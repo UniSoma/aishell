@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-harness-integration
 source: 03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md
 started: 2026-01-17T21:00:00Z
@@ -56,7 +56,10 @@ skipped: 2
   reason: "User reported: EACCES: permission denied, mkdir '/home/jonasrodrigues/.local/state'"
   severity: blocker
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "entrypoint.sh creates $HOME but not XDG standard subdirectories (~/.local/state). OpenCode expects to write to XDG_STATE_HOME (~/.local/state) but it doesn't exist and container user can't create it."
+  artifacts:
+    - path: "entrypoint.sh"
+      issue: "Missing XDG directory creation after home dir setup"
+  missing:
+    - "Create ~/.local/state in entrypoint after home directory creation"
+  debug_session: "inline"
