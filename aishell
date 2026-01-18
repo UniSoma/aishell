@@ -1341,6 +1341,44 @@ main() {
         done <<< "$api_envs"
     fi
 
+    # Apply runtime configuration from .aishell/run.conf
+    local config_file="$project_dir/.aishell/run.conf"
+    if [[ -f "$config_file" ]]; then
+        verbose "Loading runtime config: $config_file"
+        parse_run_conf "$config_file"
+
+        # Add configured mounts
+        if [[ -n "$CONF_MOUNTS" ]]; then
+            verbose "  MOUNTS: $CONF_MOUNTS"
+            while IFS= read -r arg; do
+                [[ -n "$arg" ]] && docker_args+=("$arg")
+            done < <(build_mount_args "$CONF_MOUNTS")
+        fi
+
+        # Add configured environment variables
+        if [[ -n "$CONF_ENV" ]]; then
+            verbose "  ENV: $CONF_ENV"
+            while IFS= read -r arg; do
+                [[ -n "$arg" ]] && docker_args+=("$arg")
+            done < <(build_env_args "$CONF_ENV")
+        fi
+
+        # Add configured port mappings
+        if [[ -n "$CONF_PORTS" ]]; then
+            verbose "  PORTS: $CONF_PORTS"
+            while IFS= read -r arg; do
+                [[ -n "$arg" ]] && docker_args+=("$arg")
+            done < <(build_port_args "$CONF_PORTS")
+        fi
+
+        # Add extra docker arguments (word splitting intentional)
+        if [[ -n "$CONF_DOCKER_ARGS" ]]; then
+            verbose "  DOCKER_ARGS: $CONF_DOCKER_ARGS"
+            # shellcheck disable=SC2206
+            docker_args+=($CONF_DOCKER_ARGS)
+        fi
+    fi
+
     # Dispatch based on command
     case "$HARNESS_CMD" in
         claude)
