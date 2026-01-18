@@ -7,6 +7,28 @@ set -e
 VERSION="0.1.0"
 BASE_IMAGE_NAME="aishell:base"
 VERBOSE=false
+
+# --- Image Tag Computation ---
+# Compute image tag based on version specifications
+# Returns versioned tag (e.g., aishell:claude-2.0.22) or base tag
+compute_image_tag() {
+    local suffix=""
+
+    # Build suffix from versions
+    if [[ -n "$CLAUDE_VERSION" ]]; then
+        suffix="${suffix:+$suffix-}claude-$CLAUDE_VERSION"
+    fi
+    if [[ -n "$OPENCODE_VERSION" ]]; then
+        suffix="${suffix:+$suffix-}opencode-$OPENCODE_VERSION"
+    fi
+
+    # Return tagged name or base
+    if [[ -n "$suffix" ]]; then
+        echo "aishell:$suffix"
+    else
+        echo "$BASE_IMAGE_NAME"
+    fi
+}
 WITH_CLAUDE=false
 WITH_OPENCODE=false
 CLAUDE_VERSION=""
@@ -570,14 +592,23 @@ ensure_image() {
     local needs_build=false
     local -a build_args=()
 
+    # Compute target tag (includes version info if specified)
+    local target_tag
+    target_tag=$(compute_image_tag)
+
     # Check if image exists
-    if ! docker image inspect "$BASE_IMAGE_NAME" >/dev/null 2>&1; then
+    if ! docker image inspect "$target_tag" >/dev/null 2>&1; then
         needs_build=true
     fi
 
     # Check if build flags request harnesses not in current image
     # (For now, rebuild if any --with-* flag passed)
     if [[ "$WITH_CLAUDE" == true ]] || [[ "$WITH_OPENCODE" == true ]]; then
+        needs_build=true
+    fi
+
+    # Also rebuild if version specified (may differ from existing)
+    if [[ -n "$CLAUDE_VERSION" ]] || [[ -n "$OPENCODE_VERSION" ]]; then
         needs_build=true
     fi
 
@@ -596,10 +627,15 @@ ensure_image() {
         write_entrypoint "$build_dir"
         write_bashrc "$build_dir"
 
+        # Add harness build args
         [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
         [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
 
-        if ! docker build "${build_args[@]}" -t "$BASE_IMAGE_NAME" "$build_dir" >/dev/null 2>&1; then
+        # Add version build args
+        [[ -n "$CLAUDE_VERSION" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$CLAUDE_VERSION")
+        [[ -n "$OPENCODE_VERSION" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$OPENCODE_VERSION")
+
+        if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" >/dev/null 2>&1; then
             stop_spinner
             error "Failed to build image"
         fi
@@ -607,11 +643,18 @@ ensure_image() {
         stop_spinner
         verbose "Image built successfully"
     fi
+
+    # Update BASE_IMAGE_NAME for extension builds
+    BASE_IMAGE_NAME="$target_tag"
 }
 
 # --- Update Command ---
 do_update() {
     check_docker
+
+    # Compute target tag (includes version info if specified)
+    local target_tag
+    target_tag=$(compute_image_tag)
 
     verbose "Rebuilding image with latest harness versions..."
     start_spinner "Updating image"
@@ -629,10 +672,16 @@ do_update() {
 
     # Force rebuild with no cache for harness layers
     local -a build_args=(--no-cache)
+
+    # Add harness build args
     [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
     [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
 
-    if ! docker build "${build_args[@]}" -t "$BASE_IMAGE_NAME" "$build_dir" >/dev/null 2>&1; then
+    # Add version build args
+    [[ -n "$CLAUDE_VERSION" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$CLAUDE_VERSION")
+    [[ -n "$OPENCODE_VERSION" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$OPENCODE_VERSION")
+
+    if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" >/dev/null 2>&1; then
         stop_spinner
         error "Failed to update image"
     fi
