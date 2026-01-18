@@ -5,12 +5,15 @@
 set -e
 
 VERSION="0.1.0"
-IMAGE_NAME="aishell"
+BASE_IMAGE_NAME="aishell:base"
 VERBOSE=false
 WITH_CLAUDE=false
 WITH_OPENCODE=false
 HARNESS_CMD=""
 HARNESS_ARGS=()
+FORCE_REBUILD=false
+BUILD_ARGS=()
+IMAGE_TO_RUN=""
 
 # --- Color Support ---
 supports_color() {
@@ -162,15 +165,24 @@ Commands:
 Options:
     --with-claude       Include Claude Code in image (build-time)
     --with-opencode     Include OpenCode in image (build-time)
+    --rebuild           Force rebuild of images (ignore cache)
+    --build-arg KEY=VAL Pass build argument to Dockerfile (can repeat)
     -v, --verbose       Show detailed output
     -h, --help          Show this help message
     --version           Show version
 
+Project Extensions:
+    Place a Dockerfile at .aishell/Dockerfile to extend the base image
+    with project-specific dependencies. The extended image is cached
+    and rebuilt automatically when the base image or Dockerfile changes.
+
 Examples:
-    aishell                     # Enter shell
-    aishell claude              # Run Claude Code
-    aishell opencode            # Run OpenCode
-    aishell --with-claude       # Rebuild with Claude Code, then shell
+    aishell                           # Enter shell
+    aishell claude                    # Run Claude Code
+    aishell opencode                  # Run OpenCode
+    aishell --with-claude             # Rebuild with Claude Code, then shell
+    aishell --build-arg NODE_VERSION=20   # Pass build arg to extension
+    aishell --rebuild                 # Force rebuild of all images
 
 EOF
 }
@@ -184,6 +196,21 @@ parse_args() {
                 ;;
             --with-opencode)
                 WITH_OPENCODE=true
+                shift
+                ;;
+            --rebuild)
+                FORCE_REBUILD=true
+                shift
+                ;;
+            --build-arg)
+                if [[ -z "${2:-}" ]] || [[ "$2" == -* ]]; then
+                    error "--build-arg requires a KEY=VALUE argument"
+                fi
+                BUILD_ARGS+=("$2")
+                shift 2
+                ;;
+            --build-arg=*)
+                BUILD_ARGS+=("${1#--build-arg=}")
                 shift
                 ;;
             -v|--verbose)
@@ -222,13 +249,130 @@ parse_args() {
     done
 }
 
+# --- Project Extension Functions ---
+extension_dockerfile() {
+    local project_dir="$1"
+    local dockerfile="$project_dir/.aishell/Dockerfile"
+
+    if [[ -f "$dockerfile" ]]; then
+        echo "$dockerfile"
+        return 0
+    fi
+
+    return 1
+}
+
+get_base_image_id() {
+    docker inspect --format='{{.Id}}' "$BASE_IMAGE_NAME" 2>/dev/null
+}
+
+needs_extended_rebuild() {
+    local extended_tag="$1"
+    local current_base_id="$2"
+
+    # Extended image doesn't exist
+    if ! docker image inspect "$extended_tag" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Check stored base ID against current
+    local stored_base_id
+    stored_base_id=$(docker inspect --format='{{index .Config.Labels "aishell.base.id"}}' "$extended_tag" 2>/dev/null)
+
+    if [[ "$stored_base_id" != "$current_base_id" ]]; then
+        return 0  # Base changed, need rebuild
+    fi
+
+    return 1  # Use cache
+}
+
+build_extended_image() {
+    local dockerfile="$1"
+    local project_dir="$2"
+    local image_tag="$3"
+    local base_id="$4"
+    local force_rebuild="$5"
+
+    local -a build_args=(
+        -f "$dockerfile"
+        -t "$image_tag"
+        --label "aishell.base.id=$base_id"
+    )
+
+    # Add --no-cache if force rebuild
+    [[ "$force_rebuild" == true ]] && build_args+=(--no-cache)
+
+    # Pass through BUILD_ARGS array
+    for arg in "${BUILD_ARGS[@]}"; do
+        build_args+=(--build-arg "$arg")
+    done
+
+    if [[ "$VERBOSE" == true ]]; then
+        if ! docker build "${build_args[@]}" --progress=plain "$project_dir"; then
+            error "Build failed"
+        fi
+    else
+        local build_log
+        build_log=$(mktemp)
+        # shellcheck disable=SC2064
+        trap "rm -f '$build_log'" RETURN
+
+        start_spinner "Building project image"
+        if docker build "${build_args[@]}" "$project_dir" > "$build_log" 2>&1; then
+            stop_spinner
+        else
+            stop_spinner
+            error "Build failed:
+$(cat "$build_log")"
+        fi
+    fi
+}
+
+ensure_image_with_extension() {
+    local project_dir="$1"
+
+    # First ensure base image exists
+    ensure_image
+
+    # Check for extension
+    local dockerfile
+    if ! dockerfile=$(extension_dockerfile "$project_dir"); then
+        # No extension, use base
+        IMAGE_TO_RUN="$BASE_IMAGE_NAME"
+        return 0
+    fi
+
+    # Calculate extended tag (hash of project path for isolation)
+    local hash
+    hash=$(echo -n "$project_dir" | sha256sum | cut -c1-12)
+    local extended_tag="aishell:ext-$hash"
+
+    # Get current base image ID
+    local base_id
+    base_id=$(get_base_image_id)
+
+    # Determine if rebuild needed
+    local force_rebuild=false
+    if needs_extended_rebuild "$extended_tag" "$base_id"; then
+        force_rebuild=true
+    fi
+
+    # User requested --rebuild
+    [[ "$FORCE_REBUILD" == true ]] && force_rebuild=true
+
+    # Build (Docker cache handles efficiency if force_rebuild=false)
+    build_extended_image "$dockerfile" "$project_dir" "$extended_tag" "$base_id" "$force_rebuild"
+
+    IMAGE_TO_RUN="$extended_tag"
+}
+
 # --- Image Management ---
 ensure_image() {
     local needs_build=false
     local -a build_args=()
 
     # Check if image exists
-    if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+    if ! docker image inspect "$BASE_IMAGE_NAME" >/dev/null 2>&1; then
         needs_build=true
     fi
 
@@ -248,7 +392,7 @@ ensure_image() {
         [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
         [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
 
-        if ! docker build "${build_args[@]}" -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
+        if ! docker build "${build_args[@]}" -t "$BASE_IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
             stop_spinner
             error "Failed to build image"
         fi
@@ -273,7 +417,7 @@ do_update() {
     [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
     [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
 
-    if ! docker build "${build_args[@]}" -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
+    if ! docker build "${build_args[@]}" -t "$BASE_IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
         stop_spinner
         error "Failed to update image"
     fi
@@ -293,10 +437,12 @@ main() {
     fi
 
     check_docker
-    ensure_image
 
     local project_dir
     project_dir="$(pwd)"
+
+    # Ensure image (base + extension if .aishell/Dockerfile exists)
+    ensure_image_with_extension "$project_dir"
 
     # Read git identity from host
     local identity git_name git_email
@@ -358,16 +504,16 @@ main() {
     # Dispatch based on command
     case "$HARNESS_CMD" in
         claude)
-            exec docker run "${docker_args[@]}" "$IMAGE_NAME" claude "${HARNESS_ARGS[@]}"
+            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" claude "${HARNESS_ARGS[@]}"
             ;;
         opencode)
-            exec docker run "${docker_args[@]}" "$IMAGE_NAME" opencode "${HARNESS_ARGS[@]}"
+            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" opencode "${HARNESS_ARGS[@]}"
             ;;
         exec)
-            exec docker run "${docker_args[@]}" "$IMAGE_NAME" "${HARNESS_ARGS[@]}"
+            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" "${HARNESS_ARGS[@]}"
             ;;
         *)
-            exec docker run "${docker_args[@]}" "$IMAGE_NAME" /bin/bash
+            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" /bin/bash
             ;;
     esac
 }
