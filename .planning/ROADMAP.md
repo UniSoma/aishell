@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 - [x] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
 - [x] **Phase 7: Node.js and Clojure Tooling** - Add stable Node.js and Babashka to base image
+- [ ] **Phase 8: Explicit Build/Update Commands** - Add build subcommand, update command, persist build flags
 
 ## Phase Details
 
@@ -128,10 +129,27 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Multi-stage Dockerfile with Node.js and Babashka installation
 
+### Phase 8: Explicit Build/Update Commands
+**Goal**: Separate build and run concerns with explicit subcommands, persist build configuration for updates
+**Depends on**: Phase 7
+**Requirements**: BUILD-01, BUILD-02, BUILD-03, UPDATE-01
+**Success Criteria** (what must be TRUE):
+  1. `./aishell build --with-claude --with-opencode` builds image (always, no cache)
+  2. `./aishell` enters shell (requires prior build)
+  3. `./aishell claude` runs Claude Code (requires build with --with-claude)
+  4. `./aishell opencode` runs OpenCode (requires build with --with-opencode)
+  5. `./aishell update` rebuilds with same flags as last build
+  6. Build flags persisted to state file for update command
+  7. Clear error messages when running without required build
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 8 to break down)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -142,6 +160,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
 | 6. Final Enhancements | 2/2 | Complete | 2026-01-18 |
 | 7. Node.js and Clojure Tooling | 1/1 | Complete | 2026-01-18 |
+| 8. Explicit Build/Update Commands | 0/? | Not Started | - |
 
 ---
 *Roadmap created: 2026-01-17*

@@ -5,16 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** All phases complete
+**Current focus:** Phase 8 - Explicit Build/Update Commands
 
 ## Current Position
 
-Phase: 7 of 7 (Node.js and Clojure Tooling) - COMPLETE
-Plan: 1 of 1 in phase 7
-Status: All phases complete
-Last activity: 2026-01-18 - Completed 07-01-PLAN.md
+Phase: 8 of 8 (Explicit Build/Update Commands) - NOT STARTED
+Plan: 0 of ? in phase 8
+Status: Ready to plan
+Last activity: 2026-01-18 - Added Phase 8
 
-Progress: [##########] 100% (7/7 phases complete)
+Progress: [#########-] 88% (7/8 phases complete)
+
+**Next Phase:** Phase 8 - Explicit Build/Update Commands
 
 ## Performance Metrics
 
@@ -95,6 +97,7 @@ None - all todos resolved.
 - 2 todos completed in 06-02: improve-container-shell-prompt, default-dangerously-skip-permissions
 - Statusline parity todo resolved: COLORTERM passthrough + C.UTF-8 locale
 - Phase 7 added and completed: Node.js and Clojure Tooling (Node.js LTS, Babashka)
+- Phase 8 added: Explicit Build/Update Commands (separate build/run, persist flags, update command)
 
 ### Blockers/Concerns
 
@@ -103,5 +106,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 07-01-PLAN.md (Node.js and Babashka base image)
+Stopped at: Added Phase 8 (Explicit Build/Update Commands)
 Resume file: None
