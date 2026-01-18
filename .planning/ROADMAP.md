@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
 - [x] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
 - [x] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
-- [ ] **Phase 6: Version Pinning** - Specify exact versions of Claude Code and OpenCode for reproducibility
+- [ ] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
 
 ## Phase Details
 
@@ -95,19 +95,23 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Self-contained aishell with heredocs and curl|bash installer
 
-### Phase 6: Version Pinning
-**Goal**: Users can specify exact versions of Claude Code and OpenCode for reproducible environments
+### Phase 6: Final Enhancements
+**Goal**: Polish the user experience with version pinning, shorter shell prompt, and auto-skip permissions in sandboxed environment
 **Depends on**: Phase 5
-**Requirements**: TBD (add VERSION-* requirements during planning)
+**Requirements**: VERSION-01, VERSION-02, VERSION-03, VERSION-04, UX-01, UX-02
 **Success Criteria** (what must be TRUE):
   1. User can specify `--claude-version=X.Y.Z` to install a specific Claude Code version
   2. User can specify `--opencode-version=X.Y.Z` to install a specific OpenCode version
   3. Without version flags, latest version is installed (current behavior)
   4. Version is baked into image tag for caching (e.g., `aishell:claude-1.0.5`)
-**Plans**: TBD
+  5. Container shell prompt is concise (not full absolute path)
+  6. Claude Code runs with `--dangerously-skip-permissions` by default (container is sandbox)
+  7. Users can opt-out of auto-skip permissions via environment variable
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Version pinning: CLI flags, Dockerfile args, image tagging
+- [ ] 06-02-PLAN.md — UX improvements: PROMPT_DIRTRIM, --dangerously-skip-permissions
 
 ## Progress
 
@@ -121,7 +125,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Harness Integration | 4/4 | Complete | 2026-01-17 |
 | 4. Project Customization | 1/1 | Complete | 2026-01-18 |
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
-| 6. Version Pinning | 0/1 | Not started | - |
+| 6. Final Enhancements | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-17*
@@ -130,3 +134,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 *Phase 3 planned: 2026-01-17*
 *Phase 4 planned: 2026-01-17*
 *Phase 5 planned: 2026-01-18*
+*Phase 6 planned: 2026-01-18*
