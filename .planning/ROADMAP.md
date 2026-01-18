@@ -60,12 +60,12 @@ Plans:
   3. Running `<command>` (no args) enters a shell in the container
   4. Claude Code can read existing config (API keys, settings) from mounted ~/.claude
   5. OpenCode can read existing config from mounted ~/.config/opencode
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — Dockerfile: conditional harness installation with build args
+- [ ] 03-02-PLAN.md — aishell: subcommand parsing, config mounting, env passthrough
+- [ ] 03-03-PLAN.md — Human verification of all HARNESS requirements
 
 ### Phase 4: Project Customization
 **Goal**: Projects can extend the base environment with additional dependencies without modifying the core tool
@@ -110,3 +110,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 *Roadmap created: 2026-01-17*
 *Phase 1 planned: 2026-01-17*
 *Phase 2 planned: 2026-01-17*
+*Phase 3 planned: 2026-01-17*
