@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 6 - Version Pinning
+**Current focus:** Phase 6 Complete - Version Pinning
 
 ## Current Position
 
-Phase: 5 of 6 (Distribution) - COMPLETE
-Plan: 1 of 1 in phase 5
-Status: Phase 5 complete, ready for Phase 6
-Last activity: 2026-01-18 - Completed 05-01-PLAN.md (distribution infrastructure)
+Phase: 6 of 6 (Final Enhancements) - COMPLETE
+Plan: 1 of 1 in phase 6
+Status: All phases complete
+Last activity: 2026-01-18 - Completed 06-01-PLAN.md (version pinning)
 
-Progress: [████████..] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 5.4 min
-- Total execution time: 0.9 hours
+- Total plans completed: 11
+- Average duration: 5.1 min
+- Total execution time: ~1.0 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [████████..] 80%
 | 3. Harness Integration | 4/4 | 26 min | 6.5 min |
 | 4. Project Customization | 1/1 | 8 min | 8 min |
 | 5. Distribution | 1/1 | 3 min | 3 min |
-| 6. Version Pinning | 0/1 | - | - |
+| 6. Version Pinning | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 15 min, 2 min, 8 min, 3 min
-- Trend: Phase 5 complete with curl|bash installer
+- Last 5 plans: 15 min, 2 min, 8 min, 3 min, 2 min
+- Trend: All phases complete
 
 *Updated after each plan completion*
 
@@ -73,6 +73,8 @@ Recent decisions affecting current work:
 - Extract heredocs to temp dir at build time, clean up after
 - Install to ~/.local/bin (XDG standard)
 - Warn on missing Docker but continue installation
+- Version format: no v-prefix (e.g., 2.0.22 not v2.0.22)
+- Tag format: aishell:claude-X.Y.Z for version-specific images
 
 ### Pending Todos
 
@@ -83,7 +85,8 @@ Recent decisions affecting current work:
 
 ### Roadmap Evolution
 
-- Phase 6 added: Version Pinning (specify exact harness versions for reproducibility)
+- All 6 phases complete
+- Remaining todos are future enhancements, not blockers
 
 ### Blockers/Concerns
 
@@ -92,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 05-01-PLAN.md (distribution infrastructure)
+Stopped at: Completed 06-01-PLAN.md (version pinning)
 Resume file: None
