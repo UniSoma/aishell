@@ -27,15 +27,22 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — next milestone will define new requirements)
+**v1.1 — Per-project Runtime Configuration**
+
+- [ ] Projects can define additional volume mounts via `.aishell/run.conf`
+- [ ] Projects can define additional environment variables (passthrough or literal)
+- [ ] Projects can expose port mappings from container to host
+- [ ] Projects can specify extra docker run arguments
+- [ ] Projects can define a pre-start command for sidecar/background services
 
 ### Out of Scope
 
 - Persistent containers / named sessions — ephemeral is the design choice
-- Windows host support — Linux first, macOS planned for v1.1
+- Windows host support — Linux first, macOS planned for future
 - GUI/desktop integration — CLI-focused tool
-- SSH agent forwarding — planned for v1.1
-- GPG signing passthrough — planned for v1.1
+- SSH agent forwarding — deferred to v1.2
+- GPG signing passthrough — deferred to v1.2
+- macOS support — deferred to v1.2
 
 ## Context
 
@@ -72,4 +79,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Multi-stage build | Node.js binaries without full runtime overhead | ✓ Good |
 
 ---
-*Last updated: 2026-01-18 after v1.0 milestone*
+*Last updated: 2026-01-18 after starting v1.1 milestone*
