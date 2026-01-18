@@ -316,6 +316,28 @@ export HISTCONTROL=ignoreboth:erasedups
 BASHRC_EOF
 }
 
+# --- State Management ---
+# Get unique hash for project path (for state file naming)
+get_project_hash() {
+    local project_dir="$1"
+    local canonical_path
+
+    # Resolve to canonical path (handles symlinks, .., etc)
+    canonical_path=$(realpath "$project_dir" 2>/dev/null) || canonical_path="$project_dir"
+
+    # Hash and truncate to 12 chars (matches existing pattern for extended images)
+    echo -n "$canonical_path" | sha256sum | cut -c1-12
+}
+
+# Create and return state directory path
+setup_state_dir() {
+    local state_base="${XDG_STATE_HOME:-$HOME/.local/state}"
+    local state_dir="$state_base/aishell/builds"
+
+    mkdir -p "$state_dir"
+    echo "$state_dir"
+}
+
 # --- Git Identity ---
 read_git_identity() {
     local project_dir="$1"
