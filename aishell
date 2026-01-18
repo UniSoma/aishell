@@ -93,6 +93,8 @@ FROM debian:bookworm-slim
 # Build arguments for optional harness installation
 ARG WITH_CLAUDE=false
 ARG WITH_OPENCODE=false
+ARG CLAUDE_VERSION=""
+ARG OPENCODE_VERSION=""
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -122,9 +124,14 @@ RUN set -eux; \
 # Install Claude Code if requested (native binary)
 # Installer places binary at ~/.local/bin/claude, copy to /usr/local/bin for PATH
 # Copy instead of symlink because /root/ is not accessible after privilege drop
+# Version syntax: bash -s <version> (no v prefix, e.g., 2.0.22)
 RUN if [ "$WITH_CLAUDE" = "true" ]; then \
         export DISABLE_AUTOUPDATER=1 && \
-        curl -fsSL https://claude.ai/install.sh | bash && \
+        if [ -n "$CLAUDE_VERSION" ]; then \
+            curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_VERSION"; \
+        else \
+            curl -fsSL https://claude.ai/install.sh | bash; \
+        fi && \
         cp /root/.local/bin/claude /usr/local/bin/claude && \
         chmod +x /usr/local/bin/claude; \
     fi
@@ -132,8 +139,13 @@ RUN if [ "$WITH_CLAUDE" = "true" ]; then \
 # Install OpenCode if requested (native binary)
 # Installs to /root/.opencode/bin/opencode, copy to /usr/local/bin for PATH
 # Copy instead of symlink because /root/ is not accessible after privilege drop
+# Version syntax: VERSION=<version> env var (no v prefix, e.g., 1.1.25)
 RUN if [ "$WITH_OPENCODE" = "true" ]; then \
-        curl -fsSL https://opencode.ai/install | bash && \
+        if [ -n "$OPENCODE_VERSION" ]; then \
+            VERSION="$OPENCODE_VERSION" curl -fsSL https://opencode.ai/install | bash; \
+        else \
+            curl -fsSL https://opencode.ai/install | bash; \
+        fi && \
         cp /root/.opencode/bin/opencode /usr/local/bin/opencode && \
         chmod +x /usr/local/bin/opencode; \
     fi
