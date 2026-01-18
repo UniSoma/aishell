@@ -37,9 +37,9 @@ Requirements for per-project runtime configuration.
 
 ### Pre-Start Command
 
-- [ ] **PRE-01**: User can specify pre-start command via `PRE_START`
-- [ ] **PRE-02**: Command runs inside container before main process
-- [ ] **PRE-03**: Command runs in background (does not block shell/harness)
+- [x] **PRE-01**: User can specify pre-start command via `PRE_START`
+- [x] **PRE-02**: Command runs inside container before main process
+- [x] **PRE-03**: Command runs in background (does not block shell/harness)
 
 ## v2 Requirements
 
@@ -81,9 +81,9 @@ Deferred to future release.
 | PORT-02 | Phase 9 | Complete |
 | DARG-01 | Phase 9 | Complete |
 | DARG-02 | Phase 9 | Complete |
-| PRE-01 | Phase 10 | Pending |
-| PRE-02 | Phase 10 | Pending |
-| PRE-03 | Phase 10 | Pending |
+| PRE-01 | Phase 10 | Complete |
+| PRE-02 | Phase 10 | Complete |
+| PRE-03 | Phase 10 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 16 total
@@ -92,4 +92,4 @@ Deferred to future release.
 
 ---
 *Requirements defined: 2026-01-18*
-*Last updated: 2026-01-18 after initial definition*
+*Last updated: 2026-01-18 after Phase 10 completion*

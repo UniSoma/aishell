@@ -9,7 +9,7 @@
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 9 | Runtime Config Core | RCONF-*, MOUNT-*, ENV-*, PORT-*, DARG-* | Complete |
-| 10 | Pre-Start Command | PRE-* | Planned |
+| 10 | Pre-Start Command | PRE-* | Complete |
 
 ## Phase 9: Runtime Config Core
 
@@ -48,7 +48,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 10-01-PLAN.md — PRE_START whitelist, env passthrough, and entrypoint execution
+- [x] 10-01-PLAN.md — PRE_START whitelist, env passthrough, and entrypoint execution
 
 **Requirements covered:**
 - PRE-01, PRE-02, PRE-03
@@ -87,3 +87,4 @@ Phase 10 depends on Phase 9 (needs config file infrastructure).
 *Phase 9 planned: 2026-01-18*
 *Phase 9 completed: 2026-01-18*
 *Phase 10 planned: 2026-01-18*
+*Phase 10 completed: 2026-01-18*
