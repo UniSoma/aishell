@@ -34,18 +34,22 @@ RUN set -eux; \
     gosu nobody true
 
 # Install Claude Code if requested (native binary)
-# Installer places binary at ~/.local/bin/claude, symlink to /usr/local/bin for PATH
+# Installer places binary at ~/.local/bin/claude, copy to /usr/local/bin for PATH
+# Copy instead of symlink because /root/ is not accessible after privilege drop
 RUN if [ "$WITH_CLAUDE" = "true" ]; then \
         export DISABLE_AUTOUPDATER=1 && \
         curl -fsSL https://claude.ai/install.sh | bash && \
-        ln -sf /root/.local/bin/claude /usr/local/bin/claude; \
+        cp /root/.local/bin/claude /usr/local/bin/claude && \
+        chmod +x /usr/local/bin/claude; \
     fi
 
 # Install OpenCode if requested (native binary)
-# Installs to /root/.opencode/bin/opencode, symlink to /usr/local/bin for PATH
+# Installs to /root/.opencode/bin/opencode, copy to /usr/local/bin for PATH
+# Copy instead of symlink because /root/ is not accessible after privilege drop
 RUN if [ "$WITH_OPENCODE" = "true" ]; then \
         curl -fsSL https://opencode.ai/install | bash && \
-        ln -sf /root/.opencode/bin/opencode /usr/local/bin/opencode; \
+        cp /root/.opencode/bin/opencode /usr/local/bin/opencode && \
+        chmod +x /usr/local/bin/opencode; \
     fi
 
 # Copy entrypoint script
