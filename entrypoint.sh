@@ -52,5 +52,8 @@ if [ "$1" = "/bin/bash" ] || [ "$1" = "bash" ]; then
     fi
 fi
 
+# Add harness bin directories to PATH if they exist
+[[ -d /usr/local/bin ]] && export PATH="/usr/local/bin:$PATH"
+
 # Execute command as the user via gosu
 exec gosu "$USER_ID:$GROUP_ID" "$@"

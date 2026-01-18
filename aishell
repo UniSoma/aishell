@@ -264,9 +264,40 @@ ensure_image() {
     fi
 }
 
+# --- Update Command ---
+do_update() {
+    check_docker
+
+    verbose "Rebuilding image with latest harness versions..."
+    start_spinner "Updating image"
+
+    local script_dir
+    script_dir="$(dirname "$(readlink -f "$0")")"
+
+    # Force rebuild with no cache for harness layers
+    local -a build_args=(--no-cache)
+    [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
+    [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
+
+    if ! docker build "${build_args[@]}" -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
+        stop_spinner
+        error "Failed to update image"
+    fi
+
+    stop_spinner
+    echo "Image updated successfully"
+}
+
 # --- Main ---
 main() {
     parse_args "$@"
+
+    # Handle update command before docker checks
+    if [[ "$HARNESS_CMD" == "update" ]]; then
+        do_update
+        exit 0
+    fi
+
     check_docker
     ensure_image
 
@@ -279,7 +310,6 @@ main() {
     git_name=$(echo "$identity" | head -1)
     git_email=$(echo "$identity" | tail -1)
 
-    # Warn if git identity not found (per CONTEXT.md)
     if [[ -z "$git_name" ]] || [[ -z "$git_email" ]]; then
         warn "Git identity not found on host"
     fi
@@ -290,6 +320,7 @@ main() {
     if [[ -n "$git_name" ]] && [[ -n "$git_email" ]]; then
         verbose "  Git identity: $git_name <$git_email>"
     fi
+    [[ -n "$HARNESS_CMD" ]] && verbose "  Command: $HARNESS_CMD ${HARNESS_ARGS[*]}"
 
     # Build docker run arguments
     local -a docker_args=(
@@ -301,8 +332,7 @@ main() {
         -e "TERM=${TERM:-xterm-256color}"
     )
 
-    # Only pass git identity if BOTH name and email are set
-    # (empty env vars would override git config with empty strings)
+    # Add git identity env vars
     if [[ -n "$git_name" ]] && [[ -n "$git_email" ]]; then
         docker_args+=(
             -e "GIT_AUTHOR_NAME=$git_name"
@@ -312,7 +342,39 @@ main() {
         )
     fi
 
-    exec docker run "${docker_args[@]}" "$IMAGE_NAME"
+    # Add config mounts (using mapfile for robustness)
+    local config_mounts
+    config_mounts=$(build_config_mounts)
+    if [[ -n "$config_mounts" ]]; then
+        while IFS= read -r mount; do
+            [[ -n "$mount" ]] && docker_args+=($mount)
+        done <<< "$config_mounts"
+    fi
+
+    # Add API environment variables
+    local api_envs
+    api_envs=$(build_api_env)
+    if [[ -n "$api_envs" ]]; then
+        while IFS= read -r env; do
+            [[ -n "$env" ]] && docker_args+=($env)
+        done <<< "$api_envs"
+    fi
+
+    # Dispatch based on command
+    case "$HARNESS_CMD" in
+        claude)
+            exec docker run "${docker_args[@]}" "$IMAGE_NAME" claude "${HARNESS_ARGS[@]}"
+            ;;
+        opencode)
+            exec docker run "${docker_args[@]}" "$IMAGE_NAME" opencode "${HARNESS_ARGS[@]}"
+            ;;
+        exec)
+            exec docker run "${docker_args[@]}" "$IMAGE_NAME" "${HARNESS_ARGS[@]}"
+            ;;
+        *)
+            exec docker run "${docker_args[@]}" "$IMAGE_NAME" /bin/bash
+            ;;
+    esac
 }
 
 main "$@"
