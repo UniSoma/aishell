@@ -402,6 +402,68 @@ read_state_file() {
     return 0
 }
 
+# --- Runtime Config Parsing ---
+# Allowed variable names for run.conf (whitelist)
+readonly RUNCONF_ALLOWED_VARS="MOUNTS|ENV|PORTS|DOCKER_ARGS"
+
+# Parse .aishell/run.conf safely
+# Sets CONF_* variables for each allowed config option
+# Returns 0 on success, exits 1 on syntax error
+parse_run_conf() {
+    local config_file="$1"
+    local line_num=0
+
+    # Initialize config variables
+    declare -g CONF_MOUNTS=""
+    declare -g CONF_ENV=""
+    declare -g CONF_PORTS=""
+    declare -g CONF_DOCKER_ARGS=""
+
+    # No config file is valid (use defaults)
+    [[ ! -f "$config_file" ]] && return 0
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        ((line_num++))
+
+        # Skip empty lines (including whitespace-only)
+        [[ -z "${line// /}" ]] && continue
+
+        # Skip comments
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+
+        # Trim leading whitespace
+        line="${line#"${line%%[![:space:]]*}"}"
+        # Trim trailing whitespace
+        line="${line%"${line##*[![:space:]]}"}"
+
+        # Validate: ALLOWED_VAR=value or ALLOWED_VAR="value"
+        if [[ "$line" =~ ^($RUNCONF_ALLOWED_VARS)=(.*)$ ]]; then
+            local var_name="${BASH_REMATCH[1]}"
+            local var_value="${BASH_REMATCH[2]}"
+
+            # Remove surrounding quotes (double or single)
+            if [[ "$var_value" =~ ^\"(.*)\"$ ]]; then
+                var_value="${BASH_REMATCH[1]}"
+            elif [[ "$var_value" =~ ^\'(.*)\'$ ]]; then
+                var_value="${BASH_REMATCH[1]}"
+            fi
+
+            # Set CONF_ prefixed variable
+            declare -g "CONF_${var_name}=$var_value"
+        else
+            # Provide helpful error with line number and context
+            echo -e "${RED}Config error${NC} in $config_file line $line_num:" >&2
+            echo "  $line" >&2
+            echo "" >&2
+            echo "Expected format: VARIABLE=value or VARIABLE=\"value with spaces\"" >&2
+            echo "Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS" >&2
+            exit 1
+        fi
+    done < "$config_file"
+
+    return 0
+}
+
 # Display what will be built (user feedback before long-running build)
 show_build_preview() {
     local with_claude="$1"
