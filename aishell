@@ -653,6 +653,12 @@ ensure_image() {
         needs_build=true
     fi
 
+    # Force rebuild if --rebuild flag passed
+    if [[ "$FORCE_REBUILD" == true ]]; then
+        needs_build=true
+        build_args+=(--no-cache)
+    fi
+
     if [[ "$needs_build" == true ]]; then
         verbose "Building image..."
         start_spinner "Building image"
