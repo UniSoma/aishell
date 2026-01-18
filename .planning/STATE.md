@@ -10,20 +10,20 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 8 of 8 (Explicit Build/Update Commands) - IN PROGRESS
-Plan: 2 of 4 in phase 8
+Plan: 3 of 4 in phase 8
 Status: In progress
-Last activity: 2026-01-18 - Completed 08-02-PLAN.md
+Last activity: 2026-01-18 - Completed 08-03-PLAN.md
 
-Progress: [##########] 94% (15/16 plans complete)
+Progress: [##########] 100% (16/16 plans complete)
 
-**Next Plan:** 08-03 - Harness Verification
+**Next Plan:** 08-04 - Final Integration Testing (optional)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 4.9 min
-- Total execution time: ~1.2 hours
+- Total plans completed: 16
+- Average duration: 4.8 min
+- Total execution time: ~1.3 hours
 
 **By Phase:**
 
@@ -36,10 +36,10 @@ Progress: [##########] 94% (15/16 plans complete)
 | 5. Distribution | 1/1 | 3 min | 3 min |
 | 6. Final Enhancements | 2/2 | 4 min | 2 min |
 | 7. Node.js and Clojure Tooling | 1/1 | 8 min | 8 min |
-| 8. Explicit Build/Update Commands | 2/4 | 9 min | 4.5 min |
+| 8. Explicit Build/Update Commands | 3/4 | 13 min | 4.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 2 min, 8 min, 4 min, 5 min
+- Last 5 plans: 2 min, 8 min, 4 min, 5 min, 4 min
 - Trend: Consistent execution times
 
 *Updated after each plan completion*
@@ -96,6 +96,8 @@ Recent decisions affecting current work:
 - Update always uses --no-cache (get latest versions semantic)
 - Stop spinner only clears line when spinner was active
 - errexit-compatible pattern: `cmd || result=$?`
+- Harness verification via BUILD_WITH_* state flags
+- Error messages include exact corrective commands
 
 ### Pending Todos
 
@@ -110,6 +112,7 @@ None - all todos resolved.
 - Phase 8 added: Explicit Build/Update Commands (separate build/run, persist flags, update command)
 - Phase 8 Plan 1 complete: State management infrastructure
 - Phase 8 Plan 2 complete: Build command implementation
+- Phase 8 Plan 3 complete: Harness verification with actionable errors
 
 ### Blockers/Concerns
 
@@ -118,5 +121,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 08-02-PLAN.md (Build Command Implementation)
+Stopped at: Completed 08-03-PLAN.md (Harness Verification)
 Resume file: None
