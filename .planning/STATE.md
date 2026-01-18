@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 5 - Distribution
+**Current focus:** Phase 6 - Version Pinning
 
 ## Current Position
 
-Phase: 4 of 6 (Project Customization) - COMPLETE
-Plan: 1 of 1 in phase 4
-Status: Phase 4 complete, ready for Phase 5
-Last activity: 2026-01-18 - Completed 04-01-PLAN.md (project extension support)
+Phase: 5 of 6 (Distribution) - COMPLETE
+Plan: 1 of 1 in phase 5
+Status: Phase 5 complete, ready for Phase 6
+Last activity: 2026-01-18 - Completed 05-01-PLAN.md (distribution infrastructure)
 
-Progress: [██████....] 60%
+Progress: [████████..] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 5.7 min
-- Total execution time: 0.85 hours
+- Total plans completed: 10
+- Average duration: 5.4 min
+- Total execution time: 0.9 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [██████....] 60%
 | 2. Git Integration | 1/1 | 2 min | 2 min |
 | 3. Harness Integration | 4/4 | 26 min | 6.5 min |
 | 4. Project Customization | 1/1 | 8 min | 8 min |
-| 5. Distribution | 0/1 | - | - |
+| 5. Distribution | 1/1 | 3 min | 3 min |
 | 6. Version Pinning | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 5 min, 15 min, 2 min, 8 min
-- Trend: Phase 4 complete with project extension support
+- Last 5 plans: 5 min, 15 min, 2 min, 8 min, 3 min
+- Trend: Phase 5 complete with curl|bash installer
 
 *Updated after each plan completion*
 
@@ -69,6 +69,10 @@ Recent decisions affecting current work:
 - Hash project path for extended image tag (aishell:ext-{hash12})
 - Use docker labels (aishell.base.id) to track base image version for cache invalidation
 - Always run docker build for extensions - let Docker handle caching
+- Embed Dockerfile, entrypoint.sh, bashrc.aishell as heredocs in aishell
+- Extract heredocs to temp dir at build time, clean up after
+- Install to ~/.local/bin (XDG standard)
+- Warn on missing Docker but continue installation
 
 ### Pending Todos
 
@@ -87,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 04-01-PLAN.md (project extension support)
+Stopped at: Completed 05-01-PLAN.md (distribution infrastructure)
 Resume file: None
