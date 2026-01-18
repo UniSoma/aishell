@@ -7,7 +7,18 @@
 
 ## Executive Summary
 
-This project aims to create a Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in isolated containers. The research reveals a critical finding: **Docker already provides official first-party sandbox support** via `docker sandbox run claude`. Before building from scratch, the user should verify that Docker Sandboxes or the community tool aibox (npm: @zzev/aibox) don't meet their needs. The primary differentiation for building custom would be **OpenCode support** (not in existing tools), **no npm dependency**, or **specific base image requirements**.
+This project creates a Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in isolated containers.
+
+**CRITICAL FINDING:** Docker Sandboxes requires **Docker Desktop 4.50+** — it does NOT work with Docker Engine on Linux. This eliminates the official Docker solution for users running Docker Engine.
+
+**Decision matrix:**
+
+| Requirement | Docker Sandboxes | aibox | Build Custom |
+|-------------|------------------|-------|--------------|
+| Docker Engine (Linux) | **NO** | Yes | Yes |
+| OpenCode support | No | No | **Yes** |
+
+**Our situation:** User runs Docker Engine on Ubuntu + needs OpenCode support → **Building custom is justified.**
 
 If proceeding with custom development, the recommended approach is a **Bash CLI wrapper** invoking Docker with properly configured mounts, using **Ubuntu 22.04** as the base image. The architecture follows a three-layer pattern: CLI wrapper (shell script) -> Docker image (Dockerfile) -> Entrypoint script. This is well-documented, low-risk territory with established patterns from Docker Sandboxes, VS Code devcontainers, and community projects like aibox.
 
@@ -157,21 +168,22 @@ Based on research, suggested phase structure:
 
 ## Build vs Use Decision
 
-**Recommend using Docker Sandboxes if:**
-- User has Docker Desktop (not just Docker Engine)
-- Only need Claude Code support
-- Don't need heavy customization
+**Docker Sandboxes — NOT AVAILABLE:**
+- Requires Docker Desktop 4.50+ — does NOT work with Docker Engine on Linux
+- Not an option for this project
 
-**Recommend forking aibox if:**
-- Need multi-account profiles
-- Okay with npm dependency on host
-- Want Claude/Codex/Gemini support
+**aibox — POSSIBLE BUT LIMITED:**
+- Works with Docker Engine
+- No OpenCode support
+- Requires npm on host
 
-**Recommend building custom if:**
-- Need OpenCode support (primary differentiator)
-- Want no npm/Node.js on host system
-- Need specific base image or tool requirements
-- Want full control over the tool
+**Build custom — JUSTIFIED:**
+- Works with Docker Engine on Linux
+- OpenCode support (key differentiator)
+- No npm/Node.js dependency on host
+- Full control over the tool
+
+**Decision: Build custom** is the right choice for this project.
 
 ## Sources
 
