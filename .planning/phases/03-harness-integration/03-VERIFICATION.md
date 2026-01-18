@@ -1,16 +1,30 @@
 ---
 phase: 03-harness-integration
-verified: 2026-01-17T20:45:00Z
-status: passed
-score: 6/6 must-haves verified
+verified: 2026-01-17T21:15:00Z
+status: human_needed
+score: 6/6 must-haves verified (code)
+re_verification:
+  previous_status: passed
+  previous_score: 6/6
+  gaps_closed:
+    - "OpenCode XDG directory creation (entrypoint.sh lines 39-41)"
+  gaps_remaining: []
+  regressions: []
+human_verification:
+  - test: "OpenCode starts without permission errors"
+    expected: "Run `./aishell opencode` and see OpenCode interface (no EACCES error)"
+    why_human: "Requires running container and verifying runtime behavior"
+  - test: "Claude Code warning about ~/.local/bin gone"
+    expected: "Run `./aishell claude` and see no warning about installMethod native and ~/.local/bin"
+    why_human: "Requires running container and verifying console output"
 ---
 
 # Phase 3: Harness Integration Verification Report
 
 **Phase Goal:** Users can run Claude Code and OpenCode harnesses with their configurations mounted
-**Verified:** 2026-01-17T20:45:00Z
-**Status:** passed
-**Re-verification:** No - initial verification
+**Verified:** 2026-01-17T21:15:00Z
+**Status:** human_needed
+**Re-verification:** Yes - after gap closure (03-04 XDG directory fix)
 
 ## Goal Achievement
 
@@ -25,15 +39,15 @@ score: 6/6 must-haves verified
 | 5 | OpenCode can read existing config from mounted ~/.config/opencode | VERIFIED | aishell:104 mounts `$HOME/.config/opencode` when it exists |
 | 6 | API keys (ANTHROPIC_API_KEY etc.) passed to container | VERIFIED | aishell:114-131 passes 13 API key vars when set, plus DISABLE_AUTOUPDATER=1 |
 
-**Score:** 6/6 truths verified
+**Score:** 6/6 truths verified (code-level)
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
 | `Dockerfile` | Conditional harness installation with build args | VERIFIED | 63 lines, contains ARG WITH_CLAUDE=false, ARG WITH_OPENCODE=false, conditional RUN blocks with curl installers |
-| `aishell` | Subcommand parsing, config mounting, env passthrough | VERIFIED | 375 lines, contains build_config_mounts(), build_api_env(), case dispatch for claude/opencode/update |
-| `entrypoint.sh` | Harness command dispatch, PATH setup | VERIFIED | 63 lines, PATH includes /usr/local/bin, exec gosu passes command to user |
+| `aishell` | Subcommand parsing, config mounting, env passthrough | VERIFIED | 376 lines, contains build_config_mounts(), build_api_env(), case dispatch for claude/opencode/update |
+| `entrypoint.sh` | Harness command dispatch, PATH setup, XDG directories | VERIFIED | 67 lines, creates ~/.local/{state,share,bin}, PATH includes /usr/local/bin, exec gosu passes command to user |
 
 ### Key Link Verification
 
@@ -44,7 +58,38 @@ score: 6/6 must-haves verified
 | aishell subcommand parsing | docker run CMD | exec docker run | WIRED | Lines 360-370: case dispatch builds docker_args and execs with harness command |
 | aishell config mounting | container filesystem | -v mount flags | WIRED | Lines 342-346: build_config_mounts() output added to docker_args |
 | aishell build flags | Dockerfile build args | --build-arg | WIRED | Lines 248, 273: WITH_CLAUDE/WITH_OPENCODE passed to docker build |
-| entrypoint.sh | user execution | exec gosu | WIRED | Line 63: `exec gosu "$USER_ID:$GROUP_ID" "$@"` runs command as user |
+| entrypoint.sh | user execution | exec gosu | WIRED | Line 67: `exec gosu "$USER_ID:$GROUP_ID" "$@"` runs command as user |
+| entrypoint.sh | XDG directories | mkdir/chown | WIRED | Lines 39-41: creates ~/.local/{state,share,bin} with correct ownership |
+
+### Gap Closure: XDG Directory Fix (03-04)
+
+**Original Issue (from 03-UAT.md):**
+- Test 4 (OpenCode API Connectivity) failed with: `EACCES: permission denied, mkdir '/home/jonasrodrigues/.local/state'`
+- Root cause: entrypoint.sh created `$HOME` but not XDG standard subdirectories
+- OpenCode expects to write to `~/.local/state` (XDG_STATE_HOME default)
+
+**Fix Applied (commit d0849ae):**
+
+```bash
+# entrypoint.sh lines 39-41
+# Create XDG standard directories (apps expect these to be writable)
+mkdir -p "$HOME/.local/state" "$HOME/.local/share" "$HOME/.local/bin"
+chown -R "$USER_ID:$GROUP_ID" "$HOME/.local"
+```
+
+**Fix Verification:**
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Code exists | VERIFIED | entrypoint.sh lines 39-41 |
+| Creates ~/.local/state | VERIFIED | `mkdir -p "$HOME/.local/state"` |
+| Creates ~/.local/share | VERIFIED | `mkdir -p "$HOME/.local/share"` |
+| Creates ~/.local/bin | VERIFIED | `mkdir -p "$HOME/.local/bin"` |
+| Sets correct ownership | VERIFIED | `chown -R "$USER_ID:$GROUP_ID" "$HOME/.local"` |
+| Runs before gosu switch | VERIFIED | Lines 39-41 precede line 67 (exec gosu) |
+| Committed | VERIFIED | Commit d0849ae |
+
+**Conclusion:** The code fix is correctly implemented. Runtime verification required to confirm OpenCode starts without permission errors.
 
 ### Requirements Coverage
 
@@ -66,45 +111,45 @@ score: 6/6 must-haves verified
 
 **Anti-pattern scan:** Searched for TODO, FIXME, placeholder, "not implemented" - none found in aishell, Dockerfile, entrypoint.sh.
 
-### Human Verification Completed
+### Human Verification Required
 
-Per 03-03-SUMMARY.md, human verification was completed with all HARNESS requirements passing:
+The XDG directory fix (03-04) has been code-verified but requires runtime verification.
 
-| Requirement | Test | Result |
-|-------------|------|--------|
-| HARNESS-01 | `./aishell claude` launches Claude Code | Pass |
-| HARNESS-02 | `./aishell opencode` launches OpenCode | Pass |
-| HARNESS-03 | `./aishell` enters interactive shell | Pass |
-| HARNESS-04 | ~/.claude mounted in container | Pass |
-| HARNESS-05 | ~/.config/opencode mounted in container | Pass |
-| HARNESS-06 | Claude Code installed (v2.1.12) | Pass |
-| HARNESS-07 | OpenCode installed (v1.1.25) | Pass |
+#### 1. OpenCode Starts Without Permission Errors
 
-Issues found and fixed during human verification:
-1. Harness binary access: Symlinks to /root/ were inaccessible after privilege drop - fixed by copying binaries to /usr/local/bin/
-2. Config mount flags: Output format caused parsing issues - fixed by outputting complete flags on single lines
-3. Home directory mismatch: Container HOME was /home/developer but mounts used host path - fixed by passing LOCAL_HOME
+**Test:** Run `./aishell --with-opencode && ./aishell opencode`
+**Expected:** OpenCode starts and shows interface (no EACCES permission error)
+**Why human:** Requires running the container and observing runtime behavior; the fix creates directories at container startup which cannot be verified without actually running the container
+
+#### 2. Claude Code Warning Resolved
+
+**Test:** Run `./aishell --with-claude && ./aishell claude`
+**Expected:** Claude Code starts without warning about installMethod native and ~/.local/bin not existing
+**Why human:** Requires observing console output at runtime
 
 ### Verification Summary
 
-**All must-haves verified.**
+**Code-level verification: PASSED**
 
-The phase goal "Users can run Claude Code and OpenCode harnesses with their configurations mounted" has been achieved:
+All phase 3 artifacts are:
+- Present (existence verified)
+- Substantive (adequate length, no stubs)
+- Wired (properly connected)
 
-1. **Dockerfile** contains conditional harness installation via WITH_CLAUDE and WITH_OPENCODE build args. Binaries are copied to /usr/local/bin/ for PATH accessibility after privilege drop.
+The XDG directory fix (03-04) is correctly implemented:
+- Creates ~/.local/state (fixes OpenCode EACCES)
+- Creates ~/.local/share (common app data)
+- Creates ~/.local/bin (fixes Claude Code warning)
+- Sets correct ownership before privilege drop
 
-2. **aishell** script:
-   - Parses subcommands (claude, opencode, update) and build flags (--with-claude, --with-opencode)
-   - Builds config mounts conditionally based on existence of ~/.claude, ~/.config/opencode
-   - Passes API keys (13 common providers) when set in host environment
-   - Always sets DISABLE_AUTOUPDATER=1 for ephemeral container use
-   - Dispatches to appropriate docker run command with all args
+**Runtime verification: PENDING**
 
-3. **entrypoint.sh** sets up PATH to include /usr/local/bin and executes commands as the user via gosu.
-
-4. **Human verification** confirmed all 7 HARNESS requirements work end-to-end.
+Human must verify that:
+1. OpenCode starts without EACCES permission errors
+2. Claude Code warning about ~/.local/bin is resolved
 
 ---
 
-*Verified: 2026-01-17T20:45:00Z*
+*Verified: 2026-01-17T21:15:00Z*
 *Verifier: Claude (gsd-verifier)*
+*Re-verification after: 03-04 gap closure*
