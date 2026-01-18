@@ -937,15 +937,96 @@ ensure_image() {
 }
 
 # --- Update Command ---
+# Error shown when no prior build exists
+error_no_build() {
+    echo -e "${RED}Error:${NC} No previous build found for this project." >&2
+    echo "" >&2
+    echo "To build with Claude Code:  aishell build --with-claude" >&2
+    echo "To build with OpenCode:     aishell build --with-opencode" >&2
+    echo "To build base image:        aishell build" >&2
+    exit 1
+}
+
 do_update() {
+    local args=("$@")
+    local new_with_claude=false
+    local new_with_opencode=false
+    local new_claude_version=""
+    local new_opencode_version=""
+    local verbose_build=false
+
+    # Parse update-specific args (new flags to add)
+    for arg in "${args[@]}"; do
+        case "$arg" in
+            --with-claude)
+                new_with_claude=true
+                ;;
+            --with-opencode)
+                new_with_opencode=true
+                ;;
+            --claude-version=*)
+                new_claude_version="${arg#--claude-version=}"
+                ;;
+            --opencode-version=*)
+                new_opencode_version="${arg#--opencode-version=}"
+                ;;
+            -v|--verbose)
+                verbose_build=true
+                ;;
+            -h|--help)
+                echo "Usage: aishell update [OPTIONS]"
+                echo ""
+                echo "Rebuild with latest versions using saved configuration."
+                echo ""
+                echo "Options:"
+                echo "    --with-claude           Add Claude Code to existing build"
+                echo "    --with-opencode         Add OpenCode to existing build"
+                echo "    --claude-version=X.Y.Z  Update to specific Claude Code version"
+                echo "    --opencode-version=X.Y.Z Update to specific OpenCode version"
+                echo "    -v, --verbose           Show detailed build output"
+                echo "    -h, --help              Show this help"
+                echo ""
+                echo "Update always uses --no-cache to fetch latest versions."
+                exit 0
+                ;;
+        esac
+    done
+
     check_docker
 
-    # Compute target tag (includes version info if specified)
+    local project_dir
+    project_dir="$(pwd)"
+
+    # Load existing state
+    local state_file
+    state_file=$(get_state_file "$project_dir")
+
+    if ! read_state_file "$state_file"; then
+        error_no_build
+    fi
+
+    # Merge new flags with existing state (new flags ADD to existing)
+    local with_claude="$BUILD_WITH_CLAUDE"
+    local with_opencode="$BUILD_WITH_OPENCODE"
+    local claude_version="$BUILD_CLAUDE_VERSION"
+    local opencode_version="$BUILD_OPENCODE_VERSION"
+
+    # New flags add to existing (don't replace)
+    [[ "$new_with_claude" == true ]] && with_claude=true
+    [[ "$new_with_opencode" == true ]] && with_opencode=true
+
+    # Version flags override existing for that harness
+    [[ -n "$new_claude_version" ]] && claude_version="$new_claude_version"
+    [[ -n "$new_opencode_version" ]] && opencode_version="$new_opencode_version"
+
+    # Show update preview with merged state
+    show_build_preview "$with_claude" "$with_opencode" "$claude_version" "$opencode_version" true
+
+    # Compute target tag
+    CLAUDE_VERSION="$claude_version"
+    OPENCODE_VERSION="$opencode_version"
     local target_tag
     target_tag=$(compute_image_tag)
-
-    verbose "Rebuilding image with latest harness versions..."
-    start_spinner "Updating image"
 
     # Create temp directory for build files
     local build_dir
@@ -958,24 +1039,38 @@ do_update() {
     write_entrypoint "$build_dir"
     write_bashrc "$build_dir"
 
-    # Force rebuild with no cache for harness layers
+    # Build args - always use --no-cache for update (get latest)
     local -a build_args=(--no-cache)
+    [[ "$with_claude" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
+    [[ "$with_opencode" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
+    [[ -n "$claude_version" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$claude_version")
+    [[ -n "$opencode_version" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$opencode_version")
 
-    # Add harness build args
-    [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
-    [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
+    # Build the image
+    if [[ "$verbose_build" == true ]]; then
+        if ! docker build "${build_args[@]}" -t "$target_tag" --progress=plain "$build_dir"; then
+            error "Update failed"
+        fi
+    else
+        local build_log
+        build_log=$(mktemp)
+        # shellcheck disable=SC2064
+        trap "rm -rf '$build_dir' '$build_log'" RETURN
 
-    # Add version build args
-    [[ -n "$CLAUDE_VERSION" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$CLAUDE_VERSION")
-    [[ -n "$OPENCODE_VERSION" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$OPENCODE_VERSION")
-
-    if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" >/dev/null 2>&1; then
-        stop_spinner
-        error "Failed to update image"
+        start_spinner "Updating image"
+        if docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
+            stop_spinner
+        else
+            stop_spinner
+            error "Update failed:
+$(cat "$build_log")"
+        fi
     fi
 
-    stop_spinner
-    echo "Image updated successfully"
+    # Write updated state
+    write_state_file "$state_file" "$project_dir" "$with_claude" "$with_opencode" "$claude_version" "$opencode_version" "$target_tag"
+
+    echo "Update complete. Image: $target_tag"
 }
 
 # --- Main ---
