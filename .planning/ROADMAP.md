@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
 - [x] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
 - [x] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
-- [ ] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
+- [x] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
 
 ## Phase Details
 
@@ -110,8 +110,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Version pinning: CLI flags, Dockerfile args, image tagging
-- [ ] 06-02-PLAN.md — UX improvements: PROMPT_DIRTRIM, --dangerously-skip-permissions
+- [x] 06-01-PLAN.md — Version pinning: CLI flags, Dockerfile args, image tagging
+- [x] 06-02-PLAN.md — UX improvements: PROMPT_DIRTRIM, --dangerously-skip-permissions
 
 ## Progress
 
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Harness Integration | 4/4 | Complete | 2026-01-17 |
 | 4. Project Customization | 1/1 | Complete | 2026-01-18 |
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
-| 6. Final Enhancements | 0/2 | Not started | - |
+| 6. Final Enhancements | 2/2 | Complete | 2026-01-18 |
 
 ---
 *Roadmap created: 2026-01-17*

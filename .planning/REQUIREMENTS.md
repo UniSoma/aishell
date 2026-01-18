@@ -38,6 +38,18 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DIST-03**: Installation creates command available in PATH
 - [x] **DIST-04**: Base Docker image published or buildable locally
 
+### Version Pinning
+
+- [x] **VERSION-01**: User can specify `--claude-version=X.Y.Z` for specific Claude Code version
+- [x] **VERSION-02**: User can specify `--opencode-version=X.Y.Z` for specific OpenCode version
+- [x] **VERSION-03**: Without version flags, latest version is installed (current behavior)
+- [x] **VERSION-04**: Version is baked into image tag for caching (e.g., `aishell:claude-1.0.5`)
+
+### User Experience
+
+- [x] **UX-01**: Container shell prompt is concise (not full absolute path)
+- [x] **UX-02**: Claude Code runs with `--dangerously-skip-permissions` by default in container (configurable)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -99,12 +111,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-02 | Phase 1 | Complete |
 | DIST-03 | Phase 5 | Complete |
 | DIST-04 | Phase 1 | Complete |
+| VERSION-01 | Phase 6 | Complete |
+| VERSION-02 | Phase 6 | Complete |
+| VERSION-03 | Phase 6 | Complete |
+| VERSION-04 | Phase 6 | Complete |
+| UX-01 | Phase 6 | Complete |
+| UX-02 | Phase 6 | Complete |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 18
+- v1 requirements: 24 total
+- Mapped to phases: 24
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-18 after Phase 5 completion*
+*Last updated: 2026-01-18 after Phase 6 completion*
