@@ -45,10 +45,10 @@ Plans:
   1. Running `git config user.name` and `git config user.email` in container returns host values
   2. Running `git status` in mounted project shows no "dubious ownership" errors
   3. Git commits made in container have correct author name and email
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Git identity propagation and safe.directory configuration
 
 ### Phase 3: Harness Integration
 **Goal**: Users can run Claude Code and OpenCode harnesses with their configurations mounted
@@ -109,3 +109,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 ---
 *Roadmap created: 2026-01-17*
 *Phase 1 planned: 2026-01-17*
+*Phase 2 planned: 2026-01-17*
