@@ -89,6 +89,54 @@ read_git_identity() {
     echo "$email"
 }
 
+# --- Harness Config Mounts ---
+build_config_mounts() {
+    local -a mounts=()
+
+    # Claude Code configs
+    [[ -d "$HOME/.claude" ]] && mounts+=(-v "$HOME/.claude:$HOME/.claude")
+    [[ -f "$HOME/.claude.json" ]] && mounts+=(-v "$HOME/.claude.json:$HOME/.claude.json")
+
+    # OpenCode configs
+    [[ -d "$HOME/.config/opencode" ]] && mounts+=(-v "$HOME/.config/opencode:$HOME/.config/opencode")
+
+    # OpenCode credentials (auth.json from /connect)
+    [[ -d "$HOME/.local/share/opencode" ]] && mounts+=(-v "$HOME/.local/share/opencode:$HOME/.local/share/opencode")
+
+    printf '%s\n' "${mounts[@]}"
+}
+
+# --- API Key Environment Variables ---
+build_api_env() {
+    local -a envs=()
+
+    # API keys for various providers (only pass if set, avoid empty override)
+    local api_vars=(
+        ANTHROPIC_API_KEY
+        OPENAI_API_KEY
+        GEMINI_API_KEY
+        GROQ_API_KEY
+        GITHUB_TOKEN
+        AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY
+        AWS_REGION
+        AWS_PROFILE
+        AZURE_OPENAI_API_KEY
+        AZURE_OPENAI_ENDPOINT
+        GOOGLE_CLOUD_PROJECT
+        GOOGLE_APPLICATION_CREDENTIALS
+    )
+
+    for var in "${api_vars[@]}"; do
+        [[ -n "${!var:-}" ]] && envs+=(-e "$var=${!var}")
+    done
+
+    # Recommended container settings for Claude Code
+    envs+=(-e "DISABLE_AUTOUPDATER=1")
+
+    printf '%s\n' "${envs[@]}"
+}
+
 # --- Docker Checks ---
 check_docker() {
     if ! command -v docker &> /dev/null; then
