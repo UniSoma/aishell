@@ -55,7 +55,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+1 pending todo:
+- `improve-container-shell-prompt` — Shorten the PS1 prompt in bashrc.aishell (ui)
 
 ### Blockers/Concerns
 
