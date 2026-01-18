@@ -8,12 +8,18 @@
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 9 | Runtime Config Core | RCONF-*, MOUNT-*, ENV-*, PORT-*, DARG-* | Pending |
+| 9 | Runtime Config Core | RCONF-*, MOUNT-*, ENV-*, PORT-*, DARG-* | Planned |
 | 10 | Pre-Start Command | PRE-* | Pending |
 
 ## Phase 9: Runtime Config Core
 
 **Goal:** Enable per-project runtime configuration via `.aishell/run.conf`
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Config file parser with validation and error handling
+- [ ] 09-02-PLAN.md — Argument builders and integration into main()
 
 **Requirements covered:**
 - RCONF-01, RCONF-02, RCONF-03 (config file)
@@ -72,3 +78,4 @@ Phase 10 depends on Phase 9 (needs config file infrastructure).
 
 ---
 *Roadmap created: 2026-01-18*
+*Phase 9 planned: 2026-01-18*
