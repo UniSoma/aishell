@@ -10,28 +10,26 @@ See: .planning/PROJECT.md (updated 2026-01-18)
 ## Current Position
 
 Phase: 9 of 10 (runtime-config-core)
-Plan: 1 of 2 in phase
-Status: In progress
-Last activity: 2026-01-18 — Completed 09-01-PLAN.md (config parser)
+Plan: 2 of 2 in phase (COMPLETE)
+Status: Phase complete
+Last activity: 2026-01-18 — Completed 09-02-PLAN.md (config application)
 
-Progress: [================  ] 94% (17/18 plans complete)
+Progress: [=================+] 100% (18/18 plans complete)
 
-**Milestone v1.1:** In progress (Phase 9 of 9-10)
+**Milestone v1.1:** Phase 9 complete, Phase 10 remaining
 
 ## What's Being Built
 
 Per-project runtime configuration via `.aishell/run.conf`:
 - [x] Config file parsing and validation (09-01)
-- [ ] MOUNTS, ENV, PORTS, DOCKER_ARGS application (09-02)
+- [x] MOUNTS, ENV, PORTS, DOCKER_ARGS application (09-02)
 - [ ] Pre-start command for sidecars (Phase 10)
 
 ## Next Steps
 
-Execute plan 09-02 to complete Phase 9:
-- Apply CONF_MOUNTS to docker run arguments
-- Apply CONF_ENV to docker run arguments
-- Apply CONF_PORTS to docker run arguments
-- Apply CONF_DOCKER_ARGS to docker run arguments
+Execute Phase 10 (pre-start command):
+- PRE_START hook for sidecar services before container launch
+- Integration with existing runtime config infrastructure
 
 ## Accumulated Context
 
@@ -42,6 +40,7 @@ Execute plan 09-02 to complete Phase 9:
 | 2026-01-18 | v1.1 | Shell-style config format | Native to Bash, no parser dependencies |
 | 2026-01-18 | 09-01 | return 1 vs exit 1 in parse_run_conf | Better for function composition and testing |
 | 2026-01-18 | 09-01 | Embed function in test script | Avoids Docker dependency during testing |
+| 2026-01-18 | 09-02 | printf instead of echo for flags | echo -e interprets -e as flag, printf outputs literal |
 
 ### Pending Todos
 
@@ -51,7 +50,7 @@ None.
 
 v1.0: Phases 1-8 (complete)
 v1.1: Phases 9-10 (current)
-- Phase 9: Config parsing and application (in progress)
+- Phase 9: Config parsing and application (COMPLETE)
 - Phase 10: PRE_START command
 
 ### Blockers/Concerns
@@ -60,6 +59,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-18 20:58 UTC
-Stopped at: Completed 09-01-PLAN.md
-Resume file: .planning/phases/09-runtime-config-core/09-02-PLAN.md
+Last session: 2026-01-18 21:02 UTC
+Stopped at: Completed 09-02-PLAN.md
+Resume file: None (Phase 10 planning needed)
