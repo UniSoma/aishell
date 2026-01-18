@@ -68,19 +68,19 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RCONF-01 | Phase 9 | Pending |
-| RCONF-02 | Phase 9 | Pending |
-| RCONF-03 | Phase 9 | Pending |
-| MOUNT-01 | Phase 9 | Pending |
-| MOUNT-02 | Phase 9 | Pending |
-| MOUNT-03 | Phase 9 | Pending |
-| ENV-01 | Phase 9 | Pending |
-| ENV-02 | Phase 9 | Pending |
-| ENV-03 | Phase 9 | Pending |
-| PORT-01 | Phase 9 | Pending |
-| PORT-02 | Phase 9 | Pending |
-| DARG-01 | Phase 9 | Pending |
-| DARG-02 | Phase 9 | Pending |
+| RCONF-01 | Phase 9 | Complete |
+| RCONF-02 | Phase 9 | Complete |
+| RCONF-03 | Phase 9 | Complete |
+| MOUNT-01 | Phase 9 | Complete |
+| MOUNT-02 | Phase 9 | Complete |
+| MOUNT-03 | Phase 9 | Complete |
+| ENV-01 | Phase 9 | Complete |
+| ENV-02 | Phase 9 | Complete |
+| ENV-03 | Phase 9 | Complete |
+| PORT-01 | Phase 9 | Complete |
+| PORT-02 | Phase 9 | Complete |
+| DARG-01 | Phase 9 | Complete |
+| DARG-02 | Phase 9 | Complete |
 | PRE-01 | Phase 10 | Pending |
 | PRE-02 | Phase 10 | Pending |
 | PRE-03 | Phase 10 | Pending |
