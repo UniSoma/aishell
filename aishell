@@ -441,6 +441,119 @@ show_build_preview() {
     echo ""
 }
 
+# --- Build Command ---
+# Explicit build subcommand with state persistence
+do_build() {
+    local args=("$@")
+    local with_claude=false
+    local with_opencode=false
+    local claude_version=""
+    local opencode_version=""
+    local no_cache=false
+    local verbose_build=false
+
+    # Parse build-specific args
+    for arg in "${args[@]}"; do
+        case "$arg" in
+            --with-claude)
+                with_claude=true
+                ;;
+            --with-opencode)
+                with_opencode=true
+                ;;
+            --claude-version=*)
+                claude_version="${arg#--claude-version=}"
+                ;;
+            --opencode-version=*)
+                opencode_version="${arg#--opencode-version=}"
+                ;;
+            --no-cache|--rebuild)
+                no_cache=true
+                ;;
+            -v|--verbose)
+                verbose_build=true
+                ;;
+            -h|--help)
+                echo "Usage: aishell build [OPTIONS]"
+                echo ""
+                echo "Build the container image."
+                echo ""
+                echo "Options:"
+                echo "    --with-claude           Include Claude Code"
+                echo "    --with-opencode         Include OpenCode"
+                echo "    --claude-version=X.Y.Z  Specific Claude Code version"
+                echo "    --opencode-version=X.Y.Z Specific OpenCode version"
+                echo "    --no-cache              Force rebuild (ignore Docker cache)"
+                echo "    -v, --verbose           Show detailed build output"
+                echo "    -h, --help              Show this help"
+                exit 0
+                ;;
+        esac
+    done
+
+    check_docker
+
+    local project_dir
+    project_dir="$(pwd)"
+
+    # Show build preview
+    show_build_preview "$with_claude" "$with_opencode" "$claude_version" "$opencode_version" false
+
+    # Compute target tag
+    # Set global version vars for compute_image_tag
+    CLAUDE_VERSION="$claude_version"
+    OPENCODE_VERSION="$opencode_version"
+    local target_tag
+    target_tag=$(compute_image_tag)
+
+    # Create temp directory for build files
+    local build_dir
+    build_dir=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$build_dir'" RETURN
+
+    # Write embedded build files to temp directory
+    write_dockerfile "$build_dir"
+    write_entrypoint "$build_dir"
+    write_bashrc "$build_dir"
+
+    # Build docker args
+    local -a build_args=()
+    [[ "$no_cache" == true ]] && build_args+=(--no-cache)
+    [[ "$with_claude" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
+    [[ "$with_opencode" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
+    [[ -n "$claude_version" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$claude_version")
+    [[ -n "$opencode_version" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$opencode_version")
+
+    # Build the image
+    if [[ "$verbose_build" == true ]]; then
+        if ! docker build "${build_args[@]}" -t "$target_tag" --progress=plain "$build_dir"; then
+            error "Build failed"
+        fi
+    else
+        local build_log
+        build_log=$(mktemp)
+        # shellcheck disable=SC2064
+        trap "rm -rf '$build_dir' '$build_log'" RETURN
+
+        start_spinner "Building image"
+        if docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
+            stop_spinner
+        else
+            stop_spinner
+            error "Build failed:
+$(cat "$build_log")"
+        fi
+    fi
+
+    # Write state file after successful build
+    local state_file
+    state_file=$(get_state_file "$project_dir")
+    write_state_file "$state_file" "$project_dir" "$with_claude" "$with_opencode" "$claude_version" "$opencode_version" "$target_tag"
+
+    echo "Build complete. Image: $target_tag"
+}
+
 # --- Git Identity ---
 read_git_identity() {
     local project_dir="$1"
@@ -523,10 +636,11 @@ Usage: aishell [OPTIONS] [COMMAND] [ARGS...]
 Launch an ephemeral container with the current directory mounted.
 
 Commands:
-    claude      Run Claude Code (requires --with-claude at build)
-    opencode    Run OpenCode (requires --with-opencode at build)
-    update      Rebuild image with latest harness versions
-    (none)      Enter interactive shell (default)
+    build       Build the container image (required before other commands)
+    update      Rebuild with latest versions using saved configuration
+    claude      Run Claude Code (requires build with --with-claude)
+    opencode    Run OpenCode (requires build with --with-opencode)
+    (none)      Enter interactive shell (requires build)
 
 Options:
     --with-claude           Include Claude Code in image (build-time)
@@ -545,12 +659,14 @@ Project Extensions:
     and rebuilt automatically when the base image or Dockerfile changes.
 
 Examples:
-    aishell                           # Enter shell
+    aishell build --with-claude       # Build image with Claude Code
+    aishell build --with-opencode     # Build image with OpenCode
+    aishell build                     # Build base image (shell access only)
+    aishell                           # Enter shell (requires prior build)
     aishell claude                    # Run Claude Code
     aishell opencode                  # Run OpenCode
-    aishell --with-claude             # Rebuild with Claude Code, then shell
-    aishell --build-arg NODE_VERSION=20   # Pass build arg to extension
-    aishell --rebuild                 # Force rebuild of all images
+    aishell update                    # Rebuild with latest versions
+    aishell update --with-opencode    # Add OpenCode to existing build
 
 Environment Variables:
     AISHELL_SKIP_PERMISSIONS   Set to 'false' to require permission prompts in Claude
@@ -611,9 +727,16 @@ parse_args() {
                 HARNESS_ARGS=("$@")
                 break
                 ;;
+            build)
+                HARNESS_CMD="build"
+                shift
+                HARNESS_ARGS=("$@")
+                break
+                ;;
             update)
                 HARNESS_CMD="update"
                 shift
+                HARNESS_ARGS=("$@")
                 break
                 ;;
             -*)
@@ -859,9 +982,15 @@ do_update() {
 main() {
     parse_args "$@"
 
-    # Handle update command before docker checks
+    # Handle build command
+    if [[ "$HARNESS_CMD" == "build" ]]; then
+        do_build "${HARNESS_ARGS[@]}"
+        exit 0
+    fi
+
+    # Handle update command
     if [[ "$HARNESS_CMD" == "update" ]]; then
-        do_update
+        do_update "${HARNESS_ARGS[@]}"
         exit 0
     fi
 
