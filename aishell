@@ -271,6 +271,13 @@ fi
 # Add harness bin directories to PATH if they exist
 [[ -d /usr/local/bin ]] && export PATH="/usr/local/bin:$PATH"
 
+# Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
+if [[ -n "${PRE_START:-}" ]]; then
+    # Run in background, redirect all output to log file
+    # Using sh -c ensures proper argument handling for complex commands
+    sh -c "$PRE_START" > /tmp/pre-start.log 2>&1 &
+fi
+
 # Execute command as the user via gosu
 exec gosu "$USER_ID:$GROUP_ID" "$@"
 ENTRYPOINT_EOF
