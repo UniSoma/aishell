@@ -1,9 +1,10 @@
 ---
 created: 2026-01-17T21:48
+resolved: 2026-01-18
 title: Default to --dangerously-skip-permissions for Claude
 area: tooling
 files:
-  - scripts/aishell
+  - aishell
 ---
 
 ## Problem
@@ -14,7 +15,11 @@ Currently users must manually add this flag if they want uninterrupted Claude op
 
 ## Solution
 
-Modify the Claude harness script to pass `--dangerously-skip-permissions` by default when launching Claude inside the container. Consider:
-- Making this configurable via environment variable (e.g., `AISHELL_SKIP_PERMISSIONS=1` by default)
-- Documenting that the container isolation makes this safe
-- Potentially allowing users to opt-out if desired
+Modified aishell to pass `--dangerously-skip-permissions` by default when launching Claude.
+
+- Default behavior: permissions skipped (container is sandbox)
+- Opt-out: `AISHELL_SKIP_PERMISSIONS=false` environment variable
+
+## Status
+
+RESOLVED - Implemented in 06-02-PLAN.md (commit d243591).

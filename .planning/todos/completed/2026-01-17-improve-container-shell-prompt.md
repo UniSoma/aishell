@@ -1,9 +1,10 @@
 ---
 created: 2026-01-17T15:40
+resolved: 2026-01-18
 title: Improve container shell prompt
 area: ui
 files:
-  - bashrc.aishell
+  - aishell
 ---
 
 ## Problem
@@ -18,11 +19,10 @@ This is especially problematic for deeply nested directories where the prompt ca
 
 ## Solution
 
-Modify the PS1 in `bashrc.aishell` to show a shorter path representation:
+Used `PROMPT_DIRTRIM=2` in bashrc.aishell to limit path depth to last 2 components.
 
-Options:
-- Show only the current directory name (`\W` instead of `\w`)
-- Show abbreviated path (e.g., `~/p/harness` or just last 2 components)
-- Use `PROMPT_DIRTRIM=2` to limit path depth
+Result: `.../parent/current` instead of full absolute path.
 
-TBD: Decide which approach best balances context vs. brevity.
+## Status
+
+RESOLVED - Implemented in 06-02-PLAN.md (commit 63afd13).
