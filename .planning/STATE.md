@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 6 Complete - Version Pinning
+**Current focus:** Phase 6 Complete - All Enhancements Done
 
 ## Current Position
 
 Phase: 6 of 6 (Final Enhancements) - COMPLETE
-Plan: 1 of 1 in phase 6
+Plan: 2 of 2 in phase 6
 Status: All phases complete
-Last activity: 2026-01-18 - Completed 06-01-PLAN.md (version pinning)
+Last activity: 2026-01-18 - Completed 06-02-PLAN.md (UX improvements)
 
-Progress: [██████████] 100%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 5.1 min
+- Total plans completed: 12
+- Average duration: 4.8 min
 - Total execution time: ~1.0 hours
 
 **By Phase:**
@@ -32,10 +32,10 @@ Progress: [██████████] 100%
 | 3. Harness Integration | 4/4 | 26 min | 6.5 min |
 | 4. Project Customization | 1/1 | 8 min | 8 min |
 | 5. Distribution | 1/1 | 3 min | 3 min |
-| 6. Version Pinning | 1/1 | 2 min | 2 min |
+| 6. Final Enhancements | 2/2 | 4 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 15 min, 2 min, 8 min, 3 min, 2 min
+- Last 5 plans: 2 min, 8 min, 3 min, 2 min, 2 min
 - Trend: All phases complete
 
 *Updated after each plan completion*
@@ -75,18 +75,20 @@ Recent decisions affecting current work:
 - Warn on missing Docker but continue installation
 - Version format: no v-prefix (e.g., 2.0.22 not v2.0.22)
 - Tag format: aishell:claude-X.Y.Z for version-specific images
+- PROMPT_DIRTRIM=2 for showing last 2 path components in prompt
+- Default --dangerously-skip-permissions for Claude (container is sandbox)
+- AISHELL_SKIP_PERMISSIONS=false for opt-out
 
 ### Pending Todos
 
-3 pending todos:
-- `improve-container-shell-prompt` - Shorten the PS1 prompt in bashrc.aishell (ui)
-- `default-dangerously-skip-permissions` - Default to --dangerously-skip-permissions for Claude (tooling)
+1 pending todo:
 - `claude-statusline-host-container-parity` - Investigate Claude statusline difference between host and container (tooling)
 
 ### Roadmap Evolution
 
 - All 6 phases complete
-- Remaining todos are future enhancements, not blockers
+- 2 todos completed in 06-02: improve-container-shell-prompt, default-dangerously-skip-permissions
+- 1 remaining todo is future investigation, not a blocker
 
 ### Blockers/Concerns
 
@@ -95,5 +97,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 06-01-PLAN.md (version pinning)
+Stopped at: Completed 06-02-PLAN.md (UX improvements)
 Resume file: None
