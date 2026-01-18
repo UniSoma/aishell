@@ -90,10 +90,10 @@ Plans:
   1. User can run `curl ... | bash` and install the tool
   2. After installation, command is available in PATH without manual configuration
   3. Installation works on fresh Linux system with Docker Engine installed
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Self-contained aishell with heredocs and curl|bash installer
 
 ### Phase 6: Version Pinning
 **Goal**: Users can specify exact versions of Claude Code and OpenCode for reproducible environments
@@ -129,3 +129,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 *Phase 2 planned: 2026-01-17*
 *Phase 3 planned: 2026-01-17*
 *Phase 4 planned: 2026-01-17*
+*Phase 5 planned: 2026-01-18*
