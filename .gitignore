@@ -1,0 +1,17 @@
+# State files (local to each machine)
+*.state
+
+# Build artifacts
+*.log
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
