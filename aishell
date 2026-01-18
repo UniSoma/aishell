@@ -263,6 +263,11 @@ write_bashrc() {
     cat > "${target_dir}/bashrc.aishell" << 'BASHRC_EOF'
 # /etc/bash.aishell - Custom shell configuration for aishell containers
 
+# UTF-8 locale for Unicode character support (statusline, symbols)
+# C.UTF-8 is available by default in Debian without installing locales package
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
 # Limit directory depth in prompt (shows .../parent/current instead of full path)
 export PROMPT_DIRTRIM=2
 
@@ -742,6 +747,7 @@ main() {
         -e "LOCAL_GID=$(id -g)"
         -e "LOCAL_HOME=$HOME"
         -e "TERM=${TERM:-xterm-256color}"
+        -e "COLORTERM=${COLORTERM:-truecolor}"
     )
 
     # Add git identity env vars

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 6 Complete - All Enhancements Done
+**Current focus:** Phase 7 - Node.js and Clojure Tooling
 
 ## Current Position
 
-Phase: 6 of 6 (Final Enhancements) - COMPLETE
-Plan: 2 of 2 in phase 6
-Status: All phases complete
-Last activity: 2026-01-18 - Completed 06-02-PLAN.md (UX improvements)
+Phase: 7 of 7 (Node.js and Clojure Tooling) - NOT STARTED
+Plan: 0 of ? in phase 7
+Status: Phase 7 awaiting planning
+Last activity: 2026-01-18 - Added Phase 7
 
-Progress: [##########] 100%
+Progress: [#########-] 86% (6/7 phases complete)
 
 ## Performance Metrics
 
@@ -78,17 +78,19 @@ Recent decisions affecting current work:
 - PROMPT_DIRTRIM=2 for showing last 2 path components in prompt
 - Default --dangerously-skip-permissions for Claude (container is sandbox)
 - AISHELL_SKIP_PERMISSIONS=false for opt-out
+- Pass COLORTERM env var for 24-bit color support in container
+- Set LANG=C.UTF-8 in bashrc.aishell for Unicode character rendering
 
 ### Pending Todos
 
-1 pending todo:
-- `claude-statusline-host-container-parity` - Investigate Claude statusline difference between host and container (tooling)
+None - all todos resolved.
 
 ### Roadmap Evolution
 
 - All 6 phases complete
 - 2 todos completed in 06-02: improve-container-shell-prompt, default-dangerously-skip-permissions
-- 1 remaining todo is future investigation, not a blocker
+- Statusline parity todo resolved: COLORTERM passthrough + C.UTF-8 locale
+- Phase 7 added: Node.js and Clojure Tooling (Node.js LTS, Babashka, bbin)
 
 ### Blockers/Concerns
 
