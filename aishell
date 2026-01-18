@@ -404,7 +404,7 @@ read_state_file() {
 
 # --- Runtime Config Parsing ---
 # Allowed variable names for run.conf (whitelist)
-readonly RUNCONF_ALLOWED_VARS="MOUNTS|ENV|PORTS|DOCKER_ARGS"
+readonly RUNCONF_ALLOWED_VARS="MOUNTS|ENV|PORTS|DOCKER_ARGS|PRE_START"
 
 # Parse .aishell/run.conf safely
 # Sets CONF_* variables for each allowed config option
@@ -418,6 +418,7 @@ parse_run_conf() {
     declare -g CONF_ENV=""
     declare -g CONF_PORTS=""
     declare -g CONF_DOCKER_ARGS=""
+    declare -g CONF_PRE_START=""
 
     # No config file is valid (use defaults)
     [[ ! -f "$config_file" ]] && return 0
@@ -456,7 +457,7 @@ parse_run_conf() {
             echo "  $line" >&2
             echo "" >&2
             echo "Expected format: VARIABLE=value or VARIABLE=\"value with spaces\"" >&2
-            echo "Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS" >&2
+            echo "Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS, PRE_START" >&2
             exit 1
         fi
     done < "$config_file"
@@ -842,6 +843,7 @@ Runtime Configuration:
     ENV="EDITOR DEBUG_MODE=1"                  # Environment variables
     PORTS="3000:3000 8080:80"                  # Port mappings
     DOCKER_ARGS="--cap-add=SYS_PTRACE"         # Extra docker run args
+    PRE_START="redis-server --daemonize yes"   # Background command before shell
 
     See: https://github.com/user/aishell#runtime-configuration
 
@@ -1386,6 +1388,12 @@ main() {
             verbose "  DOCKER_ARGS: $CONF_DOCKER_ARGS"
             # shellcheck disable=SC2206
             docker_args+=($CONF_DOCKER_ARGS)
+        fi
+
+        # Pass PRE_START command to container if configured
+        if [[ -n "${CONF_PRE_START:-}" ]]; then
+            verbose "  PRE_START: $CONF_PRE_START"
+            docker_args+=(-e "PRE_START=$CONF_PRE_START")
         fi
     fi
 
