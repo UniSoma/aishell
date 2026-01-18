@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
 - [ ] **Phase 4: Project Customization** - Projects can extend base image via Dockerfile.sandbox
 - [ ] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
+- [ ] **Phase 6: Version Pinning** - Specify exact versions of Claude Code and OpenCode for reproducibility
 
 ## Phase Details
 
@@ -94,10 +95,24 @@ Plans:
 Plans:
 - [ ] 05-01: TBD
 
+### Phase 6: Version Pinning
+**Goal**: Users can specify exact versions of Claude Code and OpenCode for reproducible environments
+**Depends on**: Phase 5
+**Requirements**: TBD (add VERSION-* requirements during planning)
+**Success Criteria** (what must be TRUE):
+  1. User can specify `--claude-version=X.Y.Z` to install a specific Claude Code version
+  2. User can specify `--opencode-version=X.Y.Z` to install a specific OpenCode version
+  3. Without version flags, latest version is installed (current behavior)
+  4. Version is baked into image tag for caching (e.g., `aishell:claude-1.0.5`)
+**Plans**: TBD
+
+Plans:
+- [ ] 06-01: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -106,6 +121,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Harness Integration | 4/4 | Complete | 2026-01-17 |
 | 4. Project Customization | 0/1 | Not started | - |
 | 5. Distribution | 0/1 | Not started | - |
+| 6. Version Pinning | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-17*

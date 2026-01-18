@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 3 of 5 (Harness Integration) - COMPLETE
+Phase: 3 of 6 (Harness Integration) - COMPLETE
 Plan: 4 of 4 in phase 3 (gap closure plan added)
 Status: Phase 3 complete, ready for Phase 4
 Last activity: 2026-01-17 - Completed 03-04-PLAN.md (XDG directory fix)
 
-Progress: [██████....] 62%
+Progress: [█████.....] 50%
 
 ## Performance Metrics
 
@@ -32,6 +32,7 @@ Progress: [██████....] 62%
 | 3. Harness Integration | 4/4 | 26 min | 6.5 min |
 | 4. Project Customization | 0/1 | - | - |
 | 5. Distribution | 0/1 | - | - |
+| 6. Version Pinning | 0/1 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: 2 min, 4 min, 5 min, 15 min, 2 min
@@ -70,6 +71,10 @@ Recent decisions affecting current work:
 
 1 pending todo:
 - `improve-container-shell-prompt` - Shorten the PS1 prompt in bashrc.aishell (ui)
+
+### Roadmap Evolution
+
+- Phase 6 added: Version Pinning (specify exact harness versions for reproducibility)
 
 ### Blockers/Concerns
 
