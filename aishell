@@ -835,6 +835,16 @@ Global Options:
 Project Extensions:
     Place a Dockerfile at .aishell/Dockerfile to extend the base image.
 
+Runtime Configuration:
+    Create .aishell/run.conf to configure container runtime:
+
+    MOUNTS="\$HOME/.ssh \$HOME/.config/git"    # Additional volume mounts
+    ENV="EDITOR DEBUG_MODE=1"                  # Environment variables
+    PORTS="3000:3000 8080:80"                  # Port mappings
+    DOCKER_ARGS="--cap-add=SYS_PTRACE"         # Extra docker run args
+
+    See: https://github.com/user/aishell#runtime-configuration
+
 Examples:
     aishell build --with-claude     # Build with Claude Code
     aishell build                   # Build base image only
