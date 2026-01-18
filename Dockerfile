@@ -4,6 +4,10 @@
 
 FROM debian:bookworm-slim
 
+# Build arguments for optional harness installation
+ARG WITH_CLAUDE=false
+ARG WITH_OPENCODE=false
+
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -28,6 +32,21 @@ RUN set -eux; \
     chmod +x /usr/local/bin/gosu; \
     gosu --version; \
     gosu nobody true
+
+# Install Claude Code if requested (native binary)
+# Installs to /root/.claude/bin/claude, symlink to /usr/local/bin for PATH
+RUN if [ "$WITH_CLAUDE" = "true" ]; then \
+        export DISABLE_AUTOUPDATER=1 && \
+        curl -fsSL https://claude.ai/install.sh | bash && \
+        ln -sf /root/.claude/bin/claude /usr/local/bin/claude; \
+    fi
+
+# Install OpenCode if requested (native binary)
+# Installs to /root/.opencode/bin/opencode, symlink to /usr/local/bin for PATH
+RUN if [ "$WITH_OPENCODE" = "true" ]; then \
+        curl -fsSL https://opencode.ai/install | bash && \
+        ln -sf /root/.opencode/bin/opencode /usr/local/bin/opencode; \
+    fi
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
