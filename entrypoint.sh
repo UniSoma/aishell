@@ -36,6 +36,10 @@ export HOME=${LOCAL_HOME:-$(getent passwd "$USER_ID" | cut -d: -f6)}
 mkdir -p "$HOME"
 chown "$USER_ID:$GROUP_ID" "$HOME"
 
+# Create XDG standard directories (apps expect these to be writable)
+mkdir -p "$HOME/.local/state" "$HOME/.local/share" "$HOME/.local/bin"
+chown -R "$USER_ID:$GROUP_ID" "$HOME/.local"
+
 # Configure git safe.directory to trust the mounted project path (GIT-02)
 # PWD is set by docker run -w flag
 # Must run after home directory exists (git config --global needs $HOME/.gitconfig writable)
