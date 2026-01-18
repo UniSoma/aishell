@@ -1,0 +1,22 @@
+# /etc/bash.aishell - Custom shell configuration for aishell containers
+
+# Custom prompt: [aishell] ~/project $
+# Cyan [aishell] prefix, then working directory, then $
+export PS1='\[\033[0;36m\][aishell]\[\033[0m\] \w \$ '
+
+# Useful aliases
+alias ll='ls -la'
+alias la='ls -A'
+
+# Ensure colors in common commands
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+
+# Set editor
+export EDITOR=vim
+export VISUAL=vim
+
+# History settings
+export HISTSIZE=10000
+export HISTFILESIZE=20000
+export HISTCONTROL=ignoreboth:erasedups

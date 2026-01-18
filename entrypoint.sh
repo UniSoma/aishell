@@ -1,0 +1,48 @@
+#!/bin/bash
+# entrypoint.sh - Dynamic user creation with gosu
+# Creates a user at container startup that matches the host user's UID/GID
+
+set -e
+
+# Read UID/GID from environment variables
+USER_ID=${LOCAL_UID:-1000}
+GROUP_ID=${LOCAL_GID:-1000}
+USERNAME=developer
+
+# Create group if GID doesn't exist
+if ! getent group "$GROUP_ID" > /dev/null 2>&1; then
+    groupadd -g "$GROUP_ID" "$USERNAME" 2>/dev/null || true
+fi
+
+# Create user if UID doesn't exist
+if ! getent passwd "$USER_ID" > /dev/null 2>&1; then
+    useradd --shell /bin/bash \
+        -u "$USER_ID" \
+        -g "$GROUP_ID" \
+        -o \
+        -c "Container User" \
+        -m "$USERNAME" 2>/dev/null || true
+fi
+
+# Get the username for this UID (might be different if user already existed)
+ACTUAL_USER=$(getent passwd "$USER_ID" | cut -d: -f1)
+export HOME=$(getent passwd "$USER_ID" | cut -d: -f6)
+
+# Ensure home directory exists with correct ownership
+mkdir -p "$HOME"
+chown "$USER_ID:$GROUP_ID" "$HOME"
+
+# Setup passwordless sudo for the user
+echo "$ACTUAL_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/developer
+chmod 0440 /etc/sudoers.d/developer
+
+# Source custom bashrc if starting bash
+if [ "$1" = "/bin/bash" ] || [ "$1" = "bash" ]; then
+    # Only add source line if not already present
+    if ! grep -q "source /etc/bash.aishell" "$HOME/.bashrc" 2>/dev/null; then
+        echo "source /etc/bash.aishell" >> "$HOME/.bashrc"
+    fi
+fi
+
+# Execute command as the user via gosu
+exec gosu "$USER_ID:$GROUP_ID" "$@"
