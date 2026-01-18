@@ -10,20 +10,20 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 8 of 8 (Explicit Build/Update Commands) - IN PROGRESS
-Plan: 1 of 4 in phase 8
+Plan: 2 of 4 in phase 8
 Status: In progress
-Last activity: 2026-01-18 - Completed 08-01-PLAN.md
+Last activity: 2026-01-18 - Completed 08-02-PLAN.md
 
-Progress: [#########-] 89% (14/16 plans complete)
+Progress: [##########] 94% (15/16 plans complete)
 
-**Next Plan:** 08-02 - Build Command Implementation
+**Next Plan:** 08-03 - Harness Verification
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 4.9 min
-- Total execution time: ~1.15 hours
+- Total execution time: ~1.2 hours
 
 **By Phase:**
 
@@ -36,10 +36,10 @@ Progress: [#########-] 89% (14/16 plans complete)
 | 5. Distribution | 1/1 | 3 min | 3 min |
 | 6. Final Enhancements | 2/2 | 4 min | 2 min |
 | 7. Node.js and Clojure Tooling | 1/1 | 8 min | 8 min |
-| 8. Explicit Build/Update Commands | 1/4 | 4 min | 4 min |
+| 8. Explicit Build/Update Commands | 2/4 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 3 min, 2 min, 2 min, 8 min, 4 min
+- Last 5 plans: 2 min, 2 min, 8 min, 4 min, 5 min
 - Trend: Consistent execution times
 
 *Updated after each plan completion*
@@ -91,6 +91,11 @@ Recent decisions affecting current work:
 - Shell variable format for state files (not JSON) for native bash support
 - Security validation regex before sourcing state files to prevent code injection
 - Atomic write pattern (mktemp + mv) to prevent corruption
+- Build subcommand always runs docker build (relies on Docker cache)
+- Update merges new flags with existing (additive, not replacement)
+- Update always uses --no-cache (get latest versions semantic)
+- Stop spinner only clears line when spinner was active
+- errexit-compatible pattern: `cmd || result=$?`
 
 ### Pending Todos
 
@@ -104,6 +109,7 @@ None - all todos resolved.
 - Phase 7 added and completed: Node.js and Clojure Tooling (Node.js LTS, Babashka)
 - Phase 8 added: Explicit Build/Update Commands (separate build/run, persist flags, update command)
 - Phase 8 Plan 1 complete: State management infrastructure
+- Phase 8 Plan 2 complete: Build command implementation
 
 ### Blockers/Concerns
 
@@ -112,5 +118,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 08-01-PLAN.md (State Management Infrastructure)
+Stopped at: Completed 08-02-PLAN.md (Build Command Implementation)
 Resume file: None
