@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 - [x] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
 - [x] **Phase 7: Node.js and Clojure Tooling** - Add stable Node.js and Babashka to base image
-- [ ] **Phase 8: Explicit Build/Update Commands** - Add build subcommand, update command, persist build flags
+- [x] **Phase 8: Explicit Build/Update Commands** - Add build subcommand, update command, persist build flags
 
 ## Phase Details
 
@@ -144,9 +144,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — State management infrastructure (state file read/write/validate)
-- [ ] 08-02-PLAN.md — Build and update subcommands with state persistence
-- [ ] 08-03-PLAN.md — Run command guards and human verification
+- [x] 08-01-PLAN.md — State management infrastructure (state file read/write/validate)
+- [x] 08-02-PLAN.md — Build and update subcommands with state persistence
+- [x] 08-03-PLAN.md — Run command guards and human verification
 
 ## Progress
 
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
 | 6. Final Enhancements | 2/2 | Complete | 2026-01-18 |
 | 7. Node.js and Clojure Tooling | 1/1 | Complete | 2026-01-18 |
-| 8. Explicit Build/Update Commands | 0/3 | Not Started | - |
+| 8. Explicit Build/Update Commands | 3/3 | Complete | 2026-01-18 |
 
 ---
 *Roadmap created: 2026-01-17*

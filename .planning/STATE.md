@@ -5,18 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 8 - Explicit Build/Update Commands
+**Current focus:** Milestone v1.0 complete
 
 ## Current Position
 
-Phase: 8 of 8 (Explicit Build/Update Commands) - IN PROGRESS
-Plan: 3 of 4 in phase 8
-Status: In progress
-Last activity: 2026-01-18 - Completed 08-03-PLAN.md
+Phase: 8 of 8 (Explicit Build/Update Commands) - COMPLETE
+Plan: 3 of 3 in phase 8
+Status: Milestone complete
+Last activity: 2026-01-18 - Completed Phase 8 execution
 
-Progress: [##########] 100% (16/16 plans complete)
+Progress: [##########] 100% (8/8 phases complete)
 
-**Next Plan:** 08-04 - Final Integration Testing (optional)
+**Milestone:** v1.0 Complete - All requirements delivered
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Progress: [##########] 100% (16/16 plans complete)
 | 5. Distribution | 1/1 | 3 min | 3 min |
 | 6. Final Enhancements | 2/2 | 4 min | 2 min |
 | 7. Node.js and Clojure Tooling | 1/1 | 8 min | 8 min |
-| 8. Explicit Build/Update Commands | 3/4 | 13 min | 4.3 min |
+| 8. Explicit Build/Update Commands | 3/3 | 13 min | 4.3 min |
 
 **Recent Trend:**
 - Last 5 plans: 2 min, 8 min, 4 min, 5 min, 4 min
@@ -105,14 +105,11 @@ None - all todos resolved.
 
 ### Roadmap Evolution
 
-- All 7 phases complete
+- All 8 phases complete - Milestone v1.0 delivered
 - 2 todos completed in 06-02: improve-container-shell-prompt, default-dangerously-skip-permissions
 - Statusline parity todo resolved: COLORTERM passthrough + C.UTF-8 locale
 - Phase 7 added and completed: Node.js and Clojure Tooling (Node.js LTS, Babashka)
-- Phase 8 added: Explicit Build/Update Commands (separate build/run, persist flags, update command)
-- Phase 8 Plan 1 complete: State management infrastructure
-- Phase 8 Plan 2 complete: Build command implementation
-- Phase 8 Plan 3 complete: Harness verification with actionable errors
+- Phase 8 added and completed: Explicit Build/Update Commands (separate build/run, persist flags, update command)
 
 ### Blockers/Concerns
 
@@ -121,5 +118,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 08-03-PLAN.md (Harness Verification)
+Stopped at: Milestone v1.0 complete
 Resume file: None
