@@ -474,37 +474,62 @@ Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS, PRE_START"
 }
 
 # Build mount arguments from MOUNTS config
-# Expands $HOME, ${HOME}, ~ and outputs -v flags
+# Supports both formats:
+#   - source-only: /path/to/dir (mounts at same path in container)
+#   - source:destination: /host/path:/container/path (explicit destination)
+# Expands $HOME, ${HOME}, ~ in both source and destination
 build_mount_args() {
     local mounts_str="$1"
 
     [[ -z "$mounts_str" ]] && return 0
 
     # Split on whitespace
-    for mount_path in $mounts_str; do
-        local expanded="$mount_path"
+    for mount_entry in $mounts_str; do
+        local source=""
+        local destination=""
 
-        # Expand $HOME
-        expanded="${expanded//\$HOME/$HOME}"
-
-        # Expand ${HOME}
-        expanded="${expanded//\$\{HOME\}/$HOME}"
-
-        # Handle ~ at start
-        if [[ "$expanded" == "~"* ]]; then
-            expanded="$HOME${expanded:1}"
-        fi
-
-        # Resolve to absolute path if exists
-        if [[ -e "$expanded" ]]; then
-            expanded=$(realpath "$expanded")
+        # Check if this is source:destination format
+        # Look for : that's not part of $HOME or ${HOME}
+        if [[ "$mount_entry" == *":"* && ! "$mount_entry" =~ ^\$\{?HOME\}?:$ ]]; then
+            # Has colon - split into source and destination
+            # Handle case where source might have $HOME
+            source="${mount_entry%%:*}"
+            destination="${mount_entry#*:}"
         else
-            warn "Mount source does not exist: $expanded"
+            # Source-only format - use same path for both
+            source="$mount_entry"
+            destination=""
         fi
 
-        # Output mount flags (same path in container)
+        # Expand $HOME in source
+        source="${source//\$HOME/$HOME}"
+        source="${source//\$\{HOME\}/$HOME}"
+        if [[ "$source" == "~"* ]]; then
+            source="$HOME${source:1}"
+        fi
+
+        # Expand $HOME in destination if present
+        if [[ -n "$destination" ]]; then
+            destination="${destination//\$HOME/$HOME}"
+            destination="${destination//\$\{HOME\}/$HOME}"
+            if [[ "$destination" == "~"* ]]; then
+                destination="$HOME${destination:1}"
+            fi
+        else
+            # Source-only: destination equals source
+            destination="$source"
+        fi
+
+        # Resolve source to absolute path if exists
+        if [[ -e "$source" ]]; then
+            source=$(realpath "$source")
+        else
+            warn "Mount source does not exist: $source"
+        fi
+
+        # Output mount flags
         printf '%s\n' "-v"
-        printf '%s\n' "$expanded:$expanded"
+        printf '%s\n' "$source:$destination"
     done
 }
 
