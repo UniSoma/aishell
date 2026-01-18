@@ -18,6 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
 - [x] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 - [x] **Phase 6: Final Enhancements** - Version pinning, UX improvements (prompt, permissions), polish
+- [ ] **Phase 7: Node.js and Clojure Tooling** - Add stable Node.js, Babashka, and bbin to base image
 
 ## Phase Details
 
@@ -113,10 +114,25 @@ Plans:
 - [x] 06-01-PLAN.md — Version pinning: CLI flags, Dockerfile args, image tagging
 - [x] 06-02-PLAN.md — UX improvements: PROMPT_DIRTRIM, --dangerously-skip-permissions
 
+### Phase 7: Node.js and Clojure Tooling
+**Goal**: Base image includes stable Node.js LTS, Babashka (bb), and bbin for enhanced scripting capabilities
+**Depends on**: Phase 6
+**Requirements**: DEV-01, DEV-02, DEV-03
+**Success Criteria** (what must be TRUE):
+  1. Node.js LTS is available in container (`node --version` works)
+  2. npm is available in container (`npm --version` works)
+  3. Babashka is available in container (`bb --version` works)
+  4. bbin is available in container (`bbin version` works)
+  5. All tools work for non-root container user
+**Plans**: 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md — Multi-stage Dockerfile with Node.js, Babashka, bbin installation
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -126,6 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. Project Customization | 1/1 | Complete | 2026-01-18 |
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
 | 6. Final Enhancements | 2/2 | Complete | 2026-01-18 |
+| 7. Node.js and Clojure Tooling | 0/1 | Not Started | - |
 
 ---
 *Roadmap created: 2026-01-17*
@@ -135,3 +152,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 *Phase 4 planned: 2026-01-17*
 *Phase 5 planned: 2026-01-18*
 *Phase 6 planned: 2026-01-18*
+*Phase 7 planned: 2026-01-18*

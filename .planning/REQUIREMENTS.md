@@ -50,6 +50,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **UX-01**: Container shell prompt is concise (not full absolute path)
 - [x] **UX-02**: Claude Code runs with `--dangerously-skip-permissions` by default in container (configurable)
 
+### Developer Tooling
+
+- [ ] **DEV-01**: Node.js LTS available in container (`node --version`, `npm --version`)
+- [ ] **DEV-02**: Babashka (bb) available in container (`bb --version`)
+- [ ] **DEV-03**: bbin available in container (`bbin version`)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -117,12 +123,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VERSION-04 | Phase 6 | Complete |
 | UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 6 | Complete |
+| DEV-01 | Phase 7 | Not Started |
+| DEV-02 | Phase 7 | Not Started |
+| DEV-03 | Phase 7 | Not Started |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24
+- v1 requirements: 27 total
+- Mapped to phases: 27
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-18 after Phase 6 completion*
+*Last updated: 2026-01-18 after Phase 7 planning*
