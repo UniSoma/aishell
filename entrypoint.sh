@@ -4,9 +4,10 @@
 
 set -e
 
-# Read UID/GID from environment variables
+# Read UID/GID/HOME from environment variables
 USER_ID=${LOCAL_UID:-1000}
 GROUP_ID=${LOCAL_GID:-1000}
+USER_HOME=${LOCAL_HOME:-/home/developer}
 USERNAME=developer
 
 # Create group if GID doesn't exist
@@ -15,10 +16,12 @@ if ! getent group "$GROUP_ID" > /dev/null 2>&1; then
 fi
 
 # Create user if UID doesn't exist
+# Use -d to set home directory to match host path (for config mounts)
 if ! getent passwd "$USER_ID" > /dev/null 2>&1; then
     useradd --shell /bin/bash \
         -u "$USER_ID" \
         -g "$GROUP_ID" \
+        -d "$USER_HOME" \
         -o \
         -c "Container User" \
         -m "$USERNAME" 2>/dev/null || true
@@ -26,7 +29,8 @@ fi
 
 # Get the username for this UID (might be different if user already existed)
 ACTUAL_USER=$(getent passwd "$USER_ID" | cut -d: -f1)
-export HOME=$(getent passwd "$USER_ID" | cut -d: -f6)
+# Use LOCAL_HOME if provided, otherwise fall back to passwd entry
+export HOME=${LOCAL_HOME:-$(getent passwd "$USER_ID" | cut -d: -f6)}
 
 # Ensure home directory exists with correct ownership
 mkdir -p "$HOME"

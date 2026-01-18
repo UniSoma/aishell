@@ -323,6 +323,7 @@ main() {
         -w "$project_dir"
         -e "LOCAL_UID=$(id -u)"
         -e "LOCAL_GID=$(id -g)"
+        -e "LOCAL_HOME=$HOME"
         -e "TERM=${TERM:-xterm-256color}"
     )
 
