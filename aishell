@@ -7,6 +7,10 @@ set -e
 VERSION="0.1.0"
 IMAGE_NAME="aishell"
 VERBOSE=false
+WITH_CLAUDE=false
+WITH_OPENCODE=false
+HARNESS_CMD=""
+HARNESS_ARGS=()
 
 # --- Color Support ---
 supports_color() {
@@ -151,14 +155,28 @@ check_docker() {
 # --- Argument Parsing ---
 usage() {
     cat << EOF
-Usage: aishell [OPTIONS]
+Usage: aishell [OPTIONS] [COMMAND] [ARGS...]
 
 Launch an ephemeral container with the current directory mounted.
 
+Commands:
+    claude      Run Claude Code (requires --with-claude at build)
+    opencode    Run OpenCode (requires --with-opencode at build)
+    update      Rebuild image with latest harness versions
+    (none)      Enter interactive shell (default)
+
 Options:
-    -v, --verbose    Show detailed output
-    -h, --help       Show this help message
-    --version        Show version
+    --with-claude       Include Claude Code in image (build-time)
+    --with-opencode     Include OpenCode in image (build-time)
+    -v, --verbose       Show detailed output
+    -h, --help          Show this help message
+    --version           Show version
+
+Examples:
+    aishell                     # Enter shell
+    aishell claude              # Run Claude Code
+    aishell opencode            # Run OpenCode
+    aishell --with-claude       # Rebuild with Claude Code, then shell
 
 EOF
 }
@@ -166,6 +184,14 @@ EOF
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --with-claude)
+                WITH_CLAUDE=true
+                shift
+                ;;
+            --with-opencode)
+                WITH_OPENCODE=true
+                shift
+                ;;
             -v|--verbose)
                 VERBOSE=true
                 shift
@@ -178,8 +204,25 @@ parse_args() {
                 echo "aishell $VERSION"
                 exit 0
                 ;;
-            *)
+            claude|opencode)
+                HARNESS_CMD="$1"
+                shift
+                HARNESS_ARGS=("$@")
+                break
+                ;;
+            update)
+                HARNESS_CMD="update"
+                shift
+                break
+                ;;
+            -*)
                 error "Unknown option: $1"
+                ;;
+            *)
+                # Unknown positional - treat as command to run in shell
+                HARNESS_CMD="exec"
+                HARNESS_ARGS=("$1" "${@:2}")
+                break
                 ;;
         esac
     done
@@ -187,15 +230,31 @@ parse_args() {
 
 # --- Image Management ---
 ensure_image() {
+    local needs_build=false
+    local -a build_args=()
+
+    # Check if image exists
     if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-        verbose "Image not found, building..."
+        needs_build=true
+    fi
+
+    # Check if build flags request harnesses not in current image
+    # (For now, rebuild if any --with-* flag passed)
+    if [[ "$WITH_CLAUDE" == true ]] || [[ "$WITH_OPENCODE" == true ]]; then
+        needs_build=true
+    fi
+
+    if [[ "$needs_build" == true ]]; then
+        verbose "Building image..."
         start_spinner "Building image"
 
-        # Build from Dockerfile in script directory
         local script_dir
         script_dir="$(dirname "$(readlink -f "$0")")"
 
-        if ! docker build -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
+        [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
+        [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
+
+        if ! docker build "${build_args[@]}" -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
             stop_spinner
             error "Failed to build image"
         fi
