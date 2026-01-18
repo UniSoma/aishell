@@ -52,9 +52,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Developer Tooling
 
-- [ ] **DEV-01**: Node.js LTS available in container (`node --version`, `npm --version`)
-- [ ] **DEV-02**: Babashka (bb) available in container (`bb --version`)
-- [ ] **DEV-03**: bbin available in container (`bbin version`)
+- [x] **DEV-01**: Node.js LTS available in container (`node --version`, `npm --version`)
+- [x] **DEV-02**: Babashka (bb) available in container (`bb --version`)
+- [~] **DEV-03**: ~~bbin available in container~~ (Descoped: requires Java runtime)
 
 ## v2 Requirements
 
