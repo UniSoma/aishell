@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CORE-03**: Files created in container have correct host UID/GID ownership
 - [x] **CORE-04**: Container runs as non-root user with sudo access
 - [x] **CORE-05**: Basic CLI tools available (git, curl, vim, jq, ripgrep)
-- [ ] **CORE-06**: Projects can extend base image via Dockerfile.sandbox
+- [x] **CORE-06**: Projects can extend base image via Dockerfile.sandbox
 
 ### Git Integration
 
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-03 | Phase 1 | Complete |
 | CORE-04 | Phase 1 | Complete |
 | CORE-05 | Phase 1 | Complete |
-| CORE-06 | Phase 4 | Pending |
+| CORE-06 | Phase 4 | Complete |
 | GIT-01 | Phase 2 | Complete |
 | GIT-02 | Phase 2 | Complete |
 | HARNESS-01 | Phase 3 | Complete |
