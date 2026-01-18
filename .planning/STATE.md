@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 4 - Project Customization
+**Current focus:** Phase 5 - Distribution
 
 ## Current Position
 
-Phase: 3 of 6 (Harness Integration) - COMPLETE
-Plan: 4 of 4 in phase 3 (gap closure plan added)
-Status: Phase 3 complete, ready for Phase 4
-Last activity: 2026-01-17 - Completed 03-04-PLAN.md (XDG directory fix)
+Phase: 4 of 6 (Project Customization) - COMPLETE
+Plan: 1 of 1 in phase 4
+Status: Phase 4 complete, ready for Phase 5
+Last activity: 2026-01-18 - Completed 04-01-PLAN.md (project extension support)
 
-Progress: [█████.....] 50%
+Progress: [██████....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5 min
-- Total execution time: 0.61 hours
+- Total plans completed: 9
+- Average duration: 5.7 min
+- Total execution time: 0.85 hours
 
 **By Phase:**
 
@@ -30,13 +30,13 @@ Progress: [█████.....] 50%
 | 1. Core Container Foundation | 3/3 | 15 min | 5 min |
 | 2. Git Integration | 1/1 | 2 min | 2 min |
 | 3. Harness Integration | 4/4 | 26 min | 6.5 min |
-| 4. Project Customization | 0/1 | - | - |
+| 4. Project Customization | 1/1 | 8 min | 8 min |
 | 5. Distribution | 0/1 | - | - |
 | 6. Version Pinning | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 4 min, 5 min, 15 min, 2 min
-- Trend: Gap closure plan (03-04) fixed XDG permission issue
+- Last 5 plans: 4 min, 5 min, 15 min, 2 min, 8 min
+- Trend: Phase 4 complete with project extension support
 
 *Updated after each plan completion*
 
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - Pass LOCAL_HOME env var to preserve host home path in container
 - Create container user with same home directory path as host
 - Create XDG directories (~/.local/{state,share,bin}) at container startup
+- Hash project path for extended image tag (aishell:ext-{hash12})
+- Use docker labels (aishell.base.id) to track base image version for cache invalidation
+- Always run docker build for extensions - let Docker handle caching
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: Completed 03-04-PLAN.md (XDG fix)
+Last session: 2026-01-18
+Stopped at: Completed 04-01-PLAN.md (project extension support)
 Resume file: None

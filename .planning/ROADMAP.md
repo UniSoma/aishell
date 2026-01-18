@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Core Container Foundation** - Working container with project mounted at host path, correct permissions, basic tools
 - [x] **Phase 2: Git Integration** - Git identity and safe directory configuration work seamlessly
 - [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
-- [ ] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
+- [x] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
 - [ ] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 - [ ] **Phase 6: Version Pinning** - Specify exact versions of Claude Code and OpenCode for reproducibility
 
@@ -80,7 +80,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01-PLAN.md — Extension detection, building, caching, and verification
+- [x] 04-01-PLAN.md — Extension detection, building, caching, and verification
 
 ### Phase 5: Distribution
 **Goal**: Users can install the tool with a single command and have it available in PATH
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Core Container Foundation | 3/3 | Complete | 2026-01-17 |
 | 2. Git Integration | 1/1 | Complete | 2026-01-17 |
 | 3. Harness Integration | 4/4 | Complete | 2026-01-17 |
-| 4. Project Customization | 0/1 | Not started | - |
+| 4. Project Customization | 1/1 | Complete | 2026-01-18 |
 | 5. Distribution | 0/1 | Not started | - |
 | 6. Version Pinning | 0/1 | Not started | - |
 
