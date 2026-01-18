@@ -76,9 +76,10 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-2 pending todos:
+3 pending todos:
 - `improve-container-shell-prompt` - Shorten the PS1 prompt in bashrc.aishell (ui)
 - `default-dangerously-skip-permissions` - Default to --dangerously-skip-permissions for Claude (tooling)
+- `claude-statusline-host-container-parity` - Investigate Claude statusline difference between host and container (tooling)
 
 ### Roadmap Evolution
 
