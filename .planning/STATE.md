@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 3 of 5 (Harness Integration) - COMPLETE
-Plan: 3 of 3 in phase 3
+Plan: 4 of 4 in phase 3 (gap closure plan added)
 Status: Phase 3 complete, ready for Phase 4
-Last activity: 2026-01-17 - Completed 03-03-PLAN.md (Human Verification)
+Last activity: 2026-01-17 - Completed 03-04-PLAN.md (XDG directory fix)
 
-Progress: [██████....] 60%
+Progress: [██████....] 62%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 5 min
-- Total execution time: 0.58 hours
+- Total execution time: 0.61 hours
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [██████....] 60%
 |-------|-------|-------|----------|
 | 1. Core Container Foundation | 3/3 | 15 min | 5 min |
 | 2. Git Integration | 1/1 | 2 min | 2 min |
-| 3. Harness Integration | 3/3 | 24 min | 8 min |
+| 3. Harness Integration | 4/4 | 26 min | 6.5 min |
 | 4. Project Customization | 0/1 | - | - |
 | 5. Distribution | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 4 min, 5 min, 15 min
-- Trend: Phase 3 included fixes during verification
+- Last 5 plans: 2 min, 4 min, 5 min, 15 min, 2 min
+- Trend: Gap closure plan (03-04) fixed XDG permission issue
 
 *Updated after each plan completion*
 
@@ -64,6 +64,7 @@ Recent decisions affecting current work:
 - Copy harness binaries to /usr/local/bin (not symlink, as /root/ inaccessible after gosu)
 - Pass LOCAL_HOME env var to preserve host home path in container
 - Create container user with same home directory path as host
+- Create XDG directories (~/.local/{state,share,bin}) at container startup
 
 ### Pending Todos
 
@@ -77,5 +78,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-17
-Stopped at: Completed Phase 3 (Harness Integration)
+Stopped at: Completed 03-04-PLAN.md (XDG fix)
 Resume file: None
