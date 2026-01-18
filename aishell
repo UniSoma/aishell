@@ -464,6 +464,124 @@ parse_run_conf() {
     return 0
 }
 
+# Build mount arguments from MOUNTS config
+# Expands $HOME, ${HOME}, ~ and outputs -v flags
+build_mount_args() {
+    local mounts_str="$1"
+
+    [[ -z "$mounts_str" ]] && return 0
+
+    # Split on whitespace
+    for mount_path in $mounts_str; do
+        local expanded="$mount_path"
+
+        # Expand $HOME
+        expanded="${expanded//\$HOME/$HOME}"
+
+        # Expand ${HOME}
+        expanded="${expanded//\$\{HOME\}/$HOME}"
+
+        # Handle ~ at start
+        if [[ "$expanded" == "~"* ]]; then
+            expanded="$HOME${expanded:1}"
+        fi
+
+        # Resolve to absolute path if exists
+        if [[ -e "$expanded" ]]; then
+            expanded=$(realpath "$expanded")
+        else
+            warn "Mount source does not exist: $expanded"
+        fi
+
+        # Output mount flags (same path in container)
+        printf '%s\n' "-v"
+        printf '%s\n' "$expanded:$expanded"
+    done
+}
+
+# Build environment arguments from ENV config
+# Handles VAR (passthrough) and VAR=value (literal) syntax
+build_env_args() {
+    local env_str="$1"
+
+    [[ -z "$env_str" ]] && return 0
+
+    for env_entry in $env_str; do
+        if [[ "$env_entry" == *"="* ]]; then
+            # Literal value: VAR=value
+            printf '%s\n' "-e"
+            printf '%s\n' "$env_entry"
+        else
+            # Passthrough: VAR (inherit from host)
+            if [[ -v "$env_entry" ]]; then
+                printf '%s\n' "-e"
+                printf '%s\n' "$env_entry"
+            else
+                warn "Skipping unset host variable: $env_entry"
+            fi
+        fi
+    done
+}
+
+# Build port arguments from PORTS config
+# Validates format and outputs -p flags
+build_port_args() {
+    local ports_str="$1"
+
+    [[ -z "$ports_str" ]] && return 0
+
+    for port_spec in $ports_str; do
+        # Validate format: host:container or host:container/protocol
+        if [[ "$port_spec" =~ ^[0-9]+:[0-9]+(/[a-z]+)?$ ]]; then
+            printf '%s\n' "-p"
+            printf '%s\n' "$port_spec"
+        else
+            error "Invalid port mapping: $port_spec
+Expected format: HOST_PORT:CONTAINER_PORT (e.g., 8080:80)
+Optional protocol: 8080:80/udp"
+        fi
+    done
+}
+
+# Apply runtime configuration to docker_args array
+# Reads run.conf and appends appropriate flags
+apply_runtime_config() {
+    local project_dir="$1"
+    local -n docker_args_ref="$2"
+
+    local config_file="$project_dir/.aishell/run.conf"
+
+    # Parse config (sets CONF_* variables)
+    parse_run_conf "$config_file"
+
+    # Add mounts
+    if [[ -n "$CONF_MOUNTS" ]]; then
+        while IFS= read -r arg; do
+            [[ -n "$arg" ]] && docker_args_ref+=("$arg")
+        done < <(build_mount_args "$CONF_MOUNTS")
+    fi
+
+    # Add environment variables
+    if [[ -n "$CONF_ENV" ]]; then
+        while IFS= read -r arg; do
+            [[ -n "$arg" ]] && docker_args_ref+=("$arg")
+        done < <(build_env_args "$CONF_ENV")
+    fi
+
+    # Add port mappings
+    if [[ -n "$CONF_PORTS" ]]; then
+        while IFS= read -r arg; do
+            [[ -n "$arg" ]] && docker_args_ref+=("$arg")
+        done < <(build_port_args "$CONF_PORTS")
+    fi
+
+    # Add extra docker arguments (word splitting intentional)
+    if [[ -n "$CONF_DOCKER_ARGS" ]]; then
+        # shellcheck disable=SC2206
+        docker_args_ref+=($CONF_DOCKER_ARGS)
+    fi
+}
+
 # Display what will be built (user feedback before long-running build)
 show_build_preview() {
     local with_claude="$1"
