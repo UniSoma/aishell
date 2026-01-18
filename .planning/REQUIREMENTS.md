@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Container Core
 
-- [ ] **CORE-01**: Container mounts project at same path as host (e.g., /home/user/project → /home/user/project in container)
+- [ ] **CORE-01**: Container mounts project at same path as host (e.g., /home/user/project -> /home/user/project in container)
 - [ ] **CORE-02**: Container is ephemeral (destroyed on exit, only mounted files persist)
 - [ ] **CORE-03**: Files created in container have correct host UID/GID ownership
 - [ ] **CORE-04**: Container runs as non-root user with sudo access
@@ -103,8 +103,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 18 total
 - Mapped to phases: 18
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-17 after initial definition*
+*Last updated: 2026-01-17 after roadmap creation*
