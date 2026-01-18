@@ -167,19 +167,14 @@ RUN set -eux; \
     gosu --version; \
     gosu nobody true
 
-# Install Claude Code if requested (native binary)
-# Installer places binary at ~/.local/bin/claude, copy to /usr/local/bin for PATH
-# Copy instead of symlink because /root/ is not accessible after privilege drop
-# Version syntax: bash -s <version> (no v prefix, e.g., 2.0.22)
+# Install Claude Code if requested (npm global)
+# npm global installs to /usr/local/bin/claude which matches doctor's expectations
 RUN if [ "$WITH_CLAUDE" = "true" ]; then \
-        export DISABLE_AUTOUPDATER=1 && \
         if [ -n "$CLAUDE_VERSION" ]; then \
-            curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_VERSION"; \
+            npm install -g @anthropic-ai/claude-code@"$CLAUDE_VERSION"; \
         else \
-            curl -fsSL https://claude.ai/install.sh | bash; \
-        fi && \
-        cp /root/.local/bin/claude /usr/local/bin/claude && \
-        chmod +x /usr/local/bin/claude; \
+            npm install -g @anthropic-ai/claude-code; \
+        fi \
     fi
 
 # Install OpenCode if requested (native binary)
