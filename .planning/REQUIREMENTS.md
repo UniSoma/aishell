@@ -18,8 +18,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Git Integration
 
-- [ ] **GIT-01**: Git user.name and user.email from host ~/.gitconfig work in container
-- [ ] **GIT-02**: Git recognizes project directory as safe (no dubious ownership errors)
+- [x] **GIT-01**: Git user.name and user.email from host ~/.gitconfig work in container
+- [x] **GIT-02**: Git recognizes project directory as safe (no dubious ownership errors)
 
 ### Harness Support
 
@@ -86,8 +86,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-04 | Phase 1 | Complete |
 | CORE-05 | Phase 1 | Complete |
 | CORE-06 | Phase 4 | Pending |
-| GIT-01 | Phase 2 | Pending |
-| GIT-02 | Phase 2 | Pending |
+| GIT-01 | Phase 2 | Complete |
+| GIT-02 | Phase 2 | Complete |
 | HARNESS-01 | Phase 3 | Pending |
 | HARNESS-02 | Phase 3 | Pending |
 | HARNESS-03 | Phase 3 | Pending |
