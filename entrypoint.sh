@@ -32,6 +32,14 @@ export HOME=$(getent passwd "$USER_ID" | cut -d: -f6)
 mkdir -p "$HOME"
 chown "$USER_ID:$GROUP_ID" "$HOME"
 
+# Configure git safe.directory to trust the mounted project path (GIT-02)
+# PWD is set by docker run -w flag
+# Must run after home directory exists (git config --global needs $HOME/.gitconfig writable)
+# Must run before exec gosu (runs as root, can write to the gitconfig that will be owned by user)
+if [ -n "$PWD" ]; then
+    git config --global --add safe.directory "$PWD"
+fi
+
 # Setup passwordless sudo for the user
 echo "$ACTUAL_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/developer
 chmod 0440 /etc/sudoers.d/developer
