@@ -15,11 +15,12 @@
 
 **Goal:** Enable per-project runtime configuration via `.aishell/run.conf`
 
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 - [x] 09-01-PLAN.md — Config file parser with validation and error handling
 - [x] 09-02-PLAN.md — Argument builders and integration into main()
+- [x] 09-03-PLAN.md — UAT gap closure (error display, MOUNTS format, ENV passthrough)
 
 **Requirements covered:**
 - RCONF-01, RCONF-02, RCONF-03 (config file)

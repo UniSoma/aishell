@@ -9,31 +9,31 @@ Requirements for per-project runtime configuration.
 
 ### Runtime Configuration
 
-- [ ] **RCONF-01**: User can create `.aishell/run.conf` to configure container runtime
-- [ ] **RCONF-02**: Config file is sourced safely with validation (no code injection)
-- [ ] **RCONF-03**: Config syntax errors produce helpful error messages
+- [x] **RCONF-01**: User can create `.aishell/run.conf` to configure container runtime
+- [x] **RCONF-02**: Config file is sourced safely with validation (no code injection)
+- [x] **RCONF-03**: Config syntax errors produce helpful error messages
 
 ### Volume Mounts
 
-- [ ] **MOUNT-01**: User can specify additional mounts via `MOUNTS` variable
-- [ ] **MOUNT-02**: Paths support `$HOME` expansion
-- [ ] **MOUNT-03**: Mounts are created as read-write at same path in container
+- [x] **MOUNT-01**: User can specify additional mounts via `MOUNTS` variable
+- [x] **MOUNT-02**: Paths support `$HOME` expansion
+- [x] **MOUNT-03**: Mounts are created as read-write at same path in container
 
 ### Environment Variables
 
-- [ ] **ENV-01**: User can specify env vars via `ENV` variable
-- [ ] **ENV-02**: `VAR` syntax passes through value from host
-- [ ] **ENV-03**: `VAR=value` syntax sets literal value
+- [x] **ENV-01**: User can specify env vars via `ENV` variable
+- [x] **ENV-02**: `VAR` syntax passes through value from host
+- [x] **ENV-03**: `VAR=value` syntax sets literal value
 
 ### Port Mappings
 
-- [ ] **PORT-01**: User can specify port mappings via `PORTS` variable
-- [ ] **PORT-02**: Supports `host:container` format
+- [x] **PORT-01**: User can specify port mappings via `PORTS` variable
+- [x] **PORT-02**: Supports `host:container` format
 
 ### Docker Arguments
 
-- [ ] **DARG-01**: User can specify extra docker run args via `DOCKER_ARGS`
-- [ ] **DARG-02**: Args are passed through to docker run command
+- [x] **DARG-01**: User can specify extra docker run args via `DOCKER_ARGS`
+- [x] **DARG-02**: Args are passed through to docker run command
 
 ### Pre-Start Command
 
