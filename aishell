@@ -68,6 +68,27 @@ stop_spinner() {
 
 trap 'stop_spinner' EXIT
 
+# --- Git Identity ---
+read_git_identity() {
+    local project_dir="$1"
+
+    # Check if git is installed on host
+    if ! command -v git &> /dev/null; then
+        echo ""
+        echo ""
+        return 0
+    fi
+
+    # Read effective config (local overrides global)
+    # git -C runs command as if started in <path>
+    local name email
+    name=$(git -C "$project_dir" config user.name 2>/dev/null) || name=""
+    email=$(git -C "$project_dir" config user.email 2>/dev/null) || email=""
+
+    echo "$name"
+    echo "$email"
+}
+
 # --- Docker Checks ---
 check_docker() {
     if ! command -v docker &> /dev/null; then
@@ -145,17 +166,46 @@ main() {
     local project_dir
     project_dir="$(pwd)"
 
+    # Read git identity from host
+    local identity git_name git_email
+    identity=$(read_git_identity "$project_dir")
+    git_name=$(echo "$identity" | head -1)
+    git_email=$(echo "$identity" | tail -1)
+
+    # Warn if git identity not found (per CONTEXT.md)
+    if [[ -z "$git_name" ]] || [[ -z "$git_email" ]]; then
+        warn "Git identity not found on host"
+    fi
+
     verbose "Launching container..."
     verbose "  Project: $project_dir"
     verbose "  UID/GID: $(id -u):$(id -g)"
+    if [[ -n "$git_name" ]] && [[ -n "$git_email" ]]; then
+        verbose "  Git identity: $git_name <$git_email>"
+    fi
 
-    exec docker run --rm -it \
-        -v "$project_dir:$project_dir" \
-        -w "$project_dir" \
-        -e "LOCAL_UID=$(id -u)" \
-        -e "LOCAL_GID=$(id -g)" \
-        -e "TERM=${TERM:-xterm-256color}" \
-        "$IMAGE_NAME"
+    # Build docker run arguments
+    local -a docker_args=(
+        --rm -it
+        -v "$project_dir:$project_dir"
+        -w "$project_dir"
+        -e "LOCAL_UID=$(id -u)"
+        -e "LOCAL_GID=$(id -g)"
+        -e "TERM=${TERM:-xterm-256color}"
+    )
+
+    # Only pass git identity if BOTH name and email are set
+    # (empty env vars would override git config with empty strings)
+    if [[ -n "$git_name" ]] && [[ -n "$git_email" ]]; then
+        docker_args+=(
+            -e "GIT_AUTHOR_NAME=$git_name"
+            -e "GIT_AUTHOR_EMAIL=$git_email"
+            -e "GIT_COMMITTER_NAME=$git_name"
+            -e "GIT_COMMITTER_EMAIL=$git_email"
+        )
+    fi
+
+    exec docker run "${docker_args[@]}" "$IMAGE_NAME"
 }
 
 main "$@"
