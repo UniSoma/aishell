@@ -33,9 +33,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Distribution
 
-- [ ] **DIST-01**: Tool installable via curl | bash one-liner
+- [x] **DIST-01**: Tool installable via curl | bash one-liner
 - [x] **DIST-02**: Works on Linux with Docker Engine
-- [ ] **DIST-03**: Installation creates command available in PATH
+- [x] **DIST-03**: Installation creates command available in PATH
 - [x] **DIST-04**: Base Docker image published or buildable locally
 
 ## v2 Requirements
@@ -95,9 +95,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARNESS-05 | Phase 3 | Complete |
 | HARNESS-06 | Phase 3 | Complete |
 | HARNESS-07 | Phase 3 | Complete |
-| DIST-01 | Phase 5 | Pending |
+| DIST-01 | Phase 5 | Complete |
 | DIST-02 | Phase 1 | Complete |
-| DIST-03 | Phase 5 | Pending |
+| DIST-03 | Phase 5 | Complete |
 | DIST-04 | Phase 1 | Complete |
 
 **Coverage:**
@@ -107,4 +107,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-17 after roadmap creation*
+*Last updated: 2026-01-18 after Phase 5 completion*
