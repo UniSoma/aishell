@@ -92,9 +92,11 @@ start_spinner() {
 }
 
 stop_spinner() {
-    [[ -n "$spinner_pid" ]] && kill "$spinner_pid" 2>/dev/null
-    spinner_pid=""
-    printf "\r\033[K" >&2  # Clear line
+    if [[ -n "$spinner_pid" ]]; then
+        kill "$spinner_pid" 2>/dev/null
+        spinner_pid=""
+        printf "\r\033[K" >&2  # Clear line only if spinner was active
+    fi
 }
 
 trap 'stop_spinner' EXIT
@@ -831,17 +833,42 @@ $(cat "$build_log")"
     fi
 }
 
-ensure_image_with_extension() {
+# --- Build Verification ---
+# Verify that a build exists for the current project
+verify_build_exists() {
     local project_dir="$1"
+    local state_file
 
-    # First ensure base image exists
-    ensure_image
+    state_file=$(get_state_file "$project_dir")
+
+    # Check if state file exists
+    if [[ ! -f "$state_file" ]]; then
+        return 1
+    fi
+
+    # Load state file
+    if ! read_state_file "$state_file"; then
+        return 1
+    fi
+
+    # Check if the built image still exists
+    if [[ -n "$BUILD_IMAGE_TAG" ]] && ! docker image inspect "$BUILD_IMAGE_TAG" >/dev/null 2>&1; then
+        return 2  # State exists but image is missing
+    fi
+
+    # Set IMAGE_TO_RUN from state
+    IMAGE_TO_RUN="$BUILD_IMAGE_TAG"
+    return 0
+}
+
+# Handle extension Dockerfile on top of base image from state
+handle_extension() {
+    local project_dir="$1"
+    local dockerfile
 
     # Check for extension
-    local dockerfile
     if ! dockerfile=$(extension_dockerfile "$project_dir"); then
-        # No extension, use base
-        IMAGE_TO_RUN="$BASE_IMAGE_NAME"
+        # No extension, use image from state
         return 0
     fi
 
@@ -850,9 +877,9 @@ ensure_image_with_extension() {
     hash=$(echo -n "$project_dir" | sha256sum | cut -c1-12)
     local extended_tag="aishell:ext-$hash"
 
-    # Get current base image ID
+    # Get base image ID (from the image stored in state)
     local base_id
-    base_id=$(get_base_image_id)
+    base_id=$(docker inspect --format='{{.Id}}' "$IMAGE_TO_RUN" 2>/dev/null)
 
     # Determine if rebuild needed
     local force_rebuild=false
@@ -863,80 +890,13 @@ ensure_image_with_extension() {
     # User requested --rebuild
     [[ "$FORCE_REBUILD" == true ]] && force_rebuild=true
 
-    # Build (Docker cache handles efficiency if force_rebuild=false)
+    # Build extension (Docker cache handles efficiency if force_rebuild=false)
     build_extended_image "$dockerfile" "$project_dir" "$extended_tag" "$base_id" "$force_rebuild"
 
     IMAGE_TO_RUN="$extended_tag"
 }
 
-# --- Image Management ---
-ensure_image() {
-    local needs_build=false
-    local -a build_args=()
-
-    # Compute target tag (includes version info if specified)
-    local target_tag
-    target_tag=$(compute_image_tag)
-
-    # Check if image exists
-    if ! docker image inspect "$target_tag" >/dev/null 2>&1; then
-        needs_build=true
-    fi
-
-    # Check if build flags request harnesses not in current image
-    # (For now, rebuild if any --with-* flag passed)
-    if [[ "$WITH_CLAUDE" == true ]] || [[ "$WITH_OPENCODE" == true ]]; then
-        needs_build=true
-    fi
-
-    # Also rebuild if version specified (may differ from existing)
-    if [[ -n "$CLAUDE_VERSION" ]] || [[ -n "$OPENCODE_VERSION" ]]; then
-        needs_build=true
-    fi
-
-    # Force rebuild if --rebuild flag passed
-    if [[ "$FORCE_REBUILD" == true ]]; then
-        needs_build=true
-        build_args+=(--no-cache)
-    fi
-
-    if [[ "$needs_build" == true ]]; then
-        verbose "Building image..."
-        start_spinner "Building image"
-
-        # Create temp directory for build files
-        local build_dir
-        build_dir=$(mktemp -d)
-        # shellcheck disable=SC2064
-        trap "rm -rf '$build_dir'" RETURN
-
-        # Write embedded build files to temp directory
-        write_dockerfile "$build_dir"
-        write_entrypoint "$build_dir"
-        write_bashrc "$build_dir"
-
-        # Add harness build args
-        [[ "$WITH_CLAUDE" == true ]] && build_args+=(--build-arg WITH_CLAUDE=true)
-        [[ "$WITH_OPENCODE" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
-
-        # Add version build args
-        [[ -n "$CLAUDE_VERSION" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$CLAUDE_VERSION")
-        [[ -n "$OPENCODE_VERSION" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$OPENCODE_VERSION")
-
-        if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" >/dev/null 2>&1; then
-            stop_spinner
-            error "Failed to build image"
-        fi
-
-        stop_spinner
-        verbose "Image built successfully"
-    fi
-
-    # Update BASE_IMAGE_NAME for extension builds
-    BASE_IMAGE_NAME="$target_tag"
-}
-
-# --- Update Command ---
+# --- Error Helpers ---
 # Error shown when no prior build exists
 error_no_build() {
     echo -e "${RED}Error:${NC} No previous build found for this project." >&2
@@ -944,6 +904,16 @@ error_no_build() {
     echo "To build with Claude Code:  aishell build --with-claude" >&2
     echo "To build with OpenCode:     aishell build --with-opencode" >&2
     echo "To build base image:        aishell build" >&2
+    exit 1
+}
+
+# Error shown when state exists but image is missing
+error_image_missing() {
+    echo -e "${RED}Error:${NC} Build state found but image is missing." >&2
+    echo "" >&2
+    echo "The Docker image may have been removed. Rebuild with:" >&2
+    echo "  aishell build --with-claude     # (if Claude Code was in original build)" >&2
+    echo "  aishell update                  # (to rebuild with saved configuration)" >&2
     exit 1
 }
 
@@ -1094,8 +1064,26 @@ main() {
     local project_dir
     project_dir="$(pwd)"
 
-    # Ensure image (base + extension if .aishell/Dockerfile exists)
-    ensure_image_with_extension "$project_dir"
+    # Verify build exists (no auto-build - user must run aishell build first)
+    local verify_result=0
+    verify_build_exists "$project_dir" || verify_result=$?
+
+    case "$verify_result" in
+        0)
+            # Build exists and image found
+            ;;
+        1)
+            # No state file - need to build
+            error_no_build
+            ;;
+        2)
+            # State exists but image missing
+            error_image_missing
+            ;;
+    esac
+
+    # Handle extension Dockerfile if present
+    handle_extension "$project_dir"
 
     # Read git identity from host
     local identity git_name git_email
