@@ -1,0 +1,161 @@
+#!/bin/bash
+# aishell - AI Shell Container Launcher
+# Launches an ephemeral container with project mounted at host path
+
+set -e
+
+VERSION="0.1.0"
+IMAGE_NAME="aishell"
+VERBOSE=false
+
+# --- Color Support ---
+supports_color() {
+    [[ ! -t 1 ]] && return 1
+    [[ -n "$NO_COLOR" ]] && return 1
+    [[ -n "$FORCE_COLOR" ]] && return 0
+    local colors
+    colors=$(tput colors 2>/dev/null) || return 1
+    [[ "$colors" -ge 8 ]]
+}
+
+if supports_color; then
+    RED='\033[0;31m'
+    YELLOW='\033[0;33m'
+    NC='\033[0m'
+else
+    RED=''
+    YELLOW=''
+    NC=''
+fi
+
+# --- Output Functions ---
+error() {
+    echo -e "${RED}Error:${NC} $1" >&2
+    exit 1
+}
+
+warn() {
+    echo -e "${YELLOW}Warning:${NC} $1" >&2
+}
+
+verbose() {
+    [[ "$VERBOSE" == true ]] && echo "$1" >&2
+}
+
+# --- Spinner for Long Operations ---
+spinner_pid=""
+
+start_spinner() {
+    local msg="$1"
+    local spin='|/-\'
+    local i=0
+
+    # Only show spinner if stderr is a TTY
+    [[ ! -t 2 ]] && return
+
+    while true; do
+        printf "\r%s %c " "$msg" "${spin:i++%${#spin}:1}" >&2
+        sleep 0.1
+    done &
+    spinner_pid=$!
+}
+
+stop_spinner() {
+    [[ -n "$spinner_pid" ]] && kill "$spinner_pid" 2>/dev/null
+    spinner_pid=""
+    printf "\r\033[K" >&2  # Clear line
+}
+
+trap 'stop_spinner' EXIT
+
+# --- Docker Checks ---
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        error "Docker is not installed. Please install Docker and try again."
+    fi
+
+    if ! docker info >/dev/null 2>&1; then
+        error "Docker is not running. Please start Docker and try again."
+    fi
+}
+
+# --- Argument Parsing ---
+usage() {
+    cat << EOF
+Usage: aishell [OPTIONS]
+
+Launch an ephemeral container with the current directory mounted.
+
+Options:
+    -v, --verbose    Show detailed output
+    -h, --help       Show this help message
+    --version        Show version
+
+EOF
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            --version)
+                echo "aishell $VERSION"
+                exit 0
+                ;;
+            *)
+                error "Unknown option: $1"
+                ;;
+        esac
+    done
+}
+
+# --- Image Management ---
+ensure_image() {
+    if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+        verbose "Image not found, building..."
+        start_spinner "Building image"
+
+        # Build from Dockerfile in script directory
+        local script_dir
+        script_dir="$(dirname "$(readlink -f "$0")")"
+
+        if ! docker build -t "$IMAGE_NAME" "$script_dir" >/dev/null 2>&1; then
+            stop_spinner
+            error "Failed to build image"
+        fi
+
+        stop_spinner
+        verbose "Image built successfully"
+    fi
+}
+
+# --- Main ---
+main() {
+    parse_args "$@"
+    check_docker
+    ensure_image
+
+    local project_dir
+    project_dir="$(pwd)"
+
+    verbose "Launching container..."
+    verbose "  Project: $project_dir"
+    verbose "  UID/GID: $(id -u):$(id -g)"
+
+    exec docker run --rm -it \
+        -v "$project_dir:$project_dir" \
+        -w "$project_dir" \
+        -e "LOCAL_UID=$(id -u)" \
+        -e "LOCAL_GID=$(id -g)" \
+        -e "TERM=${TERM:-xterm-256color}" \
+        "$IMAGE_NAME"
+}
+
+main "$@"
