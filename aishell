@@ -124,7 +124,6 @@ ARG OPENCODE_VERSION=""
 
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.214
-ARG BBIN_VERSION=0.2.5
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -156,13 +155,6 @@ RUN set -eux; \
     | tar -xz -C /usr/local/bin bb; \
     chmod +x /usr/local/bin/bb; \
     bb --version
-
-# Install bbin (Babashka script installer)
-# Note: bbin version check skipped during build as it requires Java for deps resolution
-# The script will work at runtime with bb
-RUN curl -fsSL -o /usr/local/bin/bbin \
-    "https://raw.githubusercontent.com/babashka/bbin/v${BBIN_VERSION}/bbin" \
-    && chmod +x /usr/local/bin/bbin
 
 # Install gosu 1.19 for proper user switching
 # Source: https://github.com/tianon/gosu
