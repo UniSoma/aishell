@@ -907,6 +907,32 @@ error_no_build() {
     exit 1
 }
 
+# Error shown when harness was not included in build
+error_missing_harness() {
+    local harness_name="$1"
+    echo -e "${RED}Error:${NC} ${harness_name} was not included in the build." >&2
+    echo "" >&2
+    echo "Current build does not include ${harness_name}." >&2
+    echo "" >&2
+    echo "To add ${harness_name} to the build:" >&2
+    echo "    aishell update --with-${harness_name}" >&2
+    echo "" >&2
+    echo "Or rebuild with ${harness_name}:" >&2
+    echo "    aishell build --with-${harness_name}" >&2
+    exit 1
+}
+
+# Verify harness is available in current build
+verify_harness_available() {
+    local harness_name="$1"
+    local required_flag_value="$2"
+
+    if [[ "$required_flag_value" != "true" ]]; then
+        error_missing_harness "$harness_name"
+    fi
+    return 0
+}
+
 # Error shown when state exists but image is missing
 error_image_missing() {
     echo -e "${RED}Error:${NC} Build state found but image is missing." >&2
@@ -1146,6 +1172,8 @@ main() {
     # Dispatch based on command
     case "$HARNESS_CMD" in
         claude)
+            # Verify Claude was included in the build
+            verify_harness_available "claude" "$BUILD_WITH_CLAUDE"
             local claude_args=()
             # Default: skip permissions (container is the sandbox)
             # Opt-out: AISHELL_SKIP_PERMISSIONS=false
@@ -1155,6 +1183,8 @@ main() {
             exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" claude "${claude_args[@]}" "${HARNESS_ARGS[@]}"
             ;;
         opencode)
+            # Verify OpenCode was included in the build
+            verify_harness_available "opencode" "$BUILD_WITH_OPENCODE"
             exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" opencode "${HARNESS_ARGS[@]}"
             ;;
         exec)
