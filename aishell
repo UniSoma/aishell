@@ -400,6 +400,10 @@ Examples:
     aishell --build-arg NODE_VERSION=20   # Pass build arg to extension
     aishell --rebuild                 # Force rebuild of all images
 
+Environment Variables:
+    AISHELL_SKIP_PERMISSIONS   Set to 'false' to require permission prompts in Claude
+                               (default: true, permissions auto-skipped in container)
+
 EOF
 }
 
@@ -771,7 +775,13 @@ main() {
     # Dispatch based on command
     case "$HARNESS_CMD" in
         claude)
-            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" claude "${HARNESS_ARGS[@]}"
+            local claude_args=()
+            # Default: skip permissions (container is the sandbox)
+            # Opt-out: AISHELL_SKIP_PERMISSIONS=false
+            if [[ "${AISHELL_SKIP_PERMISSIONS:-true}" != "false" ]]; then
+                claude_args+=(--dangerously-skip-permissions)
+            fi
+            exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" claude "${claude_args[@]}" "${HARNESS_ARGS[@]}"
             ;;
         opencode)
             exec docker run "${docker_args[@]}" "$IMAGE_TO_RUN" opencode "${HARNESS_ARGS[@]}"
