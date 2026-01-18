@@ -110,6 +110,10 @@ write_dockerfile() {
 # Debian-based container with dynamic user creation, gosu for user switching,
 # and basic development tools for agentic AI harnesses.
 
+# Stage 1: Node.js source (for multi-stage copy)
+FROM node:24-bookworm-slim AS node-source
+
+# Stage 2: Main image
 FROM debian:bookworm-slim
 
 # Build arguments for optional harness installation
@@ -117,6 +121,10 @@ ARG WITH_CLAUDE=false
 ARG WITH_OPENCODE=false
 ARG CLAUDE_VERSION=""
 ARG OPENCODE_VERSION=""
+
+# Build arguments for developer tools
+ARG BABASHKA_VERSION=1.12.214
+ARG BBIN_VERSION=0.2.5
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -133,6 +141,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     vim \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js via multi-stage copy from official image
+COPY --from=node-source /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-source /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && node --version \
+    && npm --version
+
+# Install Babashka (static binary for container compatibility)
+RUN set -eux; \
+    curl -fsSL "https://github.com/babashka/babashka/releases/download/v${BABASHKA_VERSION}/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz" \
+    | tar -xz -C /usr/local/bin bb; \
+    chmod +x /usr/local/bin/bb; \
+    bb --version
+
+# Install bbin (Babashka script installer)
+RUN curl -fsSL -o /usr/local/bin/bbin \
+    "https://raw.githubusercontent.com/babashka/bbin/v${BBIN_VERSION}/bbin" \
+    && chmod +x /usr/local/bin/bbin \
+    && bbin version
 
 # Install gosu 1.19 for proper user switching
 # Source: https://github.com/tianon/gosu
