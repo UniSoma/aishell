@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 09-runtime-config-core
 source: 09-01-SUMMARY.md, 09-02-SUMMARY.md
 started: 2026-01-18T21:30:00Z
-updated: 2026-01-18T21:35:00Z
+updated: 2026-01-18T21:40:00Z
 ---
 
 ## Current Test
@@ -73,9 +73,13 @@ skipped: 4
   reason: "User reported: Partial. We have a return error code and the container does not start. But we don't have error details. Only shows 'Loading runtime config: /path/to/run.conf' then exits."
   severity: major
   test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "parse_run_conf uses exit 1 on error which terminates script, but error messages to stderr may not be displayed due to buffering or terminal configuration. Also uses echo -e which may have portability issues."
+  artifacts:
+    - path: "aishell"
+      issue: "Line 468 uses exit 1, lines 463-467 use echo -e for error output"
+  missing:
+    - "Use error() function instead of direct echo/exit for consistency"
+    - "Ensure error messages are flushed to stderr before exit"
   debug_session: ""
 
 - truth: "MOUNTS with $HOME expansion works and container starts"
@@ -83,9 +87,16 @@ skipped: 4
   reason: "User reported: FAILED. run.conf with exactly MOUNTS=\"$HOME/.config:/home/user/.config\" does not start. Container won't run. Return code 1 but no error messages."
   severity: blocker
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "build_mount_args expects source-only paths (mounted at same path in container), but user used source:destination format. With source:destination input, function produces malformed docker -v arguments with triple colons."
+  artifacts:
+    - path: "aishell"
+      issue: "Lines 505-506 use $expanded:$expanded format, assuming input is source-only"
+    - path: "aishell"
+      issue: "Line 849 documentation shows source-only format, but test expected source:destination"
+  missing:
+    - "Either: Support source:destination format in build_mount_args"
+    - "Or: Validate and error on colons in mount input with clear message"
+    - "Or: Update tests to match actual format (source-only)"
   debug_session: ""
 
 - truth: "ENV passthrough works and container starts"
@@ -93,7 +104,11 @@ skipped: 4
   reason: "User reported: Same issue, container doesn't start"
   severity: blocker
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "Same root cause as test 3 - if ENV config has issues, similar silent failure occurs. Need to verify ENV parsing works with simple passthrough case."
+  artifacts:
+    - path: "aishell"
+      issue: "Cascading failure from MOUNTS test - need isolated ENV test"
+  missing:
+    - "Test ENV independently without MOUNTS"
+    - "Verify parse_run_conf accepts ENV-only config"
   debug_session: ""
