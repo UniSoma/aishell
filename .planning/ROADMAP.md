@@ -141,10 +141,12 @@ Plans:
   5. `./aishell update` rebuilds with same flags as last build
   6. Build flags persisted to state file for update command
   7. Clear error messages when running without required build
-**Plans**: 0 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 8 to break down)
+- [ ] 08-01-PLAN.md — State management infrastructure (state file read/write/validate)
+- [ ] 08-02-PLAN.md — Build and update subcommands with state persistence
+- [ ] 08-03-PLAN.md — Run command guards and human verification
 
 ## Progress
 
@@ -160,7 +162,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 5. Distribution | 1/1 | Complete | 2026-01-18 |
 | 6. Final Enhancements | 2/2 | Complete | 2026-01-18 |
 | 7. Node.js and Clojure Tooling | 1/1 | Complete | 2026-01-18 |
-| 8. Explicit Build/Update Commands | 0/? | Not Started | - |
+| 8. Explicit Build/Update Commands | 0/3 | Not Started | - |
 
 ---
 *Roadmap created: 2026-01-17*
@@ -171,3 +173,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 *Phase 5 planned: 2026-01-18*
 *Phase 6 planned: 2026-01-18*
 *Phase 7 planned: 2026-01-18*
+*Phase 8 planned: 2026-01-18*

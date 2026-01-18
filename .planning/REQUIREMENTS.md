@@ -56,6 +56,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DEV-02**: Babashka (bb) available in container (`bb --version`)
 - [~] **DEV-03**: ~~bbin available in container~~ (Descoped: requires Java runtime)
 
+### Build/Update Commands
+
+- [ ] **BUILD-01**: Explicit `aishell build` command creates container image
+- [ ] **BUILD-02**: Build flags (--with-claude, --with-opencode) persisted to state file
+- [ ] **BUILD-03**: Run commands require prior build (clear error messages if missing)
+- [ ] **UPDATE-01**: `aishell update` rebuilds with saved flags (--no-cache by default)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -123,15 +130,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VERSION-04 | Phase 6 | Complete |
 | UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 6 | Complete |
-| DEV-01 | Phase 7 | Not Started |
-| DEV-02 | Phase 7 | Not Started |
-| DEV-03 | Phase 7 | Not Started |
+| DEV-01 | Phase 7 | Complete |
+| DEV-02 | Phase 7 | Complete |
+| DEV-03 | Phase 7 | Descoped |
+| BUILD-01 | Phase 8 | Not Started |
+| BUILD-02 | Phase 8 | Not Started |
+| BUILD-03 | Phase 8 | Not Started |
+| UPDATE-01 | Phase 8 | Not Started |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 27
+- v1 requirements: 31 total (1 descoped)
+- Mapped to phases: 31
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-18 after Phase 7 planning*
+*Last updated: 2026-01-18 after Phase 8 planning*
