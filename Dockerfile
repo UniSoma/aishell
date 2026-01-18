@@ -34,11 +34,11 @@ RUN set -eux; \
     gosu nobody true
 
 # Install Claude Code if requested (native binary)
-# Installs to /root/.claude/bin/claude, symlink to /usr/local/bin for PATH
+# Installer places binary at ~/.local/bin/claude, symlink to /usr/local/bin for PATH
 RUN if [ "$WITH_CLAUDE" = "true" ]; then \
         export DISABLE_AUTOUPDATER=1 && \
         curl -fsSL https://claude.ai/install.sh | bash && \
-        ln -sf /root/.claude/bin/claude /usr/local/bin/claude; \
+        ln -sf /root/.local/bin/claude /usr/local/bin/claude; \
     fi
 
 # Install OpenCode if requested (native binary)
