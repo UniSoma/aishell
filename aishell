@@ -405,6 +405,42 @@ read_state_file() {
     return 0
 }
 
+# Display what will be built (user feedback before long-running build)
+show_build_preview() {
+    local with_claude="$1"
+    local with_opencode="$2"
+    local claude_version="$3"
+    local opencode_version="$4"
+    local is_update="$5"
+
+    local action="Building"
+    [[ "$is_update" == true ]] && action="Updating"
+
+    echo "$action image with:"
+
+    if [[ "$with_claude" == true ]]; then
+        if [[ -n "$claude_version" ]]; then
+            echo "  - Claude Code v$claude_version"
+        else
+            echo "  - Claude Code (latest)"
+        fi
+    fi
+
+    if [[ "$with_opencode" == true ]]; then
+        if [[ -n "$opencode_version" ]]; then
+            echo "  - OpenCode v$opencode_version"
+        else
+            echo "  - OpenCode (latest)"
+        fi
+    fi
+
+    if [[ "$with_claude" != true ]] && [[ "$with_opencode" != true ]]; then
+        echo "  - Base image only (shell access)"
+    fi
+
+    echo ""
+}
+
 # --- Git Identity ---
 read_git_identity() {
     local project_dir="$1"
