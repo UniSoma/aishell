@@ -10,32 +10,32 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 1 of 5 (Core Container Foundation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-17 — Completed 01-01-PLAN.md (Docker image foundation)
+Last activity: 2026-01-17 — Completed 01-02-PLAN.md (aishell CLI script)
 
-Progress: [#.........] 11%
+Progress: [##........] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 8 min
-- Total execution time: 0.13 hours
+- Total plans completed: 2
+- Average duration: 5 min
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Core Container Foundation | 1/3 | 8 min | 8 min |
+| 1. Core Container Foundation | 2/3 | 10 min | 5 min |
 | 2. Git Integration | 0/1 | - | - |
 | 3. Harness Integration | 0/3 | - | - |
 | 4. Project Customization | 0/1 | - | - |
 | 5. Distribution | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 8 min
-- Trend: N/A (insufficient data)
+- Last 5 plans: 8 min, 2 min
+- Trend: Improving
 
 *Updated after each plan completion*
 
@@ -49,6 +49,9 @@ Recent decisions affecting current work:
 - Debian bookworm-slim over Alpine for glibc compatibility
 - gosu 1.19 for user switching (proper PID 1 handling)
 - Dynamic user creation at runtime for UID/GID matching
+- Color output uses tput for detection, respects NO_COLOR and FORCE_COLOR
+- Spinner writes to stderr with TTY detection
+- Image auto-builds from Dockerfile in script directory when missing
 
 ### Pending Todos
 
@@ -61,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-17
-Stopped at: Completed 01-01-PLAN.md (Docker image foundation)
+Stopped at: Completed 01-02-PLAN.md (aishell CLI script)
 Resume file: None
