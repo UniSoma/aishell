@@ -460,12 +460,13 @@ parse_run_conf() {
             declare -g "CONF_${var_name}=$var_value"
         else
             # Provide helpful error with line number and context
-            echo -e "${RED}Config error${NC} in $config_file line $line_num:" >&2
-            echo "  $line" >&2
-            echo "" >&2
-            echo "Expected format: VARIABLE=value or VARIABLE=\"value with spaces\"" >&2
-            echo "Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS, PRE_START" >&2
-            exit 1
+            # Build multiline message for error() function
+            local err_msg="Config error in $config_file line $line_num:
+  $line
+
+Expected format: VARIABLE=value or VARIABLE=\"value with spaces\"
+Allowed variables: MOUNTS, ENV, PORTS, DOCKER_ARGS, PRE_START"
+            error "$err_msg"
         fi
     done < "$config_file"
 
