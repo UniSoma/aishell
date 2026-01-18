@@ -30,12 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Files created in container appear on host with correct UID/GID ownership
   4. Container runs as non-root user but sudo is available
   5. Basic tools (git, curl, vim, jq, ripgrep) are available in container
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Docker image foundation (Dockerfile, entrypoint, bashrc)
+- [ ] 01-02-PLAN.md — CLI script (aishell) with Docker integration
+- [ ] 01-03-PLAN.md — Human verification of all Phase 1 requirements
 
 ### Phase 2: Git Integration
 **Goal**: Users can make git commits inside the container with their identity and without ownership warnings
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Container Foundation | 0/3 | Not started | - |
+| 1. Core Container Foundation | 0/3 | Planned | - |
 | 2. Git Integration | 0/1 | Not started | - |
 | 3. Harness Integration | 0/3 | Not started | - |
 | 4. Project Customization | 0/1 | Not started | - |
@@ -108,3 +108,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 ---
 *Roadmap created: 2026-01-17*
+*Phase 1 planned: 2026-01-17*
