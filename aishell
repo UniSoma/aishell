@@ -9,6 +9,8 @@ BASE_IMAGE_NAME="aishell:base"
 VERBOSE=false
 WITH_CLAUDE=false
 WITH_OPENCODE=false
+CLAUDE_VERSION=""
+OPENCODE_VERSION=""
 HARNESS_CMD=""
 HARNESS_ARGS=()
 FORCE_REBUILD=false
@@ -338,13 +340,15 @@ Commands:
     (none)      Enter interactive shell (default)
 
 Options:
-    --with-claude       Include Claude Code in image (build-time)
-    --with-opencode     Include OpenCode in image (build-time)
-    --rebuild           Force rebuild of images (ignore cache)
-    --build-arg KEY=VAL Pass build argument to Dockerfile (can repeat)
-    -v, --verbose       Show detailed output
-    -h, --help          Show this help message
-    --version           Show version
+    --with-claude           Include Claude Code in image (build-time)
+    --with-opencode         Include OpenCode in image (build-time)
+    --claude-version=X.Y.Z  Install specific Claude Code version (e.g., 2.0.22)
+    --opencode-version=X.Y.Z Install specific OpenCode version (e.g., 1.1.25)
+    --rebuild               Force rebuild of images (ignore cache)
+    --build-arg KEY=VAL     Pass build argument to Dockerfile (can repeat)
+    -v, --verbose           Show detailed output
+    -h, --help              Show this help message
+    --version               Show version
 
 Project Extensions:
     Place a Dockerfile at .aishell/Dockerfile to extend the base image
@@ -371,6 +375,14 @@ parse_args() {
                 ;;
             --with-opencode)
                 WITH_OPENCODE=true
+                shift
+                ;;
+            --claude-version=*)
+                CLAUDE_VERSION="${1#--claude-version=}"
+                shift
+                ;;
+            --opencode-version=*)
+                OPENCODE_VERSION="${1#--opencode-version=}"
                 shift
                 ;;
             --rebuild)
