@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Core Container Foundation** - Working container with project mounted at host path, correct permissions, basic tools
 - [x] **Phase 2: Git Integration** - Git identity and safe directory configuration work seamlessly
-- [ ] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
+- [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
 - [ ] **Phase 4: Project Customization** - Projects can extend base image via Dockerfile.sandbox
 - [ ] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 
@@ -102,7 +102,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Core Container Foundation | 3/3 | Complete | 2026-01-17 |
 | 2. Git Integration | 1/1 | Complete | 2026-01-17 |
-| 3. Harness Integration | 0/3 | Not started | - |
+| 3. Harness Integration | 3/3 | Complete | 2026-01-17 |
 | 4. Project Customization | 0/1 | Not started | - |
 | 5. Distribution | 0/1 | Not started | - |
 

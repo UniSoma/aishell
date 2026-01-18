@@ -23,13 +23,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Harness Support
 
-- [ ] **HARNESS-01**: User can run Claude Code with `<command> claude`
-- [ ] **HARNESS-02**: User can run OpenCode with `<command> opencode`
-- [ ] **HARNESS-03**: User can enter shell with `<command>` (no arguments)
-- [ ] **HARNESS-04**: Claude Code config (~/.claude, ~/.claude.json) mounted from host
-- [ ] **HARNESS-05**: OpenCode config (~/.config/opencode) mounted from host
-- [ ] **HARNESS-06**: Claude Code is installed and runnable in container
-- [ ] **HARNESS-07**: OpenCode is installed and runnable in container
+- [x] **HARNESS-01**: User can run Claude Code with `<command> claude`
+- [x] **HARNESS-02**: User can run OpenCode with `<command> opencode`
+- [x] **HARNESS-03**: User can enter shell with `<command>` (no arguments)
+- [x] **HARNESS-04**: Claude Code config (~/.claude, ~/.claude.json) mounted from host
+- [x] **HARNESS-05**: OpenCode config (~/.config/opencode) mounted from host
+- [x] **HARNESS-06**: Claude Code is installed and runnable in container
+- [x] **HARNESS-07**: OpenCode is installed and runnable in container
 
 ### Distribution
 
@@ -88,13 +88,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-06 | Phase 4 | Pending |
 | GIT-01 | Phase 2 | Complete |
 | GIT-02 | Phase 2 | Complete |
-| HARNESS-01 | Phase 3 | Pending |
-| HARNESS-02 | Phase 3 | Pending |
-| HARNESS-03 | Phase 3 | Pending |
-| HARNESS-04 | Phase 3 | Pending |
-| HARNESS-05 | Phase 3 | Pending |
-| HARNESS-06 | Phase 3 | Pending |
-| HARNESS-07 | Phase 3 | Pending |
+| HARNESS-01 | Phase 3 | Complete |
+| HARNESS-02 | Phase 3 | Complete |
+| HARNESS-03 | Phase 3 | Complete |
+| HARNESS-04 | Phase 3 | Complete |
+| HARNESS-05 | Phase 3 | Complete |
+| HARNESS-06 | Phase 3 | Complete |
+| HARNESS-07 | Phase 3 | Complete |
 | DIST-01 | Phase 5 | Pending |
 | DIST-02 | Phase 1 | Complete |
 | DIST-03 | Phase 5 | Pending |

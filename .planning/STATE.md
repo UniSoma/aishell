@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 3 - Harness Integration
+**Current focus:** Phase 4 - Project Customization
 
 ## Current Position
 
-Phase: 3 of 5 (Harness Integration)
-Plan: 2 of 3 in phase 3
-Status: In progress
-Last activity: 2026-01-17 - Completed 03-02-PLAN.md
+Phase: 3 of 5 (Harness Integration) - COMPLETE
+Plan: 3 of 3 in phase 3
+Status: Phase 3 complete, ready for Phase 4
+Last activity: 2026-01-17 - Completed 03-03-PLAN.md (Human Verification)
 
 Progress: [██████....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4 min
-- Total execution time: 0.42 hours
+- Total plans completed: 7
+- Average duration: 5 min
+- Total execution time: 0.58 hours
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [██████....] 60%
 |-------|-------|-------|----------|
 | 1. Core Container Foundation | 3/3 | 15 min | 5 min |
 | 2. Git Integration | 1/1 | 2 min | 2 min |
-| 3. Harness Integration | 2/3 | 9 min | 4.5 min |
+| 3. Harness Integration | 3/3 | 24 min | 8 min |
 | 4. Project Customization | 0/1 | - | - |
 | 5. Distribution | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 2 min, 4 min, 5 min
-- Trend: Stable
+- Last 5 plans: 2 min, 4 min, 5 min, 15 min
+- Trend: Phase 3 included fixes during verification
 
 *Updated after each plan completion*
 
@@ -61,6 +61,9 @@ Recent decisions affecting current work:
 - Only mount config dirs that exist on host (avoid Docker bind mount errors)
 - Only pass API env vars that are set (avoid empty override)
 - Build flags (--with-*) trigger rebuild when passed
+- Copy harness binaries to /usr/local/bin (not symlink, as /root/ inaccessible after gosu)
+- Pass LOCAL_HOME env var to preserve host home path in container
+- Create container user with same home directory path as host
 
 ### Pending Todos
 
@@ -74,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-17
-Stopped at: Completed 03-02-PLAN.md (Harness SDK Configuration)
+Stopped at: Completed Phase 3 (Harness Integration)
 Resume file: None
