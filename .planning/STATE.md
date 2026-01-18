@@ -5,57 +5,49 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Per-project Runtime Configuration
 
 ## Current Position
 
-Phase: Milestone complete
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-01-18 — v1.0 milestone archived
+Phase: 9
+Plan: Not yet created
+Status: Ready to plan Phase 9
+Last activity: 2026-01-18 — v1.1 milestone initialized
 
-Progress: v1.0 SHIPPED
+Progress: ░░░░░░░░░░ 0%
 
-**Milestone v1.0:** Complete - archived to `.planning/milestones/`
+**Milestone v1.1:** In progress
 
-## What Was Shipped
+## What's Being Built
 
-- Docker-based ephemeral sandbox with correct UID/GID ownership
-- Git identity propagation and safe.directory configuration
-- Claude Code and OpenCode harnesses installed and runnable
-- Per-project customization via .aishell/Dockerfile
-- curl|bash installation with self-contained heredocs
-- Explicit build/update workflow with state persistence
-- Version pinning for harnesses
-- Node.js LTS and Babashka in base image
+Per-project runtime configuration via `.aishell/run.conf`:
+- Additional volume mounts (MOUNTS)
+- Environment variables with passthrough syntax (ENV)
+- Port mappings (PORTS)
+- Extra docker run arguments (DOCKER_ARGS)
+- Pre-start command for sidecars (PRE_START)
 
 ## Next Steps
 
-Run `/gsd:new-milestone` to:
-1. Define v1.1 or v2.0 goals
-2. Gather requirements
-3. Create new ROADMAP.md
-4. Create new REQUIREMENTS.md
-
-Suggested next milestone focus areas:
-- **v1.1 Security**: SSH agent forwarding, credential helpers, GPG signing
-- **v1.1 macOS**: Docker Desktop support, macOS SSH socket handling
-- **v2.0 Advanced**: Auto-detect harnesses, cache persistence, resource limits
+Run `/gsd:plan-phase 9` to create execution plan for:
+- Config file parsing and validation
+- MOUNTS, ENV, PORTS, DOCKER_ARGS implementation
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0 decisions documented in PROJECT.md Key Decisions table.
+Config format: Shell-style sourced file (not JSON/YAML)
+- Rationale: Native to Bash, no parser dependencies, familiar syntax
 
 ### Pending Todos
 
-None - fresh state for next milestone.
+None.
 
 ### Roadmap Evolution
 
-v1.0 complete with 8 phases, 16 plans.
-Next milestone will start at Phase 9.
+v1.0: Phases 1-8 (complete)
+v1.1: Phases 9-10 (current)
 
 ### Blockers/Concerns
 
@@ -64,5 +56,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: v1.0 milestone archived
+Stopped at: v1.1 milestone initialized
 Resume file: None
