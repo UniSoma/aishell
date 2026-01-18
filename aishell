@@ -633,46 +633,43 @@ check_docker() {
 # --- Argument Parsing ---
 usage() {
     cat << EOF
-Usage: aishell [OPTIONS] [COMMAND] [ARGS...]
+Usage: aishell [OPTIONS] COMMAND [ARGS...]
 
-Launch an ephemeral container with the current directory mounted.
+Build and run ephemeral containers for AI harnesses.
 
 Commands:
-    build       Build the container image (required before other commands)
-    update      Rebuild with latest versions using saved configuration
-    claude      Run Claude Code (requires build with --with-claude)
-    opencode    Run OpenCode (requires build with --with-opencode)
-    (none)      Enter interactive shell (requires build)
+    build       Build the container image
+    update      Rebuild with latest versions (uses saved configuration)
+    claude      Run Claude Code (requires: aishell build --with-claude)
+    opencode    Run OpenCode (requires: aishell build --with-opencode)
+    (none)      Enter interactive shell (requires: aishell build)
 
-Options:
-    --with-claude           Include Claude Code in image (build-time)
-    --with-opencode         Include OpenCode in image (build-time)
-    --claude-version=X.Y.Z  Install specific Claude Code version (e.g., 2.0.22)
-    --opencode-version=X.Y.Z Install specific OpenCode version (e.g., 1.1.25)
-    --rebuild               Force rebuild of images (ignore cache)
-    --build-arg KEY=VAL     Pass build argument to Dockerfile (can repeat)
+Build Options:
+    --with-claude           Include Claude Code in image
+    --with-opencode         Include OpenCode in image
+    --claude-version=X.Y.Z  Install specific Claude Code version
+    --opencode-version=X.Y.Z Install specific OpenCode version
+    --no-cache              Force fresh build (no Docker cache)
+
+Global Options:
+    --build-arg KEY=VAL     Pass build argument to Dockerfile
     -v, --verbose           Show detailed output
     -h, --help              Show this help message
     --version               Show version
 
 Project Extensions:
-    Place a Dockerfile at .aishell/Dockerfile to extend the base image
-    with project-specific dependencies. The extended image is cached
-    and rebuilt automatically when the base image or Dockerfile changes.
+    Place a Dockerfile at .aishell/Dockerfile to extend the base image.
 
 Examples:
-    aishell build --with-claude       # Build image with Claude Code
-    aishell build --with-opencode     # Build image with OpenCode
-    aishell build                     # Build base image (shell access only)
-    aishell                           # Enter shell (requires prior build)
-    aishell claude                    # Run Claude Code
-    aishell opencode                  # Run OpenCode
-    aishell update                    # Rebuild with latest versions
-    aishell update --with-opencode    # Add OpenCode to existing build
+    aishell build --with-claude     # Build with Claude Code
+    aishell build                   # Build base image only
+    aishell claude                  # Run Claude Code
+    aishell                         # Enter shell
+    aishell update                  # Rebuild with latest versions
+    aishell update --with-opencode  # Add OpenCode to existing build
 
 Environment Variables:
-    AISHELL_SKIP_PERMISSIONS   Set to 'false' to require permission prompts in Claude
-                               (default: true, permissions auto-skipped in container)
+    AISHELL_SKIP_PERMISSIONS   Set to 'false' for permission prompts in Claude
 
 EOF
 }
