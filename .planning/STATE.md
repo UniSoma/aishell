@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 2 of 5 (Git Integration) - COMPLETE
-Plan: 1 of 1 in phase 2
-Status: Phase 2 complete, ready for Phase 3
-Last activity: 2026-01-17 - Completed 02-01-PLAN.md
+Phase: 3 of 5 (Harness Integration)
+Plan: 1 of 3 in phase 3
+Status: In progress
+Last activity: 2026-01-17 - Completed 03-01-PLAN.md
 
-Progress: [████......] 40%
+Progress: [█████.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4 min
-- Total execution time: 0.28 hours
+- Total execution time: 0.35 hours
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [████......] 40%
 |-------|-------|-------|----------|
 | 1. Core Container Foundation | 3/3 | 15 min | 5 min |
 | 2. Git Integration | 1/1 | 2 min | 2 min |
-| 3. Harness Integration | 0/3 | - | - |
+| 3. Harness Integration | 1/3 | 4 min | 4 min |
 | 4. Project Customization | 0/1 | - | - |
 | 5. Distribution | 0/1 | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 8 min, 2 min, 2 min
-- Trend: Stable/Improving
+- Last 5 plans: 8 min, 2 min, 2 min, 4 min
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -55,6 +55,9 @@ Recent decisions affecting current work:
 - Git identity read using `git -C` (respects local .git/config overrides)
 - Git env vars only passed if BOTH name and email are set (avoid empty override)
 - Git safe.directory configured in entrypoint after home dir creation
+- Claude Code installer places binary at ~/.local/bin/claude (not ~/.claude/bin)
+- OpenCode installer places binary at ~/.opencode/bin/opencode
+- DISABLE_AUTOUPDATER=1 for Claude in containers (ephemeral environment)
 
 ### Pending Todos
 
@@ -68,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-17
-Stopped at: Completed 02-01-PLAN.md (Git Integration phase complete)
+Stopped at: Completed 03-01-PLAN.md (Harness Installation)
 Resume file: None
