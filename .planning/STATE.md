@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 7 - Node.js and Clojure Tooling
+**Current focus:** All phases complete
 
 ## Current Position
 
-Phase: 7 of 7 (Node.js and Clojure Tooling) - NOT STARTED
-Plan: 0 of ? in phase 7
-Status: Phase 7 awaiting planning
-Last activity: 2026-01-18 - Added Phase 7
+Phase: 7 of 7 (Node.js and Clojure Tooling) - COMPLETE
+Plan: 1 of 1 in phase 7
+Status: All phases complete
+Last activity: 2026-01-18 - Completed 07-01-PLAN.md
 
-Progress: [#########-] 86% (6/7 phases complete)
+Progress: [##########] 100% (7/7 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 4.8 min
-- Total execution time: ~1.0 hours
+- Total plans completed: 13
+- Average duration: 5.0 min
+- Total execution time: ~1.1 hours
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: [#########-] 86% (6/7 phases complete)
 | 4. Project Customization | 1/1 | 8 min | 8 min |
 | 5. Distribution | 1/1 | 3 min | 3 min |
 | 6. Final Enhancements | 2/2 | 4 min | 2 min |
+| 7. Node.js and Clojure Tooling | 1/1 | 8 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 8 min, 3 min, 2 min, 2 min
+- Last 5 plans: 8 min, 3 min, 2 min, 2 min, 8 min
 - Trend: All phases complete
 
 *Updated after each plan completion*
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - AISHELL_SKIP_PERMISSIONS=false for opt-out
 - Pass COLORTERM env var for 24-bit color support in container
 - Set LANG=C.UTF-8 in bashrc.aishell for Unicode character rendering
+- Multi-stage build from node:24-bookworm-slim for Node.js binaries
+- Babashka static binary for container compatibility (no glibc dependencies)
+- Removed bbin after user feedback (requires Java runtime)
 
 ### Pending Todos
 
@@ -87,10 +91,10 @@ None - all todos resolved.
 
 ### Roadmap Evolution
 
-- All 6 phases complete
+- All 7 phases complete
 - 2 todos completed in 06-02: improve-container-shell-prompt, default-dangerously-skip-permissions
 - Statusline parity todo resolved: COLORTERM passthrough + C.UTF-8 locale
-- Phase 7 added: Node.js and Clojure Tooling (Node.js LTS, Babashka, bbin)
+- Phase 7 added and completed: Node.js and Clojure Tooling (Node.js LTS, Babashka)
 
 ### Blockers/Concerns
 
@@ -99,5 +103,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 06-02-PLAN.md (UX improvements)
+Stopped at: Completed 07-01-PLAN.md (Node.js and Babashka base image)
 Resume file: None
