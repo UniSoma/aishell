@@ -8,8 +8,8 @@
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 9 | Runtime Config Core | RCONF-*, MOUNT-*, ENV-*, PORT-*, DARG-* | ✓ Complete |
-| 10 | Pre-Start Command | PRE-* | Pending |
+| 9 | Runtime Config Core | RCONF-*, MOUNT-*, ENV-*, PORT-*, DARG-* | Complete |
+| 10 | Pre-Start Command | PRE-* | Planned |
 
 ## Phase 9: Runtime Config Core
 
@@ -45,6 +45,11 @@ Plans:
 
 **Goal:** Enable background services/sidecars via pre-start hook
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 10-01-PLAN.md — PRE_START whitelist, env passthrough, and entrypoint execution
+
 **Requirements covered:**
 - PRE-01, PRE-02, PRE-03
 
@@ -56,8 +61,9 @@ Plans:
 
 **Key implementation notes:**
 - PRE_START runs in entrypoint.sh before exec to main command
-- Must handle background process correctly (& and disown/nohup)
-- Stdout/stderr should go to file, not block terminal
+- Uses `sh -c "$PRE_START" > /tmp/pre-start.log 2>&1 &` for background execution
+- No nohup/disown needed (exec replaces shell entirely)
+- Stdout/stderr captured in /tmp/pre-start.log
 
 ## Dependencies
 
@@ -80,3 +86,4 @@ Phase 10 depends on Phase 9 (needs config file infrastructure).
 *Roadmap created: 2026-01-18*
 *Phase 9 planned: 2026-01-18*
 *Phase 9 completed: 2026-01-18*
+*Phase 10 planned: 2026-01-18*
