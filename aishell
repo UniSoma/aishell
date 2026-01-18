@@ -338,6 +338,73 @@ setup_state_dir() {
     echo "$state_dir"
 }
 
+# Get state file path for a project
+get_state_file() {
+    local project_dir="$1"
+    local state_dir hash
+
+    state_dir=$(setup_state_dir)
+    hash=$(get_project_hash "$project_dir")
+
+    echo "$state_dir/$hash.state"
+}
+
+# Atomically write build state to file
+write_state_file() {
+    local state_file="$1"
+    local project_path="$2"
+    local with_claude="$3"
+    local with_opencode="$4"
+    local claude_version="$5"
+    local opencode_version="$6"
+    local image_tag="$7"
+
+    local tmp_file
+    tmp_file=$(mktemp)
+
+    cat > "$tmp_file" << EOF
+# aishell build state - DO NOT EDIT MANUALLY
+# Project: $project_path
+# Built: $(date -Iseconds)
+BUILD_WITH_CLAUDE=$with_claude
+BUILD_WITH_OPENCODE=$with_opencode
+BUILD_CLAUDE_VERSION="$claude_version"
+BUILD_OPENCODE_VERSION="$opencode_version"
+BUILD_IMAGE_TAG="$image_tag"
+BUILD_TIMESTAMP="$(date -Iseconds)"
+EOF
+
+    # Atomic move
+    mv "$tmp_file" "$state_file"
+}
+
+# Safely read and validate state file
+read_state_file() {
+    local state_file="$1"
+
+    # Initialize defaults
+    BUILD_WITH_CLAUDE=false
+    BUILD_WITH_OPENCODE=false
+    BUILD_CLAUDE_VERSION=""
+    BUILD_OPENCODE_VERSION=""
+    BUILD_IMAGE_TAG=""
+    BUILD_TIMESTAMP=""
+
+    [[ ! -f "$state_file" ]] && return 1
+
+    # Validate: only comments, empty lines, and BUILD_VAR=value allowed
+    # Security: prevents code injection via malicious state files
+    if grep -qvE '^(#.*|BUILD_[A-Z_]+="?[^"]*"?|[[:space:]]*)$' "$state_file"; then
+        warn "State file appears corrupted: $state_file"
+        return 1
+    fi
+
+    # Safe to source
+    # shellcheck source=/dev/null
+    source "$state_file"
+    return 0
+}
+
 # --- Git Identity ---
 read_git_identity() {
     local project_dir="$1"
