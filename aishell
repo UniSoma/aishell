@@ -431,7 +431,8 @@ parse_run_conf() {
     [[ ! -f "$config_file" ]] && return 0
 
     while IFS= read -r line || [[ -n "$line" ]]; do
-        ((line_num++))
+        # Note: Use pre-increment to avoid set -e exit when line_num is 0
+        ((++line_num))
 
         # Skip empty lines (including whitespace-only)
         [[ -z "${line// /}" ]] && continue
