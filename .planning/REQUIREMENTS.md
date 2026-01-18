@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Container Core
 
-- [ ] **CORE-01**: Container mounts project at same path as host (e.g., /home/user/project -> /home/user/project in container)
-- [ ] **CORE-02**: Container is ephemeral (destroyed on exit, only mounted files persist)
-- [ ] **CORE-03**: Files created in container have correct host UID/GID ownership
-- [ ] **CORE-04**: Container runs as non-root user with sudo access
-- [ ] **CORE-05**: Basic CLI tools available (git, curl, vim, jq, ripgrep)
+- [x] **CORE-01**: Container mounts project at same path as host (e.g., /home/user/project -> /home/user/project in container)
+- [x] **CORE-02**: Container is ephemeral (destroyed on exit, only mounted files persist)
+- [x] **CORE-03**: Files created in container have correct host UID/GID ownership
+- [x] **CORE-04**: Container runs as non-root user with sudo access
+- [x] **CORE-05**: Basic CLI tools available (git, curl, vim, jq, ripgrep)
 - [ ] **CORE-06**: Projects can extend base image via Dockerfile.sandbox
 
 ### Git Integration
@@ -34,9 +34,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Distribution
 
 - [ ] **DIST-01**: Tool installable via curl | bash one-liner
-- [ ] **DIST-02**: Works on Linux with Docker Engine
+- [x] **DIST-02**: Works on Linux with Docker Engine
 - [ ] **DIST-03**: Installation creates command available in PATH
-- [ ] **DIST-04**: Base Docker image published or buildable locally
+- [x] **DIST-04**: Base Docker image published or buildable locally
 
 ## v2 Requirements
 
@@ -80,11 +80,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
-| CORE-05 | Phase 1 | Pending |
+| CORE-01 | Phase 1 | Complete |
+| CORE-02 | Phase 1 | Complete |
+| CORE-03 | Phase 1 | Complete |
+| CORE-04 | Phase 1 | Complete |
+| CORE-05 | Phase 1 | Complete |
 | CORE-06 | Phase 4 | Pending |
 | GIT-01 | Phase 2 | Pending |
 | GIT-02 | Phase 2 | Pending |
@@ -96,9 +96,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARNESS-06 | Phase 3 | Pending |
 | HARNESS-07 | Phase 3 | Pending |
 | DIST-01 | Phase 5 | Pending |
-| DIST-02 | Phase 1 | Pending |
+| DIST-02 | Phase 1 | Complete |
 | DIST-03 | Phase 5 | Pending |
-| DIST-04 | Phase 1 | Pending |
+| DIST-04 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 18 total
