@@ -2,13 +2,13 @@
 # install.sh - Installer for aishell
 # Downloads aishell to ~/.local/bin and makes it executable
 #
-# Usage: curl -fsSL https://raw.githubusercontent.com/jonasrodrigues/harness/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
 
 set -euo pipefail
 
 VERSION="0.1.0"
 INSTALL_DIR="${HOME}/.local/bin"
-REPO_URL="https://raw.githubusercontent.com/jonasrodrigues/harness/main/aishell"
+REPO_URL="https://raw.githubusercontent.com/UniSoma/aishell/main/aishell"
 
 # --- Color Support ---
 supports_color() {
