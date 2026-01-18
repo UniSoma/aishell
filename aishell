@@ -158,10 +158,11 @@ RUN set -eux; \
     bb --version
 
 # Install bbin (Babashka script installer)
+# Note: bbin version check skipped during build as it requires Java for deps resolution
+# The script will work at runtime with bb
 RUN curl -fsSL -o /usr/local/bin/bbin \
     "https://raw.githubusercontent.com/babashka/bbin/v${BBIN_VERSION}/bbin" \
-    && chmod +x /usr/local/bin/bbin \
-    && bbin version
+    && chmod +x /usr/local/bin/bbin
 
 # Install gosu 1.19 for proper user switching
 # Source: https://github.com/tianon/gosu
