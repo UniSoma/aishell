@@ -263,6 +263,9 @@ write_bashrc() {
     cat > "${target_dir}/bashrc.aishell" << 'BASHRC_EOF'
 # /etc/bash.aishell - Custom shell configuration for aishell containers
 
+# Limit directory depth in prompt (shows .../parent/current instead of full path)
+export PROMPT_DIRTRIM=2
+
 # Custom prompt: [aishell] ~/project $
 # Cyan [aishell] prefix, then working directory, then $
 export PS1='\[\033[0;36m\][aishell]\[\033[0m\] \w \$ '
