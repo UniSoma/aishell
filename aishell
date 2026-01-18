@@ -39,7 +39,7 @@ warn() {
 }
 
 verbose() {
-    [[ "$VERBOSE" == true ]] && echo "$1" >&2
+    [[ "$VERBOSE" == true ]] && echo "$1" >&2 || true
 }
 
 # --- Spinner for Long Operations ---
