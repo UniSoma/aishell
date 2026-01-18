@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Core Container Foundation** - Working container with project mounted at host path, correct permissions, basic tools
 - [x] **Phase 2: Git Integration** - Git identity and safe directory configuration work seamlessly
 - [x] **Phase 3: Harness Integration** - Claude Code and OpenCode installed, configured, and runnable
-- [ ] **Phase 4: Project Customization** - Projects can extend base image via Dockerfile.sandbox
+- [ ] **Phase 4: Project Customization** - Projects can extend base image via .aishell/Dockerfile
 - [ ] **Phase 5: Distribution** - Tool installable via curl | bash with command available in PATH
 - [ ] **Phase 6: Version Pinning** - Specify exact versions of Claude Code and OpenCode for reproducibility
 
@@ -70,17 +70,17 @@ Plans:
 - [x] 03-04-PLAN.md — Fix OpenCode XDG state directory (gap closure)
 
 ### Phase 4: Project Customization
-**Goal**: Projects can extend the base environment with additional dependencies without modifying the core tool
+**Goal**: Projects can extend the base environment with additional dependencies via .aishell/Dockerfile
 **Depends on**: Phase 3
 **Requirements**: CORE-06
 **Success Criteria** (what must be TRUE):
-  1. If Dockerfile.sandbox exists in project root, CLI detects and builds extended image
+  1. If .aishell/Dockerfile exists in project, CLI detects and builds extended image
   2. Extended image includes project-specific dependencies (e.g., node, python, rust)
-  3. Builds are cached (subsequent runs don't rebuild unless Dockerfile.sandbox changes)
-**Plans**: TBD
+  3. Builds are cached (subsequent runs don't rebuild unless Dockerfile or base changes)
+**Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Extension detection, building, caching, and verification
 
 ### Phase 5: Distribution
 **Goal**: Users can install the tool with a single command and have it available in PATH
@@ -128,3 +128,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 *Phase 1 planned: 2026-01-17*
 *Phase 2 planned: 2026-01-17*
 *Phase 3 planned: 2026-01-17*
+*Phase 4 planned: 2026-01-17*
