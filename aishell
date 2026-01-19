@@ -135,12 +135,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
     curl \
+    file \
     git \
+    htop \
     jq \
     less \
     ripgrep \
+    sqlite3 \
     sudo \
+    tree \
+    unzip \
     vim \
+    watch \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js via multi-stage copy from official image
@@ -269,7 +275,7 @@ if [ "$1" = "/bin/bash" ] || [ "$1" = "bash" ]; then
 fi
 
 # Add harness bin directories to PATH if they exist
-[[ -d /usr/local/bin ]] && export PATH="/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 
 # Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
 if [[ -n "${PRE_START:-}" ]]; then
