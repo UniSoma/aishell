@@ -49,11 +49,11 @@ See git history for phase details.
   3. Script handles missing HOME gracefully with fallback behavior
   4. Ctrl+C during build phase exits cleanly without orphaned processes or temp files
   5. Running container with --privileged or docker.sock mount prints a warning to stderr
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md — Cleanup infrastructure (trap consolidation, signal handling)
+- [ ] 11-02-PLAN.md — Input validation and security warnings
 
 #### Phase 12: Maintenance & Documentation
 **Goal**: Add update detection and document known limitations for users
@@ -75,7 +75,7 @@ Plans:
 | 1-8 | v1.0 | 16/16 | Complete | 2026-01-18 |
 | 9 | v1.1 | 3/3 | Complete | 2026-01-19 |
 | 10 | v1.1 | 1/1 | Complete | 2026-01-19 |
-| 11 - Code Hardening | v1.2 | 0/TBD | Not started | - |
+| 11 - Code Hardening | v1.2 | 0/2 | Planned | - |
 | 12 - Maintenance & Docs | v1.2 | 0/TBD | Not started | - |
 
 ---
