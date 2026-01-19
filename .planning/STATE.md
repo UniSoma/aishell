@@ -5,35 +5,42 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v1.2 Hardening & Edge Cases
 
 ## Current Position
 
-Phase: 11+ (next milestone)
+Phase: 11 of 12 (Code Hardening)
 Plan: Not started
-Status: Ready to plan next milestone
-Last activity: 2026-01-19 - v1.1 milestone complete
+Status: Ready to plan
+Last activity: 2026-01-19 - v1.2 roadmap created
 
-Progress: [====================] 100% (10 phases, 20 plans complete)
+Progress: [====================] 100% v1.0-v1.1 | [░░░░░░░░░░] 0% v1.2
 
-**Milestone v1.1:** SHIPPED
+**Milestone v1.2:** In progress (0/2 phases)
 
 ## What's Being Built
 
-Next milestone not yet defined. Candidates:
-- v1.2: SSH agent forwarding, GPG signing, macOS support
-- v2.0: Major new features or redesign
+Phase 11 will harden input validation and robustness:
+- Port mapping IP binding support
+- Version string validation
+- HOME fallback handling
+- Signal/trap consolidation
+- Dangerous DOCKER_ARGS warnings
+
+Phase 12 will add maintenance tooling and documentation:
+- Dockerfile hash change detection
+- run.conf limitations documented
+- safe.directory behavior documented
 
 ## Next Steps
 
-Use `/gsd:new-milestone` to start next milestone:
-- Questioning → Research → Requirements → Roadmap
+Run `/gsd:plan-phase 11` to create execution plans.
 
 ## Accumulated Context
 
 ### Decisions
 
-See PROJECT.md Key Decisions table (15 validated decisions).
+See PROJECT.md Key Decisions table (15 validated decisions from v1.0-v1.1).
 
 ### Pending Todos
 
@@ -43,8 +50,9 @@ None.
 
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
-- Phase 9: Runtime Config Core (3 plans)
-- Phase 10: Pre-Start Command (1 plan)
+v1.2: Phases 11-12 (IN PROGRESS)
+- Phase 11: Code Hardening (7 requirements)
+- Phase 12: Maintenance & Documentation (3 requirements)
 
 ### Blockers/Concerns
 
@@ -53,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Completed v1.1 milestone
+Stopped at: Created v1.2 roadmap
 Resume file: None
