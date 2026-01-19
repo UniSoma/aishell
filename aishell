@@ -447,6 +447,46 @@ export HISTCONTROL=ignoreboth:erasedups
 BASHRC_EOF
 }
 
+# --- Dockerfile Hash Detection (MAINT-01) ---
+# Compute hash of embedded Dockerfile content for update detection
+get_dockerfile_hash() {
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    write_dockerfile "$temp_dir"
+    local hash
+    hash=$(sha256sum "${temp_dir}/Dockerfile" | cut -c1-12)
+    rm -rf "$temp_dir"
+    echo "$hash"
+}
+
+# Read hash label from built image
+get_image_dockerfile_hash() {
+    local image="$1"
+    docker inspect --format='{{index .Config.Labels "aishell.dockerfile.hash"}}' "$image" 2>/dev/null || true
+}
+
+# Warn if Dockerfile has changed since build
+check_dockerfile_changed() {
+    local image="$1"
+
+    local built_hash
+    built_hash=$(get_image_dockerfile_hash "$image")
+
+    # Skip check for old images without hash label
+    [[ -z "$built_hash" ]] && return 0
+
+    local current_hash
+    current_hash=$(get_dockerfile_hash)
+
+    if [[ "$built_hash" != "$current_hash" ]]; then
+        warn "Image was built with a different Dockerfile version"
+        echo "  Built with:  $built_hash" >&2
+        echo "  Current:     $current_hash" >&2
+        echo "  Run 'aishell update' to rebuild with the current version." >&2
+        echo "" >&2
+    fi
+}
+
 # --- State Management ---
 # Get unique hash for project path (for state file naming)
 get_project_hash() {
@@ -865,6 +905,11 @@ do_build() {
     [[ "$with_opencode" == true ]] && build_args+=(--build-arg WITH_OPENCODE=true)
     [[ -n "$claude_version" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$claude_version")
     [[ -n "$opencode_version" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$opencode_version")
+
+    # Compute Dockerfile hash for update detection (MAINT-01)
+    local dockerfile_hash
+    dockerfile_hash=$(get_dockerfile_hash)
+    build_args+=(--label "aishell.dockerfile.hash=$dockerfile_hash")
 
     # Build the image
     if [[ "$verbose_build" == true ]]; then
@@ -1390,6 +1435,11 @@ do_update() {
     [[ -n "$claude_version" ]] && build_args+=(--build-arg "CLAUDE_VERSION=$claude_version")
     [[ -n "$opencode_version" ]] && build_args+=(--build-arg "OPENCODE_VERSION=$opencode_version")
 
+    # Compute Dockerfile hash for update detection (MAINT-01)
+    local dockerfile_hash
+    dockerfile_hash=$(get_dockerfile_hash)
+    build_args+=(--label "aishell.dockerfile.hash=$dockerfile_hash")
+
     # Build the image
     if [[ "$verbose_build" == true ]]; then
         if ! docker build "${build_args[@]}" -t "$target_tag" --progress=plain "$build_dir"; then
@@ -1460,6 +1510,9 @@ main() {
 
     # Handle extension Dockerfile if present
     handle_extension "$project_dir"
+
+    # Check for Dockerfile updates (MAINT-01)
+    check_dockerfile_changed "$IMAGE_TO_RUN"
 
     # Read git identity from host
     local identity git_name git_email
