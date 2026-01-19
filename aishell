@@ -59,6 +59,49 @@ else
     NC=''
 fi
 
+# --- Cleanup Infrastructure ---
+# Consolidated cleanup handler (ROBUST-01, ROBUST-02)
+# Single trap registered once - no trap overrides
+declare -a CLEANUP_FILES=()
+declare -a CLEANUP_PIDS=()
+spinner_pid=""
+
+cleanup() {
+    local exit_code=$?
+
+    # Stop spinner if running
+    if [[ -n "$spinner_pid" ]]; then
+        kill "$spinner_pid" 2>/dev/null || true
+        printf "\r\033[K" >&2  # Clear spinner line
+        spinner_pid=""
+    fi
+
+    # Remove registered temp files/directories
+    for path in "${CLEANUP_FILES[@]}"; do
+        [[ -e "$path" ]] && rm -rf "$path" 2>/dev/null
+    done
+
+    # Kill tracked background processes
+    for pid in "${CLEANUP_PIDS[@]}"; do
+        kill "$pid" 2>/dev/null || true
+    done
+
+    exit "$exit_code"
+}
+
+# Register cleanup ONCE at script start
+trap cleanup EXIT
+
+# Helper to register files/directories for cleanup
+register_cleanup() {
+    CLEANUP_FILES+=("$1")
+}
+
+# Helper to track background process PIDs
+track_pid() {
+    CLEANUP_PIDS+=("$1")
+}
+
 # --- Output Functions ---
 error() {
     echo -e "${RED}Error:${NC} $1" >&2
@@ -74,7 +117,7 @@ verbose() {
 }
 
 # --- Spinner for Long Operations ---
-spinner_pid=""
+# Note: spinner_pid is declared in Cleanup Infrastructure section
 
 start_spinner() {
     local msg="$1"
@@ -89,17 +132,16 @@ start_spinner() {
         sleep 0.1
     done &
     spinner_pid=$!
+    track_pid "$spinner_pid"
 }
 
 stop_spinner() {
     if [[ -n "$spinner_pid" ]]; then
-        kill "$spinner_pid" 2>/dev/null
+        kill "$spinner_pid" 2>/dev/null || true
         spinner_pid=""
         printf "\r\033[K" >&2  # Clear line only if spinner was active
     fi
 }
-
-trap 'stop_spinner' EXIT
 
 # --- Embedded Build Files (Heredocs) ---
 # These functions write the embedded Dockerfile, entrypoint.sh, and bashrc.aishell
