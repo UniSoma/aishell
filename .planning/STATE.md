@@ -9,24 +9,24 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 
 ## Current Position
 
-Phase: 11 of 12 (Code Hardening)
-Plan: 1 of 2 complete
-Status: In progress
-Last activity: 2026-01-19 - Completed 11-01-PLAN.md (Trap Consolidation)
+Phase: 11 of 12 (Code Hardening) - COMPLETE
+Plan: 2 of 2 complete
+Status: Phase 11 complete
+Last activity: 2026-01-19 - Completed 11-02-PLAN.md (Input Validation & Security)
 
-Progress: [====================] 100% v1.0-v1.1 | [███░░░░░░░] 30% v1.2
+Progress: [====================] 100% v1.0-v1.1 | [█████░░░░░] 50% v1.2
 
-**Milestone v1.2:** In progress (0.5/2 phases)
+**Milestone v1.2:** In progress (1/2 phases complete)
 
 ## What's Being Built
 
-Phase 11 hardening input validation and robustness:
+~~Phase 11 hardening input validation and robustness:~~
 - ~~Signal/trap consolidation (ROBUST-01, ROBUST-02)~~ DONE in 11-01
-- Port mapping IP binding support (VALID-01) - 11-02
-- Version string validation (VALID-02) - 11-02
-- HOME fallback handling (VALID-03) - 11-02
-- --init flag for zombie reaping (ROBUST-03) - 11-02
-- Dangerous DOCKER_ARGS warnings (SEC-01) - 11-02
+- ~~Port mapping IP binding support (VALID-01)~~ DONE in 11-02
+- ~~Version string validation (VALID-02)~~ DONE in 11-02
+- ~~HOME fallback handling (VALID-03)~~ DONE in 11-02
+- ~~--init flag for zombie reaping (ROBUST-03)~~ DONE in 11-02
+- ~~Dangerous DOCKER_ARGS warnings (SEC-01)~~ DONE in 11-02
 
 Phase 12 will add maintenance tooling and documentation:
 - Dockerfile hash change detection
@@ -35,7 +35,7 @@ Phase 12 will add maintenance tooling and documentation:
 
 ## Next Steps
 
-Continue with 11-02-PLAN.md (Input Validation & Security).
+Begin Phase 12 (Maintenance & Documentation).
 
 ## Accumulated Context
 
@@ -49,6 +49,9 @@ See PROJECT.md Key Decisions table (15 validated decisions from v1.0-v1.1).
 | Single trap cleanup EXIT | Prevents trap override bugs, consolidates cleanup logic | 11-01 |
 | CLEANUP_FILES/CLEANUP_PIDS arrays | Track resources for cleanup without trap per-function | 11-01 |
 | register_cleanup()/track_pid() helpers | Clean API for registering resources | 11-01 |
+| Validate versions at all entry points | Catch invalid input regardless of invocation method | 11-02 |
+| Defense in depth for version validation | Blocklist + allowlist catches more edge cases | 11-02 |
+| Docker --init for zombie reaping | Simpler than custom PID 1 handling, built into Docker | 11-02 |
 
 ### Pending Todos
 
@@ -59,7 +62,7 @@ None.
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
 v1.2: Phases 11-12 (IN PROGRESS)
-- Phase 11: Code Hardening - 11-01 COMPLETE, 11-02 PENDING
+- Phase 11: Code Hardening - COMPLETE
 - Phase 12: Maintenance & Documentation (3 requirements)
 
 ### Blockers/Concerns
@@ -68,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-19T16:34:20Z
-Stopped at: Completed 11-01-PLAN.md (Trap Consolidation)
+Last session: 2026-01-19T16:38:34Z
+Stopped at: Completed 11-02-PLAN.md (Input Validation & Security)
 Resume file: None
