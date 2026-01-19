@@ -10,22 +10,23 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 ## Current Position
 
 Phase: 11 of 12 (Code Hardening)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-19 - v1.2 roadmap created
+Plan: Ready to execute (2 plans created)
+Status: Planned
+Last activity: 2026-01-19 - Phase 11 plans created
 
-Progress: [====================] 100% v1.0-v1.1 | [░░░░░░░░░░] 0% v1.2
+Progress: [====================] 100% v1.0-v1.1 | [=░░░░░░░░░] 10% v1.2
 
 **Milestone v1.2:** In progress (0/2 phases)
 
 ## What's Being Built
 
 Phase 11 will harden input validation and robustness:
-- Port mapping IP binding support
-- Version string validation
-- HOME fallback handling
-- Signal/trap consolidation
-- Dangerous DOCKER_ARGS warnings
+- Port mapping IP binding support (VALID-01)
+- Version string validation (VALID-02)
+- HOME fallback handling (VALID-03)
+- Signal/trap consolidation (ROBUST-01, ROBUST-02)
+- --init flag for zombie reaping (ROBUST-03)
+- Dangerous DOCKER_ARGS warnings (SEC-01)
 
 Phase 12 will add maintenance tooling and documentation:
 - Dockerfile hash change detection
@@ -34,7 +35,7 @@ Phase 12 will add maintenance tooling and documentation:
 
 ## Next Steps
 
-Run `/gsd:plan-phase 11` to create execution plans.
+Run `/gsd:execute-phase 11` to implement the plans.
 
 ## Accumulated Context
 
@@ -51,7 +52,7 @@ None.
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
 v1.2: Phases 11-12 (IN PROGRESS)
-- Phase 11: Code Hardening (7 requirements)
+- Phase 11: Code Hardening (7 requirements) - PLANNED
 - Phase 12: Maintenance & Documentation (3 requirements)
 
 ### Blockers/Concerns
@@ -61,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Created v1.2 roadmap
+Stopped at: Created Phase 11 plans (11-01-PLAN.md, 11-02-PLAN.md)
 Resume file: None
