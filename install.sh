@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="1.1.0"
 INSTALL_DIR="${HOME}/.local/bin"
 REPO_URL="https://raw.githubusercontent.com/UniSoma/aishell/main/aishell"
 
