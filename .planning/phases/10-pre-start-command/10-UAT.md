@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 10-pre-start-command
 source: 10-01-SUMMARY.md
-started: 2026-01-19T00:00:00Z
-updated: 2026-01-19T00:10:00Z
+started: 2026-01-19T00:15:00Z
+updated: 2026-01-19T00:20:00Z
 ---
 
 ## Current Test
@@ -14,56 +14,28 @@ updated: 2026-01-19T00:10:00Z
 
 ### 1. PRE_START Executes Before Shell
 expected: Create `.aishell/run.conf` with `PRE_START="echo hello > /tmp/test.txt"`. Run `aishell`. Once inside the container, run `cat /tmp/test.txt`. The file should exist and contain "hello".
-result: issue
-reported: "There's no /tmp/test.txt on the container"
-severity: major
+result: pass
 
 ### 2. PRE_START Runs in Background
 expected: Set `PRE_START="sleep 60"` in run.conf. Run `aishell`. The shell should appear immediately, not wait 60 seconds. The sleep command runs in the background without blocking.
-result: skipped
-reason: Dependent on Test 1 - PRE_START not executing at all
+result: pass
 
 ### 3. PRE_START Output Logged
 expected: After running any PRE_START command, check `/tmp/pre-start.log` inside the container. It should contain stdout/stderr from the PRE_START command.
-result: issue
-reported: "there's no /tmp/pre-start.log in the container"
-severity: major
+result: pass
 
 ### 4. PRE_START Complex Command
 expected: Set `PRE_START="sh -c 'echo line1 && echo line2'"` in run.conf. Run `aishell`. Check `/tmp/pre-start.log` shows both "line1" and "line2", confirming complex commands with arguments work correctly.
-result: skipped
-reason: Dependent on Test 1 - PRE_START not executing at all
+result: pass
 
 ## Summary
 
 total: 4
-passed: 0
-issues: 2
+passed: 4
+issues: 0
 pending: 0
-skipped: 2
+skipped: 0
 
 ## Gaps
 
-- truth: "PRE_START command creates /tmp/test.txt before shell starts"
-  status: failed
-  reason: "User reported: There's no /tmp/test.txt on the container"
-  severity: major
-  test: 1
-  root_cause: "Docker image built before PRE_START feature - contains stale entrypoint.sh"
-  artifacts:
-    - path: "aishell"
-      issue: "Code is correct - entrypoint.sh has PRE_START at lines 274-279"
-  missing:
-    - "User needs to rebuild Docker image to pick up new entrypoint.sh"
-  debug_session: ".planning/debug/pre-start-not-executing.md"
-
-- truth: "PRE_START output is logged to /tmp/pre-start.log"
-  status: failed
-  reason: "User reported: there's no /tmp/pre-start.log in the container"
-  severity: major
-  test: 3
-  root_cause: "Same as Test 1 - stale Docker image without PRE_START support in entrypoint.sh"
-  artifacts: []
-  missing:
-    - "Rebuild Docker image"
-  debug_session: ".planning/debug/pre-start-not-executing.md"
+[none yet]
