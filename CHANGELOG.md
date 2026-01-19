@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-19
+
+### Added
+
+- Consolidated trap/cleanup infrastructure with single EXIT handler
+- `register_cleanup()` and `track_pid()` helpers for resource tracking
+- Version string validation with semver regex and shell metachar blocklist
+- `validate_home()` with passwd lookup fallback and /tmp fallback
+- Port mapping IP binding support (e.g., `127.0.0.1:8080:80`)
+- Security warnings for dangerous DOCKER_ARGS (--privileged, docker.sock)
+- Dockerfile hash detection with runtime mismatch warnings
+- `--init` flag for zombie process reaping via tini
+
+### Changed
+
+- Trap handlers consolidated to single EXIT handler (prevents override bugs)
+- Default case handlers added to `build` and `update` commands (rejects unknown options)
+
+### Fixed
+
+- Shell injection via version flags now blocked
+- Unknown options no longer silently ignored
+- Ctrl+C during build now cleans up properly
+
+### Documentation
+
+- run.conf parsing limitations documented (no escaped quotes, one value per line)
+- safe.directory behavior documented (may modify host gitconfig)
+
 ## [1.1.0] - 2026-01-19
 
 ### Added

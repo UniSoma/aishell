@@ -1,5 +1,34 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v1.2 Hardening & Edge Cases (Shipped: 2026-01-19)
+
+**Delivered:** Input validation hardening, consolidated cleanup infrastructure, security warnings, and documentation for edge cases and known limitations.
+
+**Phases completed:** 11-12 (4 plans total)
+
+**Key accomplishments:**
+
+- Consolidated trap/cleanup infrastructure with single EXIT handler and tracking arrays
+- Input validation with semver regex + shell metachar blocklist (defense in depth)
+- Port mapping IP binding support (127.0.0.1:8080:80 format)
+- Zombie process handling via `--init` flag for proper PID 1 reaping
+- Security warnings for dangerous DOCKER_ARGS (--privileged, docker.sock)
+- Dockerfile hash detection with runtime mismatch warnings
+- Documented run.conf limitations and safe.directory behavior
+
+**Stats:**
+
+- 1 file modified (aishell)
+- 1,655 lines of Bash (+194 from v1.1)
+- 2 phases, 4 plans, ~8 tasks
+- Same day (2026-01-19)
+
+**Git range:** `feat(11-01)` → `test(11-03)` (27 commits)
+
+**What's next:** v2.0 (SSH agent forwarding, GPG signing, macOS support)
+
+---
+
 ## v1.1 Per-project Runtime Configuration (Shipped: 2026-01-19)
 
 **Delivered:** Per-project runtime configuration via `.aishell/run.conf` for custom mounts, environment variables, ports, docker args, and pre-start commands.
