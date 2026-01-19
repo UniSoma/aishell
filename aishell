@@ -1382,6 +1382,9 @@ do_update() {
                 echo "Update always uses --no-cache to fetch latest versions."
                 exit 0
                 ;;
+            *)
+                error "Unknown option: $arg"
+                ;;
         esac
     done
 
