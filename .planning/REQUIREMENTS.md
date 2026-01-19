@@ -9,19 +9,19 @@ Requirements for hardening and edge case fixes.
 
 ### Input Validation
 
-- [ ] **VALID-01**: Port mapping regex accepts IP binding format (e.g., 127.0.0.1:8080:80)
-- [ ] **VALID-02**: Version strings validated against semver-like pattern before npm/curl use
-- [ ] **VALID-03**: HOME environment variable validated before use with fallback
+- [x] **VALID-01**: Port mapping regex accepts IP binding format (e.g., 127.0.0.1:8080:80)
+- [x] **VALID-02**: Version strings validated against semver-like pattern before npm/curl use
+- [x] **VALID-03**: HOME environment variable validated before use with fallback
 
 ### Robustness
 
-- [ ] **ROBUST-01**: Temp file cleanup uses single consolidated handler (no trap override bugs)
-- [ ] **ROBUST-02**: Signal handling during build phase propagates cleanly on Ctrl+C
-- [ ] **ROBUST-03**: `--init` flag added to docker run for zombie process reaping
+- [x] **ROBUST-01**: Temp file cleanup uses single consolidated handler (no trap override bugs)
+- [x] **ROBUST-02**: Signal handling during build phase propagates cleanly on Ctrl+C
+- [x] **ROBUST-03**: `--init` flag added to docker run for zombie process reaping
 
 ### Security Awareness
 
-- [ ] **SEC-01**: Dangerous DOCKER_ARGS patterns trigger warning (--privileged, docker.sock)
+- [x] **SEC-01**: Dangerous DOCKER_ARGS patterns trigger warning (--privileged, docker.sock)
 
 ### Maintenance
 
@@ -52,13 +52,13 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VALID-01 | Phase 11 | Pending |
-| VALID-02 | Phase 11 | Pending |
-| VALID-03 | Phase 11 | Pending |
-| ROBUST-01 | Phase 11 | Pending |
-| ROBUST-02 | Phase 11 | Pending |
-| ROBUST-03 | Phase 11 | Pending |
-| SEC-01 | Phase 11 | Pending |
+| VALID-01 | Phase 11 | Complete |
+| VALID-02 | Phase 11 | Complete |
+| VALID-03 | Phase 11 | Complete |
+| ROBUST-01 | Phase 11 | Complete |
+| ROBUST-02 | Phase 11 | Complete |
+| ROBUST-03 | Phase 11 | Complete |
+| SEC-01 | Phase 11 | Complete |
 | MAINT-01 | Phase 12 | Pending |
 | DOC-01 | Phase 12 | Pending |
 | DOC-02 | Phase 12 | Pending |
@@ -70,4 +70,4 @@ Deferred to future release.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 after initial definition*
+*Last updated: 2026-01-19 after Phase 11 completion*
