@@ -24,16 +24,15 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Tool installable via curl|bash one-liner — v1.0
 - ✓ Version pinning for harnesses (--claude-version, --opencode-version) — v1.0
 - ✓ Explicit build/update workflow with state persistence — v1.0
+- ✓ Projects can define additional volume mounts via `.aishell/run.conf` — v1.1
+- ✓ Projects can define additional environment variables (passthrough or literal) — v1.1
+- ✓ Projects can expose port mappings from container to host — v1.1
+- ✓ Projects can specify extra docker run arguments — v1.1
+- ✓ Projects can define a pre-start command for sidecar/background services — v1.1
 
 ### Active
 
-**v1.1 — Per-project Runtime Configuration**
-
-- [ ] Projects can define additional volume mounts via `.aishell/run.conf`
-- [ ] Projects can define additional environment variables (passthrough or literal)
-- [ ] Projects can expose port mappings from container to host
-- [ ] Projects can specify extra docker run arguments
-- [ ] Projects can define a pre-start command for sidecar/background services
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -46,16 +45,23 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Context
 
-**Shipped:** v1.0 MVP on 2026-01-18
+**Shipped:** v1.1 on 2026-01-19 (v1.0 MVP on 2026-01-18)
 
-**Codebase:** 1,316 LOC Bash (aishell + install.sh)
+**Codebase:** 1,461 LOC Bash (aishell + install.sh)
 **Tech stack:** Bash, Docker, Debian bookworm-slim base, Node.js 24, Babashka 1.12
+
+**v1.1 additions:**
+- `.aishell/run.conf` for per-project runtime configuration
+- MOUNTS, ENV, PORTS, DOCKER_ARGS variables
+- PRE_START for background sidecar services
 
 **Decisions validated:**
 - Ephemeral containers with `--rm` flag work well for the use case
 - Dockerfile-based extension via `.aishell/Dockerfile` provides flexibility
 - Heredoc embedding for self-contained distribution avoids multi-file complexity
 - Explicit `build` command separates concerns better than auto-build
+- Shell-style config format (run.conf) native to Bash, no parser dependencies
+- Whitelist-based config parsing prevents injection attacks
 
 ## Constraints
 
@@ -77,6 +83,11 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Explicit build command | Clear separation of build vs run | ✓ Good |
 | State file for flags | Persistent config without JSON complexity | ✓ Good |
 | Multi-stage build | Node.js binaries without full runtime overhead | ✓ Good |
+| Shell-style config (run.conf) | Native to Bash, no parser dependencies | ✓ Good |
+| Whitelist-based config parsing | Prevents injection attacks, explicit allowed vars | ✓ Good |
+| printf for docker flags | Avoids echo -e flag interpretation issues | ✓ Good |
+| sh -c for PRE_START | Handles complex commands with arguments properly | ✓ Good |
+| PRE_START output to /tmp | Prevents sidecar output from polluting terminal | ✓ Good |
 
 ---
-*Last updated: 2026-01-18 after starting v1.1 milestone*
+*Last updated: 2026-01-19 after v1.1 milestone*

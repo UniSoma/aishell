@@ -10,6 +10,8 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in
 - **Per-project customization** - Extend via `.aishell/Dockerfile`
 - **Version pinning** - Lock harness versions for reproducibility
 - **Config persistence** - Mounts `~/.claude` and OpenCode configs automatically
+- **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/run.conf`
+- **Pre-start commands** - Run sidecar services before shell/harness
 
 ## Requirements
 
@@ -80,6 +82,27 @@ Create `.aishell/Dockerfile` to extend the base image:
 FROM aishell:base
 
 RUN apt-get update && apt-get install -y postgresql-client
+```
+
+### Runtime configuration
+
+Create `.aishell/run.conf` to configure container runtime:
+
+```bash
+# Additional volume mounts
+MOUNTS="/path/to/data $HOME/.secrets:/secrets"
+
+# Environment variables (passthrough or literal)
+ENV="DATABASE_URL MY_VAR=literal_value"
+
+# Port mappings (host:container)
+PORTS="3000:3000 8080:80"
+
+# Extra docker run arguments
+DOCKER_ARGS="--memory=4g --cpus=2"
+
+# Pre-start command (runs in background before shell)
+PRE_START="redis-server --daemonize yes"
 ```
 
 ## Environment Variables

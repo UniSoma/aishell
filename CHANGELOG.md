@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-19
+
+### Added
+
+- Per-project runtime configuration via `.aishell/run.conf`
+- `MOUNTS` variable for additional volume mounts with `$HOME` expansion
+- `ENV` variable for environment variables (passthrough and literal syntax)
+- `PORTS` variable for port mappings (host:container format)
+- `DOCKER_ARGS` variable for extra docker run arguments
+- `PRE_START` variable for background pre-start commands (sidecar services)
+- Runtime Configuration section in `--help` output
+
+### Changed
+
+- Config parser uses whitelist-based validation for security
+
 ## [1.0.0] - 2026-01-18
 
 ### Added

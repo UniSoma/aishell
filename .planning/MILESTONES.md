@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v1.1 Per-project Runtime Configuration (Shipped: 2026-01-19)
+
+**Delivered:** Per-project runtime configuration via `.aishell/run.conf` for custom mounts, environment variables, ports, docker args, and pre-start commands.
+
+**Phases completed:** 9-10 (4 plans total)
+
+**Key accomplishments:**
+
+- Whitelist-based config file parser with security-focused validation
+- MOUNTS variable with $HOME expansion and source:destination format support
+- ENV passthrough (VAR) and literal (VAR=value) syntax
+- PORTS variable for container-to-host port exposure
+- DOCKER_ARGS for arbitrary docker run flags
+- PRE_START for background sidecar services before shell/harness
+
+**Stats:**
+
+- 1 file modified (aishell)
+- 1,461 lines of Bash (+145 from v1.0)
+- 2 phases, 4 plans, ~12 tasks
+- 1 day from start to ship (2026-01-18 → 2026-01-19)
+
+**Git range:** `feat(09-01)` → `test(10)` (33 commits)
+
+**What's next:** v1.2 (SSH agent forwarding, GPG signing, macOS support) or v2.0 with advanced features
+
+---
+
 ## v1.0 MVP (Shipped: 2026-01-18)
 
 **Delivered:** Docker-based ephemeral sandbox for running Claude Code and OpenCode in isolated containers with correct permissions, git integration, and per-project customization.
