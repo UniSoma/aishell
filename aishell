@@ -803,9 +803,11 @@ do_build() {
                 ;;
             --claude-version=*)
                 claude_version="${arg#--claude-version=}"
+                validate_version "$claude_version" "Claude Code"
                 ;;
             --opencode-version=*)
                 opencode_version="${arg#--opencode-version=}"
+                validate_version "$opencode_version" "OpenCode"
                 ;;
             --no-cache|--rebuild)
                 no_cache=true
@@ -1034,10 +1036,12 @@ parse_args() {
                 ;;
             --claude-version=*)
                 CLAUDE_VERSION="${1#--claude-version=}"
+                validate_version "$CLAUDE_VERSION" "Claude Code"
                 shift
                 ;;
             --opencode-version=*)
                 OPENCODE_VERSION="${1#--opencode-version=}"
+                validate_version "$OPENCODE_VERSION" "OpenCode"
                 shift
                 ;;
             --rebuild)
@@ -1305,9 +1309,11 @@ do_update() {
                 ;;
             --claude-version=*)
                 new_claude_version="${arg#--claude-version=}"
+                validate_version "$new_claude_version" "Claude Code"
                 ;;
             --opencode-version=*)
                 new_opencode_version="${arg#--opencode-version=}"
+                validate_version "$new_opencode_version" "OpenCode"
                 ;;
             -v|--verbose)
                 verbose_build=true
@@ -1412,6 +1418,9 @@ $(cat "$build_log")"
 
 # --- Main ---
 main() {
+    # Validate HOME early before any operations
+    validate_home
+
     parse_args "$@"
 
     # Handle build command
@@ -1473,6 +1482,7 @@ main() {
     # Build docker run arguments
     local -a docker_args=(
         --rm -it
+        --init
         -v "$project_dir:$project_dir"
         -w "$project_dir"
         -e "LOCAL_UID=$(id -u)"
@@ -1545,6 +1555,8 @@ main() {
             verbose "  DOCKER_ARGS: $CONF_DOCKER_ARGS"
             # shellcheck disable=SC2206
             docker_args+=($CONF_DOCKER_ARGS)
+            # Check for dangerous patterns
+            warn_dangerous_docker_args "$CONF_DOCKER_ARGS"
         fi
 
         # Pass PRE_START command to container if configured
