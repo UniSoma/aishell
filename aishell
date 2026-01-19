@@ -102,6 +102,85 @@ track_pid() {
     CLEANUP_PIDS+=("$1")
 }
 
+# --- Input Validation ---
+# Semver-like pattern (major.minor.patch with optional pre-release/build metadata)
+readonly VERSION_REGEX='^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$'
+# Shell metacharacter blocklist (defense in depth)
+readonly DANGEROUS_CHARS_REGEX='[;&|`$(){}[\]<>!\\]'
+
+validate_version() {
+    local version="$1"
+    local name="$2"  # "Claude Code" or "OpenCode"
+
+    # Empty is OK (means "latest")
+    [[ -z "$version" ]] && return 0
+
+    # Block dangerous characters first (defense in depth)
+    if [[ "$version" =~ $DANGEROUS_CHARS_REGEX ]]; then
+        error "Invalid $name version: contains shell metacharacters"
+    fi
+
+    # Validate semver-like format
+    if [[ ! "$version" =~ $VERSION_REGEX ]]; then
+        error "Invalid $name version format: $version
+Expected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)"
+    fi
+}
+
+validate_home() {
+    if [[ -z "${HOME:-}" ]]; then
+        # Try to determine from passwd entry
+        HOME=$(getent passwd "$(id -u)" | cut -d: -f6) || true
+
+        # Final fallback
+        if [[ -z "$HOME" ]]; then
+            HOME="/tmp/aishell-$$"
+            warn "HOME not set, using fallback: $HOME"
+            mkdir -p "$HOME"
+        fi
+        export HOME
+    fi
+
+    # Ensure HOME directory exists
+    if [[ ! -d "$HOME" ]]; then
+        warn "HOME directory does not exist: $HOME"
+        mkdir -p "$HOME" 2>/dev/null || error "Cannot create HOME directory"
+    fi
+}
+
+# --- Security Warnings ---
+warn_dangerous_docker_args() {
+    local docker_args="$1"
+    local warned=false
+
+    # Check for dangerous patterns
+    if [[ "$docker_args" == *"--privileged"* ]]; then
+        [[ "$warned" == false ]] && { echo "" >&2; warn "Security notice: Potentially dangerous Docker options detected"; warned=true; }
+        echo "  - --privileged: Container has full host access" >&2
+    fi
+
+    if [[ "$docker_args" == *"docker.sock"* ]]; then
+        [[ "$warned" == false ]] && { echo "" >&2; warn "Security notice: Potentially dangerous Docker options detected"; warned=true; }
+        echo "  - docker.sock mount: Container can control Docker daemon" >&2
+    fi
+
+    if [[ "$docker_args" == *"--cap-add=SYS_ADMIN"* ]] || [[ "$docker_args" == *"--cap-add=ALL"* ]]; then
+        [[ "$warned" == false ]] && { echo "" >&2; warn "Security notice: Potentially dangerous Docker options detected"; warned=true; }
+        echo "  - Elevated capabilities: Increases container escape risk" >&2
+    fi
+
+    if [[ "$docker_args" == *"apparmor=unconfined"* ]] || [[ "$docker_args" == *"seccomp=unconfined"* ]]; then
+        [[ "$warned" == false ]] && { echo "" >&2; warn "Security notice: Potentially dangerous Docker options detected"; warned=true; }
+        echo "  - Disabled security profiles: Reduces container isolation" >&2
+    fi
+
+    if [[ "$warned" == true ]]; then
+        echo "" >&2
+        echo "These options reduce container isolation. Use only if necessary." >&2
+        echo "" >&2
+    fi
+}
+
 # --- Output Functions ---
 error() {
     echo -e "${RED}Error:${NC} $1" >&2
@@ -614,14 +693,15 @@ build_port_args() {
     [[ -z "$ports_str" ]] && return 0
 
     for port_spec in $ports_str; do
-        # Validate format: host:container or host:container/protocol
-        if [[ "$port_spec" =~ ^[0-9]+:[0-9]+(/[a-z]+)?$ ]]; then
+        # Validate format: [ip:]host:container[/protocol]
+        # Supports: 8080:80, 127.0.0.1:8080:80, 192.168.1.100:8080:80/tcp
+        if [[ "$port_spec" =~ ^(([0-9]{1,3}\.){3}[0-9]{1,3}:)?[0-9]+:[0-9]+(/[a-z]+)?$ ]]; then
             printf '%s\n' "-p"
             printf '%s\n' "$port_spec"
         else
             error "Invalid port mapping: $port_spec
-Expected format: HOST_PORT:CONTAINER_PORT (e.g., 8080:80)
-Optional protocol: 8080:80/udp"
+Expected format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT
+Examples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp"
         fi
     done
 }
