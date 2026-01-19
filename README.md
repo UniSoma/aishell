@@ -105,6 +105,47 @@ DOCKER_ARGS="--memory=4g --cpus=2"
 PRE_START="redis-server --daemonize yes"
 ```
 
+### run.conf Limitations
+
+The `.aishell/run.conf` file uses a simplified parsing format:
+
+**Supported syntax:**
+- `VAR=value` - Unquoted value (no spaces allowed)
+- `VAR="value with spaces"` - Double-quoted value
+- `VAR='value with spaces'` - Single-quoted value
+- `# comment` - Comments on their own line
+
+**Not supported:**
+- Escaped quotes: `VAR="value with \"quotes\""` will fail
+- Multi-line values: Each assignment must be on one line
+- Shell expansion: `$VAR` and `$(command)` are not expanded
+- Continuation lines: No backslash line continuation
+
+**Workaround for complex values:**
+Use `DOCKER_ARGS` to pass environment variables that need special characters:
+```bash
+DOCKER_ARGS="-e COMPLEX_VAR=value-with-special-chars"
+```
+
+### Git safe.directory
+
+When you run a container, aishell configures git to trust the mounted project directory by adding it to `safe.directory` in the container's gitconfig.
+
+**What happens:**
+1. The entrypoint runs `git config --global --add safe.directory /your/project/path`
+2. This writes to `~/.gitconfig` inside the container
+
+**Host gitconfig impact:**
+If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the container (via `MOUNTS` in run.conf), the safe.directory entry will be added to your **host's** gitconfig file.
+
+**Why this happens:**
+- Git requires safe.directory for directories owned by different users
+- Inside the container, the mounted project appears owned by a different user
+- This is a security feature (CVE-2022-24765), not a bug
+
+**To avoid modifying host gitconfig:**
+Don't mount your host gitconfig into the container. The container creates its own gitconfig that is discarded when the container exits.
+
 ## Environment Variables
 
 | Variable | Description |
