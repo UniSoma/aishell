@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 10-pre-start-command
 source: 10-01-SUMMARY.md
 started: 2026-01-19T00:00:00Z
-updated: 2026-01-19T00:05:00Z
+updated: 2026-01-19T00:10:00Z
 ---
 
 ## Current Test
@@ -49,17 +49,21 @@ skipped: 2
   reason: "User reported: There's no /tmp/test.txt on the container"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Docker image built before PRE_START feature - contains stale entrypoint.sh"
+  artifacts:
+    - path: "aishell"
+      issue: "Code is correct - entrypoint.sh has PRE_START at lines 274-279"
+  missing:
+    - "User needs to rebuild Docker image to pick up new entrypoint.sh"
+  debug_session: ".planning/debug/pre-start-not-executing.md"
 
 - truth: "PRE_START output is logged to /tmp/pre-start.log"
   status: failed
   reason: "User reported: there's no /tmp/pre-start.log in the container"
   severity: major
   test: 3
-  root_cause: ""
+  root_cause: "Same as Test 1 - stale Docker image without PRE_START support in entrypoint.sh"
   artifacts: []
-  missing: []
-  debug_session: ""
+  missing:
+    - "Rebuild Docker image"
+  debug_session: ".planning/debug/pre-start-not-executing.md"
