@@ -5,20 +5,20 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** v1.2 Hardening & Edge Cases
+**Current focus:** v1.2 Hardening & Edge Cases - COMPLETE
 
 ## Current Position
 
-Phase: 11 of 12 (Code Hardening) - VERIFIED COMPLETE
-Plan: 2 of 2 complete
-Status: Phase 11 verified, ready for Phase 12
-Last activity: 2026-01-19 - Phase 11 verified (5/5 must-haves passed)
+Phase: 12 of 12 (Maintenance & Documentation) - COMPLETE
+Plan: 1 of 1 complete
+Status: Phase 12 complete, v1.2 milestone ready for release
+Last activity: 2026-01-19 - Completed 12-01-PLAN.md
 
-Progress: [====================] 100% v1.0-v1.1 | [█████░░░░░] 50% v1.2
+Progress: [====================] 100% v1.0-v1.1 | [██████████] 100% v1.2
 
-**Milestone v1.2:** In progress (1/2 phases complete)
+**Milestone v1.2:** COMPLETE (2/2 phases complete)
 
-## What's Being Built
+## What Was Built
 
 ~~Phase 11 hardening input validation and robustness:~~
 - ~~Signal/trap consolidation (ROBUST-01, ROBUST-02)~~ DONE in 11-01
@@ -28,14 +28,16 @@ Progress: [====================] 100% v1.0-v1.1 | [█████░░░░�
 - ~~--init flag for zombie reaping (ROBUST-03)~~ DONE in 11-02
 - ~~Dangerous DOCKER_ARGS warnings (SEC-01)~~ DONE in 11-02
 
-Phase 12 will add maintenance tooling and documentation:
-- Dockerfile hash change detection
-- run.conf limitations documented
-- safe.directory behavior documented
+~~Phase 12 maintenance tooling and documentation:~~
+- ~~Dockerfile hash change detection (MAINT-01)~~ DONE in 12-01
+- ~~run.conf limitations documented (DOC-01)~~ DONE in 12-01
+- ~~safe.directory behavior documented (DOC-02)~~ DONE in 12-01
 
 ## Next Steps
 
-Run `/gsd:discuss-phase 12` to begin Phase 12 (Maintenance & Documentation).
+v1.2 milestone complete. Ready for:
+- Tag and release v1.2.0
+- Future feature planning if desired
 
 ## Accumulated Context
 
@@ -53,6 +55,13 @@ See PROJECT.md Key Decisions table (15 validated decisions from v1.0-v1.1).
 | Defense in depth for version validation | Blocklist + allowlist catches more edge cases | 11-02 |
 | Docker --init for zombie reaping | Simpler than custom PID 1 handling, built into Docker | 11-02 |
 
+**Phase 12 Decisions:**
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| 12-char sha256 for Dockerfile hash | Matches existing project hash pattern, human-readable | 12-01 |
+| Skip hash check for old images | Backward compatibility with pre-MAINT-01 images | 12-01 |
+| Warn-only for version mismatch | Don't block users who intentionally use older images | 12-01 |
+
 ### Pending Todos
 
 None.
@@ -61,9 +70,9 @@ None.
 
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
-v1.2: Phases 11-12 (IN PROGRESS)
+v1.2: Phases 11-12 (COMPLETE 2026-01-19)
 - Phase 11: Code Hardening - COMPLETE
-- Phase 12: Maintenance & Documentation (3 requirements)
+- Phase 12: Maintenance & Documentation - COMPLETE
 
 ### Blockers/Concerns
 
@@ -72,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Phase 11 verified complete
+Stopped at: Completed 12-01-PLAN.md (v1.2 milestone complete)
 Resume file: None
