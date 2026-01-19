@@ -769,8 +769,7 @@ do_build() {
     # Create temp directory for build files
     local build_dir
     build_dir=$(mktemp -d)
-    # shellcheck disable=SC2064
-    trap "rm -rf '$build_dir'" RETURN
+    register_cleanup "$build_dir"
 
     # Write embedded build files to temp directory
     write_dockerfile "$build_dir"
@@ -793,8 +792,7 @@ do_build() {
     else
         local build_log
         build_log=$(mktemp)
-        # shellcheck disable=SC2064
-        trap "rm -rf '$build_dir' '$build_log'" RETURN
+        register_cleanup "$build_log"
 
         start_spinner "Building image"
         if docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
@@ -1085,8 +1083,7 @@ build_extended_image() {
     else
         local build_log
         build_log=$(mktemp)
-        # shellcheck disable=SC2064
-        trap "rm -f '$build_log'" RETURN
+        register_cleanup "$build_log"
 
         start_spinner "Building project image"
         if docker build "${build_args[@]}" "$project_dir" > "$build_log" 2>&1; then
@@ -1293,8 +1290,7 @@ do_update() {
     # Create temp directory for build files
     local build_dir
     build_dir=$(mktemp -d)
-    # shellcheck disable=SC2064
-    trap "rm -rf '$build_dir'" RETURN
+    register_cleanup "$build_dir"
 
     # Write embedded build files to temp directory
     write_dockerfile "$build_dir"
@@ -1316,8 +1312,7 @@ do_update() {
     else
         local build_log
         build_log=$(mktemp)
-        # shellcheck disable=SC2064
-        trap "rm -rf '$build_dir' '$build_log'" RETURN
+        register_cleanup "$build_log"
 
         start_spinner "Updating image"
         if docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
