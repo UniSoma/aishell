@@ -4,7 +4,7 @@
 
 - **v1.0 MVP** - Phases 1-8 (shipped 2026-01-18)
 - **v1.1 Runtime Config** - Phases 9-10 (shipped 2026-01-19)
-- **v1.2 Hardening & Edge Cases** - Phases 11-12 (in progress)
+- **v1.2 Hardening & Edge Cases** - Phases 11-12 (shipped 2026-01-19)
 
 ## Phases
 
@@ -35,7 +35,8 @@ See git history for phase details.
 
 </details>
 
-### v1.2 Hardening & Edge Cases (In Progress)
+<details>
+<summary>v1.2 Hardening & Edge Cases (Phases 11-12) - SHIPPED 2026-01-19</summary>
 
 **Milestone Goal:** Harden input validation, improve robustness for edge cases, and document known limitations.
 
@@ -56,7 +57,7 @@ Plans:
 - [x] 11-01-PLAN.md - Cleanup infrastructure (trap consolidation, signal handling)
 - [x] 11-02-PLAN.md - Input validation and security warnings
 
-#### Phase 12: Maintenance & Documentation
+#### Phase 12: Maintenance & Documentation (Complete)
 **Goal**: Add update detection and document known limitations for users
 **Depends on**: Phase 11
 **Requirements**: MAINT-01, DOC-01, DOC-02
@@ -65,9 +66,12 @@ Plans:
   2. README documents run.conf parsing limits (no escaped quotes, one value per line)
   3. README documents safe.directory behavior and its effect on host gitconfig
 **Plans**: 1 plan
+**Completed**: 2026-01-19
 
 Plans:
-- [ ] 12-01-PLAN.md - Dockerfile hash detection and documentation updates
+- [x] 12-01-PLAN.md - Dockerfile hash detection and documentation updates
+
+</details>
 
 ## Progress
 
@@ -77,7 +81,7 @@ Plans:
 | 9 | v1.1 | 3/3 | Complete | 2026-01-19 |
 | 10 | v1.1 | 1/1 | Complete | 2026-01-19 |
 | 11 - Code Hardening | v1.2 | 2/2 | Complete | 2026-01-19 |
-| 12 - Maintenance & Docs | v1.2 | 0/1 | Not started | - |
+| 12 - Maintenance & Docs | v1.2 | 1/1 | Complete | 2026-01-19 |
 
 ---
 *Roadmap created: 2026-01-19 for v1.2 milestone*

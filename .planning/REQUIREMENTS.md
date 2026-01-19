@@ -25,12 +25,12 @@ Requirements for hardening and edge case fixes.
 
 ### Maintenance
 
-- [ ] **MAINT-01**: Update check warns when embedded Dockerfile hash differs from built image
+- [x] **MAINT-01**: Update check warns when embedded Dockerfile hash differs from built image
 
 ### Documentation
 
-- [ ] **DOC-01**: run.conf parsing limits documented (no escaped quotes, strict format)
-- [ ] **DOC-02**: safe.directory behavior documented (may modify host gitconfig)
+- [x] **DOC-01**: run.conf parsing limits documented (no escaped quotes, strict format)
+- [x] **DOC-02**: safe.directory behavior documented (may modify host gitconfig)
 
 ## v2 Requirements
 
@@ -59,9 +59,9 @@ Deferred to future release.
 | ROBUST-02 | Phase 11 | Complete |
 | ROBUST-03 | Phase 11 | Complete |
 | SEC-01 | Phase 11 | Complete |
-| MAINT-01 | Phase 12 | Pending |
-| DOC-01 | Phase 12 | Pending |
-| DOC-02 | Phase 12 | Pending |
+| MAINT-01 | Phase 12 | Complete |
+| DOC-01 | Phase 12 | Complete |
+| DOC-02 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 10 total
@@ -70,4 +70,4 @@ Deferred to future release.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 after Phase 11 completion*
+*Last updated: 2026-01-19 after Phase 12 completion (v1.2 complete)*
