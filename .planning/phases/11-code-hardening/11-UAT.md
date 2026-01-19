@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 11-code-hardening
 source: 11-01-SUMMARY.md, 11-02-SUMMARY.md
 started: 2026-01-19T17:05:00Z
@@ -53,7 +53,13 @@ skipped: 0
   reason: "User reported: Script accepted malicious version '1.0.0; echo pwned' and completed build instead of rejecting it"
   severity: major
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "do_build() and do_update() case statements lack default case - unknown args like '--version' (without =) are silently ignored, so validate_version() is never called"
+  artifacts:
+    - path: "aishell"
+      issue: "do_build() case statement (lines 837-873) missing default case"
+    - path: "aishell"
+      issue: "do_update() case statement (lines 1348-1382) missing default case"
+  missing:
+    - "Add *) default case to do_build() that errors on unknown options"
+    - "Add *) default case to do_update() that errors on unknown options"
+  debug_session: ".planning/debug/version-validation-bypass.md"
