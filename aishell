@@ -870,6 +870,9 @@ do_build() {
                 echo "    -h, --help              Show this help"
                 exit 0
                 ;;
+            *)
+                error "Unknown option: $arg"
+                ;;
         esac
     done
 
