@@ -32,7 +32,17 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — planning next milestone)
+**v1.2 Hardening & Edge Cases**
+
+- [ ] Port mapping supports IP binding (e.g., 127.0.0.1:8080:80)
+- [ ] Version strings validated before use in npm/curl commands
+- [ ] Temp file cleanup consolidated to single handler
+- [ ] Signal handling during build phase (clean Ctrl+C)
+- [ ] HOME directory validated before use
+- [ ] `--init` flag added for zombie process handling
+- [ ] Dangerous DOCKER_ARGS patterns warned/documented
+- [ ] Update check warns when embedded Dockerfile changed since build
+- [ ] run.conf parsing limits documented (no escaped quotes)
 
 ### Out of Scope
 
@@ -90,4 +100,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | PRE_START output to /tmp | Prevents sidecar output from polluting terminal | ✓ Good |
 
 ---
-*Last updated: 2026-01-19 after v1.1 milestone*
+*Last updated: 2026-01-19 after v1.2 milestone start*
