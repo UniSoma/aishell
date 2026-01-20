@@ -47,11 +47,14 @@ Plans:
   3. Tool can build Docker image from embedded Dockerfile template
   4. Tool caches image builds (second build is instant if nothing changed)
   5. Per-project Dockerfile extension (.aishell/Dockerfile) is detected and applied
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md - Docker wrapper module with availability checks
+- [ ] 14-02-PLAN.md - Spinner and hash utilities for build support
+- [ ] 14-03-PLAN.md - Embedded Dockerfile templates and build logic
+- [ ] 14-04-PLAN.md - Per-project Dockerfile extension support
+- [ ] 14-05-PLAN.md - CLI integration and error messages
 
 ### Phase 15: Build Command
 **Goal**: Users can build their sandbox environment with harness version pinning
@@ -122,7 +125,7 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 13. Foundation | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
-| 14. Docker Integration | v2.0 | 0/? | Not started | - |
+| 14. Docker Integration | v2.0 | 0/5 | Not started | - |
 | 15. Build Command | v2.0 | 0/? | Not started | - |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
 | 17. Validation & Polish | v2.0 | 0/? | Not started | - |
@@ -130,4 +133,4 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 13 completion*
+*Last updated: 2026-01-20 after Phase 14 planning*
