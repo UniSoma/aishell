@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 14 of 18 (Docker Integration)
-Plan: 2 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-20 — Completed 14-02-PLAN.md (Build Utilities)
+Last activity: 2026-01-20 — Completed 14-04-PLAN.md (Project Extension Support)
 
-Progress: [████░░░░░░░░░░░░░░░░] 20%
+Progress: [████████░░░░░░░░░░░░] 40%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,16 +30,16 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4 (v2.0)
-- Average duration: 2.25 min
-- Total execution time: 9 min
+- Total plans completed: 6 (v2.0)
+- Average duration: 1.8 min
+- Total execution time: 11 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 13-foundation | 2 | 5 min | 2.5 min |
-| 14-docker-integration | 2 | 4 min | 2 min |
+| 14-docker-integration | 4 | 6 min | 1.5 min |
 
 *Updated after each plan completion*
 
@@ -65,6 +65,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Native Java MessageDigest over clj-commons/digest | Zero deps for SHA-256 hashing | 14-02 |
 | CI env var + System/console for TTY detection | Standard pattern for spinner display | 14-02 |
 | 12-char hash truncation | Matches bash sha256sum \| cut -c1-12 | 14-02 |
+| Dual cache invalidation (base ID + extension hash) | Rebuilds only when dependencies change | 14-04 |
+| Return nil for missing extension Dockerfile | Caller decides behavior, matches bash impl | 14-04 |
 
 ### Pending Todos
 
@@ -84,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 14-02-PLAN.md (Build Utilities) - ready for 14-03
+Stopped at: Completed 14-04-PLAN.md (Project Extension Support) - ready for 14-05
 Resume file: None
