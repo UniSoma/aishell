@@ -41,7 +41,10 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — planning next milestone)
+- [ ] Rewrite CLI in Babashka with feature parity to v1.2
+- [ ] Cross-platform support (Linux, macOS, Windows)
+- [ ] Leverage Babashka built-ins (YAML config, better data structures)
+- [ ] Parallel development alongside existing Bash version
 
 ### Out of Scope
 
@@ -51,6 +54,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - SSH agent forwarding — deferred to v2.0
 - GPG signing passthrough — deferred to v2.0
 - macOS support — deferred to v2.0
+
+## Current Milestone: v2.0 Babashka Rewrite
+
+**Goal:** Rewrite the CLI in Clojure Babashka for cross-platform support and simpler implementation.
+
+**Target features:**
+- Full feature parity with v1.2 (all validated requirements)
+- Cross-platform: Linux, macOS, Windows (Docker Desktop or WSL2)
+- Leverage Babashka built-ins (YAML config, EDN, better data structures)
+- Parallel development until production-ready, then deprecate Bash version
 
 ## Context
 
@@ -110,4 +123,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Warn-only for version mismatch | Don't block users who intentionally use older images | ✓ Good |
 
 ---
-*Last updated: 2026-01-19 after v1.2 milestone*
+*Last updated: 2026-01-20 after starting v2.0 milestone*
