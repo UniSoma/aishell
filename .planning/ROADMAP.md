@@ -86,12 +86,12 @@ Plans:
   6. Container is ephemeral (destroyed on exit, only mounted files persist)
   7. Per-project config.yaml mounts, env, ports, docker_args, pre_start work
   8. Tool works on Linux (x86_64, aarch64) and macOS (x86_64, aarch64)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 16-01: TBD
-- [ ] 16-02: TBD
-- [ ] 16-03: TBD
+- [ ] 16-01-PLAN.md - YAML config loading with project-first, global-fallback strategy
+- [ ] 16-02-PLAN.md - Docker run argument building (mounts, env, ports, git identity)
+- [ ] 16-03-PLAN.md - CLI integration for shell, claude, and opencode commands
 
 ### Phase 17: Validation & Polish
 **Goal**: Security validations and update awareness matching v1.2 hardening
@@ -130,10 +130,10 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | 13. Foundation | v2.0 | 2/2 | Complete | 2026-01-20 |
 | 14. Docker Integration | v2.0 | 5/5 | Complete | 2026-01-20 |
 | 15. Build Command | v2.0 | 3/3 | Complete | 2026-01-20 |
-| 16. Run Commands | v2.0 | 0/? | Not started | - |
+| 16. Run Commands | v2.0 | 0/3 | Planning complete | - |
 | 17. Validation & Polish | v2.0 | 0/? | Not started | - |
 | 18. Distribution | v2.0 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 15 complete*
+*Last updated: 2026-01-20 after Phase 16 planning complete*
