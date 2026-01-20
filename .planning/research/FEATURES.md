@@ -1,270 +1,241 @@
-# Feature Landscape
+# Features Research: Babashka CLI Patterns
 
-**Domain:** Docker-based sandbox for agentic AI harnesses (Claude Code, OpenCode)
-**Researched:** 2026-01-17
-**Confidence:** HIGH (verified against Docker Sandboxes, Claude Code devcontainer, DevPod documentation)
+**Domain:** CLI tool patterns for Babashka (Clojure) rewrite of aishell
+**Researched:** 2026-01-20
+**Mode:** Ecosystem research for Babashka CLI best practices
+**Confidence:** HIGH (verified against official babashka.cli documentation, Babashka book, reference implementations)
 
-## Table Stakes
+## Summary
 
-Features users expect. Missing = product feels incomplete.
+Babashka provides a mature CLI development ecosystem with `babashka.cli` as the primary argument parsing library (built-in since v0.9.160). The library follows an "open world assumption" where extra arguments don't break parsing, and validation is deferred to the application layer. Key patterns include: spec-based option definitions with coercion, subcommand dispatch, metadata-driven CLI generation, and integration with `babashka.process` for shell operations. The ecosystem emphasizes minimal boilerplate, leveraging Clojure's data-oriented design for configuration (EDN files instead of shell config formats).
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Project directory mounting | Core functionality - AI agent needs code access | Low | Mount at identical absolute path for script/error message compatibility |
-| Git user/email passthrough | Commits must be attributed correctly | Low | Auto-discover from host `~/.gitconfig` and inject into container |
-| Ephemeral containers | Clean state prevents cross-project contamination | Low | Destroyed on exit by default |
-| Single command entry | CLI simplicity is core value proposition | Low | `harness` drops to shell, `harness claude` runs agent directly |
-| Basic CLI tools | Agents and developers need standard tooling | Low | git, curl, vim minimum; add ripgrep, jq, gh for modern workflows |
-| Non-root user with sudo | Security + practical package installation | Low | Run as UID 1000 with passwordless sudo |
-| Exit preserves host state | Changes sync back to host project | Low | Bind mount ensures real-time synchronization |
+For the aishell rewrite, Babashka enables significant improvements over Bash: type-safe configuration parsing, proper error handling with exceptions, structured data throughout (maps instead of arrays/variables), cross-platform path handling via `babashka.fs`, and superior testability.
 
-## Git Integration (Special Research)
+## Table Stakes (Must Have)
 
-Git integration is critical for AI coding agents that create commits, branches, and PRs.
+Features users expect from a well-designed Babashka CLI tool.
 
-### Required Features (Table Stakes)
+| Feature | Description | Complexity | Notes |
+|---------|-------------|------------|-------|
+| Subcommand dispatch | `aishell build`, `aishell claude`, `aishell update` routing | LOW | Use `babashka.cli/dispatch` - handles shared options between subcommands |
+| Spec-based options | Declarative option definitions with `:desc`, `:alias`, `:coerce`, `:default` | LOW | Standard pattern in babashka.cli |
+| Auto-coercion | Automatic boolean/number/keyword conversion from strings | LOW | Built-in since v0.3.35, reduces boilerplate |
+| Help generation | `--help` and `-h` produce formatted usage text | LOW | Use `babashka.cli/format-opts` with spec |
+| Error messages | Clear errors for invalid options, missing requirements | LOW | Use `:error-fn` in parse-opts for custom handling |
+| Version flag | `--version` displays tool version | LOW | Simple check before dispatch |
+| Main entry pattern | Safe to load at REPL and invoke from CLI | LOW | Check `(= *file* (System/getProperty "babashka.file"))` |
+| bb.edn configuration | Project-level deps, paths, min-version | LOW | Standard for distributable Babashka tools |
+| Exit code handling | Non-zero exit on errors | LOW | `(System/exit 1)` or let exception propagate |
 
-| Feature | Why Required | Implementation | Complexity |
-|---------|--------------|----------------|------------|
-| Git config passthrough | User name/email for commits | Copy `~/.gitconfig` or inject `user.name`/`user.email` | Low |
-| SSH agent forwarding | Push/pull via SSH | Forward `SSH_AUTH_SOCK` socket into container | Medium |
-| HTTPS credential helper | Push/pull via HTTPS | Forward credential helper or mount credential cache | Medium |
+## Differentiators (Babashka Advantages)
 
-### Optional Features (Differentiators)
+Features where Babashka significantly improves over Bash implementation.
 
-| Feature | Value | Implementation | Complexity |
-|---------|-------|----------------|------------|
-| GPG signing passthrough | Signed commits from container | Mount GPG socket, install gnupg2, configure forwarding | High |
-| Git credential manager integration | Seamless auth with GitHub/GitLab | Use git-credential-forwarder or native helper tunneling | Medium |
-| GitHub CLI authentication | PR creation, issue management | Forward `gh` auth token or use credential helper | Low |
+| Feature | Bash Limitation | Babashka Advantage | Complexity |
+|---------|-----------------|-------------------|------------|
+| EDN configuration files | Bash: Custom parsing for `.conf` files, fragile quoting, no nested structures | Clojure: Native EDN support via `clojure.edn/read-string`, validated with spec/malli, nested maps natural | LOW |
+| Structured data throughout | Bash: Arrays with index math, associative arrays awkward, no nested structures | Clojure: Maps and vectors, destructuring, threading macros | LOW |
+| Type coercion | Bash: Manual string-to-number, boolean as string comparison | babashka.cli: Declarative `:coerce :long`, `:boolean`, `:keyword`, auto-coercion | LOW |
+| Error handling | Bash: `set -e` fragile, trap complexity, error messages ad-hoc | Clojure: try/catch, ex-info with structured data, stack traces | LOW |
+| Cross-platform paths | Bash: Hardcoded `/`, `$HOME` assumptions, no Windows | babashka.fs: `fs/path`, `fs/home`, works on Windows/macOS/Linux | MED |
+| Temporary files | Bash: `mktemp`, manual cleanup with traps | `fs/with-temp-dir` auto-cleanup, `fs/create-temp-file` | LOW |
+| Process output capture | Bash: Subshells `$()`, exit code in `$?`, stderr handling awkward | babashka.process: `:out :string`, `:err :string`, structured return | LOW |
+| Testing | Bash: No standard test framework, integration tests only | Clojure: REPL-driven development, unit tests with clojure.test | MED |
+| Heredocs/templates | Bash: Heredocs with quoting complexity, variable expansion tricky | Clojure: Multiline strings, `str`, Selmer templates if needed | LOW |
+| Config validation | Bash: Manual checks with if/case | Spec/malli schemas, validate at parse time | MED |
+| Subcommand parsing | Bash: `case` statements, manual shift, no shared options | `babashka.cli/dispatch` with `:global-opts`, automatic routing | LOW |
+| Verbose mode | Bash: Global variable, manual echo conditionals | Binding/dynamic vars, structured logging | LOW |
 
-### Implementation Notes
+## Anti-Features (Don't Do This)
 
-**SSH Agent Forwarding:**
-- Linux: Mount `$SSH_AUTH_SOCK` directly via bind mount
-- macOS Docker Desktop: Use magic path `/run/host-services/ssh-auth.sock`
-- Windows: Requires SSH agent service running in Administrator mode
+Patterns to deliberately avoid in Babashka CLI development.
 
-**Git Credential Helpers:**
-- VS Code devcontainers automatically forward credential helpers
-- Standalone Docker requires explicit socket forwarding or credential injection
-- DevPod provides automatic credential helper tunneling
+| Pattern | Why to Avoid | What to Do Instead |
+|---------|--------------|-------------------|
+| tools.cli instead of babashka.cli | More verbose, not integrated with bb tasks, different idioms | Use babashka.cli - it's built-in and designed for bb |
+| Shelling out for everything | Loses Babashka's advantages, slower, platform-dependent | Use babashka.fs, babashka.process structured APIs |
+| Global mutable state | Hard to test, REPL-unfriendly | Use function parameters, return values, or dynamic bindings |
+| Manual argument parsing | Reinventing the wheel, error-prone | Use babashka.cli spec-based parsing |
+| Complex pods for simple tasks | Pods add startup overhead, distribution complexity | Use built-in libraries first (fs, process, http-client) |
+| JVM-only libraries | Won't work in Babashka, GraalVM constraints | Check babashka toolbox for compatible libs |
+| Long-running CPU tasks | Babashka uses SCI interpreter, slower than JVM | Shell out to Java for intensive work, or accept bb is for scripts |
+| #() reader macros in bb.edn | Not valid EDN syntax | Use `(fn [x] ...)` form instead |
+| `:require` in bb.edn tasks | Syntax errors, confusing | Use `:requires` key at task level |
+| Relative paths without resolution | Breaks when invoked from different directories | Use `(fs/absolutize path)` or `*file*` for script-relative |
 
-**GPG Signing:**
-- Most complex to implement correctly
-- Requires gnupg2 in container, GPG agent socket forwarding
-- Windows has additional path resolution issues
-- Consider making this optional/advanced feature
+## Feature Mapping: Bash to Babashka
 
-## Mount Parameterization (Special Research)
+Existing aishell features and their Babashka equivalents.
 
-Users need to mount additional host paths beyond the project directory.
+| Bash Feature | Babashka Equivalent | Notes |
+|--------------|---------------------|-------|
+| `case "$1" in build)` | `(cli/dispatch {:cmds {...}})` | Declarative subcommand routing |
+| `shift; parse args` | `(cli/parse-args args {:spec ...})` | Returns `{:args [...] :opts {...}}` |
+| `$HOME/.local/state` | `(fs/path (fs/home) ".local" "state")` | Cross-platform |
+| `mktemp -d` | `(fs/create-temp-dir)` or `(fs/with-temp-dir ...)` | Auto-cleanup with `with-temp-dir` |
+| `docker build ...` | `(shell "docker" "build" ...)` or `(process ...)` | Use shell for inherited stdout |
+| Heredoc Dockerfile | Multiline string in code | `(def dockerfile "FROM...` |
+| `source "$config_file"` | `(edn/read-string (slurp config))` | Structured config, validated |
+| `echo "$var"` | `(println var)` | Or use `prn` for data |
+| `set -e` | Try/catch at top level | Or let exceptions propagate |
+| `trap cleanup EXIT` | `try/finally` or shutdown hooks | More explicit control |
+| `${var:-default}` | `(get opts :var "default")` | Or use `:default` in spec |
+| `readonly VAR=...` | `(def ^:const VAR ...)` | Immutable by default anyway |
 
-### Use Cases
+## Reference Projects
 
-| Use Case | Typical Paths | Risk Level |
-|----------|---------------|------------|
-| Shared libraries | `~/.local/lib`, `/usr/local/lib` | Low |
-| Package caches | `~/.npm`, `~/.cargo`, `~/.m2` | Low |
-| Configuration | `~/.aws`, `~/.kube`, `~/.docker` | Medium (credentials) |
-| Secrets | `~/.ssh`, `~/.gnupg` | High (sensitive) |
-| Data directories | `/data`, `~/datasets` | Low |
+Notable Babashka CLI tools demonstrating best practices.
 
-### Implementation Options
+| Project | What to Learn | Link |
+|---------|---------------|------|
+| **neil** | Complex CLI with subcommands, deps.edn manipulation, well-structured | [babashka/neil](https://github.com/babashka/neil) |
+| **bbin** | Package manager CLI, installation/distribution patterns | [babashka/bbin](https://github.com/babashka/bbin) |
+| **http-server** | Simple CLI with options, process handling | [babashka/http-server](https://github.com/babashka/http-server) |
+| **quickblog** | File processing, configuration, templating | [borkdude/quickblog](https://github.com/borkdude/quickblog) |
+| **babashka/cli examples** | Official examples of dispatch, parsing | [babashka/cli](https://github.com/babashka/cli) |
 
-| Approach | Pros | Cons | Recommendation |
-|----------|------|------|----------------|
-| CLI flags (`--mount`) | Explicit, one-off | Verbose for repeated use | Support for ad-hoc mounts |
-| Config file (`.harness.yml`) | Project-specific, version-controlled | Requires file management | Primary configuration method |
-| Environment variable | Quick override | Not persistent | Support as override |
-| `Dockerfile.sandbox` extension | Full customization | Requires Docker knowledge | Already in scope |
+## Recommended Patterns for aishell Rewrite
 
-### Recommended Approach
+### 1. Configuration File Format
 
-```yaml
-# .harness.yml (project root)
-mounts:
-  - source: ~/.npm
-    target: /home/user/.npm
-    readonly: false
-  - source: ~/.aws
-    target: /home/user/.aws
-    readonly: true  # credentials should be read-only
-```
-
-**CLI override:** `harness --mount ~/.cargo:/home/user/.cargo claude`
-
-### Security Considerations
-
-| Path Type | Default Behavior | Rationale |
-|-----------|------------------|-----------|
-| Sensitive paths (`~/.ssh`, `~/.gnupg`) | Require explicit opt-in | Prevent accidental credential exposure |
-| System paths (`/etc`, `/var`) | Block entirely | No legitimate use case, high risk |
-| Home directory (`~`) | Block full mount | Too broad, encourage specific paths |
-| Project subdirectories | Allow | Normal development workflow |
-
-## Network Access (Special Research)
-
-Network configuration balances agent functionality with security isolation.
-
-### Options Comparison
-
-| Mode | Description | Use Cases | Security |
-|------|-------------|-----------|----------|
-| **Full access** (default bridge) | Container can reach any network | General development, API calls | Low isolation |
-| **Host-only** | Access host network only | Local services, databases | Medium isolation |
-| **Allowlist** | Whitelist specific domains | Production-like constraints | High isolation |
-| **No network** | Complete isolation | Offline development, max security | Maximum isolation |
-
-### Recommended Default: Allowlist Mode
-
-Based on Claude Code devcontainer patterns:
-
-**Default allowlist:**
-- npm/yarn/pnpm registries (package installation)
-- GitHub/GitLab/Bitbucket (git operations)
-- AI provider APIs (Anthropic, OpenAI)
-- DNS resolution
-
-**Blocked by default:**
-- Arbitrary outbound connections
-- Local network scanning
-- Cloud metadata endpoints (169.254.169.254)
-
-### Implementation
-
+**Current (Bash):** `.aishell/run.conf` - custom shell-style parsing
 ```bash
-# Firewall script approach (Claude Code devcontainer pattern)
-iptables -A OUTPUT -d api.anthropic.com -j ACCEPT
-iptables -A OUTPUT -d github.com -j ACCEPT
-iptables -A OUTPUT -d registry.npmjs.org -j ACCEPT
-# ... other allowed hosts
-iptables -A OUTPUT -j DROP  # Default deny
+MOUNTS="$HOME/.ssh $HOME/.config/git"
+ENV="EDITOR DEBUG_MODE=1"
 ```
 
-### Configuration Options
-
-| Level | Approach | Target User |
-|-------|----------|-------------|
-| Preset: `--network full` | Full access | Trusted environments |
-| Preset: `--network restricted` | Allowlist (default) | Standard development |
-| Preset: `--network none` | No network | Maximum isolation |
-| Custom: `--allow-host api.example.com` | Add to allowlist | Custom API access |
-
-## Differentiators
-
-Features that set product apart. Not expected, but valued.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Multiple harness support | One tool for Claude Code, OpenCode, future agents | Medium | Harness detection/configuration system |
-| Project-specific extensions (`Dockerfile.sandbox`) | Custom dependencies per project | Medium | Already in user requirements |
-| Persistent config volumes | Preserve Claude/OpenCode settings across sessions | Low | Named volumes for `~/.claude`, `~/.opencode` |
-| Session persistence option | Continue previous session | Medium | Named containers, `--persist` flag |
-| Pre-configured harness templates | Quick start with recommended settings | Low | `docker/sandbox-templates` pattern |
-| Network allowlist customization | Project-specific network policies | Medium | Config file or CLI flags |
-| Cache mount optimization | Faster subsequent runs | Low | Mount npm/cargo/pip caches |
-| Host toolchain access | Use host-installed tools if needed | High | Complex, potential security implications |
-| Resource limits | CPU/memory constraints | Low | `--cpus`, `--memory` flags |
-| Background mode | Run agent headless | Low | `--detach` with log access |
-
-## Anti-Features
-
-Features to explicitly NOT build. Common mistakes in this domain.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Full home directory mount | Exposes all user data to agent | Mount specific paths only |
-| Docker socket passthrough (default) | Container escape risk, security vulnerability | Require explicit opt-in with warnings |
-| Privileged mode | Defeats isolation purpose | Use minimal capabilities |
-| Root user default | Security anti-pattern | Non-root with sudo access |
-| Automatic credential discovery | Silent exposure of sensitive data | Explicit credential configuration |
-| Complex multi-container orchestration | Scope creep, maintenance burden | Single container simplicity |
-| GUI/desktop integration | Out of scope for CLI tool | Focus on terminal workflows |
-| Built-in editor | Redundant with vim, users have preferences | Include vim, let users add more |
-| Cloud deployment features | Different product category | Focus on local development |
-| Persistent containers by default | Clean state is the value proposition | Ephemeral default, opt-in persistence |
-| MCP server hosting | Scope creep into orchestration | Let users configure if needed |
-| Automatic updates inside container | Reproducibility issues | Version-pinned images |
-
-## Feature Dependencies
-
-```
-Core (must implement first):
-  Project mounting ─────────────────────┐
-  Git config passthrough ───────────────┼─> Basic functional sandbox
-  Ephemeral containers ─────────────────┤
-  Single command entry ─────────────────┘
-
-Git Integration (second priority):
-  SSH agent forwarding ─────────────────┐
-  HTTPS credential helper ──────────────┼─> Full git workflow support
-  (depends on: Core)                    │
-                                        │
-  GPG signing passthrough ──────────────┘
-  (optional, high complexity)
-
-Configuration (third priority):
-  Mount parameterization ───────────────┐
-  Network allowlist ────────────────────┼─> Customizable sandbox
-  Config file support ──────────────────┘
-  (depends on: Core)
-
-Extensions (fourth priority):
-  Dockerfile.sandbox ───────────────────┐
-  Persistent config volumes ────────────┼─> Project customization
-  Cache mount optimization ─────────────┘
-  (depends on: Configuration)
+**Recommended (Babashka):** `.aishell/config.edn` - native EDN
+```clojure
+{:mounts [{:source "~/.ssh" :target "~/.ssh"}
+          {:source "~/.config/git" :target "~/.config/git"}]
+ :env {:EDITOR "vim" :DEBUG_MODE "1"}
+ :ports [[3000 3000] [8080 80]]}
 ```
 
-## MVP Recommendation
+**Advantages:**
+- Native parsing with `(edn/read-string (slurp path))`
+- Validation with spec/malli
+- Nested structures natural
+- Comments with `;`
+- No quoting complexity
 
-For MVP, prioritize:
+### 2. Subcommand Structure
 
-1. **Project mounting with path preservation** - Core value proposition
-2. **Git user/email passthrough** - Commits work correctly
-3. **SSH agent forwarding** - Push/pull via SSH works
-4. **Ephemeral containers** - Clean state guarantee
-5. **Single command entry** - `harness`, `harness claude`, `harness opencode`
-6. **Basic CLI tools** - git, curl, vim, ripgrep, jq
+```clojure
+(def dispatch-table
+  [{:cmds ["build"]   :fn build-cmd  :spec build-spec}
+   {:cmds ["update"]  :fn update-cmd :spec update-spec}
+   {:cmds ["claude"]  :fn claude-cmd :spec harness-spec}
+   {:cmds ["opencode"] :fn opencode-cmd :spec harness-spec}
+   {:cmds []          :fn shell-cmd  :spec shell-spec}])
 
-Defer to post-MVP:
-- GPG signing: High complexity, niche use case
-- Network allowlists: Default full access is acceptable for local dev
-- Mount parameterization config file: CLI flags sufficient initially
-- Session persistence: Ephemeral is the core value
-- Background mode: Interactive is primary use case
+(defn -main [& args]
+  (cli/dispatch dispatch-table args {:error-fn handle-error}))
+```
 
-## Complexity Assessment
+### 3. State Management
 
-| Feature Category | Estimated Effort | Risk |
-|------------------|------------------|------|
-| Core sandbox (mount, git config, ephemeral) | 1-2 days | Low |
-| SSH agent forwarding | 1 day | Medium (platform differences) |
-| HTTPS credential helpers | 1 day | Medium (helper variety) |
-| CLI structure | 1 day | Low |
-| Base image with tools | 0.5 days | Low |
-| Mount parameterization (CLI) | 0.5 days | Low |
-| Config file support | 1 day | Low |
-| Network isolation | 1-2 days | Medium (iptables complexity) |
-| Dockerfile.sandbox extension | 0.5 days | Low |
-| GPG signing | 2-3 days | High (cross-platform issues) |
+```clojure
+;; State file as EDN
+(defn read-state [project-dir]
+  (let [state-file (state-file-path project-dir)]
+    (when (fs/exists? state-file)
+      (edn/read-string (slurp state-file)))))
+
+(defn write-state [project-dir state]
+  (let [state-file (state-file-path project-dir)]
+    (fs/create-dirs (fs/parent state-file))
+    (spit state-file (pr-str state))))
+```
+
+### 4. Docker Integration
+
+```clojure
+(require '[babashka.process :refer [shell process check]])
+
+;; For operations where user sees output
+(defn docker-build [opts]
+  (shell {:dir build-dir}
+         "docker" "build"
+         (when (:no-cache opts) "--no-cache")
+         "-t" (:tag opts)
+         "."))
+
+;; For operations where we need to capture output
+(defn docker-inspect [image]
+  (-> (process ["docker" "inspect" image] {:out :string})
+      check
+      :out
+      (json/parse-string true)))
+```
+
+### 5. Cross-Platform Paths
+
+```clojure
+(require '[babashka.fs :as fs])
+
+(defn state-dir []
+  (or (System/getenv "XDG_STATE_HOME")
+      (fs/path (fs/home) ".local" "state")))
+
+(defn config-path [project-dir]
+  (fs/path project-dir ".aishell" "config.edn"))
+```
+
+## CLI Option Spec Example
+
+```clojure
+(def build-spec
+  {:with-claude    {:coerce :boolean
+                    :alias :c
+                    :desc "Include Claude Code in image"}
+   :with-opencode  {:coerce :boolean
+                    :alias :o
+                    :desc "Include OpenCode in image"}
+   :claude-version {:coerce :string
+                    :desc "Specific Claude Code version (e.g., 2.0.22)"}
+   :opencode-version {:coerce :string
+                      :desc "Specific OpenCode version (e.g., 1.1.25)"}
+   :no-cache       {:coerce :boolean
+                    :desc "Force rebuild without Docker cache"}
+   :verbose        {:coerce :boolean
+                    :alias :v
+                    :desc "Show detailed build output"}
+   :help           {:coerce :boolean
+                    :alias :h
+                    :desc "Show this help"}})
+```
+
+## Complexity Assessment for Rewrite
+
+| Component | Complexity | Notes |
+|-----------|------------|-------|
+| CLI dispatch/parsing | LOW | babashka.cli handles well |
+| Config file migration (shell -> EDN) | LOW | Cleaner in EDN |
+| State file format | LOW | Already structured, easy in EDN |
+| Docker process invocation | LOW | babashka.process direct replacement |
+| Heredoc embedding (Dockerfile, entrypoint) | LOW | Multiline strings work |
+| Hash computation | LOW | `(-> (slurp file) .getBytes java.security.MessageDigest ...)` |
+| Path handling | MED | Need careful fs/path usage for cross-platform |
+| Cleanup/resource management | LOW | try/finally simpler than bash traps |
+| Color output | LOW | ANSI escapes same, or use library |
+| Spinner/progress | MED | Need async or threading |
 
 ## Sources
 
 ### HIGH Confidence (Official Documentation)
-- [Docker Sandboxes Documentation](https://docs.docker.com/ai/sandboxes) - Official Docker approach
-- [Claude Code Devcontainer Documentation](https://code.claude.com/docs/en/devcontainer) - Anthropic's reference implementation
-- [VS Code Sharing Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) - Git integration patterns
-- [Dev Container JSON Reference](https://containers.dev/implementors/json_reference/) - Mount configuration spec
-- [Docker Bind Mounts Documentation](https://docs.docker.com/engine/storage/bind-mounts/) - Mount security best practices
-- [Anthropic Devcontainer Features](https://github.com/anthropics/devcontainer-features) - Official Claude Code feature
+- [Babashka CLI GitHub](https://github.com/babashka/cli) - Official argument parsing library
+- [Babashka Book](https://book.babashka.org/) - Comprehensive Babashka documentation
+- [babashka.cli API](https://github.com/babashka/cli/blob/main/API.md) - Complete API reference
+- [babashka/process](https://github.com/babashka/process) - Process execution library
+- [babashka/fs](https://github.com/babashka/fs) - File system utilities
 
-### MEDIUM Confidence (Verified Community Sources)
-- [DevPod Credentials Documentation](https://devpod.sh/docs/developing-in-workspaces/credentials) - Credential forwarding patterns
-- [Docker Security Best Practices](https://docs.docker.com/engine/security/) - Container isolation guidance
-- [Docker Enhanced Container Isolation](https://docs.docker.com/enterprise/security/hardened-desktop/enhanced-container-isolation/) - Advanced security features
+### MEDIUM Confidence (Verified Blog/Tutorial Sources)
+- [Babashka CLI Blog Post](https://blog.michielborkent.nl/babashka-cli.html) - Author's introduction
+- [Babashka Tasks + CLI](https://blog.michielborkent.nl/babashka-tasks-meets-babashka-cli.html) - Integration patterns
+- [Martin Klepsch CLI Scripts](https://martinklepsch.org/posts/one-shot-babashka-cli-scripts/) - One-shot script patterns
+- [How to Do Things with Babashka](https://presumably.de/how-to-do-things-with-babashka.html) - Practical patterns
 
-### LOW Confidence (Community Patterns, Needs Validation)
-- [Agent Infra Sandbox](https://github.com/agent-infra/sandbox) - All-in-one sandbox reference
-- Various Medium articles on AI agent sandboxing - Community patterns
+### LOW Confidence (Community Examples)
+- [bbin Scripts and Projects](https://github.com/babashka/bbin/wiki/Scripts-and-Projects) - Ecosystem examples
+- [Brave Clojure Babooka](https://www.braveclojure.com/quests/babooka/) - Tutorial content

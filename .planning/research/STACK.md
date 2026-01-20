@@ -1,483 +1,594 @@
-# Stack Research
+# Stack Research: Babashka CLI Rewrite
 
-**Domain:** Docker sandbox for agentic AI harnesses
-**Researched:** 2026-01-17
-**Confidence:** HIGH (existing solutions verified, official documentation consulted)
-
----
-
-## Executive Summary
-
-**CRITICAL FINDING:** Docker Sandboxes requires **Docker Desktop 4.50+** — it does NOT work with Docker Engine on Linux. This eliminates the official solution for users running Docker Engine.
-
-The landscape:
-
-1. **Docker Sandboxes** - Official, but **requires Docker Desktop** (not Docker Engine)
-2. **aibox** - Community tool, works with Docker Engine, but **no OpenCode support**
-3. **Build custom** - Required if: Docker Engine + OpenCode support needed
-
-**Our situation:** User has Docker Engine on Ubuntu + needs OpenCode support → Build custom is justified.
+**Project:** aishell rewrite from Bash to Babashka
+**Researched:** 2026-01-20
+**Babashka Version:** v1.12.214 (released 2026-01-13)
 
 ---
 
-## Existing Solutions Analysis
+## Summary
 
-### 1. Docker Sandboxes (Official) - NOT AVAILABLE FOR DOCKER ENGINE
+Babashka provides a complete replacement for the current 1,655 LOC Bash implementation with built-in libraries that cover all required functionality: CLI argument parsing (`babashka.cli`), process execution (`babashka.process`), file system operations (`babashka.fs`), config parsing (EDN native, YAML via built-in `clj-yaml`), and JSON handling (built-in `cheshire`). The cross-platform story is strong - Babashka binaries exist for Linux, macOS, and Windows, and the `babashka.process` library abstracts platform differences. **No external dependencies (pods) are needed; all functionality is built-in.**
 
-**Source:** [Docker Sandboxes Documentation](https://docs.docker.com/ai/sandboxes/)
+---
 
-Docker provides official first-party support for AI agent sandboxing:
+## Recommended Stack
 
-```bash
-docker sandbox run claude
+### Core (Babashka Built-ins)
+
+| Need | Babashka Solution | Notes |
+|------|-------------------|-------|
+| CLI argument parsing | `babashka.cli` | Built-in since v0.9.160. Supports subcommands, coercion, validation, help generation |
+| Process execution (docker) | `babashka.process` | `shell` for streaming output, `process` for fine control. Cross-platform |
+| File system operations | `babashka.fs` | Temp files, deletion, glob, path manipulation. Cross-platform via java.nio |
+| Config file parsing | `clojure.edn` + `clj-yaml.core` | Both built-in. EDN is native; YAML via built-in clj-yaml |
+| JSON handling | `cheshire.core` | Built-in. For Docker inspect output parsing |
+| String manipulation | `clojure.string` | Built-in. For path manipulation, output parsing |
+| Regex validation | `clojure.core` | `re-matches`, `re-pattern` built-in. Same as Clojure |
+| Hash computation | `java.security.MessageDigest` | Built-in. For Dockerfile hash detection |
+| Environment variables | `System/getenv`, `System/getProperty` | Built-in Java interop |
+| Cleanup on exit | `Runtime/addShutdownHook` | Java interop. Equivalent to Bash `trap EXIT` |
+
+### External Dependencies
+
+**None required.** All functionality is available in Babashka's built-in libraries.
+
+| Library | Version | Purpose | Required? |
+|---------|---------|---------|-----------|
+| N/A | - | All needs covered by built-ins | No |
+
+---
+
+## Bash-to-Babashka Translation
+
+### Argument Parsing
+
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `case $1 in --flag)` | `babashka.cli/parse-opts` |
+| `shift` / `$@` | Automatic via `parse-args` returns `:args` |
+| `getopts` | `babashka.cli` with `:alias` for short opts |
+
+```clojure
+;; Bash: case/esac argument parsing
+;; while [[ $# -gt 0 ]]; do case $1 in --with-claude) WITH_CLAUDE=true;; esac; done
+
+;; Babashka equivalent:
+(require '[babashka.cli :as cli])
+
+(def cli-spec
+  {:spec {:with-claude    {:coerce :boolean :desc "Include Claude Code"}
+          :with-opencode  {:coerce :boolean :desc "Include OpenCode"}
+          :claude-version {:desc "Claude Code version (X.Y.Z)"}
+          :opencode-version {:desc "OpenCode version (X.Y.Z)"}
+          :verbose        {:coerce :boolean :alias :v :desc "Verbose output"}
+          :help           {:coerce :boolean :alias :h :desc "Show help"}
+          :no-cache       {:coerce :boolean :desc "Force rebuild"}}})
+
+(defn parse-args [args]
+  (cli/parse-opts args cli-spec))
+;; (parse-args ["--with-claude" "--verbose"])
+;; => {:with-claude true, :verbose true}
 ```
 
-**Features:**
-- Isolates AI agents from host machine
-- Mounts workspace with consistent paths
-- Persists state across sessions
-- Auto-discovers Git identity
-- Includes development tools (Docker CLI, GitHub CLI, Node.js, Go, Python 3, Git, ripgrep, jq)
-- Runs as non-root user with sudo access
-- Supports Claude Code and Gemini out of the box
+### Subcommand Dispatch
 
-**CRITICAL Limitation:**
-- **Requires Docker Desktop 4.50+** — DOES NOT work with Docker Engine
-- Limited customization of the container environment
-- Tied to Docker's update cycle
-- No OpenCode support
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| First positional arg check | `babashka.cli/dispatch` |
+| `case "$HARNESS_CMD" in build)` | Multi-method or table dispatch |
 
-**Verdict:** NOT an option for Docker Engine users on Linux. If you have Docker Desktop, this works well for Claude Code. Does not support OpenCode.
+```clojure
+;; Bash: HARNESS_CMD dispatch
+;; case "$HARNESS_CMD" in build) do_build "${HARNESS_ARGS[@]}";; esac
 
-### 2. aibox (Community) - RECOMMENDED FOR CUSTOMIZATION
+;; Babashka equivalent:
+(def table
+  [{:cmds ["build"]   :fn do-build   :spec build-spec}
+   {:cmds ["update"]  :fn do-update  :spec update-spec}
+   {:cmds ["claude"]  :fn do-claude  :spec run-spec}
+   {:cmds ["opencode"] :fn do-opencode :spec run-spec}
+   {:cmds []          :fn do-shell   :spec run-spec}])  ; default
 
-**Source:** [GitHub - zzev/aibox](https://github.com/zzev/aibox)
+(defn -main [& args]
+  (cli/dispatch table args))
+```
 
-**Features:**
-- Multi-tool support (Claude Code, Codex, Gemini)
-- Multi-account profile management
-- SSH key integration with macOS-to-Linux compatibility
-- Per-profile Git configuration
-- Resource constraints (2 CPU cores, 4GB RAM)
-- Non-root execution with dropped capabilities
-- npm package: `npm install -g @zzev/aibox`
+### Process Execution (Docker Commands)
 
-**Stack:**
-- Node.js 20 Alpine base image
-- Docker Compose orchestration
-- TOML profile storage
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `docker build ...` | `(p/shell "docker" "build" ...)` |
+| `$(docker inspect ...)` | `(-> (p/shell {:out :string} ...) :out)` |
+| `command -v docker` | `(fs/which "docker")` |
+| `$?` exit code | `(:exit (p/shell {:continue true} ...))` |
+| `> "$build_log" 2>&1` | `{:out :string :err :string}` |
 
-**Limitations:**
-- Claude account isolation via undocumented `CLAUDE_CONFIG_DIR` (buggy)
-- Gemini cannot isolate accounts
-- Node.js/npm dependency for the CLI itself
+```clojure
+;; Bash: docker build with captured output
+;; if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
 
-**Verdict:** If you need multi-account or customization beyond Docker Sandboxes, fork aibox rather than building from scratch.
+;; Babashka equivalent:
+(require '[babashka.process :as p])
 
-### 3. claude-code-sandbox (Community)
+(defn docker-build [{:keys [build-args target-tag build-dir verbose]}]
+  (let [cmd (concat ["docker" "build"]
+                    build-args
+                    ["-t" target-tag build-dir])]
+    (if verbose
+      ;; Streaming output (like original verbose mode)
+      (apply p/shell cmd)
+      ;; Captured output (like original quiet mode)
+      (let [result (apply p/shell {:out :string :err :string :continue true} cmd)]
+        (when-not (zero? (:exit result))
+          (throw (ex-info "Build failed" {:error (:err result)})))
+        result))))
 
-**Source:** [GitHub - textcortex/claude-code-sandbox](https://github.com/textcortex/claude-code-sandbox)
+;; Check if docker exists
+(defn check-docker []
+  (when-not (fs/which "docker")
+    (error "Docker is not installed. Please install Docker and try again."))
+  (let [result (p/shell {:out :string :err :string :continue true} "docker" "info")]
+    (when-not (zero? (:exit result))
+      (error "Docker is not running. Please start Docker and try again."))))
+```
 
-**Features:**
-- Automatic Git branch creation for AI work
-- Web-based terminal monitoring (localhost:3456)
-- Credential forwarding
-- Multi-container support
-- Interactive diff review with push/PR creation
+### Temp Files and Cleanup
 
-**Stack:**
-- Ubuntu 22.04 base
-- Python-based CLI
-- Supports Podman as alternative
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `mktemp -d` | `(fs/create-temp-dir)` |
+| `trap cleanup EXIT` | `Runtime/addShutdownHook` |
+| `rm -rf "$dir"` | `(fs/delete-tree dir)` |
+| Array of cleanup paths | `atom` with paths |
 
-**Limitations:**
-- Alpha software
-- Different use case (review workflow, not interactive development)
+```clojure
+;; Bash: trap cleanup EXIT with temp files
+;; declare -a CLEANUP_FILES=()
+;; trap cleanup EXIT
+;; register_cleanup() { CLEANUP_FILES+=("$1"); }
 
-**Verdict:** Good for autonomous AI workflows where you want to review before merging. Different paradigm than interactive sandboxing.
+;; Babashka equivalent:
+(require '[babashka.fs :as fs])
 
-### 4. Dev Containers (devcontainer.json)
+(def cleanup-paths (atom []))
 
-**Source:** [Dev Containers Specification](https://containers.dev/)
+(defn register-cleanup [path]
+  (swap! cleanup-paths conj (str path)))
 
-**Features:**
-- IDE-integrated (VS Code, JetBrains)
-- Per-project configuration
-- Rich ecosystem of feature extensions
-- Works with devcontainers/cli for non-IDE use
+(defn cleanup []
+  (doseq [path @cleanup-paths]
+    (when (fs/exists? path)
+      (fs/delete-tree path))))
 
-**Limitations:**
-- Designed for project-specific environments, not tool-specific
-- Heavier setup per project
-- MCP integration requires additional configuration inside containers
+;; Register shutdown hook ONCE at startup (like Bash trap EXIT)
+(defn setup-cleanup-hook []
+  (-> (Runtime/getRuntime)
+      (.addShutdownHook (Thread. cleanup))))
 
-**Verdict:** Use for project-specific dev environments. Not ideal for "run any AI harness on any project" use case.
+;; Usage:
+(defn with-build-dir [f]
+  (let [build-dir (fs/create-temp-dir {:prefix "aishell-"})]
+    (register-cleanup build-dir)
+    (f build-dir)))
+```
 
----
+### Config File Parsing (run.conf to run.edn)
 
-## Decision Matrix: Build vs Use vs Fork
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `source config.sh` | `(edn/read-string (slurp ...))` |
+| Shell variable syntax | EDN maps |
+| Line-by-line parsing | Native EDN parsing |
+| `IFS= read -r line` | Not needed |
 
-| Requirement | Docker Sandboxes | aibox | Build Custom |
-|-------------|------------------|-------|--------------|
-| Docker Engine (Linux) | **NO** | Yes | Yes |
-| Docker Desktop (Mac/Windows) | Yes | Yes | Yes |
-| OpenCode support | No | No | **Yes** |
-| Claude Code support | Yes | Yes | Yes |
-| Multi-account profiles | Limited | Yes | Yes |
-| Custom base image | No | Possible | Yes |
-| No npm dependency | Yes | No | Possible |
+**Config format change: `run.conf` (shell) to `run.edn` (EDN)**
 
-**Recommendation:** Build custom because:
-1. **Docker Engine on Linux** — Docker Sandboxes not available
-2. **OpenCode support** — Not in existing tools
-3. **No npm dependency** — Simpler installation
+```clojure
+;; Bash run.conf format:
+;; MOUNTS="$HOME/.ssh $HOME/.config/git"
+;; ENV="EDITOR DEBUG_MODE=1"
+;; PORTS="3000:3000 8080:80"
+;; DOCKER_ARGS="--cap-add=SYS_PTRACE"
+;; PRE_START="redis-server --daemonize yes"
 
----
+;; Babashka run.edn format (new):
+;; {:mounts ["$HOME/.ssh" "$HOME/.config/git"]
+;;  :env {"EDITOR" :passthrough   ; nil or :passthrough = inherit from host
+;;        "DEBUG_MODE" "1"}       ; string = literal value
+;;  :ports ["3000:3000" "8080:80"]
+;;  :docker-args ["--cap-add=SYS_PTRACE"]
+;;  :pre-start "redis-server --daemonize yes"}
 
-## Recommended Stack (If Building Custom)
+(require '[clojure.edn :as edn])
 
-### CLI Technology: Shell Script (Bash)
+(defn expand-home [s]
+  (let [home (or (System/getenv "HOME")
+                 (System/getProperty "user.home"))]
+    (-> s
+        (str/replace "$HOME" home)
+        (str/replace "${HOME}" home)
+        (str/replace #"^~" home))))
 
-**Confidence:** HIGH
+(defn parse-run-conf [project-dir]
+  (let [config-file (fs/path project-dir ".aishell" "run.edn")]
+    (if (fs/exists? config-file)
+      (edn/read-string (slurp (str config-file)))
+      {})))
 
-**Recommendation:** Use **Bash** for v1, not Go or Rust.
+;; Backward compatibility: also support YAML
+(require '[clj-yaml.core :as yaml])
 
-| Factor | Bash | Go | Rust |
-|--------|------|-----|------|
-| Development speed | Fastest | Medium | Slowest |
-| Dependencies | None (bash built-in) | Go toolchain | Rust toolchain |
-| Distribution | Single file | Single binary | Single binary |
-| Docker integration | Native (docker CLI) | SDK available | SDK available |
-| Maintenance | Easy | Medium | Medium |
-| Target audience fit | DevOps/SREs | Developers | Developers |
+(defn parse-run-conf-yaml [project-dir]
+  (let [config-file (fs/path project-dir ".aishell" "run.yaml")]
+    (if (fs/exists? config-file)
+      (yaml/parse-string (slurp (str config-file)) :keywords true)
+      {})))
+```
 
-**Rationale:**
-1. **Target users already have Docker** - they're comfortable with shell commands
-2. **Wrapper around docker commands** - no complex logic needing type safety
-3. **Fastest time to working v1** - prioritize shipping over elegance
-4. **Easy to modify** - users can hack the script themselves
-5. **No build step** - distribute single file via curl
+### Input Validation (Regex)
 
-**When to switch to Go/Rust:**
-- If CLI complexity grows (subcommands, config parsing, TUI)
-- If cross-platform Windows support needed
-- If performance-critical operations added
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `[[ "$v" =~ $REGEX ]]` | `(re-matches regex v)` |
+| `readonly REGEX='...'` | `(def regex #"...")` |
 
-**Anti-pattern to avoid:** Don't use Node.js CLI (like aibox does) when your users already have Docker. Adding npm as a dependency is unnecessary friction.
+```clojure
+;; Bash: VERSION_REGEX validation
+;; readonly VERSION_REGEX='^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'
+;; if [[ ! "$version" =~ $VERSION_REGEX ]]; then error "Invalid version"; fi
 
-### Base Docker Image: Ubuntu 22.04 LTS
+;; Babashka equivalent:
+(def version-regex
+  #"^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$")
 
-**Confidence:** HIGH
+(def dangerous-chars-regex
+  #"[;&|`$(){}[\]<>!\\]")
 
-**Source:** [Docker Best Practices](https://docs.docker.com/build/building/best-practices/)
+(defn validate-version [version name]
+  (cond
+    (nil? version) nil  ; empty is OK (means "latest")
 
-| Image | Size | Compatibility | Package Availability |
-|-------|------|---------------|---------------------|
-| Alpine | ~5MB | musl libc issues | Limited |
-| Debian Slim | ~22MB | Good | Good |
-| Ubuntu 22.04 | ~77MB | Excellent | Excellent |
+    (re-find dangerous-chars-regex version)
+    (throw (ex-info (str "Invalid " name " version: contains shell metacharacters")
+                    {:version version}))
 
-**Recommendation:** `ubuntu:22.04`
+    (not (re-matches version-regex version))
+    (throw (ex-info (str "Invalid " name " version format: " version)
+                    {:version version
+                     :expected "X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)"}))
 
-**Rationale:**
-1. **AI tools expect Ubuntu** - Claude Code, OpenCode tested primarily on Ubuntu/Debian
-2. **glibc compatibility** - no musl libc surprises with Python/Node packages
-3. **apt package availability** - everything installs without custom builds
-4. **User familiarity** - most developers know Ubuntu
-5. **LTS support until 2027** - no urgent migration pressure
+    :else version))
+```
 
-**What to install in image:**
-```dockerfile
-FROM ubuntu:22.04
+### Environment Variables
 
-# Core tools
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    wget \
-    jq \
-    ripgrep \
-    sudo \
-    openssh-client \
-    ca-certificates \
-    gnupg \
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `${VAR:-default}` | `(or (System/getenv "VAR") "default")` |
+| `[[ -n "$VAR" ]]` | `(some? (System/getenv "VAR"))` |
+| `export VAR=val` | `:extra-env` in process call |
+
+```clojure
+;; Bash: build_api_env function
+;; for var in "${api_vars[@]}"; do
+;;     [[ -n "${!var:-}" ]] && echo "-e $var=${!var}"
+;; done
+
+;; Babashka equivalent:
+(def api-vars
+  ["ANTHROPIC_API_KEY" "OPENAI_API_KEY" "GEMINI_API_KEY"
+   "GROQ_API_KEY" "GITHUB_TOKEN" "AWS_ACCESS_KEY_ID"
+   "AWS_SECRET_ACCESS_KEY" "AWS_REGION" "AWS_PROFILE"
+   "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"
+   "GOOGLE_CLOUD_PROJECT" "GOOGLE_APPLICATION_CREDENTIALS"])
+
+(defn build-api-env []
+  (into {"DISABLE_AUTOUPDATER" "1"}
+        (for [v api-vars
+              :let [val (System/getenv v)]
+              :when val]
+          [v val])))
+
+;; Pass to docker via :extra-env (not as -e flags)
+;; Note: babashka.process handles this properly
+```
+
+### Heredoc / Embedded Files
+
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `cat << 'EOF'` | Multi-line string literal |
+| Variable substitution | `str` or `format` |
+
+```clojure
+;; Bash: write_dockerfile with heredoc
+;; cat > "${target_dir}/Dockerfile" << 'DOCKERFILE_EOF'
+;; ...
+;; DOCKERFILE_EOF
+
+;; Babashka equivalent:
+(def dockerfile-template
+  "# Aishell Base Image
+FROM debian:bookworm-slim
+
+ARG WITH_CLAUDE=false
+ARG WITH_OPENCODE=false
+ARG CLAUDE_VERSION=\"\"
+ARG OPENCODE_VERSION=\"\"
+ARG BABASHKA_VERSION=1.12.214
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    bash ca-certificates curl file git htop jq less \\
+    ripgrep sqlite3 sudo tree unzip vim watch \\
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js (for Claude Code, OpenCode)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+# ... rest of Dockerfile
+")
 
-# Python 3 (common dependency)
-RUN apt-get update && apt-get install -y python3 python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-# GitHub CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt-get update && apt-get install -y gh \
-    && rm -rf /var/lib/apt/lists/*
-
-# AI harnesses
-RUN npm install -g @anthropic-ai/claude-code
-# OpenCode: install from their recommended method
-
-# Non-root user
-RUN useradd -m -s /bin/bash -u 1000 dev \
-    && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER dev
-WORKDIR /workspace
+(defn write-dockerfile [target-dir]
+  (spit (str (fs/path target-dir "Dockerfile")) dockerfile-template))
 ```
 
-### Distribution Method: curl | bash
+### Color Output
 
-**Confidence:** HIGH
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `echo -e "${RED}Error${NC}"` | ANSI escape codes |
+| `tput colors` | Check `TERM` env var |
+| `[[ -t 1 ]]` | `(System/console)` |
 
-**Recommendation:** Single-file installation via curl, optional Homebrew tap.
+```clojure
+;; Bash: color support detection
+;; supports_color() { [[ ! -t 1 ]] && return 1; ... }
 
-**Primary method:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/[org]/[repo]/main/install.sh | bash
+;; Babashka equivalent:
+(def colors-enabled?
+  (and (some? (System/console))  ; TTY check
+       (nil? (System/getenv "NO_COLOR"))
+       (or (some? (System/getenv "FORCE_COLOR"))
+           (not= "dumb" (System/getenv "TERM")))))
+
+(def red (if colors-enabled? "\u001b[0;31m" ""))
+(def yellow (if colors-enabled? "\u001b[0;33m" ""))
+(def nc (if colors-enabled? "\u001b[0m" ""))
+
+(defn error [msg]
+  (binding [*out* *err*]
+    (println (str red "Error:" nc " " msg)))
+  (System/exit 1))
+
+(defn warn [msg]
+  (binding [*out* *err*]
+    (println (str yellow "Warning:" nc " " msg))))
 ```
 
-**Secondary method (later):**
-```bash
-brew install [org]/tap/[toolname]
+### SHA256 Hash Computation
+
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| `sha256sum file \| cut -c1-12` | `MessageDigest` |
+
+```clojure
+;; Bash: get_dockerfile_hash
+;; hash=$(sha256sum "${temp_dir}/Dockerfile" | cut -c1-12)
+
+;; Babashka equivalent:
+(import '[java.security MessageDigest])
+
+(defn sha256-hex [s]
+  (let [md (MessageDigest/getInstance "SHA-256")
+        bytes (.digest md (.getBytes s "UTF-8"))]
+    (apply str (map #(format "%02x" %) bytes))))
+
+(defn get-dockerfile-hash []
+  (subs (sha256-hex dockerfile-template) 0 12))
 ```
 
-**Rationale:**
-1. **Matches Docker install pattern** - users familiar with this
-2. **Zero dependencies** - just curl and bash
-3. **Immediate updates** - always fetches latest
-4. **Homebrew for power users** - but not required for v1
+### State File Management
 
-**Installation script does:**
-1. Download the main script to `~/.local/bin/[toolname]`
-2. Make it executable
-3. Add to PATH if needed
-4. Optionally download/build Docker image
+| Bash Pattern | Babashka Idiom |
+|--------------|----------------|
+| Shell-style key=value | EDN format |
+| Atomic write via mv | `spit` (atomic on POSIX) |
 
----
+```clojure
+;; Bash state file format:
+;; BUILD_WITH_CLAUDE=true
+;; BUILD_IMAGE_TAG="aishell:claude-2.0.22"
 
-## Harness Configuration Paths
+;; Babashka state file format (EDN):
+;; {:with-claude true
+;;  :with-opencode false
+;;  :claude-version "2.0.22"
+;;  :image-tag "aishell:claude-2.0.22"
+;;  :timestamp "2026-01-20T12:00:00Z"}
 
-### Claude Code
+(defn get-state-file [project-dir]
+  (let [state-base (or (System/getenv "XDG_STATE_HOME")
+                       (str (System/getProperty "user.home") "/.local/state"))
+        hash (subs (sha256-hex (str (fs/canonicalize project-dir))) 0 12)]
+    (fs/path state-base "aishell" "builds" (str hash ".edn"))))
 
-**Source:** [Claude Code Settings Documentation](https://code.claude.com/docs/en/settings)
+(defn write-state [state-file state]
+  (fs/create-dirs (fs/parent state-file))
+  (spit (str state-file) (pr-str state)))
 
-**Must mount (read-write):**
-| Path | Purpose |
-|------|---------|
-| `~/.claude/` | User settings, agents, plans, memory |
-| `~/.claude.json` | OAuth, MCP servers, preferences |
-| Project `.claude/` | Project settings (if exists) |
-| Project `.mcp.json` | Project MCP servers (if exists) |
-| Project `CLAUDE.md` | Project context file |
-
-**Mount strategy:**
-```bash
-# Mount user config
--v "$HOME/.claude:/home/dev/.claude"
--v "$HOME/.claude.json:/home/dev/.claude.json"
-
-# Mount project (working directory)
--v "$(pwd):/workspace"
-```
-
-**Environment variable:**
-- `CLAUDE_CONFIG_DIR` - Custom config directory (use for multi-account)
-
-### OpenCode
-
-**Source:** [OpenCode Configuration Documentation](https://opencode.ai/docs/config/)
-
-**Must mount (read-write):**
-| Path | Purpose |
-|------|---------|
-| `~/.config/opencode/` | Global config, agents, commands, plugins |
-| Project `opencode.json` | Project config (if exists) |
-| Project `.opencode/` | Project agents, commands, modes, plugins |
-
-**Mount strategy:**
-```bash
-# Mount user config
--v "$HOME/.config/opencode:/home/dev/.config/opencode"
-
-# Mount project
--v "$(pwd):/workspace"
-```
-
-**Environment variables:**
-- `OPENCODE_CONFIG` - Custom config file path
-- `OPENCODE_CONFIG_DIR` - Custom config directory
-
-### Git/SSH Integration
-
-**Source:** [VS Code Sharing Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)
-
-**Must mount:**
-| Path | Purpose |
-|------|---------|
-| `~/.gitconfig` | Git user identity |
-| `~/.ssh/` (read-only) | SSH keys for git operations |
-| SSH agent socket | For passphrase-protected keys |
-
-**Mount strategy (Linux):**
-```bash
-# Git config
--v "$HOME/.gitconfig:/home/dev/.gitconfig:ro"
-
-# SSH keys (read-only)
--v "$HOME/.ssh:/home/dev/.ssh:ro"
-
-# SSH agent forwarding
--v "$SSH_AUTH_SOCK:/ssh-agent"
--e SSH_AUTH_SOCK=/ssh-agent
-```
-
-**Mount strategy (macOS with Docker Desktop):**
-```bash
-# Docker Desktop's magic SSH socket
---mount type=bind,src=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock
--e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock
+(defn read-state [state-file]
+  (when (fs/exists? state-file)
+    (edn/read-string (slurp (str state-file)))))
 ```
 
 ---
 
-## Naming Recommendations
+## Cross-Platform Considerations
 
-### Availability Analysis
+### Windows-Specific
 
-| Name | npm | GitHub | Conflict Risk |
-|------|-----|--------|---------------|
-| harness | Scoped only | Major platform (harness.io) | HIGH |
-| devbox | Taken | Taken (jetify-com/devbox) | HIGH |
-| aibox | Security hold | Multiple repos | HIGH |
-| agentbox | Security hold | Multiple repos | HIGH |
-| ai-shell | @builder.io/ai-shell | Multiple repos | HIGH |
-| codeforge | Taken | Organization exists | HIGH |
-| devpod | Related projects | DevPod exists | HIGH |
+| Issue | Solution |
+|-------|----------|
+| No shebang support | Distribute `aishell.bat` wrapper or use `bb.exe` directly |
+| Path separators | Use `babashka.fs` functions (handles `\` vs `/` automatically) |
+| Executable extensions | `babashka.process` auto-resolves `.exe`, `.cmd`, `.bat` |
+| Case-sensitive env vars | Use exact case in `:extra-env` (e.g., `"Path"` not `"PATH"`) |
+| HOME directory | `(System/getProperty "user.home")` works cross-platform |
+| `$HOME` expansion | Use Babashka function, not shell expansion |
 
-### Recommended Names (Likely Available)
+```clojure
+;; Cross-platform HOME resolution
+(defn get-home []
+  (or (System/getenv "HOME")
+      (System/getProperty "user.home")))
 
-**Confidence:** MEDIUM (requires verification at time of creation)
+;; Cross-platform path joining (NOT string concat)
+(fs/path (get-home) ".aishell" "run.edn")
 
-1. **agentcage** - "cage" metaphor for isolation, not found in searches
-2. **codecage** - Same metaphor, code-focused
-3. **aishell** - May be available as base name (not @builder.io scoped)
-4. **devharness** - Combines "dev" with "harness", likely unique
-5. **sandshell** - "sandbox" + "shell" portmanteau
-6. **harnessbox** - Your project folder name + "box"
+;; Windows wrapper (aishell.bat):
+;; @echo off
+;; bb "%~dp0aishell.bb" %*
+```
 
-**Before finalizing, verify:**
-1. `npm view [name]` - Check npm
-2. `pip show [name]` - Check PyPI
-3. GitHub search for `[name]` in repository names
-4. Domain availability (optional)
+### macOS-Specific
 
-**Naming guidance:**
-- Avoid generic terms (sandbox, shell, dev)
-- Make it memorable and typeable
-- Consider tab-completion friendliness
-- Check for embarrassing meanings in other languages
+| Issue | Solution |
+|-------|----------|
+| Apple Silicon | Babashka provides `aarch64` builds |
+| `realpath` differences | Use `(fs/canonicalize path)` |
+| Docker Desktop SSH socket | Different path than Linux |
+
+```clojure
+;; SSH agent socket detection (cross-platform)
+(defn get-ssh-agent-socket []
+  (cond
+    ;; macOS Docker Desktop magic socket
+    (and (= "Mac OS X" (System/getProperty "os.name"))
+         (fs/exists? "/run/host-services/ssh-auth.sock"))
+    "/run/host-services/ssh-auth.sock"
+
+    ;; Linux/standard SSH_AUTH_SOCK
+    (System/getenv "SSH_AUTH_SOCK")
+    (System/getenv "SSH_AUTH_SOCK")
+
+    :else nil))
+```
+
+### Linux-Specific
+
+| Issue | Solution |
+|-------|----------|
+| Static binary for containers | Use `babashka-*-linux-amd64-static.tar.gz` |
+| Alpine/musl | Static binary works; no glibc dependency |
+| Docker socket permissions | User must be in `docker` group |
 
 ---
 
-## What NOT to Use
+## Project Structure
 
-### Technologies to Avoid
+Recommended structure for the Babashka rewrite:
 
-| Technology | Why Avoid |
-|------------|-----------|
-| **Alpine base image** | musl libc causes issues with Python/Node packages; debugging harder |
-| **Node.js CLI** | Unnecessary dependency when bash suffices; requires npm on host |
-| **Docker Compose (v1)** | CLI needs `docker compose` (v2), not `docker-compose` |
-| **Podman without testing** | Compatibility varies; test thoroughly if supporting |
-| **Nested Docker (DinD)** | Security concerns; use Docker-out-of-Docker (DooD) pattern |
-| **gVisor/Firecracker** | Overkill for dev sandboxing; adds complexity |
-| **Kubernetes** | Wrong abstraction level for single-developer tool |
+```
+aishell                 ; Main script (shebang: #!/usr/bin/env bb)
+bb.edn                  ; Dependencies, paths, tasks
+src/
+  aishell/
+    core.clj            ; Main entry, CLI dispatch
+    cli.clj             ; Argument parsing with babashka.cli
+    config.clj          ; Config file parsing (run.edn)
+    docker.clj          ; Docker build/run operations
+    state.clj           ; Build state management
+    validation.clj      ; Input validation (versions, paths)
+    output.clj          ; Color output, spinners, logging
+    templates.clj       ; Embedded Dockerfile, entrypoint, bashrc
+```
 
-### Anti-Patterns to Avoid
+### bb.edn Configuration
 
-1. **Building from scratch when Docker Sandboxes exists** - Validate that official solution doesn't work first
-2. **Privileged containers** - Never use `--privileged`; map only needed capabilities
-3. **Root user in container** - Always run as non-root with sudo available
-4. **Hardcoded paths** - Respect XDG conventions and environment overrides
-5. **Ignoring SSH agent** - Users expect git operations to work seamlessly
-6. **Mounting entire home directory** - Security risk; mount only what's needed
+```clojure
+{:paths ["src"]
+ :min-bb-version "1.12.214"
+ :tasks
+ {build   {:doc "Build the container image"
+           :task (exec 'aishell.core/build)}
+  update  {:doc "Rebuild with latest versions"
+           :task (exec 'aishell.core/update)}
+  claude  {:doc "Run Claude Code"
+           :task (exec 'aishell.core/claude)}
+  opencode {:doc "Run OpenCode"
+            :task (exec 'aishell.core/opencode)}}}
+```
+
+### Single-File Alternative
+
+For simpler distribution, the entire CLI can be a single `.bb` file:
+
+```clojure
+#!/usr/bin/env bb
+;; aishell - AI Shell Container Launcher
+
+(ns aishell.core
+  (:require [babashka.cli :as cli]
+            [babashka.fs :as fs]
+            [babashka.process :as p]
+            [clojure.edn :as edn]
+            [clojure.string :as str]))
+
+;; ... all code in single file ...
+
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))
+```
+
+---
+
+## Migration Strategy
+
+### Phase 1: Core Structure
+1. Set up `bb.edn` with paths
+2. Create `aishell.core` with main entry
+3. Port CLI parsing using `babashka.cli`
+4. Port output functions (error, warn, verbose)
+
+### Phase 2: Docker Operations
+1. Port `check-docker` function
+2. Port `docker-build` with captured/streaming output
+3. Port `docker-run` with all mount/env logic
+4. Test on Linux first
+
+### Phase 3: Config and State
+1. Design `run.edn` format (simpler than `run.conf`)
+2. Port state file management (use EDN)
+3. Port Dockerfile hash detection
+4. Maintain backward compat with `run.conf` if needed
+
+### Phase 4: Cross-Platform
+1. Test on macOS
+2. Add Windows support (wrapper script)
+3. Handle platform-specific SSH agent sockets
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Reasoning |
+|------|------------|-----------|
+| Built-in libraries | HIGH | Verified via Babashka book and v1.12.214 release notes |
+| babashka.process | HIGH | Verified via babashka/process GitHub repo and API docs |
+| babashka.fs | HIGH | Verified via babashka/fs API.md |
+| babashka.cli | HIGH | Verified via babashka/cli GitHub repo |
+| clj-yaml built-in | HIGH | Confirmed: "No installation required. Clj-yaml is built into babashka" |
+| Cross-platform Linux/macOS | HIGH | Documented in Babashka book |
+| Windows support | MEDIUM | Documented but less battle-tested than Unix |
+| Docker integration | HIGH | Just shell commands via babashka.process |
 
 ---
 
 ## Sources
 
-### Official Documentation
-- [Docker Sandboxes Documentation](https://docs.docker.com/ai/sandboxes/) - Official Docker AI sandbox feature
-- [Claude Code Settings](https://code.claude.com/docs/en/settings) - All Claude Code configuration paths
-- [OpenCode Configuration](https://opencode.ai/docs/config/) - OpenCode configuration system
-- [Docker Best Practices](https://docs.docker.com/build/building/best-practices/) - Docker image building guidelines
-- [VS Code Git Credentials Sharing](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) - SSH agent forwarding patterns
-
-### Community Projects (Verified)
-- [aibox (zzev/aibox)](https://github.com/zzev/aibox) - Node.js-based multi-tool sandbox
-- [claude-code-sandbox (textcortex)](https://github.com/textcortex/claude-code-sandbox) - Python-based autonomous workflow tool
-- [Dev Containers Specification](https://containers.dev/) - Development container standard
-
-### Comparison Articles
-- [Alpine vs Debian Slim Comparison](https://alpinelinuxsupport.com/alpine-linux-vs-debian-slim-lightweight-docker-images-comparison/)
-- [CLI Framework Comparison 2025](https://medium.com/@no-non-sense-guy/building-great-clis-in-2025-node-js-vs-go-vs-rust-e8e4bf7ee10e)
-- [AI Sandboxes: Daytona vs microsandbox](https://pixeljets.com/blog/ai-sandboxes-daytona-vs-microsandbox/)
-
----
-
-## Appendix: Quick Start Script Template
-
-If building custom, here's a minimal starting point:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Configuration
-IMAGE_NAME="[your-image]:latest"
-CONTAINER_NAME="[your-tool]-$(basename $(pwd))"
-
-# Detect SSH agent socket
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    SSH_SOCK="/run/host-services/ssh-auth.sock"
-else
-    SSH_SOCK="${SSH_AUTH_SOCK:-}"
-fi
-
-# Build mount arguments
-MOUNTS=(
-    # Project
-    -v "$(pwd):/workspace"
-    # Git
-    -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro"
-    # Claude Code
-    -v "$HOME/.claude:/home/dev/.claude"
-    -v "$HOME/.claude.json:/home/dev/.claude.json"
-    # OpenCode
-    -v "$HOME/.config/opencode:/home/dev/.config/opencode"
-)
-
-# SSH agent forwarding
-if [[ -n "$SSH_SOCK" ]]; then
-    MOUNTS+=(
-        -v "$SSH_SOCK:/ssh-agent"
-        -e SSH_AUTH_SOCK=/ssh-agent
-    )
-fi
-
-# Run
-docker run -it --rm \
-    --name "$CONTAINER_NAME" \
-    --user 1000:1000 \
-    --security-opt no-new-privileges \
-    -w /workspace \
-    "${MOUNTS[@]}" \
-    "$IMAGE_NAME" \
-    "${@:-bash}"
-```
-
-This provides a working foundation to iterate from.
+- [Babashka Book](https://book.babashka.org/) - Official documentation
+- [babashka/babashka GitHub](https://github.com/babashka/babashka) - v1.12.214 release
+- [babashka/process GitHub](https://github.com/babashka/process) - Process execution API
+- [babashka/fs API](https://github.com/babashka/fs/blob/master/API.md) - File system functions
+- [babashka/cli GitHub](https://github.com/babashka/cli) - CLI argument parsing
+- [clj-yaml in Babashka](https://github.com/babashka/babashka/blob/master/feature-yaml/babashka/impl/yaml.clj) - Built-in YAML

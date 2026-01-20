@@ -1,208 +1,181 @@
 # Project Research Summary
 
-**Project:** Docker Sandbox for Agentic AI Harnesses
-**Domain:** Developer tooling / Container-based development environments
-**Researched:** 2026-01-17
+**Project:** aishell CLI rewrite from Bash to Babashka
+**Domain:** Cross-platform CLI tool with Docker integration
+**Researched:** 2026-01-20
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project creates a Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in isolated containers.
+Rewriting aishell from 1,655 LOC Bash to Babashka is a well-supported migration path. Babashka provides all required functionality through built-in libraries: `babashka.cli` for argument parsing, `babashka.process` for Docker command execution, `babashka.fs` for cross-platform file operations, and native EDN/YAML/JSON parsing. **No external dependencies (pods) are required.** The estimated final implementation will be significantly simpler than Bash due to structured data handling, proper error management with try/catch, and elimination of shell quoting complexity.
 
-**CRITICAL FINDING:** Docker Sandboxes requires **Docker Desktop 4.50+** — it does NOT work with Docker Engine on Linux. This eliminates the official Docker solution for users running Docker Engine.
+The recommended approach is a phased rewrite starting with core CLI infrastructure (Phase 1), then Docker integration (Phase 2), followed by build commands (Phase 3), run commands (Phase 4), and finally cross-platform polish including Windows support (Phase 5). This order respects dependencies and delivers incremental value. The architecture separates concerns into clear namespaces: `aishell.cli`, `aishell.docker`, `aishell.build`, `aishell.run`, `aishell.config`, `aishell.state`, and `aishell.output`.
 
-**Decision matrix:**
-
-| Requirement | Docker Sandboxes | aibox | Build Custom |
-|-------------|------------------|-------|--------------|
-| Docker Engine (Linux) | **NO** | Yes | Yes |
-| OpenCode support | No | No | **Yes** |
-
-**Our situation:** User runs Docker Engine on Ubuntu + needs OpenCode support → **Building custom is justified.**
-
-If proceeding with custom development, the recommended approach is a **Bash CLI wrapper** invoking Docker with properly configured mounts, using **Ubuntu 22.04** as the base image. The architecture follows a three-layer pattern: CLI wrapper (shell script) -> Docker image (Dockerfile) -> Entrypoint script. This is well-documented, low-risk territory with established patterns from Docker Sandboxes, VS Code devcontainers, and community projects like aibox.
-
-The key risks are **UID/GID mismatch** (files created as wrong user, breaking host workflows), **SSH agent forwarding failures** (git push/pull broken), and **macOS volume performance degradation**. All have documented mitigations. The total estimated build effort for MVP is 4-6 days if proceeding with custom development.
+Key risks center on cross-platform compatibility, particularly Windows. The top pitfalls to address early are: (1) `babashka.process/shell` does NOT invoke an actual shell, so glob expansion and pipes fail without explicit handling; (2) environment variable case sensitivity on Windows; (3) UID/GID concepts don't exist on Windows, requiring conditional permission mapping; (4) SSH agent socket paths differ dramatically across platforms. These are all well-documented with clear mitigations, giving HIGH confidence in successful delivery.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is intentionally minimal: a Bash CLI script orchestrating Docker with an Ubuntu-based image. This avoids the npm dependency that aibox requires while matching the user's existing Docker familiarity.
+Babashka v1.12.214 provides a complete replacement for the current Bash implementation. All functionality is available through built-in libraries with no external pods required.
 
 **Core technologies:**
-- **Bash**: CLI wrapper script (~100-200 lines) - universal availability, no build step, easy to modify
-- **Docker**: Container runtime - standard, well-documented, required for the use case
-- **Ubuntu 22.04 LTS**: Base image - excellent package availability, glibc compatibility, AI tools tested primarily on Ubuntu/Debian
-- **Node.js 20 LTS**: Required for Claude Code - installed in container, not on host
+- **babashka.cli**: CLI argument parsing with subcommand dispatch, coercion, validation, help generation
+- **babashka.process**: Docker command execution with captured/streaming output, cross-platform
+- **babashka.fs**: File system operations, temp file management, path normalization (handles Windows backslashes)
+- **clojure.edn + clj-yaml**: Configuration file parsing (EDN native, YAML built-in)
+- **cheshire.core**: JSON handling for Docker inspect output parsing
+- **Java interop**: SHA256 hashing via `MessageDigest`, shutdown hooks via `Runtime/addShutdownHook`
 
-**Existing alternatives (evaluate first):**
-- **Docker Sandboxes** (`docker sandbox run claude`): Official Docker feature, requires Docker Desktop
-- **aibox** (`npm install -g @zzev/aibox`): Multi-tool support, multi-account profiles, npm dependency
+**Key version requirement:** Babashka >= 1.12.214 (released 2026-01-13)
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Project directory mounting at `/workspace`
-- Git user/email passthrough from host `.gitconfig`
-- Ephemeral containers (destroyed on exit)
-- Single command entry (`harness`, `harness claude`, `harness opencode`)
-- Basic CLI tools (git, curl, vim, ripgrep, jq, gh)
-- Non-root user with sudo access (UID 1000)
+- Subcommand dispatch: `aishell build`, `aishell claude`, `aishell update`
+- Spec-based CLI options with `:desc`, `:alias`, `:coerce`, `:default`
+- Auto-generated help via `--help`/`-h`
+- Clear error messages for invalid inputs
+- Exit code handling (non-zero on errors)
+- Cross-platform path handling
 
-**Should have (differentiators):**
-- Multiple harness support (Claude Code, OpenCode) - key differentiator over Docker Sandboxes
-- SSH agent forwarding for git push/pull
-- Project-specific extensions via `Dockerfile.sandbox`
-- Persistent config volumes for harness settings
-- Cache mount optimization (npm, cargo, pip caches)
+**Should have (differentiators from Bash):**
+- EDN configuration files (simpler than shell `.conf` format)
+- Structured data throughout (maps/vectors instead of arrays/variables)
+- Proper error handling with try/catch and ex-info
+- Type-safe configuration parsing and validation
+- Superior testability (REPL-driven development, unit tests)
 
 **Defer (v2+):**
-- GPG signing passthrough (high complexity, niche use case)
-- Network allowlist restrictions (full access acceptable for local dev)
-- Session persistence (ephemeral is the core value)
-- Background/headless mode
+- Spinner/progress indicators (requires async/threading)
+- Full Windows support (functional but less tested)
+- Migration tooling for existing `.conf` files
 
 ### Architecture Approach
 
-The architecture is a three-component pipeline: a Bash CLI wrapper that parses arguments, detects project context, and constructs `docker run` commands; a Docker image with base tools and harness dependencies; and an entrypoint script that configures the runtime environment and execs to the target (harness or shell). This matches the pattern used by Docker Sandboxes, aibox, and VS Code devcontainers.
+The architecture separates concerns into distinct namespaces following standard Babashka patterns. The entry point (`aishell.core`) dispatches to command handlers, each namespace has clear responsibilities, and I/O is isolated at boundaries while keeping business logic pure.
 
 **Major components:**
-1. **CLI Wrapper** (`bin/sandbox`) - Parse arguments, detect project, build if Dockerfile.sandbox exists, invoke docker run
-2. **Base Docker Image** (`docker/Dockerfile`) - Ubuntu 22.04 + Node.js 20 + Claude Code + OpenCode + basic tools
-3. **Entrypoint Script** (`docker/entrypoint.sh`) - Configure git identity, validate mounts, exec to target command
+1. **aishell.cli** - Argument parsing, subcommand routing, spec definitions
+2. **aishell.docker** - Docker CLI wrapper (build-image, run-container, image-exists?, inspect)
+3. **aishell.build** - Build command logic, Dockerfile generation, image tag computation
+4. **aishell.run** - Run/shell/exec logic, mount building, API env vars
+5. **aishell.config** - run.conf parsing, validation, mount/env/port arg building
+6. **aishell.state** - Build state persistence (EDN format, XDG paths)
+7. **aishell.output** - Terminal output, colors, verbose mode
 
-**Configuration passthrough:**
-| Config | Host Location | Container Location | Mount Type |
-|--------|--------------|-------------------|------------|
-| Project | `$PWD` | `/workspace` | Bind (rw) |
-| Git config | `~/.gitconfig` | `/home/sandbox/.gitconfig` | Bind (ro) |
-| Claude Code | `~/.claude` | `/home/sandbox/.claude` | Bind (rw) |
-| OpenCode | `~/.config/opencode` | `/home/sandbox/.config/opencode` | Bind (rw) |
-| SSH keys | `$SSH_AUTH_SOCK` | `/ssh.socket` | Socket forward |
+**Key pattern:** Pure functions compute what to do; impure functions at boundaries execute it.
 
 ### Critical Pitfalls
 
-1. **UID/GID Mismatch** - Files created as root unusable on host. **Solve:** Run container with `--user $(id -u):$(id -g)` or create matching user in Dockerfile with build args.
+1. **shell doesn't invoke actual shell** - `babashka.process/shell` directly executes programs. Globs (`*.txt`), pipes (`|`), and environment variable expansion don't work. Use `babashka.fs/glob` for patterns, explicit shell invocation (`bash -c "..."`) when needed.
 
-2. **SSH Agent Forwarding Fails** - Git push/pull broken. **Solve:** Mount `$SSH_AUTH_SOCK` on Linux; use `/run/host-services/ssh-auth.sock` on macOS Docker Desktop.
+2. **Environment variable case sensitivity on Windows** - Setting `{"PATH" "..."}` won't update Windows' `Path` variable. Create platform-aware env key normalization in Phase 1.
 
-3. **Signal Handling Broken** - Container won't stop cleanly. **Solve:** Use exec form for ENTRYPOINT, use `exec` in shell scripts to replace shell with target process.
+3. **UID/GID concepts missing on Windows** - Docker permission mapping via `id -u`/`id -g` must be conditional. Docker Desktop for Windows handles permissions differently (no UID/GID needed).
 
-4. **Config Security** - Mounting `~/.claude` exposes API keys. **Solve:** Mount read-only where possible, use Docker secrets for sensitive data, document risks.
+4. **exec() only works in native images** - `babashka.process/exec` (process replacement) only works with the native bb binary, not JVM execution. Document this requirement clearly.
 
-5. **macOS Volume Performance** - 3-6x slower file operations. **Solve:** Use named volumes for heavy directories (node_modules), document OrbStack as faster alternative.
+5. **SSH socket paths differ across platforms** - Linux uses `$SSH_AUTH_SOCK`, macOS Docker Desktop uses `/run/host-services/ssh-auth.sock`, Windows requires npiperelay. Build platform-specific detection.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Core Container Foundation
-**Rationale:** Establishes the foundational loop - enter container, see files, exit. Everything else depends on this working correctly.
-**Delivers:** Working container with project mounted, correct file permissions, basic tools available
-**Addresses:** Project mounting, ephemeral containers, non-root user with sudo, basic CLI tools
-**Avoids:** UID/GID mismatch (critical), signal handling issues, TTY allocation errors
-**Effort estimate:** 1-2 days
+### Phase 1: Foundation
+**Rationale:** Establishes project structure and core utilities that all subsequent phases depend on. Must address critical cross-platform pitfalls upfront.
+**Delivers:** Basic CLI skeleton, `aishell --version`, `aishell --help`
+**Addresses:** Table stakes (CLI options, help generation, error messages)
+**Avoids:** Environment variable case sensitivity, path handling issues, shell expansion misunderstanding
+**Exit criteria:** `./aishell --version` and `./aishell --help` work
 
-### Phase 2: Git Integration
-**Rationale:** Git is core to the "working seamlessly" requirement. Without git identity and SSH agent, the sandbox is unusable for real work.
-**Delivers:** Git commits with correct author, SSH push/pull to private repos
-**Addresses:** Git config passthrough, SSH agent forwarding, safe.directory configuration
-**Avoids:** "Please tell me who you are" errors, "dubious ownership" errors, permission denied on git operations
-**Effort estimate:** 1-2 days
+### Phase 2: Docker Integration
+**Rationale:** Docker is the core dependency. All commands need Docker operations (check, build, run, inspect).
+**Delivers:** Docker wrapper module, pre-flight checks ("Docker not running" error)
+**Uses:** babashka.process for shell execution
+**Implements:** aishell.docker namespace
+**Exit criteria:** `./aishell` shows appropriate "Docker not running" or "No build found" message
 
-### Phase 3: Harness Integration
-**Rationale:** With core container and git working, add the actual AI harnesses. Claude Code first (more users), OpenCode second (key differentiator).
-**Delivers:** `sandbox claude` launches Claude Code; `sandbox opencode` launches OpenCode
-**Addresses:** Harness config mounting, CLI subcommand parsing, harness-specific dependencies
-**Uses:** Node.js 20 from stack, entrypoint command switching from architecture
-**Effort estimate:** 1-2 days
+### Phase 3: Build Command
+**Rationale:** Build must work before run. Creates images that run commands depend on.
+**Delivers:** `aishell build --with-claude` creates Docker image, state persistence
+**Uses:** babashka.fs for temp files, EDN for state
+**Implements:** aishell.build, aishell.state namespaces
+**Avoids:** Heredoc migration issues (use multi-line strings)
+**Exit criteria:** Can build image, state file created in XDG location
 
-### Phase 4: Project Customization
-**Rationale:** Allow projects to extend base image with their own dependencies without modifying the core tool.
-**Delivers:** Dockerfile.sandbox detection and building, cache mount optimization
-**Addresses:** Per-project extension mechanism, build caching
-**Avoids:** Fat base image anti-pattern, rebuild on every change
-**Effort estimate:** 0.5-1 day
+### Phase 4: Run Commands
+**Rationale:** Run commands are the primary user-facing feature. Depends on working build.
+**Delivers:** `aishell claude`, `aishell opencode`, `aishell` (shell) launch containers
+**Uses:** babashka.process for container execution with TTY
+**Implements:** aishell.run, aishell.config namespaces
+**Avoids:** SSH socket forwarding issues, TTY detection problems
+**Exit criteria:** Full `aishell claude` flow works on Linux/macOS
 
-### Phase 5: Polish and Documentation
-**Rationale:** Usability improvements that make the tool pleasant to use.
-**Delivers:** Installation script, timezone handling, resource limit documentation, macOS performance guidance
-**Addresses:** Distribution method (curl | bash), minor pitfalls (timezone, DNS)
-**Effort estimate:** 1 day
+### Phase 5: Cross-Platform Polish
+**Rationale:** Windows support and edge cases after core functionality proven.
+**Delivers:** Windows compatibility, update command, extension Dockerfile handling
+**Addresses:** Windows-specific pitfalls (PATH case, Cygwin paths, USERPROFILE)
+**Exit criteria:** Feature parity with v1.2 Bash implementation
+
+### Phase 6: Testing and Distribution
+**Rationale:** Solidify implementation before distribution.
+**Delivers:** Test suite, uberscript for single-file distribution, documentation
+**Exit criteria:** CI green, release artifact ready
 
 ### Phase Ordering Rationale
 
-- **Dependencies:** Phase 1 must complete before anything else works. Phase 2 (git) depends on Phase 1 (container). Phase 3 (harnesses) depends on both. Phase 4 (extensions) depends on Phase 3.
-- **Risk reduction:** The highest-risk pitfalls (UID/GID, SSH agent) are addressed in Phases 1-2. If these fail, we discover early.
-- **Value delivery:** Each phase produces a usable increment. After Phase 1, users have a functional container. After Phase 2, they can commit. After Phase 3, they have the full value proposition.
+- **Dependencies flow downward:** CLI parsing -> Docker wrapper -> Build command -> Run commands
+- **Risk mitigation early:** Phase 1 addresses the most critical cross-platform pitfalls before building on them
+- **Incremental delivery:** Each phase produces testable artifacts
+- **Windows deferred:** Core functionality on Linux/macOS first, Windows polish later (lower risk, well-documented path)
 
 ### Research Flags
 
-**Phases needing standard patterns (skip research-phase):**
-- **Phase 1:** Well-documented Docker patterns, multiple reference implementations
-- **Phase 2:** VS Code devcontainer docs provide complete SSH/git integration patterns
-- **Phase 4:** Straightforward conditional build logic
+Phases likely needing deeper research during planning:
+- **Phase 5 (Windows):** Complex platform-specific behaviors, SSH agent forwarding on WSL, Cygwin path translation
+- **Phase 4 (Run Commands):** TTY detection nuances, signal forwarding behavior
 
-**Phases with potential complexity:**
-- **Phase 3 (OpenCode):** OpenCode installation and configuration less documented than Claude Code. May need to verify installation method and config paths during implementation.
-- **Phase 5 (macOS):** macOS-specific socket paths and performance mitigations need testing on actual macOS system.
+Phases with standard patterns (skip research-phase):
+- **Phase 1 (Foundation):** Well-documented babashka.cli patterns, clear examples
+- **Phase 2 (Docker Integration):** Simple shell wrapping, no complex API needed
+- **Phase 3 (Build):** Straightforward file operations and process execution
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Official Docker docs, multiple verified community projects |
-| Features | HIGH | Cross-referenced Docker Sandboxes, devcontainer spec, aibox |
-| Architecture | HIGH | Pattern consistent across Docker Sandboxes, aibox, devcontainers |
-| Pitfalls | HIGH | Multiple authoritative sources, Claude Code-specific docs available |
+| Stack | HIGH | Verified via Babashka book, v1.12.214 release notes, official repo docs |
+| Features | HIGH | babashka.cli well-documented, reference projects (neil, bbin) demonstrate patterns |
+| Architecture | HIGH | Standard Babashka project structure, aligns with official examples |
+| Pitfalls | MEDIUM-HIGH | Core pitfalls well-documented; Windows edge cases less battle-tested |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **OpenCode installation:** Verify exact installation method and dependencies during Phase 3. OpenCode docs less comprehensive than Claude Code.
-- **macOS testing:** SSH agent socket path and volume performance mitigations need validation on actual macOS hardware.
-- **GPG signing:** Explicitly deferred. If users request, will need dedicated research (high complexity, cross-platform issues).
-- **Podman support:** Not researched. If needed, would require separate investigation of compatibility differences.
-
-## Build vs Use Decision
-
-**Docker Sandboxes — NOT AVAILABLE:**
-- Requires Docker Desktop 4.50+ — does NOT work with Docker Engine on Linux
-- Not an option for this project
-
-**aibox — POSSIBLE BUT LIMITED:**
-- Works with Docker Engine
-- No OpenCode support
-- Requires npm on host
-
-**Build custom — JUSTIFIED:**
-- Works with Docker Engine on Linux
-- OpenCode support (key differentiator)
-- No npm/Node.js dependency on host
-- Full control over the tool
-
-**Decision: Build custom** is the right choice for this project.
+- **Windows testing:** Less community battle-testing than Linux/macOS. Plan explicit Windows testing in Phase 5.
+- **Spinner/progress UI:** Not researched in depth. Defer to Phase 5 or post-MVP.
+- **run.conf backward compatibility:** Decision needed: support old format, require migration, or auto-convert?
+- **Uberscript vs bb installation:** Distribution strategy not finalized. Research during Phase 6 planning.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Docker Sandboxes Documentation](https://docs.docker.com/ai/sandboxes/) - Official Docker AI sandbox feature
-- [Claude Code Settings](https://code.claude.com/docs/en/settings) - Configuration paths
-- [Claude Code DevContainer](https://code.claude.com/docs/en/devcontainer) - Reference implementation
-- [VS Code Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials) - SSH/git patterns
-- [Docker Bind Mounts](https://docs.docker.com/engine/storage/bind-mounts/) - Mount best practices
-- [Docker ENTRYPOINT Best Practices](https://www.docker.com/blog/docker-best-practices-choosing-between-run-cmd-and-entrypoint/) - Signal handling
+- [Babashka Book](https://book.babashka.org/) - Official documentation, project structure, patterns
+- [babashka/babashka GitHub](https://github.com/babashka/babashka) - v1.12.214 release notes, built-in libraries
+- [babashka/process](https://github.com/babashka/process) - Process execution API, Windows tips
+- [babashka/fs](https://github.com/babashka/fs/blob/master/API.md) - File system utilities, cross-platform handling
+- [babashka/cli](https://github.com/babashka/cli) - CLI argument parsing, subcommand dispatch
 
 ### Secondary (MEDIUM confidence)
-- [aibox (zzev/aibox)](https://github.com/zzev/aibox) - Community multi-tool sandbox
-- [OpenCode Configuration](https://opencode.ai/docs/config/) - OpenCode config paths
-- [Docker macOS Performance 2025](https://www.paolomainardi.com/posts/docker-performance-macos-2025/) - Volume performance
+- [Bash and Babashka Equivalents Wiki](https://github.com/babashka/babashka/wiki/Bash-and-Babashka-equivalents) - Migration patterns
+- [neil](https://github.com/babashka/neil), [bbin](https://github.com/babashka/bbin) - Reference CLI implementations
+- [Blog: Converting from Bash to Babashka](https://blog.agical.se/en/posts/changing-my-mind--converting-a-script-from-bash-to-babashka/) - Migration experience
 
 ### Tertiary (LOW confidence)
-- Various Medium articles on AI agent sandboxing - Community patterns, needs validation
+- Docker Forum, WSL SSH forwarding guides - Platform-specific edge cases, needs validation during implementation
 
 ---
-*Research completed: 2026-01-17*
+*Research completed: 2026-01-20*
 *Ready for roadmap: yes*

@@ -1,500 +1,530 @@
-# Domain Pitfalls: Docker Sandbox for Agentic AI Harnesses
+# Pitfalls Research: Babashka + Docker + Cross-Platform
 
-**Domain:** Docker-based sandbox environment for AI coding assistants (Claude Code, OpenCode)
-**Researched:** 2026-01-17
-**Confidence:** HIGH (verified through multiple authoritative sources)
+**Domain:** CLI tool migration from Bash to Babashka with Docker integration
+**Researched:** 2026-01-20
+**Confidence:** MEDIUM (verified through official docs and community sources)
+
+---
+
+## Summary
+
+Migrating a cross-platform CLI from Bash to Babashka introduces specific pitfalls around process handling, path normalization, Windows compatibility, and Docker integration. The current Bash implementation relies on behaviors (UID/GID detection, SSH socket forwarding, signal handling, TTY allocation) that work differently or require explicit handling in Babashka. Windows support is the highest-risk area due to fundamental differences in path handling, environment variables, and lack of Unix concepts like UID/GID.
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, data loss, or security vulnerabilities.
+Mistakes that cause broken functionality or require significant rework.
 
 ---
 
-### Pitfall 1: UID/GID Mismatch — Files Unreadable or Root-Owned on Host
+### 1. Windows Environment Variable Case Sensitivity
 
-**What goes wrong:** Files created inside the container are owned by root (UID 0) or a mismatched UID, making them unreadable/uneditable on the host without sudo. Projects become polluted with root-owned files that break normal workflows.
+**Risk:** HIGH
+**Description:** Babashka's `babashka.process` treats environment variable names as case-sensitive even on Windows. Setting `:extra-env {"PATH" "..."}` will NOT update the existing `Path` variable on Windows, resulting in broken PATH modification.
 
-**Why it happens:** Docker containers default to running as root. The Linux kernel only recognizes UID/GID numbers — a user with UID 1000 in the container is numerically identical to UID 1000 on the host. When container runs as root but host user is UID 1000, all created files are owned by root from the host's perspective.
-
-**Consequences:**
-- `git status` shows permission errors
-- IDE cannot save files
-- User must repeatedly `sudo chown -R` their project
-- Build artifacts locked to root
-- Frustrating, unusable DX
-
-**Warning signs:**
-- `ls -la` in project shows `root:root` ownership on new files
-- Permission denied errors when editing container-created files
-- `git diff` shows ownership changes
+**Warning Signs:**
+- Tools not found after supposedly adding to PATH
+- Environment variables appear duplicated with different cases
+- Works on Linux/macOS but fails on Windows
 
 **Prevention:**
-1. **Run container with matching UID/GID** (recommended):
-   ```bash
-   docker run --user $(id -u):$(id -g) -v "$PWD:/workspace" image
+1. Always use the exact case that Windows expects (typically `Path`, not `PATH`)
+2. Create a helper function that normalizes env var names per platform:
+   ```clojure
+   (defn normalize-env-key [k]
+     (if (windows?)
+       (case (str/lower-case k)
+         "path" "Path"
+         "home" "USERPROFILE"
+         k)
+       k))
    ```
-2. **Docker Compose with dynamic UID/GID**:
-   ```yaml
-   services:
-     sandbox:
-       user: "${UID:-1000}:${GID:-1000}"
-   ```
-3. **Create matching user in Dockerfile** with build args:
-   ```dockerfile
-   ARG HOST_UID=1000
-   ARG HOST_GID=1000
-   RUN addgroup -g ${HOST_GID} devgroup && \
-       adduser -D -u ${HOST_UID} -G devgroup devuser
-   USER devuser
-   ```
-4. **Never use `chmod 777`** — this is a security anti-pattern masquerading as a fix
+3. Test on Windows early in development cycle
 
-**Detection:** Add validation in entrypoint script that checks if container user matches mount ownership.
-
-**Phase to address:** Phase 1 (Core Container) — This is foundational; get it wrong and nothing works.
+**Phase:** Phase 1 (Core Architecture) - Must establish env var handling strategy upfront
 
 **Sources:**
-- [Docker Mount Permissions Guide](https://eastondev.com/blog/en/posts/dev/20251217-docker-mount-permissions-guide/)
-- [Docker Volumes Permission Denied](https://mydeveloperplanet.com/2022/10/19/docker-files-and-volumes-permission-denied/)
-- [7 Docker Volume Ownership Fixes](https://medium.com/@Modexa/7-docker-volume-ownership-fixes-uid-gid-the-python-way-23b59e703a83)
+- [babashka/process README](https://github.com/babashka/process) - Windows TIP section
 
 ---
 
-### Pitfall 2: SSH Agent Forwarding Fails — Git Push/Pull Broken
+### 2. UID/GID Concepts Don't Exist on Windows
 
-**What goes wrong:** Users cannot push/pull from private repositories. SSH operations fail with "Permission denied (publickey)" or "Could not open a connection to your authentication agent."
+**Risk:** HIGH
+**Description:** The current implementation relies heavily on `id -u` and `id -g` for Docker permission mapping. These concepts don't exist on Windows. Docker Desktop for Windows handles permissions differently (SMB mounts, no UID/GID mapping needed).
 
-**Why it happens:** SSH agent socket isn't forwarded into container, or socket permissions don't allow container user to access it. The `SSH_AUTH_SOCK` environment variable points to a non-existent or inaccessible path inside the container.
-
-**Consequences:**
-- Cannot clone private repos
-- Cannot push commits
-- Users must copy private keys into container (security risk)
-- Workflow broken for any private repo work
-
-**Warning signs:**
-- `ssh-add -l` inside container returns "Could not open a connection to your authentication agent"
-- `ssh -T git@github.com` fails with permission denied
-- Git operations prompt for password despite using SSH URLs
+**Warning Signs:**
+- `id -u` command fails or returns wrong values on Windows
+- Docker volume permissions work unexpectedly on Windows
+- Logic branches assume UID/GID are always valid integers
 
 **Prevention:**
-1. **Mount SSH agent socket**:
-   ```bash
-   docker run -v "$SSH_AUTH_SOCK:/ssh-agent" -e SSH_AUTH_SOCK=/ssh-agent image
+1. Abstract user identity into a platform-specific module:
+   ```clojure
+   (defn get-user-identity []
+     (if (windows?)
+       {:uid nil :gid nil :needs-mapping? false}
+       {:uid (parse-int (sh-out "id" "-u"))
+        :gid (parse-int (sh-out "id" "-g"))
+        :needs-mapping? true}))
    ```
-2. **Handle macOS Docker Desktop** (socket path differs):
-   ```bash
-   # macOS uses a different path
-   docker run -v /run/host-services/ssh-auth.sock:/ssh-agent \
-              -e SSH_AUTH_SOCK=/ssh-agent image
-   ```
-3. **Verify in entrypoint**:
-   ```bash
-   if [ -n "$SSH_AUTH_SOCK" ] && [ ! -S "$SSH_AUTH_SOCK" ]; then
-     echo "Warning: SSH agent socket not accessible"
-   fi
-   ```
-4. **Test connectivity in container**: `ssh -T git@github.com`
+2. Conditionally apply `--user` flag only on Linux/macOS
+3. Document that Docker Desktop for Windows handles permissions automatically
 
-**Detection:** Entrypoint should test SSH agent availability and warn if not working.
-
-**Phase to address:** Phase 2 (Git Integration) — Core to the "git working seamlessly" requirement.
+**Phase:** Phase 1 (Core Architecture) - Fundamental to Docker integration design
 
 **Sources:**
-- [VS Code: Sharing Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)
-- [Docker SSH Agent Forwarding Gist](https://gist.github.com/d11wtq/8699521)
+- [Docker Forum: UID/GID on Windows](https://forums.docker.com/t/find-uid-and-gid-on-windows-for-mounted-directories/53320)
+- [Devilbox Docs: UID/GID on Windows](https://devilbox.readthedocs.io/en/latest/howto/uid-and-gid/find-uid-and-gid-on-win.html)
 
 ---
 
-### Pitfall 3: GPG Signing Fails Inside Container
+### 3. exec() Only Works in Native Images
 
-**What goes wrong:** Git commits fail with "gpg failed to sign the data" or "fatal: failed to write commit object." Users who sign commits cannot use the sandbox.
+**Risk:** HIGH
+**Description:** Babashka's `babashka.process/exec` function (which replaces the current process) only works in GraalVM native images. The current Bash script uses `exec docker run ...` to replace the shell process with Docker. If running Babashka via JVM (not native binary), this will fail silently or throw.
 
-**Why it happens:** GPG agent forwarding is complex — more complex than SSH. TTY handling (`updatestartuptty`) for local agents conflicts with forwarded agents. Windows users face additional complexity where GPG keys set in Git Bash aren't accessible from containers.
-
-**Consequences:**
-- Users with commit signing requirements cannot use sandbox
-- CI/CD pipelines that verify signatures break
-- Users may disable signing, weakening security posture
-
-**Warning signs:**
-- `git commit` fails with GPG errors
-- `gpg --list-keys` shows no keys inside container
-- Works on host but fails in container
+**Warning Signs:**
+- Script doesn't terminate properly after Docker container exits
+- Process lingers after Docker run
+- Works in bb binary but fails when running via JVM
 
 **Prevention:**
-1. **For basic use: mount .gnupg directory** (simple but less secure):
-   ```bash
-   docker run -v "$HOME/.gnupg:/home/user/.gnupg:ro" image
+1. Always use the native Babashka binary, not JVM-based execution
+2. Document this requirement clearly
+3. Add runtime check:
+   ```clojure
+   (defn can-exec? []
+     (System/getProperty "org.graalvm.nativeimage.imagecode"))
    ```
-2. **For agent forwarding** (complex, platform-dependent):
-   - Linux: Forward `$GNUPGHOME/S.gpg-agent` socket
-   - macOS: GPG agent forwarding has known issues with Docker
-   - Windows: Must configure GPG in Windows GUI, not Git Bash
-3. **Document as optional feature** with clear setup instructions
-4. **Provide graceful fallback**: Detect if GPG unavailable and warn instead of fail
+4. Fall back to `shell` with process replacement semantics if needed
 
-**Detection:** Check `gpg --list-secret-keys` in entrypoint; warn if empty but user has signing configured.
-
-**Phase to address:** Phase 2 (Git Integration) — Mark as "advanced feature" with known limitations documented.
+**Phase:** Phase 2 (Process Management) - Critical for proper signal forwarding
 
 **Sources:**
-- [VS Code DevContainer GPG Issues](https://github.com/microsoft/vscode-remote-release/issues/11379)
-- [GPG Agent Forward Docker Mac Issue](https://github.com/docker/for-mac/issues/5297)
+- [babashka.process API](https://github.com/babashka/process/blob/master/API.md)
 
 ---
 
-### Pitfall 4: Mounting ~/.claude Exposes API Keys and Secrets
+### 4. SSH Agent Socket Path Differences Across Platforms
 
-**What goes wrong:** Mounting the entire `~/.claude` directory gives the container (and any code running in it) access to API keys, authentication tokens, and other sensitive credentials.
+**Risk:** HIGH
+**Description:** SSH agent socket paths differ dramatically across platforms:
+- Linux: `$SSH_AUTH_SOCK` (typically `/run/user/1000/keyring/ssh`)
+- macOS: `/run/host-services/ssh-auth.sock` (Docker Desktop)
+- Windows native: Named pipe `\\.\pipe\openssh-ssh-agent`
+- Windows WSL: Requires npiperelay + socat bridge
 
-**Why it happens:** Convenience wins over security — mounting the whole config directory is simpler than selectively mounting only safe files. The `~/.claude/claude.json` file may contain sensitive secrets.
-
-**Consequences:**
-- Malicious or buggy code in project can exfiltrate API keys
-- Prompt injection attacks can access credentials
-- If container is compromised, attacker has API access
-- Shared systems expose credentials to other users
-
-**Warning signs:**
-- Config directory mounted without `:ro` flag
-- No file permission restrictions on sensitive files
-- API keys visible in `docker inspect` output
+**Warning Signs:**
+- `ssh-add -l` fails inside container
+- Git operations fail with permission denied
+- SSH_AUTH_SOCK set but socket doesn't exist
 
 **Prevention:**
-1. **Mount read-only**: `-v "$HOME/.claude:/home/user/.claude:ro"`
-2. **Mount only specific files needed**, not entire directory
-3. **Use Docker secrets for sensitive data** instead of bind mounts:
-   ```yaml
-   secrets:
-     claude_api_key:
-       file: ~/.claude/api_key
+1. Create platform-specific SSH socket resolution:
+   ```clojure
+   (defn ssh-auth-sock []
+     (cond
+       (macos?) "/run/host-services/ssh-auth.sock"
+       (linux?) (System/getenv "SSH_AUTH_SOCK")
+       (windows?) nil)) ; Cannot directly forward on Windows
    ```
-4. **Set restrictive permissions** on host: `chmod 600 ~/.claude/claude.json`
-5. **Use `CLAUDE_CONFIG_DIR` environment variable** to control which config is used
-6. **Consider credential proxying** — container requests credentials from host process
+2. Document WSL requirements for Windows users
+3. Provide graceful degradation with clear error message
+4. Test SSH connectivity in container startup
 
-**Detection:** Warn in documentation; optionally scan mounted configs for obvious secrets.
-
-**Phase to address:** Phase 1 (Core Container) — Security-critical from day one.
+**Phase:** Phase 3 (Git Integration) - After core container launch works
 
 **Sources:**
-- [Claude Code Security Docs](https://code.claude.com/docs/en/security)
-- [Claude Code Automatically Loads .env Secrets](https://www.knostic.ai/blog/claude-loads-secrets-without-permission)
-- [Securely Using SSH Keys in Docker](https://www.fastruby.io/blog/docker/docker-ssh-keys.html)
+- [WSL SSH Agent Forwarding](https://stuartleeks.com/posts/wsl-ssh-key-forward-to-windows/)
+- [VS Code Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)
 
 ---
 
-### Pitfall 5: macOS Volume Mount Performance Degrades DX
+### 5. shell Function Doesn't Invoke Actual Shell
 
-**What goes wrong:** File operations become painfully slow — 3-6x slower than native. npm install, file watchers, and IDE operations become frustrating. The "quick sandbox" becomes a productivity killer.
+**Risk:** HIGH
+**Description:** `babashka.process/shell` does NOT invoke bash/cmd.exe - it directly executes programs. Shell-specific syntax like wildcards (`rm -rf target/*`), pipes, redirections, and environment variable expansion will not work.
 
-**Why it happens:** Unlike Linux (where bind mounts have minimal overhead), macOS Docker requires translation between host and container filesystems. Every file access crosses the VM boundary through VirtioFS (current) or osxfs (legacy).
-
-**Consequences:**
-- `npm install` takes minutes instead of seconds
-- File watchers (webpack, vite) have noticeable lag
-- IDE responsiveness suffers
-- Users abandon sandbox due to poor DX
-
-**Warning signs:**
-- Operations noticeably slower than host
-- High CPU usage in Docker Desktop
-- File watcher delays > 1 second
+**Warning Signs:**
+- Wildcards don't expand (`*.txt` passed literally)
+- Pipes fail (command includes `|` character)
+- Environment variable substitution doesn't happen
 
 **Prevention:**
-1. **Use volumes for heavy directories** (node_modules, vendor, etc.):
-   ```yaml
-   volumes:
-     - .:/workspace
-     - node_modules:/workspace/node_modules  # Named volume, not bind mount
+1. Never rely on shell expansion in process calls
+2. For glob patterns, use `babashka.fs/glob` first:
+   ```clojure
+   (require '[babashka.fs :as fs])
+   (doseq [f (fs/glob "target" "*.class")]
+     (fs/delete f))
    ```
-2. **Consider consistency flags** (traded write consistency for speed):
-   ```bash
-   -v "$PWD:/workspace:delegated"  # Deprecated but still works
+3. For shell commands, explicitly invoke the shell:
+   ```clojure
+   (shell "bash" "-c" "rm -rf target/*")
+   ;; On Windows:
+   (shell "cmd" "/c" "del /q target\\*")
    ```
-3. **Document OrbStack as alternative** — significantly faster than Docker Desktop
-4. **Hybrid approach**: Bind mount source, volume mount dependencies
-5. **For heavy workloads, suggest Lima or cloud dev environments**
 
-**Detection:** Benchmark file operations in entrypoint; warn if abnormally slow.
-
-**Phase to address:** Phase 3 (Polish/Performance) — Works without this, but DX suffers.
+**Phase:** Phase 1 (Core Architecture) - Affects all command execution
 
 **Sources:**
-- [Docker on MacOS is still slow? (2025)](https://www.paolomainardi.com/posts/docker-performance-macos-2025/)
-- [Docker on MacOS and How to Fix It](https://www.cncf.io/blog/2023/02/02/docker-on-macos-is-slow-and-how-to-fix-it/)
-- [Docker Performance Tuning Docs](https://docker-docs.uclv.cu/docker-for-mac/osxfs-caching/)
+- [Babashka Book](https://book.babashka.org/)
+- [babashka/process README](https://github.com/babashka/process)
 
 ---
 
-## Moderate Pitfalls
-
-Mistakes that cause delays, confusion, or technical debt.
+## Windows-Specific Pitfalls
 
 ---
 
-### Pitfall 6: Git Identity Not Set — Commits Fail
+### 6. Path Separator and Slash Direction
 
-**What goes wrong:** Git commits fail with "Please tell me who you are" error. User must manually configure git inside every container session.
+**Risk:** MEDIUM
+**Description:** Windows uses backslashes (`\`) as path separators while Unix uses forward slashes (`/`). Docker commands and mount paths must use forward slashes even on Windows. Mixing them causes hard-to-debug failures.
 
-**Why it happens:** Container doesn't have access to host's `.gitconfig`. Git looks for identity in global config which doesn't exist in fresh container.
+**Warning Signs:**
+- Docker mount paths fail with "invalid characters"
+- Paths with backslashes work in local commands but fail in Docker
+- Path joining produces incorrect results
 
 **Prevention:**
-1. **Mount .gitconfig read-only**:
-   ```bash
-   -v "$HOME/.gitconfig:/home/user/.gitconfig:ro"
+1. Use `babashka.fs/unixify` for all paths passed to Docker:
+   ```clojure
+   (require '[babashka.fs :as fs])
+   (fs/unixify "C:\\Users\\dev\\project") ; => "C:/Users/dev/project"
    ```
-2. **Copy git identity in entrypoint** from environment variables:
-   ```bash
-   if [ -n "$GIT_AUTHOR_NAME" ]; then
-     git config --global user.name "$GIT_AUTHOR_NAME"
-   fi
-   ```
-3. **Passthrough GIT_AUTHOR_* and GIT_COMMITTER_* environment variables**
+2. Use `fs/path` for cross-platform path construction
+3. Never use string concatenation for paths
 
-**Phase to address:** Phase 2 (Git Integration)
+**Phase:** Phase 1 (Core Architecture) - Must establish path handling utilities
 
 **Sources:**
-- [VS Code: Sharing Git Credentials](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)
-- [.gitconfig inside container issue](https://github.com/microsoft/vscode-remote-release/issues/5218)
+- [babashka.fs API](https://github.com/babashka/fs/blob/master/API.md)
 
 ---
 
-### Pitfall 7: "Dubious Ownership" Git Errors
+### 7. Cygwin/MSYS2 Path Translation
 
-**What goes wrong:** Git refuses to operate with "fatal: detected dubious ownership in repository." Security feature blocks normal workflow.
+**Risk:** MEDIUM
+**Description:** When running Babashka from Git Bash, Cygwin, or MSYS2, paths are Cygwin-style (`/c/Users/...`) but bb expects Windows-style (`C:\Users\...`). The shell passes Cygwin paths to bb, causing file not found errors.
 
-**Why it happens:** CVE-2022-24765 mitigation. Git now checks if repo owner matches current user. With bind mounts, container user often differs from the UID that owns the files on host.
+**Warning Signs:**
+- Scripts work in PowerShell/cmd but fail in Git Bash
+- File paths with `/c/` or `/home/` prefix fail
+- bb reports file not found for existing files
 
 **Prevention:**
-1. **Add safe.directory in entrypoint**:
-   ```bash
-   git config --global --add safe.directory /workspace
-   ```
-2. **Match container user to host user UID** (solves root cause)
-3. **Use `postStartCommand` in devcontainer.json** if using VS Code
+1. Detect Cygwin environment and convert paths:
+   ```clojure
+   (defn cygwin-env? []
+     (some? (re-find #"MINGW|MSYS|CYGWIN"
+                     (or (System/getenv "MSYSTEM") ""))))
 
-**Phase to address:** Phase 2 (Git Integration) — Common friction point.
+   (defn cygpath [path]
+     (if (cygwin-env?)
+       (str/trim (shell-out "cygpath" "-w" path))
+       path))
+   ```
+2. Document supported Windows shells
+3. Consider wrapper scripts for each shell type
+
+**Phase:** Phase 4 (Windows Support) - After core functionality works
 
 **Sources:**
-- [Avoiding Dubious Ownership in Dev Containers](https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/)
-- [Git safe.directory in Docker Containers](https://github.com/actions/runner/issues/2033)
+- [Babashka Cygwin Issues](https://clojurians-log.clojureverse.org/babashka/2021-07-14)
 
 ---
 
-### Pitfall 8: Entrypoint Breaks Signal Handling — Container Won't Stop
+### 8. Windows Executable Resolution
 
-**What goes wrong:** `docker stop` takes 10 seconds (timeout) instead of stopping gracefully. Container doesn't respond to Ctrl+C. Data may be lost due to ungraceful shutdown.
+**Risk:** MEDIUM
+**Description:** Windows resolves executables by extension in order: `.com`, `.exe`, `.bat`, `.cmd`. Babashka cannot directly launch `.ps1` scripts - they must go through PowerShell. This affects finding tools like `docker` which is actually `docker.exe`.
 
-**Why it happens:** Using shell form instead of exec form in ENTRYPOINT. Shell becomes PID 1 and doesn't forward SIGTERM to the actual process. Or entrypoint script doesn't use `exec` to hand off to main process.
+**Warning Signs:**
+- Commands work in shell but `command -v` equivalent fails
+- PowerShell scripts don't execute
+- Scripts assume executable exists without extension
 
 **Prevention:**
-1. **Use exec form for ENTRYPOINT**:
-   ```dockerfile
-   ENTRYPOINT ["/entrypoint.sh"]
-   CMD ["bash"]
+1. Always specify full path or rely on process resolution
+2. For PowerShell scripts:
+   ```clojure
+   (shell "powershell" "-File" "script.ps1")
    ```
-2. **Use `exec` in shell scripts**:
-   ```bash
-   #!/bin/bash
-   # Setup code here...
-   exec "$@"  # Replace shell with CMD
-   ```
-3. **Or use init process**:
-   ```bash
-   docker run --init image  # Uses tini
-   ```
+3. Use `babashka.fs/which` for cross-platform executable lookup
+4. Don't assume shebang-based execution works
 
-**Phase to address:** Phase 1 (Core Container) — Affects basic usability.
+**Phase:** Phase 4 (Windows Support)
 
 **Sources:**
-- [PID 1 Signal Handling in Docker](https://petermalmgren.com/signal-handling-docker/)
-- [Docker Signals Article](https://hynek.me/articles/docker-signals/)
-- [Docker ENTRYPOINT Best Practices](https://www.docker.com/blog/docker-best-practices-choosing-between-run-cmd-and-entrypoint/)
+- [babashka.process Windows section](https://github.com/babashka/process)
 
 ---
 
-### Pitfall 9: Bind Mount Obscures Container Files
+### 9. HOME vs USERPROFILE Confusion
 
-**What goes wrong:** Files that exist in the image at the mount point become invisible. Generated files, default configs, or bootstrap data disappear when bind mount is applied.
+**Risk:** MEDIUM
+**Description:** Unix uses `$HOME` for user home directory. Windows uses `%USERPROFILE%`. In some contexts (Git Bash), both exist with different values. Config file paths will break if hardcoded to either.
 
-**Why it happens:** Bind mounts overlay the container directory. Pre-existing container files are "obscured" — they still exist but are inaccessible while the mount is in place.
-
-**Prevention:**
-1. **Generate/copy files in entrypoint** (after mounts are in place)
-2. **Use volumes for container-managed directories** (node_modules, etc.)
-3. **Document clearly**: "Files in X location will be hidden by your project mount"
-4. **Bootstrap pattern**: Copy defaults from image to mount if not present
-
-**Phase to address:** Phase 1 (Core Container)
-
-**Sources:**
-- [Docker Bind Mounts Documentation](https://docs.docker.com/engine/storage/bind-mounts/)
-- [Docker bind mount deleting container files](https://forums.docker.com/t/docker-bind-mount-is-deleting-containers-files/135541)
-
----
-
-### Pitfall 10: TTY Allocation Errors in Non-Interactive Contexts
-
-**What goes wrong:** "The input device is not a TTY" error when running in scripts, CI, or piped commands. Container fails to start or behaves unexpectedly.
-
-**Why it happens:** Using `-t` (allocate TTY) when no TTY is available (CI/CD, cron, piped input). The container expects an interactive terminal that doesn't exist.
+**Warning Signs:**
+- Config directories not found on Windows
+- `~/.config` expansion fails
+- Different behavior in cmd vs PowerShell vs Git Bash
 
 **Prevention:**
-1. **Detect TTY availability**:
-   ```bash
-   if [ -t 0 ]; then
-     docker run -it image
-   else
-     docker run -i image
-   fi
+1. Create unified home directory function:
+   ```clojure
+   (defn home-dir []
+     (or (System/getenv "HOME")
+         (System/getenv "USERPROFILE")
+         (System/getProperty "user.home")))
    ```
-2. **Make `-t` optional** in wrapper script
-3. **Document interactive vs non-interactive usage**
+2. Use `babashka.fs/home` which handles this
+3. Test in all Windows shell environments
 
-**Phase to address:** Phase 1 (Core Container) — Wrapper script must handle this.
+**Phase:** Phase 1 (Core Architecture)
 
 **Sources:**
-- [Docker TTY Error Fix](https://devops-daily.com/posts/docker-tty-error-fix)
-- [Interactive and TTY Options in Docker](https://www.baeldung.com/linux/docker-run-interactive-tty-options)
+- [babashka.fs documentation](https://github.com/babashka/fs)
 
 ---
 
-### Pitfall 11: Container Timezone Mismatch Confuses Users
+### 10. Windows Line Endings in Process Output
 
-**What goes wrong:** Timestamps in logs, file modifications, and git commits show wrong times. UTC default doesn't match user's local time.
+**Risk:** LOW
+**Description:** Commands on Windows may output `\r\n` line endings. If parsing output line-by-line, this can leave `\r` characters in values causing subtle comparison failures.
 
-**Why it happens:** Containers default to UTC. No timezone data packages installed in minimal images. TZ environment variable alone isn't sufficient without tzdata.
+**Warning Signs:**
+- String comparisons fail despite looking identical
+- JSON parsing fails with "unexpected character"
+- Hidden `^M` characters when debugging
 
 **Prevention:**
-1. **Pass TZ environment variable**: `-e TZ=$(cat /etc/timezone 2>/dev/null || echo UTC)`
-2. **Mount host timezone files** (Linux only):
-   ```bash
-   -v /etc/localtime:/etc/localtime:ro
-   -v /etc/timezone:/etc/timezone:ro
+1. Always trim process output:
+   ```clojure
+   (str/trim (shell-out "command"))
    ```
-3. **Install tzdata in Dockerfile** if setting TZ via ENV
-4. **Document that timezone inherits from host** or is configurable
+2. Use `str/trim-newline` which handles `\r\n`
+3. Consider normalizing all output: `(str/replace output #"\r\n" "\n")`
 
-**Phase to address:** Phase 3 (Polish) — Nice to have, not critical.
-
-**Sources:**
-- [Fix Docker Time and Timezone Problems](https://hoa.ro/blog/2020-12-08-draft-docker-time-timezone/)
-- [How to Handle Timezones in Docker](https://www.howtogeek.com/devops/how-to-handle-timezones-in-docker-containers/)
+**Phase:** Phase 2 (Process Management)
 
 ---
 
-### Pitfall 12: DNS Resolution Fails for localhost or Custom Domains
+## Migration Pitfalls (Bash to Babashka)
 
-**What goes wrong:** Container can't resolve `host.docker.internal` or custom DNS entries. Services on host unreachable. Corporate VPN DNS doesn't work.
+---
 
-**Why it happens:** Docker's DNS handling differs by platform. Custom DNS in daemon.json can break `host.docker.internal`. Systems using 127.0.0.1 as resolver (Ubuntu with dnsmasq) cause Docker to fall back to 8.8.8.8.
+### 11. cd Doesn't Persist Across Commands
+
+**Risk:** HIGH
+**Description:** In Bash, `cd foo && command` changes the directory for subsequent commands. In Babashka, each `shell` call starts fresh. The `:dir` option only applies to that single call.
+
+**Warning Signs:**
+- Commands execute in wrong directory
+- Relative paths resolve incorrectly
+- Multi-step build sequences fail
 
 **Prevention:**
-1. **Use `host.docker.internal`** for host connectivity (not localhost)
-2. **For Linux, add host entry** if `host.docker.internal` doesn't resolve:
-   ```bash
-   --add-host host.docker.internal:host-gateway
+1. Use `:dir` option consistently:
+   ```clojure
+   (shell {:dir "foo"} "install.sh")
    ```
-3. **Document network requirements** for different platforms
-4. **Test DNS in entrypoint** if critical services depend on it
-
-**Phase to address:** Phase 3 (Polish) — Edge case but frustrating when hit.
-
-**Sources:**
-- [Support host.docker.internal on Linux](https://github.com/docker/for-linux/issues/264)
-- [Solving DNS Resolution Issues](https://www.magetop.com/blog/solving-dns-resolution-issues-inside-docker-containers/)
-
----
-
-### Pitfall 13: Resource Limits Cause Claude Code to Fail
-
-**What goes wrong:** Claude Code hangs, crashes, or performs poorly. Container appears to work but AI assistant doesn't function correctly.
-
-**Why it happens:** Default Docker memory limits (2GB) are insufficient for Claude Code. Memory-intensive operations fail silently or OOM.
-
-**Prevention:**
-1. **Set adequate memory limits**: At least 4GB, recommend 8GB+
-   ```bash
-   docker run --memory=8g image
+2. For multi-command sequences in same dir, use explicit shell:
+   ```clojure
+   (shell "bash" "-c" "cd foo && ./install.sh && ./verify.sh")
    ```
-2. **Document minimum resource requirements** clearly
-3. **Add memory check to entrypoint** with warning if below threshold
+3. Track working directory in application state if needed
 
-**Phase to address:** Phase 1 (Core Container) — Essential for core functionality.
+**Phase:** Phase 1 (Core Architecture)
 
 **Sources:**
-- [Running Claude Code in Devcontainers](https://www.solberg.is/claude-devcontainer)
-- [Claude Code Docker Guide](https://smartscope.blog/en/generative-ai/claude/claude-code-docker-guide/)
+- [Bash and Babashka Equivalents Wiki](https://github.com/babashka/babashka/wiki/Bash-and-Babashka-equivalents)
 
 ---
 
-## Minor Pitfalls
+### 12. Array/List Handling Differs from Bash
 
-Mistakes that cause annoyance but are easily fixable.
+**Risk:** MEDIUM
+**Description:** Bash arrays like `docker_args+=(-v "$path")` with word splitting behavior don't translate directly. Babashka uses persistent vectors with different semantics. Passing arrays to shell commands requires care.
 
----
-
-### Pitfall 14: Dockerfile Layer Caching Defeated by Poor Instruction Order
-
-**What goes wrong:** Every change causes full rebuild. Build times frustrate development iteration.
-
-**Why it happens:** COPY . before RUN npm install means any source change invalidates dependency install layer. ARG values that change frequently placed too early.
+**Warning Signs:**
+- Arguments get concatenated instead of being separate
+- Quoting problems in command construction
+- Commands work with few args but fail with many
 
 **Prevention:**
-1. **Order instructions from least to most frequently changed**:
-   ```dockerfile
-   COPY package*.json ./
-   RUN npm install
-   COPY . .  # Source code last
+1. Build argument vectors explicitly:
+   ```clojure
+   (def docker-args (atom []))
+   (swap! docker-args conj "-v" path)
+   ;; Apply with spread:
+   (apply shell "docker" "run" @docker-args)
    ```
-2. **Use .dockerignore** to exclude node_modules, .git, etc.
-3. **Place frequently-changing ARGs near the end**
+2. Use `into` for merging argument lists
+3. Test with arguments containing spaces
 
-**Phase to address:** Phase 1 (Core Container) — Build efficiency.
-
-**Sources:**
-- [Docker Build Cache Documentation](https://docs.docker.com/build/cache/)
-- [Ultimate Guide to Docker Build Cache](https://depot.dev/blog/ultimate-guide-to-docker-build-cache)
+**Phase:** Phase 2 (Process Management)
 
 ---
 
-### Pitfall 15: Environment Variables Leak Secrets in Logs/Inspect
+### 13. Heredoc/Embedded File Handling
 
-**What goes wrong:** API keys or tokens visible in `docker inspect`, process listings, or debug logs. Secrets exposed unintentionally.
+**Risk:** MEDIUM
+**Description:** The current Bash script uses heredocs to embed Dockerfile content. Babashka doesn't have heredocs. Must use multi-line strings or external resource files.
 
-**Why it happens:** Passing secrets via `-e SECRET=value` makes them visible to anyone who can inspect the container or view ps output.
+**Warning Signs:**
+- Embedded content has escaping issues
+- Indentation becomes part of content
+- Special characters corrupt embedded files
 
 **Prevention:**
-1. **Use Docker secrets** for sensitive values (file-mounted, not env vars)
-2. **Use env file** instead of CLI args: `--env-file .env`
-3. **Never log environment in entrypoint** for debugging
-4. **For Claude API key**: Use CLAUDE_CONFIG_DIR pointing to mounted secrets file
+1. Use raw strings for embedded content:
+   ```clojure
+   (def dockerfile-content
+     "FROM debian:bookworm-slim
+   ARG WITH_CLAUDE=false
+   ...")
+   ```
+2. Or use `slurp` with embedded resources
+3. Consider moving templates to separate files
 
-**Phase to address:** Phase 1 (Core Container) — Security hygiene.
-
-**Sources:**
-- [Docker Secrets Documentation](https://docs.docker.com/engine/swarm/secrets/)
-- [4 Ways to Securely Store Secrets in Docker](https://blog.gitguardian.com/how-to-handle-secrets-in-docker/)
+**Phase:** Phase 2 (Build System)
 
 ---
 
-### Pitfall 16: Dockerfile.sandbox Not Found or Not Applied
+### 14. *file* Not Set in Tasks
 
-**What goes wrong:** User creates `Dockerfile.sandbox` for per-project extension but it has no effect. Custom setup ignored.
+**Risk:** LOW
+**Description:** Bash's `$0` gives the script path. Babashka's `*file*` is not set when running as tasks. This affects resolving paths relative to the script.
 
-**Why it happens:** File not in expected location, not correctly named, or build process doesn't look for it.
+**Warning Signs:**
+- Relative path resolution fails in tasks
+- Works as standalone script but not as task
+- Resource files not found
 
 **Prevention:**
-1. **Document exact filename and location** expected
-2. **Provide clear error message** if file exists but can't be processed
-3. **Log when Dockerfile.sandbox is detected and applied**
-4. **Validate Dockerfile syntax** before attempting build
+1. Use `babashka.fs/cwd` for current directory
+2. Pass explicit paths rather than relying on script location
+3. Use `(System/getProperty "babashka.file")` for script location
 
-**Phase to address:** Phase 2 or 3 (Per-project extensions)
+**Phase:** Phase 1 (Core Architecture)
+
+**Sources:**
+- [Bash and Babashka Equivalents](https://github.com/babashka/babashka/wiki/Bash-and-Babashka-equivalents)
+
+---
+
+### 15. Signal Handling Requires Explicit Setup
+
+**Risk:** MEDIUM
+**Description:** Bash's `trap cleanup EXIT` automatically handles SIGTERM, SIGINT. Babashka requires explicit shutdown hook registration. Without it, Ctrl+C may leave Docker containers running.
+
+**Warning Signs:**
+- Ctrl+C doesn't clean up resources
+- Orphaned containers after script termination
+- Temp files not deleted on interrupt
+
+**Prevention:**
+1. Register explicit shutdown hooks:
+   ```clojure
+   (defn setup-cleanup! [cleanup-fn]
+     (-> (Runtime/getRuntime)
+         (.addShutdownHook
+           (Thread. cleanup-fn))))
+   ```
+2. Use `:shutdown destroy-tree` for long-running processes
+3. Track resources that need cleanup in an atom
+
+**Phase:** Phase 2 (Process Management)
+
+**Sources:**
+- [Babashka Book - Signal Handling](https://book.babashka.org/)
+- [babashka/process shutdown hooks](https://github.com/babashka/process/issues/25)
+
+---
+
+### 16. TTY Detection Works Differently
+
+**Risk:** MEDIUM
+**Description:** The Bash `[[ -t 0 ]]` test for TTY availability becomes platform-dependent in Babashka. The `is_tty.clj` example uses inheritance checking, which only works on Unix.
+
+**Warning Signs:**
+- Interactive features fail in CI/cron
+- "Input device is not a TTY" errors
+- Different behavior in terminal vs piped execution
+
+**Prevention:**
+1. Use platform-aware TTY detection:
+   ```clojure
+   (defn tty? []
+     (if (windows?)
+       ;; Windows: check if running in console
+       (some? (System/console))
+       ;; Unix: use isatty equivalent
+       (:exit (shell {:continue true} "test" "-t" "0"))))
+   ```
+2. Make `-t` flag conditional based on detection
+3. Document interactive vs non-interactive behavior
+
+**Phase:** Phase 2 (Process Management)
+
+**Sources:**
+- [Babashka Examples - is_tty.clj](https://github.com/babashka/babashka/blob/master/examples/is_tty.clj)
+
+---
+
+## Docker Integration Pitfalls
+
+---
+
+### 17. Docker Socket Communication on Unix vs Windows
+
+**Risk:** MEDIUM
+**Description:** Docker API communication uses Unix sockets on Linux/macOS (`/var/run/docker.sock`) but named pipes on Windows (`//./pipe/docker_engine`). Direct Docker API calls require platform-specific handling.
+
+**Warning Signs:**
+- Docker commands work but API calls fail
+- Socket connection refused on Windows
+- Different behavior between platforms
+
+**Prevention:**
+1. Use Docker CLI commands rather than direct socket API
+2. If API needed, use platform-specific socket paths:
+   ```clojure
+   (defn docker-socket []
+     (if (windows?)
+       "//./pipe/docker_engine"
+       "/var/run/docker.sock"))
+   ```
+3. Consider `contajners` library for Babashka-compatible Docker API
+
+**Phase:** Phase 3 (Advanced Docker Features)
+
+**Sources:**
+- [Docker babashka-pod](https://github.com/docker/babashka-pod-docker)
+- [contajners Babashka compatibility](https://github.com/lispyclouds/contajners/issues/3)
+
+---
+
+### 18. Docker Build Output Parsing
+
+**Risk:** LOW
+**Description:** Docker build output format differs between BuildKit (default) and legacy builder. Parsing build output for progress/errors requires handling both formats.
+
+**Warning Signs:**
+- Build progress display breaks
+- Error extraction fails
+- Different output on different Docker versions
+
+**Prevention:**
+1. Use `--progress=plain` for consistent output
+2. Capture exit code rather than parsing output
+3. For verbose mode, just stream output without parsing
+
+**Phase:** Phase 2 (Build System)
 
 ---
 
@@ -502,44 +532,56 @@ Mistakes that cause annoyance but are easily fixable.
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|----------------|------------|
-| Core Container | UID/GID mismatch | Run container with --user matching host |
-| Core Container | Signal handling | Use exec form, test docker stop |
-| Core Container | Memory limits | Default to 4GB+, document requirements |
-| Git Integration | SSH agent not forwarded | Platform-specific socket mounting |
-| Git Integration | GPG signing fails | Document as optional, graceful fallback |
-| Git Integration | Dubious ownership | Add safe.directory automatically |
-| macOS Support | Volume performance | Use named volumes for node_modules |
-| Security | Config/secret exposure | Mount read-only, use secrets not env vars |
-| DX Polish | Timezone mismatch | Pass TZ from host |
-| DX Polish | TTY errors in scripts | Detect TTY availability |
+| Core Architecture | Environment variable case sensitivity | Platform-aware env key normalization |
+| Core Architecture | Path handling (slashes, HOME) | Use babashka.fs consistently |
+| Core Architecture | shell doesn't expand globs | Use babashka.fs/glob explicitly |
+| Process Management | exec() only in native images | Document bb binary requirement |
+| Process Management | Signal handling not automatic | Explicit shutdown hooks |
+| Process Management | cd doesn't persist | Use :dir option consistently |
+| Build System | Heredoc migration | Use multi-line strings or external files |
+| Git Integration | SSH socket path differences | Platform-specific socket resolution |
+| Windows Support | UID/GID concepts missing | Conditional permission mapping |
+| Windows Support | Cygwin path translation | Detect and convert paths |
+| Windows Support | Executable resolution | Use babashka.fs/which |
 
 ---
 
 ## Summary: Top 5 Pitfalls to Solve First
 
-1. **UID/GID Mismatch** — Without this, files are unusable. Solve in Phase 1.
-2. **SSH Agent Forwarding** — Without this, git push/pull fails. Solve in Phase 2.
-3. **Signal Handling** — Without this, containers won't stop cleanly. Solve in Phase 1.
-4. **Config Security** — Without this, API keys at risk. Solve in Phase 1.
-5. **macOS Performance** — Without this, Mac users have poor DX. Document in Phase 1, optimize in Phase 3.
+1. **Environment Variable Case Sensitivity** - Silent failures on Windows. Solve in Phase 1.
+2. **shell Doesn't Invoke Shell** - Glob/pipe failures. Solve in Phase 1.
+3. **UID/GID Windows Absence** - Docker permission logic must be conditional. Solve in Phase 1.
+4. **exec() Native Image Requirement** - Process lifecycle management. Solve in Phase 2.
+5. **SSH Socket Platform Differences** - Git integration core feature. Solve in Phase 3.
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Reasoning |
+|------|------------|-----------|
+| babashka.process behavior | HIGH | Official docs, well-documented |
+| Windows env var handling | HIGH | Explicitly documented in README |
+| Path handling utilities | HIGH | babashka.fs is mature and documented |
+| SSH socket forwarding | MEDIUM | Community sources, platform-specific complexity |
+| Windows Cygwin issues | MEDIUM | Community reports, less official documentation |
+| exec() behavior | HIGH | Explicitly documented as GraalVM-only |
 
 ---
 
 ## Sources Summary
 
 ### Official Documentation
-- [Docker Bind Mounts](https://docs.docker.com/engine/storage/bind-mounts/)
-- [Docker Build Cache](https://docs.docker.com/build/cache/)
-- [Docker Secrets](https://docs.docker.com/engine/swarm/secrets/)
-- [Docker Security](https://docs.docker.com/engine/security/)
-
-### Claude-Specific
-- [Claude Code Security](https://code.claude.com/docs/en/security)
-- [Claude Code DevContainer Docs](https://code.claude.com/docs/en/devcontainer)
-- [Claude Code in Devcontainers (Solberg)](https://www.solberg.is/claude-devcontainer)
+- [Babashka Book](https://book.babashka.org/)
+- [babashka/process README](https://github.com/babashka/process)
+- [babashka/fs API](https://github.com/babashka/fs/blob/master/API.md)
+- [Bash and Babashka Equivalents Wiki](https://github.com/babashka/babashka/wiki/Bash-and-Babashka-equivalents)
 
 ### Community Resources
-- [VS Code Remote Containers](https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials)
-- [Docker macOS Performance 2025](https://www.paolomainardi.com/posts/docker-performance-macos-2025/)
-- [PID 1 Signal Handling](https://petermalmgren.com/signal-handling-docker/)
-- [Docker Mount Permissions Guide](https://eastondev.com/blog/en/posts/dev/20251217-docker-mount-permissions-guide/)
+- [Changing my mind: Converting a script from bash to Babashka](https://blog.agical.se/en/posts/changing-my-mind--converting-a-script-from-bash-to-babashka/)
+- [How to Do Things With Babashka](https://presumably.de/how-to-do-things-with-babashka.html)
+- [WSL SSH Agent Forwarding](https://stuartleeks.com/posts/wsl-ssh-key-forward-to-windows/)
+
+### Platform-Specific
+- [Docker Forum: Windows UID/GID](https://forums.docker.com/t/find-uid-and-gid-on-windows-for-mounted-directories/53320)
+- [contajners Babashka compatibility](https://github.com/lispyclouds/contajners/issues/3)
