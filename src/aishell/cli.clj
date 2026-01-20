@@ -48,5 +48,20 @@
 (def dispatch-table
   [{:cmds [] :spec global-spec :fn handle-default}])
 
+(defn handle-error
+  "Handle CLI parsing errors with helpful messages."
+  [{:keys [cause option msg]}]
+  (case cause
+    :restrict
+    (do
+      (binding [*out* *err*]
+        (println (str output/RED "Error:" output/NC " Unknown option: " option))
+        (println (str "Try: " output/CYAN "aishell --help" output/NC)))
+      (System/exit 1))
+
+    ;; Default
+    (output/error msg)))
+
 (defn dispatch [args]
-  (cli/dispatch dispatch-table args))
+  (cli/dispatch dispatch-table args {:error-fn handle-error
+                                      :restrict true}))

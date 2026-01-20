@@ -15,6 +15,45 @@
 (def BOLD (if (colors-enabled?) "\u001b[1m" ""))
 (def NC (if (colors-enabled?) "\u001b[0m" ""))
 
+;; Known commands for suggestion matching
+(def known-commands #{"build" "update" "claude" "opencode"})
+
+(defn- levenshtein-distance
+  "Calculate edit distance between two strings."
+  [s1 s2]
+  (cond
+    (empty? s1) (count s2)
+    (empty? s2) (count s1)
+    :else
+    (let [s1 (vec s1)
+          s2 (vec s2)
+          n (count s1)
+          m (count s2)
+          ;; Iterative approach using atoms
+          d (atom (vec (range (inc m))))]
+      (doseq [i (range 1 (inc n))]
+        (let [prev @d
+              curr (atom [(inc i)])]
+          (doseq [j (range 1 (inc m))]
+            (let [cost (if (= (s1 (dec i)) (s2 (dec j))) 0 1)]
+              (swap! curr conj
+                     (min (inc (prev j))
+                          (inc (last @curr))
+                          (+ (prev (dec j)) cost)))))
+          (reset! d @curr)))
+      (last @d))))
+
+(defn suggest-command
+  "Suggest a similar command based on input."
+  [input]
+  (let [input (str/lower-case input)
+        candidates (->> known-commands
+                        (map (fn [cmd] [cmd (levenshtein-distance input cmd)]))
+                        (filter (fn [[_ dist]] (<= dist 3)))  ;; Max 3 edits
+                        (sort-by second))]
+    (when (seq candidates)
+      (first (first candidates)))))
+
 (defn error
   "Print error message to stderr and exit with code 1"
   [msg]
@@ -40,5 +79,7 @@
   [cmd]
   (binding [*out* *err*]
     (println (str RED "Error:" NC " Unknown command: " cmd))
+    (when-let [suggestion (suggest-command cmd)]
+      (println (str "Did you mean: " CYAN suggestion NC "?")))
     (println (str "Try: " CYAN "aishell --help" NC)))
   (System/exit 1))
