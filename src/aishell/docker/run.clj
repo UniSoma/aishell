@@ -54,21 +54,40 @@
                    (output/warn (str "Mount source does not exist: " source))
                    []))))))))
 
+(defn- parse-env-string
+  "Parse env string 'KEY=value' or 'KEY' (passthrough).
+   Returns [key value] where value is nil for passthrough."
+  [s]
+  (let [s (str s)]
+    (if-let [idx (str/index-of s "=")]
+      [(subs s 0 idx) (subs s (inc idx))]
+      [s nil])))
+
 (defn- build-env-args
   "Build -e flags from env config.
 
-   In YAML, env is a map:
-   - key with nil value: passthrough from host (VAR:)
-   - key with value: literal (VAR: value)
+   Supports two YAML formats:
+   1. Map format:
+      env:
+        FOO: bar        # literal
+        BAR:            # passthrough from host
+   2. Array format:
+      env:
+        - FOO=bar       # literal
+        - BAR           # passthrough from host
 
    Skips passthrough vars not set on host with warning."
-  [env-map]
-  (when (seq env-map)
-    (->> env-map
-         (mapcat
-           (fn [[k v]]
-             (let [key-name (name k)]
-               (if (nil? v)
+  [env]
+  (when (seq env)
+    (let [entries (if (map? env)
+                    ;; Map format: {:FOO "bar" :BAR nil}
+                    (map (fn [[k v]] [(name k) v]) env)
+                    ;; Array format: ["FOO=bar" "BAR"]
+                    (map parse-env-string env))]
+      (->> entries
+           (mapcat
+             (fn [[key-name value]]
+               (if (nil? value)
                  ;; Passthrough: only add if set on host
                  (if-let [host-val (System/getenv key-name)]
                    ["-e" key-name]
@@ -76,7 +95,7 @@
                      (output/warn (str "Skipping unset host variable: " key-name))
                      []))
                  ;; Literal value
-                 ["-e" (str key-name "=" v)])))))))
+                 ["-e" (str key-name "=" value)])))))))
 
 (def port-pattern
   "Valid port format: [IP:]HOST:CONTAINER[/PROTOCOL]"
