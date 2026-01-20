@@ -169,8 +169,8 @@
 
 (def dispatch-table
   [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
-   {:cmds ["claude"] :fn #(handle-run % "claude") :spec {:help {:alias :h :coerce :boolean}}}
-   {:cmds ["opencode"] :fn #(handle-run % "opencode") :spec {:help {:alias :h :coerce :boolean}}}
+   {:cmds ["claude"] :fn #(handle-run % "claude") :spec {:help {:alias :h :coerce :boolean}} :restrict false}
+   {:cmds ["opencode"] :fn #(handle-run % "opencode") :spec {:help {:alias :h :coerce :boolean}} :restrict false}
    {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
