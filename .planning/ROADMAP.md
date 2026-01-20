@@ -1,0 +1,132 @@
+# Roadmap: aishell v2.0 Babashka Rewrite
+
+## Overview
+
+This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cross-platform support (Linux, macOS) and simpler implementation. The journey starts with CLI foundation and Docker integration, then builds the build command, run commands, and validation layers. Distribution via uberscript completes the rewrite with feature parity to v1.2.
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-8 (shipped 2026-01-18)
+- ✅ **v1.1 Runtime Config** - Phases 9-10 (shipped 2026-01-19)
+- ✅ **v1.2 Hardening** - Phases 11-12 (shipped 2026-01-19)
+- 🚧 **v2.0 Babashka Rewrite** - Phases 13-18 (in progress)
+
+## Phases
+
+- [ ] **Phase 13: Foundation** - CLI skeleton with --version, --help, and error handling
+- [ ] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
+- [ ] **Phase 15: Build Command** - Full build workflow with state persistence
+- [ ] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
+- [ ] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
+- [ ] **Phase 18: Distribution** - Uberscript packaging and curl|bash installer
+
+## Phase Details
+
+### Phase 13: Foundation
+**Goal**: Establish project structure and core CLI that all subsequent phases build on
+**Depends on**: Nothing (first phase of v2.0)
+**Requirements**: CLI-01, CLI-02, CLI-08, PLAT-03
+**Success Criteria** (what must be TRUE):
+  1. User can run `./aishell --version` and see version number
+  2. User can run `./aishell --help` and see available commands with descriptions
+  3. User sees clear error message when running invalid command (e.g., `./aishell foo`)
+  4. Path handling works correctly on both Linux and macOS (forward slashes, home expansion)
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+
+### Phase 14: Docker Integration
+**Goal**: Provide Docker operations that build and run commands depend on
+**Depends on**: Phase 13
+**Requirements**: DOCK-01, DOCK-02, DOCK-03, DOCK-07, DOCK-08
+**Success Criteria** (what must be TRUE):
+  1. User sees clear error "Docker not running" when Docker daemon unavailable
+  2. User sees clear error "No image built" when running without prior build
+  3. Tool can build Docker image from embedded Dockerfile template
+  4. Tool caches image builds (second build is instant if nothing changed)
+  5. Per-project Dockerfile extension (.aishell/Dockerfile) is detected and applied
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD
+- [ ] 14-02: TBD
+
+### Phase 15: Build Command
+**Goal**: Users can build their sandbox environment with harness version pinning
+**Depends on**: Phase 14
+**Requirements**: CLI-03, CONF-07, CONF-08
+**Success Criteria** (what must be TRUE):
+  1. User can run `./aishell build` and see image being built
+  2. User can run `./aishell build --with-claude --claude-version 1.0.0` to pin version
+  3. Build flags are persisted in `~/.aishell/state.edn`
+  4. Subsequent builds use persisted flags without re-specifying
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD
+
+### Phase 16: Run Commands
+**Goal**: Users can enter shell or run harnesses directly with full configuration support
+**Depends on**: Phase 15
+**Requirements**: CLI-04, CLI-05, CLI-06, DOCK-04, DOCK-05, DOCK-06, CONF-01, CONF-02, CONF-03, CONF-04, CONF-05, CONF-06, PLAT-01, PLAT-02
+**Success Criteria** (what must be TRUE):
+  1. User can run `./aishell` and enter a shell inside the container
+  2. User can run `./aishell claude` and Claude Code starts in the container
+  3. User can run `./aishell opencode` and OpenCode starts in the container
+  4. Project is mounted at same path as host (e.g., /home/user/project inside container)
+  5. Git identity (user.name, user.email) is available inside container
+  6. Container is ephemeral (destroyed on exit, only mounted files persist)
+  7. Per-project config.yaml mounts, env, ports, docker_args, pre_start work
+  8. Tool works on Linux (x86_64, aarch64) and macOS (x86_64, aarch64)
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: TBD
+- [ ] 16-02: TBD
+- [ ] 16-03: TBD
+
+### Phase 17: Validation & Polish
+**Goal**: Security validations and update awareness matching v1.2 hardening
+**Depends on**: Phase 16
+**Requirements**: CLI-07, VAL-01, VAL-02, VAL-03
+**Success Criteria** (what must be TRUE):
+  1. User can run `./aishell update` to check for updates
+  2. Invalid version strings (e.g., `1.0; rm -rf /`) are rejected with clear error
+  3. Dangerous docker_args patterns (--privileged, docker.sock) trigger warnings
+  4. User is warned when embedded Dockerfile changed since last build
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: TBD
+
+### Phase 18: Distribution
+**Goal**: Users can install aishell via curl|bash one-liner
+**Depends on**: Phase 17
+**Requirements**: DIST-01, DIST-02, DIST-03
+**Success Criteria** (what must be TRUE):
+  1. User can run `curl -fsSL ... | bash` to install aishell
+  2. aishell is distributed as single-file uberscript (one .clj file)
+  3. Installer assumes Babashka is installed (provides clear error if missing)
+**Plans**: TBD
+
+Plans:
+- [ ] 18-01: TBD
+
+## Progress
+
+**Execution Order:**
+Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear between their surrounding integers.
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 13. Foundation | v2.0 | 0/? | Not started | - |
+| 14. Docker Integration | v2.0 | 0/? | Not started | - |
+| 15. Build Command | v2.0 | 0/? | Not started | - |
+| 16. Run Commands | v2.0 | 0/? | Not started | - |
+| 17. Validation & Polish | v2.0 | 0/? | Not started | - |
+| 18. Distribution | v2.0 | 0/? | Not started | - |
+
+---
+*Roadmap created: 2026-01-20*
+*Last updated: 2026-01-20*

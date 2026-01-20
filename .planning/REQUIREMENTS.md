@@ -89,45 +89,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | TBD | Pending |
-| CLI-02 | TBD | Pending |
-| CLI-03 | TBD | Pending |
-| CLI-04 | TBD | Pending |
-| CLI-05 | TBD | Pending |
-| CLI-06 | TBD | Pending |
-| CLI-07 | TBD | Pending |
-| CLI-08 | TBD | Pending |
-| DOCK-01 | TBD | Pending |
-| DOCK-02 | TBD | Pending |
-| DOCK-03 | TBD | Pending |
-| DOCK-04 | TBD | Pending |
-| DOCK-05 | TBD | Pending |
-| DOCK-06 | TBD | Pending |
-| DOCK-07 | TBD | Pending |
-| DOCK-08 | TBD | Pending |
-| CONF-01 | TBD | Pending |
-| CONF-02 | TBD | Pending |
-| CONF-03 | TBD | Pending |
-| CONF-04 | TBD | Pending |
-| CONF-05 | TBD | Pending |
-| CONF-06 | TBD | Pending |
-| CONF-07 | TBD | Pending |
-| CONF-08 | TBD | Pending |
-| VAL-01 | TBD | Pending |
-| VAL-02 | TBD | Pending |
-| VAL-03 | TBD | Pending |
-| PLAT-01 | TBD | Pending |
-| PLAT-02 | TBD | Pending |
-| PLAT-03 | TBD | Pending |
-| DIST-01 | TBD | Pending |
-| DIST-02 | TBD | Pending |
-| DIST-03 | TBD | Pending |
+| CLI-01 | Phase 13 | Pending |
+| CLI-02 | Phase 13 | Pending |
+| CLI-03 | Phase 15 | Pending |
+| CLI-04 | Phase 16 | Pending |
+| CLI-05 | Phase 16 | Pending |
+| CLI-06 | Phase 16 | Pending |
+| CLI-07 | Phase 17 | Pending |
+| CLI-08 | Phase 13 | Pending |
+| DOCK-01 | Phase 14 | Pending |
+| DOCK-02 | Phase 14 | Pending |
+| DOCK-03 | Phase 14 | Pending |
+| DOCK-04 | Phase 16 | Pending |
+| DOCK-05 | Phase 16 | Pending |
+| DOCK-06 | Phase 16 | Pending |
+| DOCK-07 | Phase 14 | Pending |
+| DOCK-08 | Phase 14 | Pending |
+| CONF-01 | Phase 16 | Pending |
+| CONF-02 | Phase 16 | Pending |
+| CONF-03 | Phase 16 | Pending |
+| CONF-04 | Phase 16 | Pending |
+| CONF-05 | Phase 16 | Pending |
+| CONF-06 | Phase 16 | Pending |
+| CONF-07 | Phase 15 | Pending |
+| CONF-08 | Phase 15 | Pending |
+| VAL-01 | Phase 17 | Pending |
+| VAL-02 | Phase 17 | Pending |
+| VAL-03 | Phase 17 | Pending |
+| PLAT-01 | Phase 16 | Pending |
+| PLAT-02 | Phase 16 | Pending |
+| PLAT-03 | Phase 13 | Pending |
+| DIST-01 | Phase 18 | Pending |
+| DIST-02 | Phase 18 | Pending |
+| DIST-03 | Phase 18 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33
+- Mapped to phases: 33
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after initial definition*
+*Last updated: 2026-01-20 after roadmap creation*
