@@ -62,6 +62,11 @@
             remaining-secs (mod secs 60)]
         (format "%dm %.0fs" mins remaining-secs)))))
 
+(defn- format-harness-line
+  "Format harness version line for build summary output."
+  [name version]
+  (str "  " name ": " (or version "latest")))
+
 (defn- run-build
   "Execute docker build command. Returns true on success."
   [build-dir tag args verbose?]
@@ -137,8 +142,19 @@
               (when-not quiet
                 (println (str "Built " base-image-tag
                               " (" (format-duration duration)
-                              (when size (str ", " size)) ")")))
-              {:success true :image base-image-tag})
+                              (when size (str ", " size)) ")"))
+                (when (:with-claude opts)
+                  (println (format-harness-line "Claude Code" (:claude-version opts))))
+                (when (:with-opencode opts)
+                  (println (format-harness-line "OpenCode" (:opencode-version opts)))))
+              {:success true
+               :image base-image-tag
+               :duration duration
+               :size size
+               :with-claude (:with-claude opts)
+               :with-opencode (:with-opencode opts)
+               :claude-version (:claude-version opts)
+               :opencode-version (:opencode-version opts)})
             (output/error "Build failed")))
         (finally
           ;; Cleanup temp directory
