@@ -42,7 +42,7 @@
     (true? value) {:enabled? true}  ; boolean true from CLI
     (= value "true") {:enabled? true}
     (= value "latest") {:enabled? true}
-    :else {:enabled? true :version value}))
+    :else {:enabled? true :version (str value)}))
 
 ;; Build subcommand spec
 ;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
