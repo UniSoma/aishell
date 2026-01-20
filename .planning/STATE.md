@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 15 - Build Command
+**Current focus:** Phase 16 - Run Commands
 
 ## Current Position
 
-Phase: 15 of 18 (Build Command)
-Plan: 2 of ? in current phase
-Status: In progress
-Last activity: 2026-01-20 — Completed 15-02-PLAN.md
+Phase: 16 of 18 (Run Commands)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-01-20 — Completed Phase 15 (Build Command)
 
-Progress: [████████░░░░░░░░░░░░] 40%
+Progress: [██████████░░░░░░░░░░] 50%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -95,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 15-02-PLAN.md
+Stopped at: Completed Phase 15 (Build Command) - ready for Phase 16
 Resume file: None

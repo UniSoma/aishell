@@ -11,7 +11,7 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 - [x] **CLI-01**: User can run `aishell --version` to see version
 - [x] **CLI-02**: User can run `aishell --help` to see available commands
-- [ ] **CLI-03**: User can run `aishell build` to build the Docker image
+- [x] **CLI-03**: User can run `aishell build` to build the Docker image
 - [ ] **CLI-04**: User can run `aishell` to enter a shell in the container
 - [ ] **CLI-05**: User can run `aishell claude` to run Claude Code directly
 - [ ] **CLI-06**: User can run `aishell opencode` to run OpenCode directly
@@ -37,8 +37,8 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 - [ ] **CONF-04**: Config supports `ports` for port mappings
 - [ ] **CONF-05**: Config supports `docker_args` for arbitrary docker run flags
 - [ ] **CONF-06**: Config supports `pre_start` for background commands
-- [ ] **CONF-07**: Tool persists state in `~/.aishell/state.edn`
-- [ ] **CONF-08**: Build flags (--claude-version, --opencode-version) are persisted
+- [x] **CONF-07**: Tool persists state in `~/.aishell/state.edn`
+- [x] **CONF-08**: Build flags (--claude-version, --opencode-version) are persisted
 
 ### Validation
 
@@ -91,7 +91,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CLI-01 | Phase 13 | Complete |
 | CLI-02 | Phase 13 | Complete |
-| CLI-03 | Phase 15 | Pending |
+| CLI-03 | Phase 15 | Complete |
 | CLI-04 | Phase 16 | Pending |
 | CLI-05 | Phase 16 | Pending |
 | CLI-06 | Phase 16 | Pending |
@@ -111,8 +111,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-04 | Phase 16 | Pending |
 | CONF-05 | Phase 16 | Pending |
 | CONF-06 | Phase 16 | Pending |
-| CONF-07 | Phase 15 | Pending |
-| CONF-08 | Phase 15 | Pending |
+| CONF-07 | Phase 15 | Complete |
+| CONF-08 | Phase 15 | Complete |
 | VAL-01 | Phase 17 | Pending |
 | VAL-02 | Phase 17 | Pending |
 | VAL-03 | Phase 17 | Pending |
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 14 completion*
+*Last updated: 2026-01-20 after Phase 15 completion*

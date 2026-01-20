@@ -15,7 +15,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 
 - [x] **Phase 13: Foundation** - CLI skeleton with --version, --help, and error handling
 - [x] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
-- [ ] **Phase 15: Build Command** - Full build workflow with state persistence
+- [x] **Phase 15: Build Command** - Full build workflow with state persistence
 - [ ] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
 - [ ] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
 - [ ] **Phase 18: Distribution** - Uberscript packaging and curl|bash installer
@@ -69,8 +69,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md - State persistence module (EDN read/write)
-- [ ] 15-02-PLAN.md - Build subcommand with flag parsing and validation
+- [x] 15-01-PLAN.md - State persistence module (EDN read/write)
+- [x] 15-02-PLAN.md - Build subcommand with flag parsing and validation
 
 ### Phase 16: Run Commands
 **Goal**: Users can enter shell or run harnesses directly with full configuration support
@@ -128,11 +128,11 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 |-------|-----------|----------------|--------|-----------|
 | 13. Foundation | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
 | 14. Docker Integration | v2.0 | 5/5 | ✓ Complete | 2026-01-20 |
-| 15. Build Command | v2.0 | 0/2 | Planned | - |
+| 15. Build Command | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
 | 17. Validation & Polish | v2.0 | 0/? | Not started | - |
 | 18. Distribution | v2.0 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 15 planning*
+*Last updated: 2026-01-20 after Phase 15 execution*
