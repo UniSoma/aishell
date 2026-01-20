@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 15 of 18 (Build Command)
-Plan: 1 of ? in current phase
+Plan: 2 of ? in current phase
 Status: In progress
-Last activity: 2026-01-20 — Completed 15-01-PLAN.md
+Last activity: 2026-01-20 — Completed 15-02-PLAN.md
 
-Progress: [███████░░░░░░░░░░░░░] 35%
+Progress: [████████░░░░░░░░░░░░] 40%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v2.0)
-- Average duration: 1.6 min
-- Total execution time: 13 min
+- Total plans completed: 9 (v2.0)
+- Average duration: 1.8 min
+- Total execution time: 16 min
 
 **By Phase:**
 
@@ -40,7 +40,7 @@ v2.0 Babashka Rewrite:
 |-------|-------|-------|----------|
 | 13-foundation | 2 | 5 min | 2.5 min |
 | 14-docker-integration | 5 | 7 min | 1.4 min |
-| 15-build-command | 1 | 1 min | 1.0 min |
+| 15-build-command | 2 | 4 min | 2.0 min |
 
 *Updated after each plan completion*
 
@@ -74,6 +74,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Docker check before image check in CLI | Fail fast on Docker unavailable | 14-05 |
 | State at ~/.aishell/state.edn (global) | Per CONTEXT.md, not per-project | 15-01 |
 | read-state returns nil for missing file | Caller decides behavior, not error | 15-01 |
+| No :coerce :string for optional value flags | babashka.cli returns boolean true for flags without values | 15-02 |
+| parse-with-flag handles both boolean and string | Check (true? value) before string checks | 15-02 |
 
 ### Pending Todos
 
@@ -93,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 15-01-PLAN.md
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
