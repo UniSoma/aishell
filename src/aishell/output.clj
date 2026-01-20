@@ -83,3 +83,10 @@
       (println (str "Did you mean: " CYAN suggestion NC "?")))
     (println (str "Try: " CYAN "aishell --help" NC)))
   (System/exit 1))
+
+(defn error-no-build
+  "Print error when no image has been built for the project"
+  []
+  (binding [*out* *err*]
+    (println (str RED "Error:" NC " No image built. Run: " CYAN "aishell build" NC)))
+  (System/exit 1))
