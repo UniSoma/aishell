@@ -5,7 +5,8 @@
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
             [aishell.output :as output]
-            [aishell.state :as state]))
+            [aishell.state :as state]
+            [aishell.util :as util]))
 
 (def global-spec
   {:help    {:alias :h :coerce :boolean :desc "Show help"}
@@ -121,7 +122,7 @@
          :claude-version (:version claude-config)
          :opencode-version (:version opencode-config)
          :image-tag (:image result)
-         :build-time (java.time.Instant/now)}))))
+         :build-time (str (java.time.Instant/now))}))))
 
 (defn handle-default [{:keys [opts args]}]
   (cond

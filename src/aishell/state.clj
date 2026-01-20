@@ -28,7 +28,7 @@
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
     :image-tag \"aishell:base\"  ; string
-    :build-time #inst \"...\"}   ; instant"
+    :build-time \"2026-01-20...\" ; ISO-8601 string"
   [state]
   (let [path (state-file)]
     (util/ensure-dir (util/config-dir))

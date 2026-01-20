@@ -4,9 +4,10 @@
 
 (defn get-home
   "Get user home directory (cross-platform).
-   Uses babashka.fs/home which handles Linux, macOS, and fallbacks."
+   Prefers HOME env var (works with network logins), falls back to fs/home."
   []
-  (str (fs/home)))
+  (or (System/getenv "HOME")
+      (str (fs/home))))
 
 (defn expand-path
   "Expand ~ and $HOME in path string.
