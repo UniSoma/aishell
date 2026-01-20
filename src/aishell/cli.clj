@@ -1,13 +1,54 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
+            [clojure.string :as str]
             [aishell.core :as core]
             [aishell.docker :as docker]
-            [aishell.output :as output]))
+            [aishell.docker.build :as build]
+            [aishell.output :as output]
+            [aishell.state :as state]))
 
 (def global-spec
   {:help    {:alias :h :coerce :boolean :desc "Show help"}
    :version {:alias :v :coerce :boolean :desc "Show version"}
    :json    {:coerce :boolean :desc "Output in JSON format"}})
+
+;; Version validation patterns
+(def semver-pattern
+  #"^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$")
+
+(def dangerous-chars #"[;&|`$(){}\[\]<>!\\]")
+
+(defn validate-version
+  "Validate version string. Returns nil on success, exits with error on failure."
+  [version harness-name]
+  (when (and version (not= version "true") (not= version "latest"))
+    (cond
+      (re-find dangerous-chars version)
+      (output/error (str "Invalid " harness-name " version: contains shell metacharacters"))
+
+      (not (re-matches semver-pattern version))
+      (output/error (str "Invalid " harness-name " version format: " version
+                        "\nExpected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)")))))
+
+(defn parse-with-flag
+  "Parse --with-X flag value.
+   nil -> {:enabled? false}
+   'true' -> {:enabled? true} (flag without value)
+   'latest' -> {:enabled? true}
+   version -> {:enabled? true :version version}"
+  [value]
+  (cond
+    (nil? value) {:enabled? false}
+    (= value "true") {:enabled? true}
+    (= value "latest") {:enabled? true}
+    :else {:enabled? true :version value}))
+
+;; Build subcommand spec
+(def build-spec
+  {:with-claude   {:coerce :string :desc "Include Claude Code (optional: =VERSION)"}
+   :with-opencode {:coerce :string :desc "Include OpenCode (optional: =VERSION)"}
+   :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
+   :help          {:alias :h :coerce :boolean :desc "Show build help"}})
 
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
@@ -30,6 +71,54 @@
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
 
+(defn print-build-help []
+  (println (str output/BOLD "Usage:" output/NC " aishell build [OPTIONS]"))
+  (println)
+  (println "Build the container image with optional harness installations.")
+  (println)
+  (println (str output/BOLD "Options:" output/NC))
+  (println (cli/format-opts {:spec build-spec
+                             :order [:with-claude :with-opencode :verbose :help]}))
+  (println)
+  (println (str output/BOLD "Examples:" output/NC))
+  (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
+  (println (str "  " output/CYAN "aishell build --with-claude" output/NC "        Include Claude Code (latest)"))
+  (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
+  (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both")))
+
+(defn handle-build [{:keys [opts]}]
+  (if (:help opts)
+    (print-build-help)
+    (let [;; Parse flags
+          claude-config (parse-with-flag (:with-claude opts))
+          opencode-config (parse-with-flag (:with-opencode opts))
+
+          ;; Validate versions before build
+          _ (validate-version (:version claude-config) "Claude Code")
+          _ (validate-version (:version opencode-config) "OpenCode")
+
+          ;; Show replacement message if image exists
+          _ (when (docker/image-exists? build/base-image-tag)
+              (println "Replacing existing image..."))
+
+          ;; Build with explicit force (no aishell caching per CONTEXT.md)
+          result (build/build-base-image
+                   {:with-claude (:enabled? claude-config)
+                    :with-opencode (:enabled? opencode-config)
+                    :claude-version (:version claude-config)
+                    :opencode-version (:version opencode-config)
+                    :verbose (:verbose opts)
+                    :force true})]
+
+      ;; Persist state (always, even on failure this won't run due to error exit)
+      (state/write-state
+        {:with-claude (:enabled? claude-config)
+         :with-opencode (:enabled? opencode-config)
+         :claude-version (:version claude-config)
+         :opencode-version (:version opencode-config)
+         :image-tag (:image result)
+         :build-time (java.time.Instant/now)}))))
+
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -49,7 +138,8 @@
       (output/error-no-build))))
 
 (def dispatch-table
-  [{:cmds [] :spec global-spec :fn handle-default}])
+  [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
+   {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
   "Handle CLI parsing errors with helpful messages."
