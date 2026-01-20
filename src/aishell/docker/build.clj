@@ -76,17 +76,17 @@
                          ["."]))]
     (if verbose?
       ;; Verbose: inherit output streams
-      (let [{:keys [exit]} (p/process {:dir (str build-dir)
-                                       :out :inherit
-                                       :err :inherit}
-                                      cmd)]
+      (let [{:keys [exit]} (apply p/process {:dir (str build-dir)
+                                             :out :inherit
+                                             :err :inherit}
+                                            cmd)]
         (zero? @exit))
       ;; Silent: capture output
-      (let [{:keys [exit out err]} (p/shell {:dir (str build-dir)
-                                             :out :string
-                                             :err :string
-                                             :continue true}
-                                            cmd)]
+      (let [{:keys [exit out err]} (apply p/shell {:dir (str build-dir)
+                                                   :out :string
+                                                   :err :string
+                                                   :continue true}
+                                                  cmd)]
         (when-not (zero? exit)
           (binding [*out* *err*]
             (println err)))
