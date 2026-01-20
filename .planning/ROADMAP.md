@@ -62,13 +62,15 @@ Plans:
 **Requirements**: CLI-03, CONF-07, CONF-08
 **Success Criteria** (what must be TRUE):
   1. User can run `./aishell build` and see image being built
-  2. User can run `./aishell build --with-claude --claude-version 1.0.0` to pin version
+  2. User can run `./aishell build --with-claude=1.0.0` to pin version (single flag design)
   3. Build flags are persisted in `~/.aishell/state.edn`
   4. Subsequent builds use persisted flags without re-specifying
-**Plans**: TBD
+  5. Build with no flags clears previous state (base image only)
+**Plans**: 2 plans
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md - State persistence module (EDN read/write)
+- [ ] 15-02-PLAN.md - Build subcommand with flag parsing and validation
 
 ### Phase 16: Run Commands
 **Goal**: Users can enter shell or run harnesses directly with full configuration support
@@ -126,11 +128,11 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 |-------|-----------|----------------|--------|-----------|
 | 13. Foundation | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
 | 14. Docker Integration | v2.0 | 5/5 | ✓ Complete | 2026-01-20 |
-| 15. Build Command | v2.0 | 0/? | Not started | - |
+| 15. Build Command | v2.0 | 0/2 | Planned | - |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
 | 17. Validation & Polish | v2.0 | 0/? | Not started | - |
 | 18. Distribution | v2.0 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 14 execution*
+*Last updated: 2026-01-20 after Phase 15 planning*
