@@ -141,3 +141,74 @@
   (->> api-key-vars
        (filter #(System/getenv %))
        (mapcat (fn [var] ["-e" (str var "=" (System/getenv var))]))))
+
+(defn build-docker-args
+  "Build complete docker run argument vector.
+
+   Arguments:
+   - project-dir: Absolute path to project
+   - image-tag: Docker image to run
+   - config: Parsed config map from config.clj (or nil)
+   - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
+
+   Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
+
+   Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
+   (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
+  [{:keys [project-dir image-tag config git-identity]}]
+  (let [uid (get-uid)
+        gid (get-gid)
+        home (util/get-home)]
+    (-> ["docker" "run"
+         "--rm" "-it" "--init"
+         ;; Project mount at same path
+         "-v" (str project-dir ":" project-dir)
+         "-w" project-dir
+         ;; User identity for entrypoint
+         "-e" (str "LOCAL_UID=" uid)
+         "-e" (str "LOCAL_GID=" gid)
+         "-e" (str "LOCAL_HOME=" home)
+         ;; Terminal settings
+         "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
+         "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))]
+
+        ;; Git identity
+        (cond-> (:name git-identity)
+          (into ["-e" (str "GIT_AUTHOR_NAME=" (:name git-identity))
+                 "-e" (str "GIT_COMMITTER_NAME=" (:name git-identity))]))
+        (cond-> (:email git-identity)
+          (into ["-e" (str "GIT_AUTHOR_EMAIL=" (:email git-identity))
+                 "-e" (str "GIT_COMMITTER_EMAIL=" (:email git-identity))]))
+
+        ;; Harness config mounts (Claude, OpenCode configs)
+        (into (build-harness-config-mounts))
+
+        ;; API keys
+        (into (build-api-env-args))
+
+        ;; Disable autoupdater in container
+        (into ["-e" "DISABLE_AUTOUPDATER=1"])
+
+        ;; Config: mounts
+        (cond-> (:mounts config)
+          (into (build-mount-args (:mounts config))))
+
+        ;; Config: env
+        (cond-> (:env config)
+          (into (build-env-args (:env config))))
+
+        ;; Config: ports
+        (cond-> (:ports config)
+          (into (build-port-args (:ports config))))
+
+        ;; Config: pre_start (passed to entrypoint via env var)
+        ;; Entrypoint handles execution: sh -c "$PRE_START" > /tmp/pre-start.log 2>&1 &
+        (cond-> (:pre_start config)
+          (into ["-e" (str "PRE_START=" (:pre_start config))]))
+
+        ;; Config: docker_args (must be before image)
+        (cond-> (:docker_args config)
+          (into (tokenize-docker-args (:docker_args config))))
+
+        ;; Image tag (must be last before command)
+        (conj image-tag))))
