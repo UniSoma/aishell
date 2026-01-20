@@ -12,9 +12,9 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 Phase: 17 of 18 (Validation & Polish)
 Plan: 0 of ? in current phase
 Status: Ready to plan
-Last activity: 2026-01-20 — Phase 16 verified complete (7/7 must-haves)
+Last activity: 2026-01-20 — Completed 16-04-PLAN.md (gap closure)
 
-Progress: [█████████████░░░░░░░] 67%
+Progress: [██████████████░░░░░░] 70%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13 (v2.0)
-- Average duration: 2.0 min
-- Total execution time: 26.4 min
+- Total plans completed: 14 (v2.0)
+- Average duration: 2.2 min
+- Total execution time: 30.4 min
 
 **By Phase:**
 
@@ -41,7 +41,7 @@ v2.0 Babashka Rewrite:
 | 13-foundation | 2 | 5 min | 2.5 min |
 | 14-docker-integration | 5 | 7 min | 1.4 min |
 | 15-build-command | 3 | 6 min | 2.0 min |
-| 16-run-commands | 3 | 8.4 min | 2.8 min |
+| 16-run-commands | 4 | 12.4 min | 3.1 min |
 
 *Updated after each plan completion*
 
@@ -88,6 +88,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | p/exec for process replacement | Proper Unix exec semantics, no zombie processes | 16-03 |
 | Claude always --dangerously-skip-permissions | Container IS the sandbox, prompts redundant | 16-03 |
 | Pass-through args for harness commands | No :restrict true for claude/opencode, allow arbitrary args | 16-03 |
+| Dual format support for env config | map? check to detect format, normalize to [k v] pairs | 16-04 |
+| :restrict false per-command override | Overrides global :restrict true for pass-through commands | 16-04 |
 
 ### Pending Todos
 
@@ -107,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Phase 16 verified complete - ready for Phase 17 planning
+Stopped at: Completed 16-04-PLAN.md - gap closure complete, ready for Phase 17 planning
 Resume file: None
