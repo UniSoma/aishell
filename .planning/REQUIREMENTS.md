@@ -9,14 +9,14 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 ### CLI Core
 
-- [ ] **CLI-01**: User can run `aishell --version` to see version
-- [ ] **CLI-02**: User can run `aishell --help` to see available commands
+- [x] **CLI-01**: User can run `aishell --version` to see version
+- [x] **CLI-02**: User can run `aishell --help` to see available commands
 - [ ] **CLI-03**: User can run `aishell build` to build the Docker image
 - [ ] **CLI-04**: User can run `aishell` to enter a shell in the container
 - [ ] **CLI-05**: User can run `aishell claude` to run Claude Code directly
 - [ ] **CLI-06**: User can run `aishell opencode` to run OpenCode directly
 - [ ] **CLI-07**: User can run `aishell update` to check for updates
-- [ ] **CLI-08**: CLI provides clear error messages for invalid commands/options
+- [x] **CLI-08**: CLI provides clear error messages for invalid commands/options
 
 ### Docker Integration
 
@@ -50,7 +50,7 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 - [ ] **PLAT-01**: Tool works on Linux (x86_64, aarch64)
 - [ ] **PLAT-02**: Tool works on macOS (x86_64, aarch64)
-- [ ] **PLAT-03**: Tool handles platform-specific path conventions
+- [x] **PLAT-03**: Tool handles platform-specific path conventions
 
 ### Distribution
 
@@ -89,14 +89,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | Phase 13 | Pending |
-| CLI-02 | Phase 13 | Pending |
+| CLI-01 | Phase 13 | Complete |
+| CLI-02 | Phase 13 | Complete |
 | CLI-03 | Phase 15 | Pending |
 | CLI-04 | Phase 16 | Pending |
 | CLI-05 | Phase 16 | Pending |
 | CLI-06 | Phase 16 | Pending |
 | CLI-07 | Phase 17 | Pending |
-| CLI-08 | Phase 13 | Pending |
+| CLI-08 | Phase 13 | Complete |
 | DOCK-01 | Phase 14 | Pending |
 | DOCK-02 | Phase 14 | Pending |
 | DOCK-03 | Phase 14 | Pending |
@@ -118,7 +118,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VAL-03 | Phase 17 | Pending |
 | PLAT-01 | Phase 16 | Pending |
 | PLAT-02 | Phase 16 | Pending |
-| PLAT-03 | Phase 13 | Pending |
+| PLAT-03 | Phase 13 | Complete |
 | DIST-01 | Phase 18 | Pending |
 | DIST-02 | Phase 18 | Pending |
 | DIST-03 | Phase 18 | Pending |
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after roadmap creation*
+*Last updated: 2026-01-20 after Phase 13 completion*

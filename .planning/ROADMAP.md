@@ -13,7 +13,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 
 ## Phases
 
-- [ ] **Phase 13: Foundation** - CLI skeleton with --version, --help, and error handling
+- [x] **Phase 13: Foundation** - CLI skeleton with --version, --help, and error handling
 - [ ] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
 - [ ] **Phase 15: Build Command** - Full build workflow with state persistence
 - [ ] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
@@ -34,8 +34,8 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 **Plans**: 2 plans
 
 Plans:
-- [ ] 13-01-PLAN.md - Project structure and core CLI (dispatch, version, help)
-- [ ] 13-02-PLAN.md - Path utilities and enhanced error messages
+- [x] 13-01-PLAN.md - Project structure and core CLI (dispatch, version, help)
+- [x] 13-02-PLAN.md - Path utilities and enhanced error messages
 
 ### Phase 14: Docker Integration
 **Goal**: Provide Docker operations that build and run commands depend on
@@ -121,7 +121,7 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 13. Foundation | v2.0 | 0/2 | Planned | - |
+| 13. Foundation | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
 | 14. Docker Integration | v2.0 | 0/? | Not started | - |
 | 15. Build Command | v2.0 | 0/? | Not started | - |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
@@ -130,4 +130,4 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20*
+*Last updated: 2026-01-20 after Phase 13 completion*
