@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 16 of 18 (Run Commands)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-20 — Completed 16-01-PLAN.md (Config Module)
+Last activity: 2026-01-20 — Completed 16-02-PLAN.md (Docker Run Argument Builder)
 
-Progress: [███████████░░░░░░░░░] 55%
+Progress: [████████████░░░░░░░░] 60%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11 (v2.0)
-- Average duration: 1.8 min
-- Total execution time: 19.4 min
+- Total plans completed: 12 (v2.0)
+- Average duration: 1.9 min
+- Total execution time: 22.4 min
 
 **By Phase:**
 
@@ -41,7 +41,7 @@ v2.0 Babashka Rewrite:
 | 13-foundation | 2 | 5 min | 2.5 min |
 | 14-docker-integration | 5 | 7 min | 1.4 min |
 | 15-build-command | 3 | 6 min | 2.0 min |
-| 16-run-commands | 1 | 1.4 min | 1.4 min |
+| 16-run-commands | 2 | 4.4 min | 2.2 min |
 
 *Updated after each plan completion*
 
@@ -83,6 +83,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | build-time as ISO-8601 string, not Instant | EDN can't read #object[java.time.Instant...] | 15-UAT |
 | YAML config.yaml replaces bash run.conf | Better structure, native Babashka support via clj-yaml | 16-01 |
 | Warn don't fail on unknown config keys | Forward compatibility for future config keys | 16-01 |
+| cond-> threading for optional docker args | Cleaner than nested ifs for conditional arg inclusion | 16-02 |
+| PRE_START as env var, entrypoint executes | Passed via -e, Phase 14 entrypoint runs in background | 16-02 |
 
 ### Pending Todos
 
@@ -102,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 16-01-PLAN.md - Config Module
+Stopped at: Completed 16-02-PLAN.md - Docker Run Argument Builder
 Resume file: None
