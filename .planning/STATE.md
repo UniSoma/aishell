@@ -65,6 +65,9 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Native Java MessageDigest over clj-commons/digest | Zero deps for SHA-256 hashing | 14-02 |
 | CI env var + System/console for TTY detection | Standard pattern for spinner display | 14-02 |
 | 12-char hash truncation | Matches bash sha256sum \| cut -c1-12 | 14-02 |
+| Templates as multiline strings with escaped quotes | Clojure has no heredocs, proper escaping | 14-03 |
+| if-not early return for cache hit | Clean pattern for cache result without nesting | 14-03 |
+| Temp directory cleanup in finally block | Ensures cleanup even on build failure | 14-03 |
 | Dual cache invalidation (base ID + extension hash) | Rebuilds only when dependencies change | 14-04 |
 | Return nil for missing extension Dockerfile | Caller decides behavior, matches bash impl | 14-04 |
 
