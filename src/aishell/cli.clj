@@ -1,6 +1,7 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
             [aishell.core :as core]
+            [aishell.docker :as docker]
             [aishell.output :as output]))
 
 (def global-spec
@@ -43,7 +44,9 @@
     (output/error-unknown-command (first args))
 
     :else
-    (output/error "No image built. Run: aishell build --with-claude")))
+    (do
+      (docker/check-docker!)
+      (output/error-no-build))))
 
 (def dispatch-table
   [{:cmds [] :spec global-spec :fn handle-default}])
