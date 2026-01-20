@@ -20,14 +20,14 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 ### Docker Integration
 
-- [ ] **DOCK-01**: Tool checks Docker availability before operations
-- [ ] **DOCK-02**: Tool builds Docker image with embedded Dockerfile template
-- [ ] **DOCK-03**: Tool caches image builds (rebuilds only when needed)
+- [x] **DOCK-01**: Tool checks Docker availability before operations
+- [x] **DOCK-02**: Tool builds Docker image with embedded Dockerfile template
+- [x] **DOCK-03**: Tool caches image builds (rebuilds only when needed)
 - [ ] **DOCK-04**: Tool runs containers with proper mounts (project at same path as host)
 - [ ] **DOCK-05**: Tool passes git identity (user.name, user.email) to container
 - [ ] **DOCK-06**: Tool configures git safe.directory in container
-- [ ] **DOCK-07**: Container is ephemeral (--rm flag, destroyed on exit)
-- [ ] **DOCK-08**: Tool supports per-project Dockerfile extension (.aishell/Dockerfile)
+- [x] **DOCK-07**: Container is ephemeral (--rm flag, destroyed on exit)
+- [x] **DOCK-08**: Tool supports per-project Dockerfile extension (.aishell/Dockerfile)
 
 ### Configuration
 
@@ -97,14 +97,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-06 | Phase 16 | Pending |
 | CLI-07 | Phase 17 | Pending |
 | CLI-08 | Phase 13 | Complete |
-| DOCK-01 | Phase 14 | Pending |
-| DOCK-02 | Phase 14 | Pending |
-| DOCK-03 | Phase 14 | Pending |
+| DOCK-01 | Phase 14 | Complete |
+| DOCK-02 | Phase 14 | Complete |
+| DOCK-03 | Phase 14 | Complete |
 | DOCK-04 | Phase 16 | Pending |
 | DOCK-05 | Phase 16 | Pending |
 | DOCK-06 | Phase 16 | Pending |
-| DOCK-07 | Phase 14 | Pending |
-| DOCK-08 | Phase 14 | Pending |
+| DOCK-07 | Phase 14 | Complete |
+| DOCK-08 | Phase 14 | Complete |
 | CONF-01 | Phase 16 | Pending |
 | CONF-02 | Phase 16 | Pending |
 | CONF-03 | Phase 16 | Pending |
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 13 completion*
+*Last updated: 2026-01-20 after Phase 14 completion*

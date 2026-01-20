@@ -14,7 +14,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 ## Phases
 
 - [x] **Phase 13: Foundation** - CLI skeleton with --version, --help, and error handling
-- [ ] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
+- [x] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
 - [ ] **Phase 15: Build Command** - Full build workflow with state persistence
 - [ ] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
 - [ ] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
@@ -50,11 +50,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 14-01-PLAN.md - Docker wrapper module with availability checks
-- [ ] 14-02-PLAN.md - Spinner and hash utilities for build support
-- [ ] 14-03-PLAN.md - Embedded Dockerfile templates and build logic
-- [ ] 14-04-PLAN.md - Per-project Dockerfile extension support
-- [ ] 14-05-PLAN.md - CLI integration and error messages
+- [x] 14-01-PLAN.md - Docker wrapper module with availability checks
+- [x] 14-02-PLAN.md - Spinner and hash utilities for build support
+- [x] 14-03-PLAN.md - Embedded Dockerfile templates and build logic
+- [x] 14-04-PLAN.md - Per-project Dockerfile extension support
+- [x] 14-05-PLAN.md - CLI integration and error messages
 
 ### Phase 15: Build Command
 **Goal**: Users can build their sandbox environment with harness version pinning
@@ -125,7 +125,7 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 13. Foundation | v2.0 | 2/2 | ✓ Complete | 2026-01-20 |
-| 14. Docker Integration | v2.0 | 0/5 | Not started | - |
+| 14. Docker Integration | v2.0 | 5/5 | ✓ Complete | 2026-01-20 |
 | 15. Build Command | v2.0 | 0/? | Not started | - |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
 | 17. Validation & Polish | v2.0 | 0/? | Not started | - |
@@ -133,4 +133,4 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 14 planning*
+*Last updated: 2026-01-20 after Phase 14 execution*
