@@ -5,6 +5,7 @@
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
             [aishell.output :as output]
+            [aishell.run :as run]
             [aishell.state :as state]
             [aishell.util :as util]))
 
@@ -124,6 +125,30 @@
          :image-tag (:image result)
          :build-time (str (java.time.Instant/now))}))))
 
+(defn handle-run
+  "Handle run commands: claude, opencode, or shell (default)."
+  [{:keys [opts args]} cmd]
+  (if (:help opts)
+    (case cmd
+      "claude" (do
+                 (println (str output/BOLD "Usage:" output/NC " aishell claude [ARGS...]"))
+                 (println)
+                 (println "Run Claude Code in container.")
+                 (println)
+                 (println "All arguments are passed to Claude Code.")
+                 (println)
+                 (println (str output/BOLD "Examples:" output/NC))
+                 (println (str "  " output/CYAN "aishell claude" output/NC "                  Start Claude Code"))
+                 (println (str "  " output/CYAN "aishell claude --model opus" output/NC "     Use specific model")))
+      "opencode" (do
+                   (println (str output/BOLD "Usage:" output/NC " aishell opencode [ARGS...]"))
+                   (println)
+                   (println "Run OpenCode in container.")
+                   (println)
+                   (println "All arguments are passed to OpenCode.")))
+    ;; Run the command
+    (run/run-container cmd (vec args))))
+
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -134,16 +159,18 @@
     (:help opts)
     (print-help)
 
+    ;; Unknown command - check for typos
     (seq args)
     (output/error-unknown-command (first args))
 
+    ;; No command, no flags - run shell
     :else
-    (do
-      (docker/check-docker!)
-      (output/error-no-build))))
+    (run/run-container nil [])))
 
 (def dispatch-table
   [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
+   {:cmds ["claude"] :fn #(handle-run % "claude") :spec {:help {:alias :h :coerce :boolean}}}
+   {:cmds ["opencode"] :fn #(handle-run % "opencode") :spec {:help {:alias :h :coerce :boolean}}}
    {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
