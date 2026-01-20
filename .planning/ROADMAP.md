@@ -6,10 +6,10 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 
 ## Milestones
 
-- ✅ **v1.0 MVP** - Phases 1-8 (shipped 2026-01-18)
-- ✅ **v1.1 Runtime Config** - Phases 9-10 (shipped 2026-01-19)
-- ✅ **v1.2 Hardening** - Phases 11-12 (shipped 2026-01-19)
-- 🚧 **v2.0 Babashka Rewrite** - Phases 13-18 (in progress)
+- v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
+- v1.1 Runtime Config - Phases 9-10 (shipped 2026-01-19)
+- v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
+- **v2.0 Babashka Rewrite** - Phases 13-18 (in progress)
 
 ## Phases
 
@@ -31,10 +31,11 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
   2. User can run `./aishell --help` and see available commands with descriptions
   3. User sees clear error message when running invalid command (e.g., `./aishell foo`)
   4. Path handling works correctly on both Linux and macOS (forward slashes, home expansion)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md - Project structure and core CLI (dispatch, version, help)
+- [ ] 13-02-PLAN.md - Path utilities and enhanced error messages
 
 ### Phase 14: Docker Integration
 **Goal**: Provide Docker operations that build and run commands depend on
@@ -120,7 +121,7 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 13. Foundation | v2.0 | 0/? | Not started | - |
+| 13. Foundation | v2.0 | 0/2 | Planned | - |
 | 14. Docker Integration | v2.0 | 0/? | Not started | - |
 | 15. Build Command | v2.0 | 0/? | Not started | - |
 | 16. Run Commands | v2.0 | 0/? | Not started | - |
