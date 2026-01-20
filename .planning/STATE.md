@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 Phase: 16 of 18 (Run Commands)
 Plan: 0 of ? in current phase
 Status: Ready to plan
-Last activity: 2026-01-20 — Phase 15 verified complete (gap closure executed)
+Last activity: 2026-01-20 — Phase 15 UAT complete (7/7 passed)
 
 Progress: [██████████░░░░░░░░░░] 50%
 
@@ -78,6 +78,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | parse-with-flag handles both boolean and string | Check (true? value) before string checks | 15-02 |
 | (str value) in parse-with-flag :else clause | Ensures validate-version receives string, not Double | 15-03 |
 | apply to spread vectors to p/process and p/shell | babashka.process expects command parts as args, not vector | 15-03 |
+| $HOME env var over fs/home for home directory | fs/home returns '?' in network login environments | 15-UAT |
+| build-time as ISO-8601 string, not Instant | EDN can't read #object[java.time.Instant...] | 15-UAT |
 
 ### Pending Todos
 
