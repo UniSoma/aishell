@@ -30,16 +30,16 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (v2.0)
-- Average duration: 2 min
-- Total execution time: 6 min
+- Total plans completed: 4 (v2.0)
+- Average duration: 2.25 min
+- Total execution time: 9 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 13-foundation | 2 | 5 min | 2.5 min |
-| 14-docker-integration | 1 | 1 min | 1 min |
+| 14-docker-integration | 2 | 4 min | 2 min |
 
 *Updated after each plan completion*
 
@@ -59,6 +59,9 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Levenshtein max distance 3 for suggestions | Catches typos without false positives | 13-02 |
 | XDG_STATE_HOME support for state dir | Following XDG Base Directory Specification | 13-02 |
 | restrict: true for unknown options | Catches --badopt with clear error | 13-02 |
+| try/catch around all Docker shell calls | Handle missing docker binary gracefully | 14-01 |
+| Go template index syntax for labels | Handles dots in label names properly | 14-01 |
+| format-size accepts string or numeric | Flexible input from shell output | 14-01 |
 | Native Java MessageDigest over clj-commons/digest | Zero deps for SHA-256 hashing | 14-02 |
 | CI env var + System/console for TTY detection | Standard pattern for spinner display | 14-02 |
 | 12-char hash truncation | Matches bash sha256sum \| cut -c1-12 | 14-02 |
