@@ -33,20 +33,24 @@
 (defn parse-with-flag
   "Parse --with-X flag value.
    nil -> {:enabled? false}
-   'true' -> {:enabled? true} (flag without value)
+   true or 'true' -> {:enabled? true} (flag without value)
    'latest' -> {:enabled? true}
    version -> {:enabled? true :version version}"
   [value]
   (cond
     (nil? value) {:enabled? false}
+    (true? value) {:enabled? true}  ; boolean true from CLI
     (= value "true") {:enabled? true}
     (= value "latest") {:enabled? true}
     :else {:enabled? true :version value}))
 
 ;; Build subcommand spec
+;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
+;; returns boolean true for flags without values, which can't be coerced to string.
+;; parse-with-flag handles both boolean true and string values.
 (def build-spec
-  {:with-claude   {:coerce :string :desc "Include Claude Code (optional: =VERSION)"}
-   :with-opencode {:coerce :string :desc "Include OpenCode (optional: =VERSION)"}
+  {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
+   :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
 
