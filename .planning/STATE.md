@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 13 of 18 (Foundation)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-20 — Roadmap created for v2.0
+Plan: 1 of 1 in current phase
+Status: Phase complete
+Last activity: 2026-01-20 — Completed 13-01-PLAN.md
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░░░░░░░░░░░] 5%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,15 +30,15 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v2.0)
-- Average duration: N/A
-- Total execution time: 0 hours
+- Total plans completed: 1 (v2.0)
+- Average duration: 2 min
+- Total execution time: 2 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 13-foundation | 1 | 2 min | 2 min |
 
 *Updated after each plan completion*
 
@@ -47,6 +47,14 @@ v2.0 Babashka Rewrite:
 ### Decisions
 
 See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
+
+**v2.0 Decisions:**
+
+| Decision | Context | Phase |
+|----------|---------|-------|
+| Runtime require to avoid circular deps | core.clj uses dynamic require for cli.clj | 13-01 |
+| Dynamic classpath in entry script | aishell.clj loads src/ at runtime | 13-01 |
+| Color detection: console + NO_COLOR + TERM | Standard conventions for TTY detection | 13-01 |
 
 ### Pending Todos
 
@@ -66,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Roadmap created, ready to plan Phase 13
+Stopped at: Completed 13-01-PLAN.md (CLI Foundation)
 Resume file: None
