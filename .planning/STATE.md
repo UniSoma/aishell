@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9 (v2.0)
+- Total plans completed: 10 (v2.0)
 - Average duration: 1.8 min
-- Total execution time: 16 min
+- Total execution time: 18 min
 
 **By Phase:**
 
@@ -40,7 +40,7 @@ v2.0 Babashka Rewrite:
 |-------|-------|-------|----------|
 | 13-foundation | 2 | 5 min | 2.5 min |
 | 14-docker-integration | 5 | 7 min | 1.4 min |
-| 15-build-command | 2 | 4 min | 2.0 min |
+| 15-build-command | 3 | 6 min | 2.0 min |
 
 *Updated after each plan completion*
 
@@ -76,6 +76,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | read-state returns nil for missing file | Caller decides behavior, not error | 15-01 |
 | No :coerce :string for optional value flags | babashka.cli returns boolean true for flags without values | 15-02 |
 | parse-with-flag handles both boolean and string | Check (true? value) before string checks | 15-02 |
+| (str value) in parse-with-flag :else clause | Ensures validate-version receives string, not Double | 15-03 |
+| apply to spread vectors to p/process and p/shell | babashka.process expects command parts as args, not vector | 15-03 |
 
 ### Pending Todos
 
@@ -95,5 +97,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed Phase 15 (Build Command) - ready for Phase 16
+Stopped at: Completed 15-03-PLAN.md (gap closure) - ready for Phase 16 or UAT retest
 Resume file: None
