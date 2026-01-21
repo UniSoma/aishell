@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 17 of 18 (Validation & Polish)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-21 — Completed 16-05-PLAN.md (pass-through args fix)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-21 — Completed 17-01-PLAN.md (build --force and update command)
 
-Progress: [██████████████░░░░░░] 70%
+Progress: [███████████████░░░░░] 75%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15 (v2.0)
-- Average duration: 2.1 min
-- Total execution time: 31.4 min
+- Total plans completed: 16 (v2.0)
+- Average duration: 2.5 min
+- Total execution time: 39.4 min
 
 **By Phase:**
 
@@ -42,6 +42,7 @@ v2.0 Babashka Rewrite:
 | 14-docker-integration | 5 | 7 min | 1.4 min |
 | 15-build-command | 3 | 6 min | 2.0 min |
 | 16-run-commands | 5 | 13.4 min | 2.7 min |
+| 17-validation-polish | 1 | 8 min | 8.0 min |
 
 *Updated after each plan completion*
 
@@ -91,6 +92,9 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Dual format support for env config | map? check to detect format, normalize to [k v] pairs | 16-04 |
 | :restrict false per-command override | Overrides global :restrict true for pass-through commands | 16-04 |
 | Pre-dispatch command interception | Handle pass-through before cli/dispatch | 16-05 |
+| update = force rebuild, not check for updates | Per 17-CONTEXT.md design | 17-01 |
+| dockerfile-hash in state.edn | Enables future stale image detection | 17-01 |
+| force parameter through all run-build calls | Consistent --no-cache behavior | 17-01 |
 
 ### Pending Todos
 
@@ -110,5 +114,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 16-05-PLAN.md - Phase 16 gap closure complete
+Stopped at: Completed 17-01-PLAN.md - build --force and update command
 Resume file: None
