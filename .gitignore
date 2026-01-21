@@ -30,3 +30,4 @@ Thumbs.db
 **/.cpcache
 **/.DS_Store
 **/.gradle
+dist/

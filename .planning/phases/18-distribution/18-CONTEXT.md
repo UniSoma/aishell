@@ -24,7 +24,7 @@ Package aishell as a single-file uberscript and provide a curl|bash installer fo
 - Show quick start instructions after successful install (how to run aishell build, aishell shell)
 
 ### Uberscript packaging
-- Version embedded at build time (injected into uberscript during build process)
+- Version hardcoded in src/aishell/cli.clj (update before release builds)
 - Release filename: `aishell` (no extension, like standard Unix binaries)
 - Host artifacts on GitHub Releases (versioned, stable URLs, checksums alongside)
 - Default to latest release (VERSION=x.y.z env var for specific version)
