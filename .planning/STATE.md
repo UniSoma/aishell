@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 18 - Distribution (ready to plan)
+**Current focus:** Phase 18 - Distribution (in progress)
 
 ## Current Position
 
 Phase: 18 of 18 (Distribution)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-21 — Completed quick task 001: Add dangerous mount path warnings
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-21 - Completed 18-01-PLAN.md (build infrastructure)
 
-Progress: [████████████████████] 83%
+Progress: [█████████████████████] 92%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19 (v2.0)
+- Total plans completed: 20 (v2.0)
 - Average duration: 2.4 min
-- Total execution time: 45.1 min
+- Total execution time: 48.8 min
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ v2.0 Babashka Rewrite:
 | 15-build-command | 3 | 6 min | 2.0 min |
 | 16-run-commands | 5 | 13.4 min | 2.7 min |
 | 17-validation-polish | 4 | 13.7 min | 3.4 min |
+| 18-distribution | 1 | 3.7 min | 3.7 min |
 
 *Updated after each plan completion*
 
@@ -56,7 +57,10 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 
 | Decision | Context | Phase |
 |----------|---------|-------|
-| Runtime require to avoid circular deps | core.clj uses dynamic require for cli.clj | 13-01 |
+| Version in cli.clj (not core.clj) | Eliminates circular dependency for uberscript | 18-01 |
+| Static require in core.clj | Enables bb uberscript namespace detection | 18-01 |
+| No when guard in core.clj | bb uberscript -m adds own entry point | 18-01 |
+| rm -f before bb uberscript | bb refuses to overwrite existing files | 18-01 |
 | Dynamic classpath in entry script | aishell.clj loads src/ at runtime | 13-01 |
 | Color detection: console + NO_COLOR + TERM | Standard conventions for TTY detection | 13-01 |
 | Levenshtein max distance 3 for suggestions | Catches typos without false positives | 13-02 |
@@ -125,5 +129,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 17 gap closure complete & verified - ready for Phase 18
+Stopped at: Completed 18-01-PLAN.md (build infrastructure)
 Resume file: None
