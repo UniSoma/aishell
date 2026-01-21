@@ -1,9 +1,9 @@
 ---
 status: diagnosed
 phase: 16-run-commands
-source: [16-01-SUMMARY.md, 16-02-SUMMARY.md, 16-03-SUMMARY.md]
-started: 2026-01-20T12:00:00Z
-updated: 2026-01-20T12:30:00Z
+source: [16-01-SUMMARY.md, 16-02-SUMMARY.md, 16-03-SUMMARY.md, 16-04-SUMMARY.md]
+started: 2026-01-21T00:00:00Z
+updated: 2026-01-21T00:02:00Z
 ---
 
 ## Current Test
@@ -12,69 +12,82 @@ updated: 2026-01-20T12:30:00Z
 
 ## Tests
 
-### 1. Shell Entry (Default Command)
-expected: Running `./aishell.clj` with no arguments enters a bash shell inside the container. You see a container prompt.
+### 1. Enter shell with no arguments
+expected: Running `./aishell.clj` with no arguments enters an interactive shell inside the container. You see a bash prompt and can run commands like `ls`, `pwd`, etc.
 result: pass
 
-### 2. Claude Command
-expected: Running `./aishell.clj claude` starts Claude Code inside the container. Claude's interface appears.
+### 2. Project mounted at same path
+expected: Inside the container, `pwd` shows the same path as on the host (e.g., /home/user/project). Your project files are visible with `ls`.
 result: pass
 
-### 3. OpenCode Command
-expected: Running `./aishell.clj opencode` starts OpenCode inside the container. OpenCode's interface appears.
+### 3. Git identity available
+expected: Inside the container, running `git config user.name` and `git config user.email` shows your host git identity (same values as outside the container).
 result: pass
 
-### 4. Project Mount at Same Path
-expected: Inside the container, the project is mounted at the same path as on the host (e.g., /home/user/project inside matches /home/user/project on host). Files are accessible.
+### 4. Container is ephemeral
+expected: Exit the shell (type `exit`), then run `./aishell.clj` again. Any files created in non-mounted directories (like `/tmp/testfile`) are gone. Only files in your project directory persist.
 result: pass
 
-### 5. Git Identity Available
-expected: Inside the container, running `git config user.name` and `git config user.email` shows your host git identity.
+### 5. Run Claude Code
+expected: Running `./aishell.clj claude` starts Claude Code inside the container. Claude Code launches and shows its interface (or error if no ANTHROPIC_API_KEY).
 result: pass
 
-### 6. Container Ephemeral
-expected: After exiting the container, it's destroyed (no leftover container). Only mounted files persist changes.
+### 6. Run OpenCode
+expected: Running `./aishell.clj opencode` starts OpenCode inside the container. OpenCode's interface appears (or error if not configured).
 result: pass
 
-### 7. Per-Project Config (config.yaml)
-expected: Creating `.aishell/config.yaml` with mounts, env, ports, docker_args, or pre_start applies those settings. Example: adding `env: [FOO=bar]` makes $FOO=bar available in container.
+### 7. Config env (array format)
+expected: With `.aishell/config.yaml` containing `env: ["FOO=bar"]`, running `echo $FOO` inside container shows `bar`.
+result: pass
+
+### 8. Config env (map format)
+expected: With `.aishell/config.yaml` containing `env: {FOO: bar}`, running `echo $FOO` inside container shows `bar`.
+result: pass
+
+### 9. Pass-through args for claude
+expected: Running `./aishell.clj claude --help` passes `--help` to Claude Code inside the container, showing Claude's help output (not an "Unknown option" error).
 result: issue
-reported: "./aishell.clj Error: Unexpected error: java.lang.Character cannot be cast to clojure.lang.Named"
+reported: "./aishell.clj claude --help shows aishell.clj help and ./aishell.clj claude --version enters claude code inside the container, instead of showing its version"
+severity: major
+
+### 10. Pass-through args for opencode
+expected: Running `./aishell.clj opencode --help` passes `--help` to OpenCode inside the container, showing OpenCode's help output.
+result: issue
+reported: "Same behaviour as claude: --help prints this tool help and --version does not work, opens opencode directly"
 severity: major
 
 ## Summary
 
-total: 7
-passed: 6
+total: 10
+passed: 8
 issues: 2
 pending: 0
 skipped: 0
 
 ## Gaps
 
-- truth: "Per-project config.yaml with env settings applies those settings to container"
+- truth: "Pass-through args for claude command are forwarded to Claude Code"
   status: failed
-  reason: "User reported: ./aishell.clj Error: Unexpected error: java.lang.Character cannot be cast to clojure.lang.Named"
+  reason: "User reported: ./aishell.clj claude --help shows aishell.clj help and ./aishell.clj claude --version enters claude code inside the container, instead of showing its version"
   severity: major
-  test: 7
-  root_cause: "build-env-args in docker/run.clj expects env as a map ({:FOO bar}) but user provided array format ([FOO=bar]). String destructuring as [k v] yields characters, not key/value pairs."
-  artifacts:
-    - path: "src/aishell/docker/run.clj"
-      issue: "build-env-args lines 57-79 only handles map format"
-  missing:
-    - "Handle array format: parse 'KEY=value' strings"
-    - "Support both formats for user convenience"
-  debug_session: ""
-
-- truth: "Arguments passed to claude/opencode commands are forwarded to the harness"
-  status: failed
-  reason: "User reported: ./aishell.clj claude --version gives Error: Unknown option: :version"
-  severity: major
-  test: 2 (additional finding)
-  root_cause: "Global :restrict true in cli/dispatch rejects unknown options for all commands, including claude/opencode which should allow pass-through args"
+  test: 9
+  root_cause: "babashka.cli dispatch parses --help before handle-run sees it (spec has :help), and :restrict false drops unknown options like --version instead of passing them to args"
   artifacts:
     - path: "src/aishell/cli.clj"
-      issue: "Line 191-192: dispatch has global :restrict true"
+      issue: "Lines 172-173: claude/opencode dispatch entries use spec with :help and rely on :restrict false which drops unknown options"
   missing:
-    - "Add :restrict false to claude/opencode dispatch entries"
+    - "Handle claude/opencode commands before cli/dispatch to pass all args verbatim"
+  debug_session: ""
+
+- truth: "Pass-through args for opencode command are forwarded to OpenCode"
+  status: failed
+  reason: "User reported: Same behaviour as claude: --help prints this tool help and --version does not work, opens opencode directly"
+  severity: major
+  test: 10
+  root_cause: "Same as test 9 - babashka.cli dispatch parses/drops options before they reach the harness"
+  artifacts:
+    - path: "src/aishell/cli.clj"
+      issue: "Same as test 9"
+  missing:
+    - "Same fix as test 9"
   debug_session: ""
