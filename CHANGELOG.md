@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-01-21
+
+### BREAKING CHANGES
+
+- **Babashka required**: aishell now requires Babashka (https://babashka.org) to run
+- **Config format changed**: `.aishell/run.conf` (bash) replaced by `.aishell/config.yaml` (YAML)
+- **State format changed**: Build state stored in `~/.aishell/state.edn` (EDN format)
+
+### Added
+
+- Complete rewrite in Clojure Babashka for cross-platform support
+- YAML configuration with richer data structures
+- Single-flag version syntax: `--with-claude=1.0.0` (replaces `--with-claude --claude-version=1.0.0`)
+- Levenshtein-based command suggestions for typos
+- XDG Base Directory support for state files
+- Colored output with NO_COLOR and TERM detection
+
+### Changed
+
+- Distribution via uberscript (single .clj file) instead of bash script
+- Installation location unchanged: `~/.local/bin/aishell`
+
+### Migration
+
+1. Uninstall old version: `rm ~/.local/bin/aishell`
+2. Install Babashka: https://babashka.org
+3. Install new version: `curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash`
+4. Migrate config (if using):
+   - Convert `.aishell/run.conf` to `.aishell/config.yaml`
+   - See README.md for YAML format
+5. `.aishell/Dockerfile` remains compatible, no changes needed
+
 ## [1.2.0] - 2026-01-19
 
 ### Added
