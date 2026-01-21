@@ -10,15 +10,20 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in
 - **Per-project customization** - Extend via `.aishell/Dockerfile`
 - **Version pinning** - Lock harness versions for reproducibility
 - **Config persistence** - Mounts `~/.claude` and OpenCode configs automatically
-- **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/run.conf`
+- **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
 - **Pre-start commands** - Run sidecar services before shell/harness
 
 ## Requirements
 
-- Linux
+- Linux or macOS
 - Docker Engine
+- [Babashka](https://babashka.org)
 
 ## Installation
+
+First, install Babashka if you haven't already: https://babashka.org
+
+Then install aishell:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
@@ -44,8 +49,8 @@ aishell build --with-opencode
 # Build with both
 aishell build --with-claude --with-opencode
 
-# Build with specific versions
-aishell build --with-claude --claude-version=2.0.22
+# Build with specific versions (single-flag syntax)
+aishell build --with-claude=2.0.22
 ```
 
 ### Run harnesses
@@ -86,45 +91,25 @@ RUN apt-get update && apt-get install -y postgresql-client
 
 ### Runtime configuration
 
-Create `.aishell/run.conf` to configure container runtime:
+Create `.aishell/config.yaml` to configure container runtime:
 
-```bash
-# Additional volume mounts
-MOUNTS="/path/to/data $HOME/.secrets:/secrets"
+```yaml
+mounts:
+  - /path/to/data
+  - source: $HOME/.secrets
+    target: /secrets
 
-# Environment variables (passthrough or literal)
-ENV="DATABASE_URL MY_VAR=literal_value"
+env:
+  DATABASE_URL: passthrough
+  MY_VAR: literal_value
 
-# Port mappings (host:container)
-PORTS="3000:3000 8080:80"
+ports:
+  - "3000:3000"
+  - "8080:80"
 
-# Extra docker run arguments
-DOCKER_ARGS="--memory=4g --cpus=2"
+docker_args: "--memory=4g --cpus=2"
 
-# Pre-start command (runs in background before shell)
-PRE_START="redis-server --daemonize yes"
-```
-
-### run.conf Limitations
-
-The `.aishell/run.conf` file uses a simplified parsing format:
-
-**Supported syntax:**
-- `VAR=value` - Unquoted value (no spaces allowed)
-- `VAR="value with spaces"` - Double-quoted value
-- `VAR='value with spaces'` - Single-quoted value
-- `# comment` - Comments on their own line
-
-**Not supported:**
-- Escaped quotes: `VAR="value with \"quotes\""` will fail
-- Multi-line values: Each assignment must be on one line
-- Shell expansion: `$VAR` and `$(command)` are not expanded
-- Continuation lines: No backslash line continuation
-
-**Workaround for complex values:**
-Use `DOCKER_ARGS` to pass environment variables that need special characters:
-```bash
-DOCKER_ARGS="-e COMPLEX_VAR=value-with-special-chars"
+pre_start: "redis-server --daemonize yes"
 ```
 
 ### Git safe.directory
@@ -136,7 +121,7 @@ When you run a container, aishell configures git to trust the mounted project di
 2. This writes to `~/.gitconfig` inside the container
 
 **Host gitconfig impact:**
-If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the container (via `MOUNTS` in run.conf), the safe.directory entry will be added to your **host's** gitconfig file.
+If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the container (via `mounts` in config.yaml), the safe.directory entry will be added to your **host's** gitconfig file.
 
 **Why this happens:**
 - Git requires safe.directory for directories owned by different users
