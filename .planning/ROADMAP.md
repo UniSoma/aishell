@@ -120,10 +120,12 @@ Plans:
   1. User can run `curl -fsSL ... | bash` to install aishell
   2. aishell is distributed as single-file uberscript (one .clj file)
   3. Installer assumes Babashka is installed (provides clear error if missing)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 18-01: TBD
+- [ ] 18-01-PLAN.md - Build script and uberscript packaging
+- [ ] 18-02-PLAN.md - curl|bash installer with checksum verification
+- [ ] 18-03-PLAN.md - Legacy cleanup and documentation update
 
 ## Progress
 
@@ -137,8 +139,8 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | 15. Build Command | v2.0 | 3/3 | Complete | 2026-01-20 |
 | 16. Run Commands | v2.0 | 5/5 | Complete | 2026-01-21 |
 | 17. Validation & Polish | v2.0 | 4/4 | Complete | 2026-01-21 |
-| 18. Distribution | v2.0 | 0/? | Not started | - |
+| 18. Distribution | v2.0 | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-21 after Phase 17 gap closure execution*
+*Last updated: 2026-01-21 after Phase 18 planning*
