@@ -6,6 +6,7 @@
             [aishell.docker.run :as docker-run]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
+            [aishell.docker.extension :as ext]
             [aishell.config :as config]
             [aishell.state :as state]
             [aishell.output :as output]
@@ -31,6 +32,24 @@
       (when (not= stored-hash current-hash)
         (output/warn "Image may be stale. Run 'aishell update' to rebuild.")))))
 
+(defn- resolve-image-tag
+  "Determine which image to use: extended if project has .aishell/Dockerfile, else base.
+   Auto-builds extension if needed (matches bash behavior)."
+  [base-tag project-dir force?]
+  (if-let [_dockerfile (ext/project-dockerfile project-dir)]
+    ;; Project has extension
+    (let [extended-tag (ext/compute-extended-tag project-dir)]
+      (when (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
+        (ext/build-extended-image
+          {:project-dir project-dir
+           :base-tag base-tag
+           :extended-tag extended-tag
+           :force force?
+           :verbose false}))
+      extended-tag)
+    ;; No extension, use base
+    base-tag))
+
 (defn run-container
   "Run docker container for shell or harness.
 
@@ -47,10 +66,13 @@
     (when-not state
       (output/error-no-build))
 
-    ;; Verify image exists
-    (let [image-tag (or (:image-tag state) "aishell:base")]
-      (when-not (docker/image-exists? image-tag)
-        (output/error (str "Image not found: " image-tag
+    ;; Get project-dir FIRST (needed for extension resolution)
+    (let [project-dir (System/getProperty "user.dir")
+          base-tag (or (:image-tag state) "aishell:base")]
+
+      ;; Verify BASE image exists (required before extension can build)
+      (when-not (docker/image-exists? base-tag)
+        (output/error (str "Image not found: " base-tag
                           "\nRun: aishell build")))
 
       ;; Verify harness if requested
@@ -59,8 +81,8 @@
         "opencode" (verify-harness-available "opencode" :with-opencode state)
         nil)
 
-      ;; Load config
-      (let [project-dir (System/getProperty "user.dir")
+      ;; Resolve final image (may auto-build extension)
+      (let [image-tag (resolve-image-tag base-tag project-dir false)
             cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
 
@@ -78,6 +100,10 @@
             ;; Warn about dangerous docker_args (advisory warning)
             _ (when-let [docker-args (:docker_args cfg)]
                 (validation/warn-dangerous-args docker-args))
+
+            ;; Warn about dangerous mount paths (advisory warning)
+            _ (when-let [mounts (:mounts cfg)]
+                (validation/warn-dangerous-mounts mounts))
 
             ;; Build docker args
             docker-args (docker-run/build-docker-args
