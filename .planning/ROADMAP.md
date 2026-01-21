@@ -17,7 +17,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 - [x] **Phase 14: Docker Integration** - Docker wrapper module and availability checks
 - [x] **Phase 15: Build Command** - Full build workflow with state persistence
 - [x] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
-- [ ] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
+- [x] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
 - [ ] **Phase 18: Distribution** - Uberscript packaging and curl|bash installer
 
 ## Phase Details
@@ -107,8 +107,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md - Build --force flag, dockerfile hash storage, update command
-- [ ] 17-02-PLAN.md - Dangerous args validation and stale image warnings
+- [x] 17-01-PLAN.md - Build --force flag, dockerfile hash storage, update command
+- [x] 17-02-PLAN.md - Dangerous args validation and stale image warnings
 
 ### Phase 18: Distribution
 **Goal**: Users can install aishell via curl|bash one-liner
@@ -134,9 +134,9 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | 14. Docker Integration | v2.0 | 5/5 | Complete | 2026-01-20 |
 | 15. Build Command | v2.0 | 3/3 | Complete | 2026-01-20 |
 | 16. Run Commands | v2.0 | 5/5 | Complete | 2026-01-21 |
-| 17. Validation & Polish | v2.0 | 0/2 | Ready | - |
+| 17. Validation & Polish | v2.0 | 2/2 | Complete | 2026-01-21 |
 | 18. Distribution | v2.0 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-21 after Phase 17 planning*
+*Last updated: 2026-01-21 after Phase 17 execution*

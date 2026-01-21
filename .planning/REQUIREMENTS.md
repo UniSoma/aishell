@@ -15,7 +15,7 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 - [x] **CLI-04**: User can run `aishell` to enter a shell in the container
 - [x] **CLI-05**: User can run `aishell claude` to run Claude Code directly
 - [x] **CLI-06**: User can run `aishell opencode` to run OpenCode directly
-- [ ] **CLI-07**: User can run `aishell update` to check for updates
+- [x] **CLI-07**: User can run `aishell update` to check for updates
 - [x] **CLI-08**: CLI provides clear error messages for invalid commands/options
 
 ### Docker Integration
@@ -42,9 +42,9 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 ### Validation
 
-- [ ] **VAL-01**: Tool validates version strings before use
-- [ ] **VAL-02**: Tool warns about dangerous docker_args patterns
-- [ ] **VAL-03**: Tool detects Dockerfile hash changes and warns if rebuild needed
+- [x] **VAL-01**: Tool validates version strings before use
+- [x] **VAL-02**: Tool warns about dangerous docker_args patterns
+- [x] **VAL-03**: Tool detects Dockerfile hash changes and warns if rebuild needed
 
 ### Cross-Platform
 
@@ -95,7 +95,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-04 | Phase 16 | Complete |
 | CLI-05 | Phase 16 | Complete |
 | CLI-06 | Phase 16 | Complete |
-| CLI-07 | Phase 17 | Pending |
+| CLI-07 | Phase 17 | Complete |
 | CLI-08 | Phase 13 | Complete |
 | DOCK-01 | Phase 14 | Complete |
 | DOCK-02 | Phase 14 | Complete |
@@ -113,9 +113,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-06 | Phase 16 | Complete |
 | CONF-07 | Phase 15 | Complete |
 | CONF-08 | Phase 15 | Complete |
-| VAL-01 | Phase 17 | Pending |
-| VAL-02 | Phase 17 | Pending |
-| VAL-03 | Phase 17 | Pending |
+| VAL-01 | Phase 17 | Complete |
+| VAL-02 | Phase 17 | Complete |
+| VAL-03 | Phase 17 | Complete |
 | PLAT-01 | Phase 16 | Complete |
 | PLAT-02 | Phase 16 | Complete |
 | PLAT-03 | Phase 13 | Complete |
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 16 completion*
+*Last updated: 2026-01-21 after Phase 17 completion*
