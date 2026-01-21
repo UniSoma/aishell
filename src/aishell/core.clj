@@ -9,6 +9,3 @@
       (output/error (ex-message e)))
     (catch Exception e
       (output/error (str "Unexpected error: " (.getMessage e))))))
-
-(when (= *file* (System/getProperty "babashka.file"))
-  (apply -main *command-line-args*))
