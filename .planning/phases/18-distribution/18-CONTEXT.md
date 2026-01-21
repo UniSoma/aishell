@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Package aishell as a single-file uberscript and provide a curl|bash installer for easy installation. Users can install aishell via one-liner. Assumes Babashka is already installed on target system.
+Package aishell as a single-file uberscript and provide a curl|bash installer for easy installation. Users can install aishell via one-liner. Assumes Babashka is already installed on target system. Remove legacy bash implementation and update documentation for v2.0.
 
 </domain>
 
@@ -34,12 +34,29 @@ Package aishell as a single-file uberscript and provide a curl|bash installer fo
 - Checksum verification failure: Fail immediately with clear message, no retry
 - Permission denied: "Cannot write to ~/.local/bin. Check permissions."
 
+### Legacy cleanup
+- Remove `aishell` bash script from repo root
+- Remove `install.sh` legacy installer
+- Keep only babashka implementation in `src/`
+
+### Documentation
+- README: Full rewrite focused on v2.0 babashka version, no bash references
+- CHANGELOG: v2.0 entry with BREAKING CHANGES section, migration notes, new features
+
+### Migration path
+- Clean break: uninstall old version, install new version
+- Manual config migration: `.aishell/run.conf` (bash) → `.aishell/config.yaml` (babashka)
+- `.aishell/Dockerfile` remains compatible, no changes needed
+- State files (`~/.aishell/state.edn`) are new format, no migration needed
+
 ### Claude's Discretion
 - PATH detection approach (warn with instructions if ~/.local/bin not in PATH)
 - Whether to support INSTALL_DIR env var for custom location
 - Network failure behavior (immediate fail vs one retry)
 - Exact progress message wording
 - Quick start message content
+- README structure and sections
+- CHANGELOG formatting details
 
 </decisions>
 
