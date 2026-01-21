@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 17 of 18 (Validation & Polish)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-21 — Completed 17-01-PLAN.md (build --force and update command)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-21 — Completed 17-02-PLAN.md (security warnings)
 
-Progress: [███████████████░░░░░] 75%
+Progress: [████████████████░░░░] 80%
 
 **Milestone v2.0:** IN PROGRESS (Phases 13-18)
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (v2.0)
-- Average duration: 2.5 min
-- Total execution time: 39.4 min
+- Total plans completed: 17 (v2.0)
+- Average duration: 2.4 min
+- Total execution time: 41.4 min
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ v2.0 Babashka Rewrite:
 | 14-docker-integration | 5 | 7 min | 1.4 min |
 | 15-build-command | 3 | 6 min | 2.0 min |
 | 16-run-commands | 5 | 13.4 min | 2.7 min |
-| 17-validation-polish | 1 | 8 min | 8.0 min |
+| 17-validation-polish | 2 | 10 min | 5.0 min |
 
 *Updated after each plan completion*
 
@@ -95,6 +95,8 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | update = force rebuild, not check for updates | Per 17-CONTEXT.md design | 17-01 |
 | dockerfile-hash in state.edn | Enables future stale image detection | 17-01 |
 | force parameter through all run-build calls | Consistent --no-cache behavior | 17-01 |
+| String and regex patterns for dangerous-patterns | Flexible matching for OR cases | 17-02 |
+| Advisory warnings only - never block execution | Warn but continue for security notices | 17-02 |
 
 ### Pending Todos
 
@@ -114,5 +116,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 17-01-PLAN.md - build --force and update command
+Stopped at: Completed 17-02-PLAN.md - security warnings (Phase 17 complete)
 Resume file: None
