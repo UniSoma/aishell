@@ -129,9 +129,10 @@ None.
 |---|-------------|------|--------|-----------|
 | 001 | Add dangerous mount path warnings to Clojure implementation | 2026-01-21 | fcdba7a | [001-add-dangerous-mount-path-warnings-to-clo](./quick/001-add-dangerous-mount-path-warnings-to-clo/) |
 | 002 | Rewrite release build script in Babashka | 2026-01-21 | 8022940 | [002-rewrite-release-build-script-in-babashka](./quick/002-rewrite-release-build-script-in-babashka/) |
+| 003 | Create Babashka release automation script | 2026-01-21 | d0ce6dc | [003-create-babashka-release-automation-scrip](./quick/003-create-babashka-release-automation-scrip/) |
 
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed quick task 002 - Rewrite release build script in Babashka
+Stopped at: Completed quick task 003 - Create Babashka release automation script
 Resume file: None
