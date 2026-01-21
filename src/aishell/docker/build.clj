@@ -69,8 +69,9 @@
 
 (defn- run-build
   "Execute docker build command. Returns true on success."
-  [build-dir tag args verbose?]
+  [build-dir tag args verbose? force?]
   (let [cmd (vec (concat ["docker" "build" "-t" tag]
+                         (when force? ["--no-cache"])
                          (when verbose? ["--progress=plain"])
                          args
                          ["."]))]
@@ -128,14 +129,14 @@
         ;; Build with appropriate output mode
         (let [success? (cond
                          verbose
-                         (run-build build-dir base-image-tag docker-args true)
+                         (run-build build-dir base-image-tag docker-args true force)
 
                          quiet
-                         (run-build build-dir base-image-tag docker-args false)
+                         (run-build build-dir base-image-tag docker-args false force)
 
                          :else
                          (spinner/with-spinner "Building image"
-                                               #(run-build build-dir base-image-tag docker-args false)))]
+                                               #(run-build build-dir base-image-tag docker-args false force)))]
           (if success?
             (let [duration (- (System/currentTimeMillis) start-time)
                   size (docker/get-image-size base-image-tag)]

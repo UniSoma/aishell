@@ -53,6 +53,7 @@
 (def build-spec
   {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
+   :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
 
@@ -84,13 +85,14 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec build-spec
-                             :order [:with-claude :with-opencode :verbose :help]}))
+                             :order [:with-claude :with-opencode :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
   (println (str "  " output/CYAN "aishell build --with-claude" output/NC "        Include Claude Code (latest)"))
   (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
-  (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both")))
+  (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
+  (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
 (defn handle-build [{:keys [opts]}]
   (if (:help opts)
@@ -107,14 +109,14 @@
           _ (when (docker/image-exists? build/base-image-tag)
               (println "Replacing existing image..."))
 
-          ;; Build with explicit force (no aishell caching per CONTEXT.md)
+          ;; Build with force if specified (--force bypasses Docker cache)
           result (build/build-base-image
                    {:with-claude (:enabled? claude-config)
                     :with-opencode (:enabled? opencode-config)
                     :claude-version (:version claude-config)
                     :opencode-version (:version opencode-config)
                     :verbose (:verbose opts)
-                    :force true})]
+                    :force (:force opts)})]
 
       ;; Persist state (always, even on failure this won't run due to error exit)
       (state/write-state
