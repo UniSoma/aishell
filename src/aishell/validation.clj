@@ -17,18 +17,22 @@
     :message "Disabled security profiles: Reduces container isolation"}])
 
 (defn check-dangerous-args
-  "Check docker_args string for dangerous patterns.
+  "Check docker_args for dangerous patterns.
+   Accepts string or vector of args.
    Returns seq of warning messages, or nil if none found."
   [docker-args]
-  (when (and docker-args (not (str/blank? docker-args)))
-    (seq
-      (keep
-        (fn [{:keys [pattern message]}]
-          (when (if (string? pattern)
-                  (str/includes? docker-args pattern)
-                  (re-find pattern docker-args))
-            message))
-        dangerous-patterns))))
+  (let [args-str (if (sequential? docker-args)
+                   (str/join " " docker-args)
+                   docker-args)]
+    (when (and args-str (not (str/blank? args-str)))
+      (seq
+        (keep
+          (fn [{:keys [pattern message]}]
+            (when (if (string? pattern)
+                    (str/includes? args-str pattern)
+                    (re-find pattern args-str))
+              message))
+          dangerous-patterns)))))
 
 (defn warn-dangerous-args
   "Warn about dangerous docker_args if any found.
