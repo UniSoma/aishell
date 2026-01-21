@@ -13,8 +13,13 @@ Security validations, warnings, and update awareness for the container/image. Th
 <decisions>
 ## Implementation Decisions
 
+### Build --force flag
+- `aishell build --force` passes `--no-cache` to Docker build
+- Normal `aishell build` uses Docker cache as before
+
 ### Update command
 - Force rebuild by default (no check-then-prompt)
+- Always uses `--no-cache` implicitly (update = build --force with preserved state)
 - Preserve existing build flags from state.edn (--with-claude, --with-opencode versions)
 - Same output as build command (spinner, then success/failure)
 - No flags — just `aishell update`
