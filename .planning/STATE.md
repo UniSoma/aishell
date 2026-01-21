@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 18 of 18 (Distribution)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-21 - Completed 18-03-PLAN.md (legacy cleanup)
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-01-21 - Completed 18-02-PLAN.md (curl|bash installer)
 
-Progress: [█████████████████████] 95%
+Progress: [██████████████████████] 100%
 
-**Milestone v2.0:** IN PROGRESS (Phases 13-18)
+**Milestone v2.0:** COMPLETE (Phases 13-18)
 
 ## What We're Building
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21 (v2.0)
+- Total plans completed: 22 (v2.0)
 - Average duration: 2.4 min
-- Total execution time: 50.3 min
+- Total execution time: 52.9 min
 
 **By Phase:**
 
@@ -43,7 +43,7 @@ v2.0 Babashka Rewrite:
 | 15-build-command | 3 | 6 min | 2.0 min |
 | 16-run-commands | 5 | 13.4 min | 2.7 min |
 | 17-validation-polish | 4 | 13.7 min | 3.4 min |
-| 18-distribution | 2 | 5.2 min | 2.6 min |
+| 18-distribution | 3 | 7.9 min | 2.6 min |
 
 *Updated after each plan completion*
 
@@ -104,6 +104,9 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | str/join for vector normalization | Preserves spaces between args when joining | 17-03 |
 | requiring-resolve for state access in build | Avoids circular dependency with state.clj | 17-03 |
 | sequential? check for polymorphic input | tokenize-docker-args handles vector and string | 17-04 |
+| Function-wrapped installer | Protects against partial download execution | 18-02 |
+| Platform-agnostic checksum (sha256sum/shasum) | Cross-platform Linux/macOS support | 18-02 |
+| Advisory PATH warning only | Never modify shell profiles automatically | 18-02 |
 
 ### Pending Todos
 
@@ -114,7 +117,7 @@ None.
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
 v1.2: Phases 11-12 (SHIPPED 2026-01-19)
-v2.0: Phases 13-18 (IN PROGRESS)
+v2.0: Phases 13-18 (COMPLETE 2026-01-21)
 
 ### Blockers/Concerns
 
@@ -129,5 +132,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 18-03-PLAN.md (legacy cleanup)
+Stopped at: Completed 18-02-PLAN.md (curl|bash installer) - Phase 18 complete
 Resume file: None
