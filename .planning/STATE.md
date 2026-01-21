@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 Phase: 17 of 18 (Validation & Polish)
 Plan: 0 of ? in current phase
 Status: Ready to plan
-Last activity: 2026-01-20 — Phase 16 gap closure verified (7/7 must-haves)
+Last activity: 2026-01-21 — Completed 16-05-PLAN.md (pass-through args fix)
 
 Progress: [██████████████░░░░░░] 70%
 
@@ -30,9 +30,9 @@ v2.0 Babashka Rewrite:
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14 (v2.0)
-- Average duration: 2.2 min
-- Total execution time: 30.4 min
+- Total plans completed: 15 (v2.0)
+- Average duration: 2.1 min
+- Total execution time: 31.4 min
 
 **By Phase:**
 
@@ -41,7 +41,7 @@ v2.0 Babashka Rewrite:
 | 13-foundation | 2 | 5 min | 2.5 min |
 | 14-docker-integration | 5 | 7 min | 1.4 min |
 | 15-build-command | 3 | 6 min | 2.0 min |
-| 16-run-commands | 4 | 12.4 min | 3.1 min |
+| 16-run-commands | 5 | 13.4 min | 2.7 min |
 
 *Updated after each plan completion*
 
@@ -90,6 +90,7 @@ See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
 | Pass-through args for harness commands | No :restrict true for claude/opencode, allow arbitrary args | 16-03 |
 | Dual format support for env config | map? check to detect format, normalize to [k v] pairs | 16-04 |
 | :restrict false per-command override | Overrides global :restrict true for pass-through commands | 16-04 |
+| Pre-dispatch command interception | Handle pass-through before cli/dispatch | 16-05 |
 
 ### Pending Todos
 
@@ -108,6 +109,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-20
-Stopped at: Phase 16 gap closure verified - ready for Phase 17 planning
+Last session: 2026-01-21
+Stopped at: Completed 16-05-PLAN.md - Phase 16 gap closure complete
 Resume file: None
