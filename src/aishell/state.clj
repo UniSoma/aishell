@@ -28,7 +28,8 @@
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
     :image-tag \"aishell:base\"  ; string
-    :build-time \"2026-01-20...\" ; ISO-8601 string"
+    :build-time \"2026-01-20...\" ; ISO-8601 string
+    :dockerfile-hash \"abc123def456\"} ; 12-char SHA-256 hash"
   [state]
   (let [path (state-file)]
     (util/ensure-dir (util/config-dir))

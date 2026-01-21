@@ -4,6 +4,8 @@
             [aishell.core :as core]
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
+            [aishell.docker.hash :as hash]
+            [aishell.docker.templates :as templates]
             [aishell.output :as output]
             [aishell.run :as run]
             [aishell.state :as state]
@@ -125,7 +127,8 @@
          :claude-version (:version claude-config)
          :opencode-version (:version opencode-config)
          :image-tag (:image result)
-         :build-time (str (java.time.Instant/now))}))))
+         :build-time (str (java.time.Instant/now))
+         :dockerfile-hash (hash/compute-hash templates/base-dockerfile)}))))
 
 (defn handle-default [{:keys [opts args]}]
   (cond
