@@ -2,35 +2,40 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-20)
+See: .planning/PROJECT.md (updated 2026-01-21)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 18 - Distribution (in progress)
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 18 of 18 (Distribution)
-Plan: 3 of 3 in current phase
-Status: Complete
-Last activity: 2026-01-21 - Completed 18-02-PLAN.md (curl|bash installer)
+Phase: N/A (between milestones)
+Plan: N/A
+Status: v2.0 complete, ready to plan next milestone
+Last activity: 2026-01-21 — v2.0 milestone complete
 
-Progress: [██████████████████████] 100%
+Progress: Milestone complete
 
-**Milestone v2.0:** SHIPPED (Phases 13-18)
+**Shipped Milestones:**
+- v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
+- v1.1 Runtime Config — Phases 9-10 (shipped 2026-01-19)
+- v1.2 Hardening — Phases 11-12 (shipped 2026-01-19)
+- v2.0 Babashka Rewrite — Phases 13-18 (shipped 2026-01-21)
 
-## What We're Building
+## What We Built
 
-v2.0 Babashka Rewrite:
-- Rewrite CLI in Clojure Babashka
-- Cross-platform: Linux, macOS
+v2.0 Babashka Rewrite (SHIPPED):
+- Complete CLI rewrite from Bash to Clojure Babashka
+- Cross-platform: Linux, macOS (x86_64, aarch64)
 - Feature parity with v1.2
-- Leverage Babashka built-ins (YAML, EDN, better data structures)
-- Parallel development until production-ready
+- YAML config format (.aishell/config.yaml)
+- Single-file uberscript distribution
+- curl|bash installer with checksum verification
 
 ## Performance Metrics
 
-**Velocity:**
-- Total plans completed: 22 (v2.0)
+**v2.0 Velocity:**
+- Total plans completed: 22
 - Average duration: 2.4 min
 - Total execution time: 52.9 min
 
@@ -45,68 +50,11 @@ v2.0 Babashka Rewrite:
 | 17-validation-polish | 4 | 13.7 min | 3.4 min |
 | 18-distribution | 3 | 7.9 min | 2.6 min |
 
-*Updated after each plan completion*
-
 ## Accumulated Context
 
 ### Decisions
 
-See PROJECT.md Key Decisions table (23 validated decisions from v1.0-v1.2).
-
-**v2.0 Decisions:**
-
-| Decision | Context | Phase |
-|----------|---------|-------|
-| Version in cli.clj (not core.clj) | Eliminates circular dependency for uberscript | 18-01 |
-| Static require in core.clj | Enables bb uberscript namespace detection | 18-01 |
-| No when guard in core.clj | bb uberscript -m adds own entry point | 18-01 |
-| rm -f before bb uberscript | bb refuses to overwrite existing files | 18-01 |
-| Dynamic classpath in entry script | aishell.clj loads src/ at runtime | 13-01 |
-| Color detection: console + NO_COLOR + TERM | Standard conventions for TTY detection | 13-01 |
-| Levenshtein max distance 3 for suggestions | Catches typos without false positives | 13-02 |
-| XDG_STATE_HOME support for state dir | Following XDG Base Directory Specification | 13-02 |
-| restrict: true for unknown options | Catches --badopt with clear error | 13-02 |
-| try/catch around all Docker shell calls | Handle missing docker binary gracefully | 14-01 |
-| Go template index syntax for labels | Handles dots in label names properly | 14-01 |
-| format-size accepts string or numeric | Flexible input from shell output | 14-01 |
-| Native Java MessageDigest over clj-commons/digest | Zero deps for SHA-256 hashing | 14-02 |
-| CI env var + System/console for TTY detection | Standard pattern for spinner display | 14-02 |
-| 12-char hash truncation | Matches bash sha256sum \| cut -c1-12 | 14-02 |
-| Templates as multiline strings with escaped quotes | Clojure has no heredocs, proper escaping | 14-03 |
-| if-not early return for cache hit | Clean pattern for cache result without nesting | 14-03 |
-| Temp directory cleanup in finally block | Ensures cleanup even on build failure | 14-03 |
-| Dual cache invalidation (base ID + extension hash) | Rebuilds only when dependencies change | 14-04 |
-| Return nil for missing extension Dockerfile | Caller decides behavior, matches bash impl | 14-04 |
-| Docker check before image check in CLI | Fail fast on Docker unavailable | 14-05 |
-| State at ~/.aishell/state.edn (global) | Per CONTEXT.md, not per-project | 15-01 |
-| read-state returns nil for missing file | Caller decides behavior, not error | 15-01 |
-| No :coerce :string for optional value flags | babashka.cli returns boolean true for flags without values | 15-02 |
-| parse-with-flag handles both boolean and string | Check (true? value) before string checks | 15-02 |
-| (str value) in parse-with-flag :else clause | Ensures validate-version receives string, not Double | 15-03 |
-| apply to spread vectors to p/process and p/shell | babashka.process expects command parts as args, not vector | 15-03 |
-| $HOME env var over fs/home for home directory | fs/home returns '?' in network login environments | 15-UAT |
-| build-time as ISO-8601 string, not Instant | EDN can't read #object[java.time.Instant...] | 15-UAT |
-| YAML config.yaml replaces bash run.conf | Better structure, native Babashka support via clj-yaml | 16-01 |
-| Warn don't fail on unknown config keys | Forward compatibility for future config keys | 16-01 |
-| cond-> threading for optional docker args | Cleaner than nested ifs for conditional arg inclusion | 16-02 |
-| PRE_START as env var, entrypoint executes | Passed via -e, Phase 14 entrypoint runs in background | 16-02 |
-| p/exec for process replacement | Proper Unix exec semantics, no zombie processes | 16-03 |
-| Claude always --dangerously-skip-permissions | Container IS the sandbox, prompts redundant | 16-03 |
-| Pass-through args for harness commands | No :restrict true for claude/opencode, allow arbitrary args | 16-03 |
-| Dual format support for env config | map? check to detect format, normalize to [k v] pairs | 16-04 |
-| :restrict false per-command override | Overrides global :restrict true for pass-through commands | 16-04 |
-| Pre-dispatch command interception | Handle pass-through before cli/dispatch | 16-05 |
-| update = force rebuild, not check for updates | Per 17-CONTEXT.md design | 17-01 |
-| dockerfile-hash in state.edn | Enables future stale image detection | 17-01 |
-| force parameter through all run-build calls | Consistent --no-cache behavior | 17-01 |
-| String and regex patterns for dangerous-patterns | Flexible matching for OR cases | 17-02 |
-| Advisory warnings only - never block execution | Warn but continue for security notices | 17-02 |
-| str/join for vector normalization | Preserves spaces between args when joining | 17-03 |
-| requiring-resolve for state access in build | Avoids circular dependency with state.clj | 17-03 |
-| sequential? check for polymorphic input | tokenize-docker-args handles vector and string | 17-04 |
-| Function-wrapped installer | Protects against partial download execution | 18-02 |
-| Platform-agnostic checksum (sha256sum/shasum) | Cross-platform Linux/macOS support | 18-02 |
-| Advisory PATH warning only | Never modify shell profiles automatically | 18-02 |
+See PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
@@ -134,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed quick task 003 - Create Babashka release automation script
+Stopped at: v2.0 milestone complete
 Resume file: None

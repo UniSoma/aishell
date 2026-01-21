@@ -133,10 +133,6 @@ Don't mount your host gitconfig into the container. The container creates its ow
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic API key (passed to container) |
-| `OPENAI_API_KEY` | OpenAI API key (passed to container) |
 | `AISHELL_SKIP_PERMISSIONS` | Set to `false` to enable Claude permission prompts |
 
 ## Base Image Contents

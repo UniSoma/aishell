@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.0 Babashka Rewrite (Shipped: 2026-01-21)
+
+**Delivered:** Complete CLI rewrite from Bash to Clojure Babashka with feature parity to v1.2, cross-platform support (Linux, macOS), and single-file uberscript distribution.
+
+**Phases completed:** 13-18 (22 plans total)
+
+**Key accomplishments:**
+
+- Complete CLI rewrite from 1,655 LOC Bash to ~1,650 LOC Clojure Babashka
+- Cross-platform support for Linux and macOS (x86_64, aarch64)
+- YAML config format (.aishell/config.yaml) replacing shell-style run.conf
+- Single-file uberscript distribution (60KB) with curl|bash installer
+- EDN state persistence at ~/.aishell/state.edn
+- Pass-through args for harness commands (e.g., `aishell claude --help`)
+
+**Stats:**
+
+- 15 source files created
+- ~1,650 lines of Clojure
+- 6 phases, 22 plans, ~60 tasks
+- 2 days from start to ship (2026-01-20 → 2026-01-21)
+
+**Git range:** `feat(13-01)` → `feat(18-03)` (70 commits)
+
+**What's next:** TBD - project complete or v2.1 with Windows support, SSH agent forwarding, GPG signing
+
+---
+
 ## v1.2 Hardening & Edge Cases (Shipped: 2026-01-19)
 
 **Delivered:** Input validation hardening, consolidated cleanup infrastructure, security warnings, and documentation for edge cases and known limitations.
