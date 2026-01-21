@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 Phase: 18 of 18 (Distribution)
 Plan: 0 of ? in current phase
 Status: Ready to plan
-Last activity: 2026-01-21 — Completed 17-04-PLAN.md (gap closure)
+Last activity: 2026-01-21 — Completed quick task 001: Add dangerous mount path warnings
 
 Progress: [████████████████████] 83%
 
@@ -115,6 +115,12 @@ v2.0: Phases 13-18 (IN PROGRESS)
 ### Blockers/Concerns
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Add dangerous mount path warnings to Clojure implementation | 2026-01-21 | fcdba7a | [001-add-dangerous-mount-path-warnings-to-clo](./quick/001-add-dangerous-mount-path-warnings-to-clo/) |
 
 ## Session Continuity
 
