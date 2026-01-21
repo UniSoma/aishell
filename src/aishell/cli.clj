@@ -130,6 +130,39 @@
          :build-time (str (java.time.Instant/now))
          :dockerfile-hash (hash/compute-hash templates/base-dockerfile)}))))
 
+(defn handle-update
+  "Update command: force rebuild with preserved configuration.
+   Reads existing state and rebuilds with same flags + force (--no-cache).
+   This is NOT a 'check for updates' command - it always rebuilds."
+  [{:keys [opts]}]
+  (let [state (state/read-state)]
+    ;; Must have prior build
+    (when-not state
+      (output/error "No previous build found. Run: aishell build"))
+
+    ;; Show what we're updating
+    (println "Updating with preserved configuration...")
+    (when (:with-claude state)
+      (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
+    (when (:with-opencode state)
+      (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
+
+    ;; Rebuild with same config + force (always --no-cache for update)
+    (let [result (build/build-base-image
+                   {:with-claude (:with-claude state)
+                    :with-opencode (:with-opencode state)
+                    :claude-version (:claude-version state)
+                    :opencode-version (:opencode-version state)
+                    :verbose (:verbose opts)
+                    :force true})]  ; Always force for update
+
+      ;; Update state with new build-time and hash
+      (state/write-state
+        (assoc state
+               :image-tag (:image result)
+               :build-time (str (java.time.Instant/now))
+               :dockerfile-hash (hash/compute-hash templates/base-dockerfile))))))
+
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -148,8 +181,12 @@
     :else
     (run/run-container nil [])))
 
+(def update-spec
+  {:verbose {:alias :v :coerce :boolean :desc "Show full Docker build output"}})
+
 (def dispatch-table
   [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
+   {:cmds ["update"] :fn handle-update :spec update-spec :restrict true}
    {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
