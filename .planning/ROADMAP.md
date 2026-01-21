@@ -104,11 +104,12 @@ Plans:
   2. Invalid version strings (e.g., `1.0; rm -rf /`) are rejected with clear error
   3. Dangerous docker_args patterns (--privileged, docker.sock) trigger warnings
   4. User is warned when embedded Dockerfile changed since last build
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 17-01-PLAN.md - Build --force flag, dockerfile hash storage, update command
 - [x] 17-02-PLAN.md - Dangerous args validation and stale image warnings
+- [x] 17-03-PLAN.md - Gap closure: vector docker_args and version cache invalidation
 
 ### Phase 18: Distribution
 **Goal**: Users can install aishell via curl|bash one-liner
@@ -134,7 +135,7 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | 14. Docker Integration | v2.0 | 5/5 | Complete | 2026-01-20 |
 | 15. Build Command | v2.0 | 3/3 | Complete | 2026-01-20 |
 | 16. Run Commands | v2.0 | 5/5 | Complete | 2026-01-21 |
-| 17. Validation & Polish | v2.0 | 2/2 | Complete | 2026-01-21 |
+| 17. Validation & Polish | v2.0 | 3/3 | Complete | 2026-01-21 |
 | 18. Distribution | v2.0 | 0/? | Not started | - |
 
 ---
