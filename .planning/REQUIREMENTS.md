@@ -54,9 +54,9 @@ Requirements for Babashka rewrite. Each maps to roadmap phases.
 
 ### Distribution
 
-- [ ] **DIST-01**: Tool can be installed via curl|bash one-liner
-- [ ] **DIST-02**: Tool is distributed as single-file uberscript
-- [ ] **DIST-03**: Babashka is assumed installed (not bundled)
+- [x] **DIST-01**: Tool can be installed via curl|bash one-liner
+- [x] **DIST-02**: Tool is distributed as single-file uberscript
+- [x] **DIST-03**: Babashka is assumed installed (not bundled)
 
 ## v2.1 Requirements
 
@@ -119,9 +119,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAT-01 | Phase 16 | Complete |
 | PLAT-02 | Phase 16 | Complete |
 | PLAT-03 | Phase 13 | Complete |
-| DIST-01 | Phase 18 | Pending |
-| DIST-02 | Phase 18 | Pending |
-| DIST-03 | Phase 18 | Pending |
+| DIST-01 | Phase 18 | Complete |
+| DIST-02 | Phase 18 | Complete |
+| DIST-03 | Phase 18 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 33 total
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-21 after Phase 17 completion*
+*Last updated: 2026-01-21 after Phase 18 completion*

@@ -9,7 +9,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
 - v1.1 Runtime Config - Phases 9-10 (shipped 2026-01-19)
 - v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
-- **v2.0 Babashka Rewrite** - Phases 13-18 (in progress)
+- **v2.0 Babashka Rewrite** - Phases 13-18 (shipped 2026-01-21)
 
 ## Phases
 
@@ -18,7 +18,7 @@ This milestone rewrites aishell from 1,655 LOC Bash to Clojure Babashka for cros
 - [x] **Phase 15: Build Command** - Full build workflow with state persistence
 - [x] **Phase 16: Run Commands** - Shell, claude, opencode with configuration support
 - [x] **Phase 17: Validation & Polish** - Version validation, warnings, and hash detection
-- [ ] **Phase 18: Distribution** - Uberscript packaging and curl|bash installer
+- [x] **Phase 18: Distribution** - Uberscript packaging and curl|bash installer
 
 ## Phase Details
 
@@ -123,9 +123,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 18-01-PLAN.md - Build script and uberscript packaging
-- [ ] 18-02-PLAN.md - curl|bash installer with checksum verification
-- [ ] 18-03-PLAN.md - Legacy cleanup and documentation update
+- [x] 18-01-PLAN.md - Build script and uberscript packaging
+- [x] 18-02-PLAN.md - curl|bash installer with checksum verification
+- [x] 18-03-PLAN.md - Legacy cleanup and documentation update
 
 ## Progress
 
@@ -139,8 +139,8 @@ Phases 13 through 18 execute sequentially. Decimal phases (if inserted) appear b
 | 15. Build Command | v2.0 | 3/3 | Complete | 2026-01-20 |
 | 16. Run Commands | v2.0 | 5/5 | Complete | 2026-01-21 |
 | 17. Validation & Polish | v2.0 | 4/4 | Complete | 2026-01-21 |
-| 18. Distribution | v2.0 | 0/3 | Not started | - |
+| 18. Distribution | v2.0 | 3/3 | Complete | 2026-01-21 |
 
 ---
 *Roadmap created: 2026-01-20*
-*Last updated: 2026-01-21 after Phase 18 planning*
+*Last updated: 2026-01-21 after Phase 18 completion - v2.0 SHIPPED*

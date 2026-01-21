@@ -16,7 +16,7 @@ Last activity: 2026-01-21 - Completed 18-02-PLAN.md (curl|bash installer)
 
 Progress: [██████████████████████] 100%
 
-**Milestone v2.0:** COMPLETE (Phases 13-18)
+**Milestone v2.0:** SHIPPED (Phases 13-18)
 
 ## What We're Building
 
@@ -117,7 +117,7 @@ None.
 v1.0: Phases 1-8 (SHIPPED 2026-01-18)
 v1.1: Phases 9-10 (SHIPPED 2026-01-19)
 v1.2: Phases 11-12 (SHIPPED 2026-01-19)
-v2.0: Phases 13-18 (COMPLETE 2026-01-21)
+v2.0: Phases 13-18 (SHIPPED 2026-01-21)
 
 ### Blockers/Concerns
 
@@ -132,5 +132,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 18-02-PLAN.md (curl|bash installer) - Phase 18 complete
+Stopped at: v2.0 MILESTONE COMPLETE - all 6 phases shipped
 Resume file: None
