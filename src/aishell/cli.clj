@@ -125,30 +125,6 @@
          :image-tag (:image result)
          :build-time (str (java.time.Instant/now))}))))
 
-(defn handle-run
-  "Handle run commands: claude, opencode, or shell (default)."
-  [{:keys [opts args]} cmd]
-  (if (:help opts)
-    (case cmd
-      "claude" (do
-                 (println (str output/BOLD "Usage:" output/NC " aishell claude [ARGS...]"))
-                 (println)
-                 (println "Run Claude Code in container.")
-                 (println)
-                 (println "All arguments are passed to Claude Code.")
-                 (println)
-                 (println (str output/BOLD "Examples:" output/NC))
-                 (println (str "  " output/CYAN "aishell claude" output/NC "                  Start Claude Code"))
-                 (println (str "  " output/CYAN "aishell claude --model opus" output/NC "     Use specific model")))
-      "opencode" (do
-                   (println (str output/BOLD "Usage:" output/NC " aishell opencode [ARGS...]"))
-                   (println)
-                   (println "Run OpenCode in container.")
-                   (println)
-                   (println "All arguments are passed to OpenCode.")))
-    ;; Run the command
-    (run/run-container cmd (vec args))))
-
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -169,8 +145,6 @@
 
 (def dispatch-table
   [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
-   {:cmds ["claude"] :fn #(handle-run % "claude") :spec {:help {:alias :h :coerce :boolean}} :restrict false}
-   {:cmds ["opencode"] :fn #(handle-run % "opencode") :spec {:help {:alias :h :coerce :boolean}} :restrict false}
    {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
@@ -188,5 +162,11 @@
     (output/error msg)))
 
 (defn dispatch [args]
-  (cli/dispatch dispatch-table args {:error-fn handle-error
-                                      :restrict true}))
+  ;; Handle pass-through commands before standard dispatch
+  ;; This ensures all args (including --help, --version) go to the harness
+  (case (first args)
+    "claude" (run/run-container "claude" (vec (rest args)))
+    "opencode" (run/run-container "opencode" (vec (rest args)))
+    ;; Standard dispatch for other commands
+    (cli/dispatch dispatch-table args {:error-fn handle-error
+                                        :restrict true})))
