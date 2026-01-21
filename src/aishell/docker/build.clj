@@ -35,6 +35,21 @@
       (not= (get-dockerfile-hash)
             (docker/get-image-label image-tag dockerfile-hash-label))))
 
+(defn version-changed?
+  "Check if requested harness versions differ from stored state.
+   Returns true if rebuild needed due to version change."
+  [opts state]
+  (or
+    ;; Claude version changed
+    (and (:with-claude opts)
+         (not= (:claude-version opts) (:claude-version state)))
+    ;; OpenCode version changed
+    (and (:with-opencode opts)
+         (not= (:opencode-version opts) (:opencode-version state)))
+    ;; Harness added that wasn't in previous build
+    (and (:with-claude opts) (not (:with-claude state)))
+    (and (:with-opencode opts) (not (:with-opencode state)))))
+
 (defn write-build-files
   "Write embedded template files to build directory."
   [build-dir]
@@ -111,11 +126,14 @@
   (docker/check-docker!)
 
   ;; Check cache - early return if no rebuild needed
-  (if-not (needs-rebuild? base-image-tag force)
-    (do
-      (when-not quiet
-        (println (str "Image " base-image-tag " is up to date (use --force to rebuild)")))
-      {:success true :image base-image-tag :cached true})
+  ;; Read state to check for version changes (dynamic require to avoid circular deps)
+  (let [state ((requiring-resolve 'aishell.state/read-state))]
+    (if-not (or (needs-rebuild? base-image-tag force)
+                (version-changed? opts state))
+      (do
+        (when-not quiet
+          (println (str "Image " base-image-tag " is up to date (use --force to rebuild)")))
+        {:success true :image base-image-tag :cached true})
 
     ;; Create temp build directory and build
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
@@ -159,4 +177,4 @@
             (output/error "Build failed")))
         (finally
           ;; Cleanup temp directory
-          (fs/delete-tree build-dir))))))
+          (fs/delete-tree build-dir)))))))
