@@ -1,7 +1,6 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
-            [aishell.core :as core]
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
@@ -10,6 +9,14 @@
             [aishell.run :as run]
             [aishell.state :as state]
             [aishell.util :as util]))
+
+(def version "2.0.0")
+
+(defn print-version []
+  (println (str "aishell " version)))
+
+(defn print-version-json []
+  (println (str "{\"name\":\"aishell\",\"version\":\"" version "\"}")))
 
 (def global-spec
   {:help    {:alias :h :coerce :boolean :desc "Show help"}
@@ -167,8 +174,8 @@
   (cond
     (:version opts)
     (if (:json opts)
-      (core/print-version-json)
-      (core/print-version))
+      (print-version-json)
+      (print-version))
 
     (:help opts)
     (print-help)
