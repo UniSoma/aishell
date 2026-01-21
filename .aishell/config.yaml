@@ -1,0 +1,68 @@
+# AIShell per-project configuration
+# All options are optional - only include what you need
+
+# =============================================================================
+# MOUNTS - Additional directories to mount into container
+# =============================================================================
+# Supports two formats:
+#   - source-only: mounts at same path inside container
+#   - source:dest: mounts source at dest path
+mounts:
+  # - ~/.gitconfig                      # Git config (same path)
+  # - /host/path:/container/path        # Custom mapping
+  # - ~/data:/data                      # Home expansion works
+
+# =============================================================================
+# ENV - Environment variables
+# =============================================================================
+# Supports two formats:
+#
+# Map format (recommended):
+env:
+  # MY_VAR: "hello"                     # Literal value
+  # DEBUG: "true"                       # Another literal
+  # EDITOR:                             # Passthrough from host (uncomment to test)
+
+# Array format (alternative):
+# env:
+#   - MY_VAR=hello                      # Literal with =
+#   - DEBUG=true                        # Another literal
+#   - EDITOR                            # Passthrough (no =)
+
+# =============================================================================
+# PORTS - Port mappings (host:container)
+# =============================================================================
+# Format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT
+ports:
+  # - "8080:8080"                       # Web server
+  # - "3000:3000"                       # Dev server
+  # - "127.0.0.1:5432:5432"             # Postgres (localhost only)
+  # - "9090:9090/udp"                   # UDP protocol
+
+# =============================================================================
+# DOCKER_ARGS - Additional docker run arguments
+# =============================================================================
+# Supports string (space-separated) or array format
+# WARNING: Some flags are dangerous (--privileged, --network=host, etc.)
+
+# String format:
+# docker_args: "--cpus=2 --memory=4g"
+
+# Array format (recommended for complex args):
+docker_args:
+  # - "--cpus=2"
+  # - "--memory=4g"
+  # - "--hostname=aishell"
+  # - "--add-host=myhost:127.0.0.1"
+
+# =============================================================================
+# PRE_START - Command to run before shell starts
+# =============================================================================
+# Runs in background, output goes to /tmp/pre-start.log
+# Useful for starting services needed by your project
+
+pre_start: "echo 'Container started at $(date)'"
+
+# More complex examples:
+# pre_start: "redis-server --daemonize yes"
+# pre_start: "docker-compose -f /project/docker-compose.yml up -d"
