@@ -171,11 +171,16 @@ fi
 # Add harness bin directories to PATH if they exist
 export PATH=\"$HOME/.local/bin:/usr/local/bin:$PATH\"
 
+# Suppress Claude Code npm vs native installer warning (npm install still works)
+export DISABLE_INSTALLATION_CHECKS=1
+
 # Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
+# Runs as developer user so caches (.m2, .npm, etc.) go to the right place
+# Use sudo in pre_start if root is needed for specific commands
 if [[ -n \"${PRE_START:-}\" ]]; then
-    # Run in background, redirect all output to log file
+    # Run in background as developer user, redirect all output to log file
     # Using sh -c ensures proper argument handling for complex commands
-    sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1 &
+    gosu \"$USER_ID:$GROUP_ID\" sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1 &
 fi
 
 # Execute command as the user via gosu
