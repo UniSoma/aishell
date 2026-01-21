@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (build only, skip release creation)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Babashka
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          bb: latest
+
+      - name: Build release
+        run: bb scripts/build-release.clj
+
+      - name: Verify build artifacts
+        run: |
+          test -f dist/aishell || { echo "Build failed: dist/aishell not found"; exit 1; }
+          test -f dist/aishell.sha256 || { echo "Build failed: dist/aishell.sha256 not found"; exit 1; }
+          echo "Build artifacts:"
+          ls -la dist/
+          echo ""
+          echo "Checksum:"
+          cat dist/aishell.sha256
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(./dist/aishell --version --json | jq -r '.version')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Built version: $VERSION"
+
+      - name: Create GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bb scripts/create-release.clj
