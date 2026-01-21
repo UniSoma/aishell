@@ -119,11 +119,15 @@
                                    "\nExamples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp")))))))))
 
 (defn- tokenize-docker-args
-  "Split docker_args string into individual args.
-   Simple whitespace split - complex quoting not supported (documented limitation)."
-  [docker-args-str]
-  (when (and docker-args-str (not (str/blank? docker-args-str)))
-    (str/split (str/trim docker-args-str) #"\s+")))
+  "Tokenize docker_args into individual args.
+   Accepts string (splits on whitespace) or vector (returns as-is).
+   Complex quoting in strings not supported (documented limitation)."
+  [docker-args]
+  (cond
+    (sequential? docker-args) (vec docker-args)
+    (and docker-args (not (str/blank? docker-args)))
+    (str/split (str/trim docker-args) #"\s+")
+    :else nil))
 
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
