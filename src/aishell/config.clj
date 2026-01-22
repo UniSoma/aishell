@@ -8,7 +8,11 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args})
+
+(def known-harnesses
+  "Valid harness names for harness_args validation."
+  #{"claude" "opencode"})
 
 (defn project-config-path
   "Path to project config: PROJECT_DIR/.aishell/config.yaml"
@@ -20,6 +24,34 @@
   []
   (str (fs/path (util/get-home) ".aishell" "config.yaml")))
 
+(defn normalize-harness-arg
+  "Convert string to single-element list, pass lists through."
+  [arg-val]
+  (cond
+    (nil? arg-val) []
+    (string? arg-val) [arg-val]
+    (sequential? arg-val) (vec arg-val)
+    :else []))
+
+(defn normalize-harness-args
+  "Normalize harness_args map: convert string values to single-element lists."
+  [harness-args-map]
+  (when harness-args-map
+    (into {}
+          (map (fn [[k v]] [k (normalize-harness-arg v)])
+               harness-args-map))))
+
+(defn validate-harness-names
+  "Warn if harness_args contains unknown harness names."
+  [harness-args-map source-path]
+  (when harness-args-map
+    (let [config-harnesses (set (map name (keys harness-args-map)))
+          unknown (clojure.set/difference config-harnesses known-harnesses)]
+      (when (seq unknown)
+        (output/warn (str "Unknown harness names in " source-path
+                         " harness_args: "
+                         (clojure.string/join ", " unknown)))))))
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -29,18 +61,34 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends")))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args"))))
+    (when-let [harness-args (:harness_args config)]
+      (validate-harness-names harness-args source-path)))
   config)
+
+(defn merge-harness-args
+  "Merge harness_args maps: merge keys, concatenate per-harness lists.
+   Global defaults come first (can be overridden by position)."
+  [global-args project-args]
+  (let [global-normalized (normalize-harness-args global-args)
+        project-normalized (normalize-harness-args project-args)]
+    (merge-with (fn [global-list project-list]
+                  (vec (concat (or global-list [])
+                              (or project-list []))))
+                global-normalized
+                project-normalized)))
 
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
    - Lists (mounts, ports, docker_args): concatenate (global + project)
    - Maps (env): shallow merge (project overrides global)
+   - Map-of-lists (harness_args): merge keys, concatenate per-key lists
    - Scalars (pre_start): project replaces global
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
   (let [list-keys #{:mounts :ports :docker_args}
         map-keys #{:env}
+        map-of-lists-keys #{:harness_args}
         scalar-keys #{:pre_start}
         merged (reduce
                 (fn [acc k]
@@ -59,6 +107,14 @@
                           project-val (get project-config k)]
                       (if (or global-val project-val)
                         (assoc acc k (merge (or global-val {}) (or project-val {})))
+                        acc))
+
+                    ;; Map-of-lists keys - merge keys, concatenate lists
+                    (contains? map-of-lists-keys k)
+                    (let [global-val (get global-config k)
+                          project-val (get project-config k)]
+                      (if (or global-val project-val)
+                        (assoc acc k (merge-harness-args global-val project-val))
                         acc))
 
                     ;; Scalar keys - project wins
