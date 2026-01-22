@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 18.1 (Default Harness Args - INSERTED before v2.1)
-Plan: 0 of 1 in current phase
-Status: Ready to plan
-Last activity: 2026-01-22 — Inserted Phase 18.1 from pending todo
+Plan: 1 of 1 in current phase
+Status: Phase complete
+Last activity: 2026-01-22 — Completed 18.1-01-PLAN.md
 
-Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0% v2.1 (0/11 plans)
+Progress: [####################] 100% v2.0 | [██░░░░░░░░] 9% v2.1 (1/11 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -25,15 +25,15 @@ Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 0
-- Average duration: - min
-- Total execution time: 0 min
+- Total plans completed: 1
+- Average duration: 2.0 min
+- Total execution time: 2 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 18.1-default-harness-args | 0/1 | - | - |
+| 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 0/1 | - | - |
 | 20-filename-detection | 0/2 | - | - |
 | 21-content-detection | 0/2 | - | - |
@@ -52,6 +52,9 @@ Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0%
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [18.1-01]: Global defaults prepend to project defaults (concatenate lists per harness)
+- [18.1-01]: String values auto-normalize to single-element lists for better DX
+- [18.1-01]: Defaults prepend to CLI args (CLI can override by position)
 - [v2.0]: Advisory security warnings (never block, just inform)
 - [v2.0]: Babashka over Bash for cross-platform support
 - [v2.0]: YAML config format for structured configuration
@@ -77,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Completed quick task 004 (config merge with extends key)
+Stopped at: Completed 18.1-01-PLAN.md (harness_args config implementation)
 Resume file: None
