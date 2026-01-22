@@ -132,6 +132,9 @@ RUN apt-get update && apt-get install -y postgresql-client
 Create `.aishell/config.yaml` to configure container runtime:
 
 ```yaml
+# Inherit from global config (default: "global", or "none" to disable)
+extends: global
+
 mounts:
   - /path/to/data
   - source: $HOME/.secrets
@@ -149,6 +152,8 @@ docker_args: "--memory=4g --cpus=2"
 
 pre_start: "redis-server --daemonize yes"
 ```
+
+**Config inheritance:** Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.
 
 ### Git safe.directory
 
