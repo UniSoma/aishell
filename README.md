@@ -13,6 +13,44 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in
 - **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
 - **Pre-start commands** - Run sidecar services before shell/harness
 
+## Why aishell?
+
+Running AI coding agents in Docker yourself means dealing with:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:$PWD" \
+  -v "$HOME/.claude:/home/dev/.claude" \
+  -v "$HOME/.config/claude-code:/home/dev/.config/claude-code" \
+  -w "$PWD" \
+  -e ANTHROPIC_API_KEY \
+  --name claude-session \
+  my-claude-image claude
+```
+
+And that's the simple version. You still need to:
+
+- **Get paths right** - AI agents reference absolute paths in their responses. If `/home/you/project` on your host becomes `/app` in the container, file references break and the agent gets confused.
+- **Preserve git identity** - Without setup, commits appear as "root" or "unknown". You need to pass through `.gitconfig` or set `GIT_AUTHOR_*` variables.
+- **Remember all the mounts** - Config directories, credential files, SSH keys, project-specific data. Miss one and things fail mid-session.
+- **Handle project-specific needs** - One project needs PostgreSQL client, another needs Python 3.11. Managing multiple Dockerfiles gets messy.
+- **Reproduce across machines** - That 200-character docker command you perfected? Good luck remembering it on your laptop.
+
+aishell handles all of this. One command, consistent behavior, works everywhere.
+
+### Why not devcontainers?
+
+Devcontainers solve a different problem. They create persistent development environments tied to your IDE.
+
+aishell is purpose-built for AI agents:
+
+- **Ephemeral by design** - Containers spin up, run the agent, and disappear. No state accumulates, no cleanup needed.
+- **Host path preservation** - Devcontainers remap your project to `/workspaces/project`. When an AI agent says "edit `/home/you/project/src/main.ts`", that path needs to exist. aishell mounts your project at its real path.
+- **CLI-first** - No IDE required. Run from any terminal, SSH session, or script.
+- **Zero config for the common case** - `aishell claude` just works. Devcontainers require `devcontainer.json`, features configuration, and IDE integration.
+
+You can use both: devcontainers for your development environment, aishell for running AI agents.
+
 ## Requirements
 
 - Linux or macOS
@@ -137,10 +175,16 @@ Don't mount your host gitconfig into the container. The container creates its ow
 
 ## Base Image Contents
 
-- Debian bookworm-slim
-- Node.js LTS
+Built on `debian:bookworm-slim` with:
+
+**Runtimes:**
+- Node.js 24 (with npm, npx)
 - Babashka
+
+**CLI tools:**
 - git, curl, jq, ripgrep, vim
+- tree, less, file, unzip, watch
+- htop, sqlite3, sudo
 
 ## License
 
