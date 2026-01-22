@@ -2,6 +2,18 @@
 # All options are optional - only include what you need
 
 # =============================================================================
+# EXTENDS - Config inheritance strategy
+# =============================================================================
+# Controls how this project config relates to global (~/.aishell/config.yaml):
+#   - "global" (default): Merge with global config
+#       - Lists (mounts, ports, docker_args): concatenate (global + project)
+#       - Maps (env): shallow merge (project overrides global)
+#       - Scalars (pre_start): project replaces global
+#   - "none": This config fully replaces global (no merging)
+
+extends: global
+
+# =============================================================================
 # MOUNTS - Additional directories to mount into container
 # =============================================================================
 # Supports two formats:
