@@ -101,39 +101,39 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FRMW-01 | TBD | Pending |
-| FRMW-02 | TBD | Pending |
-| FRMW-03 | TBD | Pending |
-| ENVF-01 | TBD | Pending |
-| ENVF-02 | TBD | Pending |
-| ENVF-03 | TBD | Pending |
-| PKEY-01 | TBD | Pending |
-| PKEY-02 | TBD | Pending |
-| PKEY-03 | TBD | Pending |
-| PKEY-04 | TBD | Pending |
-| CLOD-01 | TBD | Pending |
-| CLOD-02 | TBD | Pending |
-| CLOD-03 | TBD | Pending |
-| CLOD-04 | TBD | Pending |
-| PKGM-01 | TBD | Pending |
-| PKGM-02 | TBD | Pending |
-| PKGM-03 | TBD | Pending |
-| PKGM-04 | TBD | Pending |
-| ASEC-01 | TBD | Pending |
-| ASEC-02 | TBD | Pending |
-| ASEC-03 | TBD | Pending |
-| CTXT-01 | TBD | Pending |
-| CTXT-02 | TBD | Pending |
-| CONF-01 | TBD | Pending |
-| CONF-02 | TBD | Pending |
-| CONF-03 | TBD | Pending |
-| CONF-04 | TBD | Pending |
+| FRMW-01 | Phase 19 | Pending |
+| FRMW-02 | Phase 19 | Pending |
+| FRMW-03 | Phase 19 | Pending |
+| ENVF-01 | Phase 20 | Pending |
+| ENVF-02 | Phase 20 | Pending |
+| ENVF-03 | Phase 20 | Pending |
+| PKEY-01 | Phase 21 | Pending |
+| PKEY-02 | Phase 20 | Pending |
+| PKEY-03 | Phase 20 | Pending |
+| PKEY-04 | Phase 20 | Pending |
+| CLOD-01 | Phase 21 | Pending |
+| CLOD-02 | Phase 22 | Pending |
+| CLOD-03 | Phase 22 | Pending |
+| CLOD-04 | Phase 22 | Pending |
+| PKGM-01 | Phase 21 | Pending |
+| PKGM-02 | Phase 22 | Pending |
+| PKGM-03 | Phase 22 | Pending |
+| PKGM-04 | Phase 22 | Pending |
+| ASEC-01 | Phase 22 | Pending |
+| ASEC-02 | Phase 22 | Pending |
+| ASEC-03 | Phase 22 | Pending |
+| CTXT-01 | Phase 23 | Pending |
+| CTXT-02 | Phase 23 | Pending |
+| CONF-01 | Phase 23 | Pending |
+| CONF-02 | Phase 23 | Pending |
+| CONF-03 | Phase 23 | Pending |
+| CONF-04 | Phase 23 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 27 total
-- Mapped to phases: 0
-- Unmapped: 27 (pending roadmap creation)
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 after expert review feedback*
+*Last updated: 2026-01-22 - traceability updated with phase mappings*
