@@ -39,11 +39,11 @@ See MILESTONES.md for completed milestone details.
 **Success Criteria** (what must be TRUE):
   1. User can add `harness_args` key to config.yaml mapping harness names to default arguments
   2. Default arguments are automatically prefixed to user-provided arguments
-  3. Per-harness granularity (claude, aider, etc. can have different defaults)
+  3. Per-harness granularity (claude, opencode can have different defaults)
 **Plans**: 1 plan
 
 Plans:
-- [ ] 18.1-01: Implement harness_args config parsing and argument injection
+- [ ] 18.1-01-PLAN.md - Implement harness_args config parsing and argument injection
 
 ### Phase 19: Core Detection Framework
 **Goal**: Users see warnings about sensitive files with severity tiers when running aishell commands
