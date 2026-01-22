@@ -78,3 +78,28 @@ pre_start: "echo 'Container started at $(date)'"
 # More complex examples:
 # pre_start: "redis-server --daemonize yes"
 # pre_start: "docker-compose -f /project/docker-compose.yml up -d"
+
+# =============================================================================
+# HARNESS_ARGS - Default arguments for AI harnesses
+# =============================================================================
+# Per-harness default arguments that are automatically prepended to CLI args.
+# Useful for flags you always want (--plugin, --model, etc.)
+#
+# Merging behavior:
+#   - Global and project harness_args concatenate per-harness
+#   - Defaults come first, CLI args follow (CLI can override by position)
+#   - String values auto-convert to single-element lists
+
+harness_args:
+  # claude:
+  #   - "--plugin"                         # Plugin flag
+  #   - "context7"                         # Plugin name
+  #   - "--model"                          # Model flag
+  #   - "sonnet"                           # Model name
+  # opencode:
+  #   - "--provider"
+  #   - "anthropic"
+
+# String shorthand (single arg):
+# harness_args:
+#   claude: "--verbose"                    # Auto-converts to ["--verbose"]
