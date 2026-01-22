@@ -43,7 +43,7 @@ See MILESTONES.md for completed milestone details.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 18.1-01-PLAN.md - Implement harness_args config parsing and argument injection
+- [x] 18.1-01-PLAN.md - Implement harness_args config parsing and argument injection
 
 ### Phase 19: Core Detection Framework
 **Goal**: Users see warnings about sensitive files with severity tiers when running aishell commands
@@ -133,7 +133,7 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 18.1 Default Harness Args (INSERTED) | v2.1 | 0/1 | Not started | - |
+| 18.1 Default Harness Args (INSERTED) | v2.1 | 1/1 | ✓ Complete | 2026-01-22 |
 | 19. Core Detection Framework | v2.1 | 0/1 | Not started | - |
 | 20. Filename-based Detection | v2.1 | 0/2 | Not started | - |
 | 21. Content-aware Detection | v2.1 | 0/2 | Not started | - |
@@ -142,4 +142,4 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-22*
+*Last updated: 2026-01-22 (Phase 18.1 complete)*
