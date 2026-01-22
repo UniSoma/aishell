@@ -86,6 +86,16 @@
             cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
 
+            ;; Extract defaults for this harness (if any)
+            defaults (when (and cfg cmd)
+                       (get-in cfg [:harness_args (keyword cmd)] []))
+
+            ;; Ensure defaults is a vector
+            defaults-vec (vec (or defaults []))
+
+            ;; Merge: defaults first, then CLI args (CLI can override by position)
+            merged-args (vec (concat defaults-vec harness-args))
+
             ;; Verbose output (when we add --verbose support)
             _ (when cfg
                 (output/verbose (str "Loaded config from: "
@@ -93,6 +103,9 @@
             _ (when (and (:name git-id) (:email git-id))
                 (output/verbose (str "Git identity: " (:name git-id)
                                     " <" (:email git-id) ">")))
+            _ (when (seq defaults-vec)
+                (output/verbose (str "Applying " cmd " defaults: "
+                                    (clojure.string/join " " defaults-vec))))
 
             ;; Check for stale image (advisory warning)
             _ (check-dockerfile-stale state)
@@ -116,10 +129,10 @@
             container-cmd (case cmd
                             "claude"
                             (into ["claude" "--dangerously-skip-permissions"]
-                                  harness-args)
+                                  merged-args)
 
                             "opencode"
-                            (into ["opencode"] harness-args)
+                            (into ["opencode"] merged-args)
 
                             ;; Default: bash shell
                             ["/bin/bash"])]
