@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-21)
+See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v2.1 Safe AI Context Protection
 
 ## Current Position
 
-Phase: N/A (between milestones)
-Plan: N/A
-Status: v2.0 complete, ready to plan next milestone
-Last activity: 2026-01-21 — v2.0 milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-22 — Milestone v2.1 started
 
-Progress: Milestone complete
+Progress: Milestone initialized
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)

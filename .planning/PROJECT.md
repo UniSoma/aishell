@@ -54,7 +54,10 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-None - no active requirements for next milestone yet.
+**v2.1 Safe AI Context Protection:**
+- .env file presence warning: Warn when .env files exist in project directory
+- Sensitive file pattern detection: Warn when SSH keys, certificates, credentials files detected
+- Git-ignored secrets check: Extra warning when sensitive files exist but are NOT in .gitignore
 
 ### Out of Scope
 
@@ -121,5 +124,16 @@ None - no active requirements for next milestone yet.
 | Advisory security warnings | Never block, just inform | Good |
 | requiring-resolve for state | Avoids circular dependency in build.clj | Good |
 
+## Current Milestone: v2.1 Safe AI Context Protection
+
+**Goal:** Proactively warn users about sensitive data in their project directory before AI agents access it.
+
+**Target features:**
+- .env file presence warning
+- Sensitive file pattern detection (id_rsa, .pem, .npmrc, credentials.json, etc.)
+- Git-ignored secrets warning (if sensitive files exist but NOT in .gitignore)
+
+**Research basis:** Deep dive on "Safe AI Sandboxing" (2026-01-21) identified context boundary protection as highest-impact opportunity.
+
 ---
-*Last updated: 2026-01-21 after v2.0 milestone*
+*Last updated: 2026-01-22 after v2.1 milestone start*
