@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 Phase: 19 of 23 (Core Detection Framework)
 Plan: 0 of 1 in current phase
 Status: Ready to plan
-Last activity: 2026-01-22 — Roadmap finalized for v2.1 Safe AI Context Protection
+Last activity: 2026-01-22 — Completed quick task 004: config merge with extends key
 
 Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0% v2.1 (0/10 plans)
 
@@ -62,6 +62,12 @@ None.
 ### Blockers/Concerns
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 004 | Add extends key for config merge strategy | 2026-01-22 | ebd6ff7 | [004-add-extends-key-for-config-merge-strateg](./quick/004-add-extends-key-for-config-merge-strateg/) |
 
 ## Session Continuity
 
