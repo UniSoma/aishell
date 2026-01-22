@@ -57,7 +57,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+1 pending todo in `.planning/todos/pending/`:
+- **Add default harness arguments in config.yaml** (config)
 
 ### Blockers/Concerns
 
