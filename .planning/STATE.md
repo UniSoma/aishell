@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 19 - Core Detection Framework
+**Current focus:** Phase 18.1 - Default Harness Arguments in Config (INSERTED)
 
 ## Current Position
 
-Phase: 19 of 23 (Core Detection Framework)
+Phase: 18.1 (Default Harness Args - INSERTED before v2.1)
 Plan: 0 of 1 in current phase
 Status: Ready to plan
-Last activity: 2026-01-22 — Completed quick task 004: config merge with extends key
+Last activity: 2026-01-22 — Inserted Phase 18.1 from pending todo
 
-Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0% v2.1 (0/10 plans)
+Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0% v2.1 (0/11 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -33,6 +33,7 @@ Progress: [####################] 100% v2.0 | [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
+| 18.1-default-harness-args | 0/1 | - | - |
 | 19-core-framework | 0/1 | - | - |
 | 20-filename-detection | 0/2 | - | - |
 | 21-content-detection | 0/2 | - | - |
@@ -57,8 +58,11 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-1 pending todo in `.planning/todos/pending/`:
-- **Add default harness arguments in config.yaml** (config)
+0 pending todos in `.planning/todos/pending/`
+
+### Roadmap Evolution
+
+- Phase 18.1 inserted after Phase 18: Default harness arguments in config (URGENT) — from pending todo
 
 ### Blockers/Concerns
 

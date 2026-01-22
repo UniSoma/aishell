@@ -33,6 +33,18 @@ See MILESTONES.md for completed milestone details.
 
 ## Phase Details
 
+### Phase 18.1: Default Harness Arguments in Config (INSERTED)
+**Goal**: Users can specify per-harness default arguments in config.yaml that are automatically applied on every invocation
+**Depends on**: v2.0 complete (Phase 18)
+**Success Criteria** (what must be TRUE):
+  1. User can add `harness_args` key to config.yaml mapping harness names to default arguments
+  2. Default arguments are automatically prefixed to user-provided arguments
+  3. Per-harness granularity (claude, aider, etc. can have different defaults)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 18.1-01: Implement harness_args config parsing and argument injection
+
 ### Phase 19: Core Detection Framework
 **Goal**: Users see warnings about sensitive files with severity tiers when running aishell commands
 **Depends on**: v2.0 complete (Phase 18)
@@ -117,10 +129,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 19 -> 19.1 -> 19.2 -> 20 -> etc.
+Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
+| 18.1 Default Harness Args (INSERTED) | v2.1 | 0/1 | Not started | - |
 | 19. Core Detection Framework | v2.1 | 0/1 | Not started | - |
 | 20. Filename-based Detection | v2.1 | 0/2 | Not started | - |
 | 21. Content-aware Detection | v2.1 | 0/2 | Not started | - |
