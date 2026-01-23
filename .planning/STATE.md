@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 
 ## Current Position
 
-Phase: 21 of 23 (Extended Filename Patterns) - COMPLETE
-Plan: 2 of 2 in current phase - COMPLETE
-Status: Phase complete
-Last activity: 2026-01-23 - Completed 21-02-PLAN.md (package manager and application secrets)
+Phase: 22 of 23 (Gitleaks Integration) - IN PROGRESS
+Plan: 1 of 2 in current phase - COMPLETE
+Status: In progress
+Last activity: 2026-01-23 - Completed 22-01-PLAN.md (gitleaks binary and command integration)
 
-Progress: [####################] 100% v2.0 | [██████░░░░] 60% v2.1 (6/10 plans)
+Progress: [####################] 100% v2.0 | [███████░░░] 70% v2.1 (7/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [██████░░░░] 60
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 6
-- Average duration: 2.7 min
-- Total execution time: 16 min
+- Total plans completed: 7
+- Average duration: 2.6 min
+- Total execution time: 18.6 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [####################] 100% v2.0 | [██████░░░░] 60
 | 19-core-framework | 1/1 | 4min | 4.0min |
 | 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
-| 22-gitleaks-integration | 0/2 | - | - |
+| 22-gitleaks-integration | 1/2 | 2.6min | 2.6min |
 | 23-context-config | 0/2 | - | - |
 
 **v2.0 Reference (for comparison):**
@@ -52,6 +52,9 @@ Progress: [####################] 100% v2.0 | [██████░░░░] 60
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [22-01]: Gitleaks v8.30.0 pinned with multi-arch support (amd64, arm64, armv7)
+- [22-01]: Skip-pre-start via `-e PRE_START=` to unset env var in entrypoint
+- [22-01]: Gitleaks command is pure passthrough (no defaults merging)
 - [roadmap]: Content-based detection delegated to Gitleaks (runs inside container via `aishell gitleaks`)
 - [roadmap]: Filename-based detection stays in aishell (pre-container, fast checks)
 - [roadmap]: Gitleaks freshness warning on all commands if scan is stale (default 7 days)
@@ -100,5 +103,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 21-02-PLAN.md (package manager and application secrets) - Phase 21 complete
+Stopped at: Completed 22-01-PLAN.md (gitleaks binary and command integration)
 Resume file: None
