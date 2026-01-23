@@ -56,13 +56,11 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 **v2.1 Safe AI Context Protection:**
 - Severity-tiered detection framework: High/medium/low severity warnings for different finding types
-- Environment file detection: .env, .env.*, .envrc with severity-appropriate warnings
-- Private key detection: Content-aware (BEGIN PRIVATE KEY markers) + filename patterns (id_rsa, *.p12, *.pfx)
-- Cloud credential detection: GCP service accounts, application_default_credentials.json, terraform.tfstate
-- Package manager credentials: .npmrc (with authToken check), .pypirc, .netrc, .docker/config.json
-- Application secrets: Rails master.key, database credentials, generic secret patterns
+- Filename-based detection (pre-container): .env files, SSH keys, key containers, cloud creds, package manager files, app secrets
+- Gitleaks integration: `aishell gitleaks` command for deep content-based secret scanning inside container
+- Scan freshness warning: Alerts on claude/opencode/shell if gitleaks hasn't been run recently
 - Context awareness: Extra warning when sensitive files NOT in .gitignore
-- Configuration: Additive custom patterns, allowlist for false positives, safe YAML parsing
+- Configuration: Additive custom filename patterns, allowlist for false positives
 
 ### Out of Scope
 
@@ -133,16 +131,17 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 **Goal:** Proactively warn users about sensitive data in their project directory before AI agents access it.
 
-**Scope (27 requirements across 7 categories):**
-- **Detection Framework:** Severity tiers (high/medium/low), advisory-only warnings
-- **Environment Files:** .env, .env.*, .envrc detection with template file awareness
-- **Private Keys:** Content-aware (BEGIN PRIVATE KEY) + filename patterns (id_rsa, *.p12, *.pfx, *.jks)
-- **Cloud Credentials:** GCP service accounts, ADC, terraform.tfstate, kubeconfig
-- **Package Managers:** .npmrc (authToken check), .pypirc, .netrc, .docker/config.json
-- **Application Secrets:** Rails master.key, database credentials, generic secret.*/vault.* patterns
+**Approach:**
+- **Filename-based detection (pre-container):** Fast checks for sensitive file patterns before container starts
+- **Content-based detection (Gitleaks):** Deep scanning via `aishell gitleaks` command inside container
+
+**Scope:**
+- **Detection Framework:** Severity tiers (high/medium/low), advisory-only warnings, --unsafe bypass
+- **Filename Patterns:** .env files, SSH keys, key containers, cloud creds (ADC, terraform.tfstate, kubeconfig), package manager files (.npmrc, .pypirc, .netrc), app secrets (master.key, secret.*, database.yml)
+- **Gitleaks Integration:** Base image includes gitleaks, one-shot scan command, freshness tracking
 - **Context & Config:** Git-ignore awareness, additive custom patterns, allowlist for false positives
 
 **Research basis:** Deep dive on "Safe AI Sandboxing" (2026-01-21) identified context boundary protection as highest-impact opportunity.
 
 ---
-*Last updated: 2026-01-22 after v2.1 milestone start*
+*Last updated: 2026-01-23 (roadmap revised - content detection delegated to Gitleaks)*

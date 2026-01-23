@@ -27,9 +27,9 @@ See MILESTONES.md for completed milestone details.
 
 - [x] **Phase 19: Core Detection Framework** - Severity tiers, warning display, advisory pattern
 - [x] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
-- [ ] **Phase 21: Content-aware Detection** - Private key markers, GCP service accounts, npmrc auth
-- [ ] **Phase 22: Extended Patterns** - Cloud creds, package managers, app secrets
-- [ ] **Phase 23: Context Awareness & Configuration** - Gitignore context, mount tracking, custom patterns
+- [ ] **Phase 21: Extended Filename Patterns** - Cloud creds, package managers, app secrets (file presence only)
+- [ ] **Phase 22: Gitleaks Integration** - Base image, `aishell gitleaks` command, scan freshness warning
+- [ ] **Phase 23: Context & Configuration** - Gitignore awareness, custom patterns, allowlist
 
 ## Phase Details
 
@@ -75,56 +75,54 @@ Plans:
 - [x] 20-01: Environment file detection with threshold-based grouping
 - [x] 20-02: SSH key, key container, and PEM/key file detection
 
-### Phase 21: Content-aware Detection
-**Goal**: Users are warned about sensitive data detected by inspecting file contents
+### Phase 21: Extended Filename Patterns
+**Goal**: Users are warned about additional sensitive files detected by filename/path patterns (no content inspection)
 **Depends on**: Phase 20
-**Requirements**: PKEY-01, CLOD-01, PKGM-01
-**Success Criteria** (what must be TRUE):
-  1. User sees high warning when any file contains "BEGIN OPENSSH PRIVATE KEY", "BEGIN RSA PRIVATE KEY", or similar markers
-  2. User sees high warning when JSON file contains both "type": "service_account" and "private_key" (GCP service account)
-  3. User sees high warning when .npmrc file contains authToken or _authToken
-**Plans**: 2 plans
-
-Plans:
-- [ ] 21-01: Private key content detection
-- [ ] 21-02: GCP service account and npmrc auth token detection
-
-### Phase 22: Extended Patterns
-**Goal**: Users are warned about additional cloud credentials, package manager configs, and application secrets
-**Depends on**: Phase 21
-**Requirements**: CLOD-02, CLOD-03, CLOD-04, PKGM-02, PKGM-03, PKGM-04, ASEC-01, ASEC-02, ASEC-03
 **Success Criteria** (what must be TRUE):
   1. User sees high warning when application_default_credentials.json exists
   2. User sees high warning when terraform.tfstate or terraform.tfstate.backup exist
   3. User sees medium warning when kubeconfig or .kube/config patterns detected
   4. User sees high warning when .pypirc or .netrc exist
-  5. User sees medium warning when .yarnrc.yml, .docker/config.json, .terraformrc, or credentials.tfrc.json exist
+  5. User sees medium warning when .npmrc, .yarnrc.yml, .docker/config.json, .terraformrc, or credentials.tfrc.json exist
   6. User sees high warning when Rails master.key or credentials*.yml.enc exist
   7. User sees medium warning when secret.*, secrets.*, vault.*, token.*, apikey.*, or private.* files exist
   8. User sees medium warning when .pgpass, .my.cnf, or database.yml exist
-**Plans**: 3 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 22-01: Cloud credential file detection
-- [ ] 22-02: Package manager credential detection
-- [ ] 22-03: Application secret file detection
+- [ ] 21-01: Cloud credential file detection (ADC, terraform state, kubeconfig)
+- [ ] 21-02: Package manager and application secret file detection
 
-### Phase 23: Context Awareness & Configuration
-**Goal**: Users can customize detection and get extra warnings for unprotected sensitive files
+### Phase 22: Gitleaks Integration
+**Goal**: Users can run gitleaks for deep content-based secret scanning inside the container
+**Depends on**: Phase 21
+**Success Criteria** (what must be TRUE):
+  1. Gitleaks binary is available in the base container image
+  2. User can run `aishell gitleaks` to perform one-shot scan of project directory
+  3. Gitleaks runs inside container without executing pre_start hooks
+  4. Last gitleaks scan timestamp is tracked in state file
+  5. User sees warning on claude/opencode/shell if gitleaks hasn't been run recently (configurable threshold, default 7 days)
+  6. Warning includes command to run gitleaks scan
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: Add gitleaks to base Dockerfile and create gitleaks command
+- [ ] 22-02: Scan freshness tracking and staleness warning
+
+### Phase 23: Context & Configuration
+**Goal**: Users can customize filename detection and get extra warnings for unprotected sensitive files
 **Depends on**: Phase 22
-**Requirements**: CTXT-01, CTXT-02, CONF-01, CONF-02, CONF-03, CONF-04
 **Success Criteria** (what must be TRUE):
   1. User sees extra emphasis when high-severity file is NOT in .gitignore (likely accidental exposure)
-  2. Warnings indicate whether sensitive file is in project directory vs additional mount
-  3. User can add custom sensitive patterns via .aishell/config.yaml
-  4. Custom patterns extend default patterns (not replace)
-  5. User can allowlist specific files to suppress false positives
-  6. YAML config parsing is safe (no arbitrary object instantiation)
-**Plans**: 2 plans
+  2. User can add custom sensitive filename patterns via .aishell/config.yaml
+  3. Custom patterns extend default patterns (not replace)
+  4. User can allowlist specific files to suppress false positives
+  5. YAML config parsing is safe (no arbitrary object instantiation)
+**Plans**: TBD
 
 Plans:
-- [ ] 23-01: Gitignore context and mount source tracking
-- [ ] 23-02: Configuration for custom patterns and allowlist
+- [ ] 23-01: Gitignore awareness for filename-based findings
+- [ ] 23-02: Custom patterns and allowlist configuration
 
 ## Progress
 
@@ -136,10 +134,10 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 | 18.1 Default Harness Args (INSERTED) | v2.1 | 1/1 | ✓ Complete | 2026-01-22 |
 | 19. Core Detection Framework | v2.1 | 1/1 | ✓ Complete | 2026-01-23 |
 | 20. Filename-based Detection | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
-| 21. Content-aware Detection | v2.1 | 0/2 | Not started | - |
-| 22. Extended Patterns | v2.1 | 0/3 | Not started | - |
-| 23. Context Awareness & Configuration | v2.1 | 0/2 | Not started | - |
+| 21. Extended Filename Patterns | v2.1 | 0/2 | Not started | - |
+| 22. Gitleaks Integration | v2.1 | 0/2 | Not started | - |
+| 23. Context & Configuration | v2.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Phase 20 complete)*
+*Last updated: 2026-01-23 (Roadmap revised - content detection delegated to Gitleaks)*

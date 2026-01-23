@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 20 - Filename-based Detection
+**Current focus:** Phase 21 - Extended Filename Patterns (next up)
 
 ## Current Position
 
 Phase: 20 (Filename-based Detection)
 Plan: 2 of 2 in current phase
 Status: Phase complete
-Last activity: 2026-01-23 — Completed 20-02-PLAN.md
+Last activity: 2026-01-23 — Roadmap revised (content detection delegated to Gitleaks)
 
-Progress: [####################] 100% v2.0 | [████░░░░░░] 36% v2.1 (4/11 plans)
+Progress: [####################] 100% v2.0 | [████░░░░░░] 40% v2.1 (4/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -36,8 +36,8 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 36
 | 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 1/1 | 4min | 4.0min |
 | 20-filename-detection | 2/2 | 4min | 2.0min |
-| 21-content-detection | 0/2 | - | - |
-| 22-extended-patterns | 0/3 | - | - |
+| 21-extended-filename-patterns | 0/2 | - | - |
+| 22-gitleaks-integration | 0/2 | - | - |
 | 23-context-config | 0/2 | - | - |
 
 **v2.0 Reference (for comparison):**
@@ -52,6 +52,9 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 36
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [roadmap]: Content-based detection delegated to Gitleaks (runs inside container via `aishell gitleaks`)
+- [roadmap]: Filename-based detection stays in aishell (pre-container, fast checks)
+- [roadmap]: Gitleaks freshness warning on all commands if scan is stale (default 7 days)
 - [20-02]: SSH keys (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk) classified as high severity
 - [20-02]: Key containers (*.p12, *.pfx, *.jks, *.keystore) classified as high severity
 - [20-02]: PEM/key files (*.pem, *.key) classified as medium severity (may be certificates or keys)
