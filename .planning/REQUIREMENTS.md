@@ -15,16 +15,16 @@ Requirements for v2.1 Safe AI Context Protection. Extends existing security warn
 
 ### Environment Files
 
-- [ ] **ENVF-01**: Warn (medium) when .env files exist in project directory
-- [ ] **ENVF-02**: Warn (medium) when .env.* variant files exist (.env.local, .env.production, .envrc)
-- [ ] **ENVF-03**: Inform (low) when .env.example/.env.sample exist (template files, lower risk)
+- [x] **ENVF-01**: Warn (medium) when .env files exist in project directory
+- [x] **ENVF-02**: Warn (medium) when .env.* variant files exist (.env.local, .env.production, .envrc)
+- [x] **ENVF-03**: Inform (low) when .env.example/.env.sample exist (template files, lower risk)
 
 ### Private Keys & Certificates (Content-Aware)
 
 - [ ] **PKEY-01**: Warn (high) when files contain private key markers (BEGIN OPENSSH/RSA/EC/DSA/PRIVATE KEY, PuTTY-User-Key-File)
-- [ ] **PKEY-02**: Warn (high) when common SSH key files exist (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk)
-- [ ] **PKEY-03**: Warn (high) when key container files exist (*.p12, *.pfx, *.jks, *.keystore)
-- [ ] **PKEY-04**: Warn (medium) when *.pem or *.key files exist (may be certs, not just private keys)
+- [x] **PKEY-02**: Warn (high) when common SSH key files exist (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk)
+- [x] **PKEY-03**: Warn (high) when key container files exist (*.p12, *.pfx, *.jks, *.keystore)
+- [x] **PKEY-04**: Warn (medium) when *.pem or *.key files exist (may be certs, not just private keys)
 
 ### Cloud Credentials
 
@@ -104,13 +104,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FRMW-01 | Phase 19 | Complete |
 | FRMW-02 | Phase 19 | Complete |
 | FRMW-03 | Phase 19 | Complete |
-| ENVF-01 | Phase 20 | Pending |
-| ENVF-02 | Phase 20 | Pending |
-| ENVF-03 | Phase 20 | Pending |
+| ENVF-01 | Phase 20 | Complete |
+| ENVF-02 | Phase 20 | Complete |
+| ENVF-03 | Phase 20 | Complete |
 | PKEY-01 | Phase 21 | Pending |
-| PKEY-02 | Phase 20 | Pending |
-| PKEY-03 | Phase 20 | Pending |
-| PKEY-04 | Phase 20 | Pending |
+| PKEY-02 | Phase 20 | Complete |
+| PKEY-03 | Phase 20 | Complete |
+| PKEY-04 | Phase 20 | Complete |
 | CLOD-01 | Phase 21 | Pending |
 | CLOD-02 | Phase 22 | Pending |
 | CLOD-03 | Phase 22 | Pending |
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-23 - Phase 19 requirements complete*
+*Last updated: 2026-01-23 - Phase 20 requirements complete*

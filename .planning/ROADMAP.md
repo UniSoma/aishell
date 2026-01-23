@@ -26,7 +26,7 @@ See MILESTONES.md for completed milestone details.
 - Decimal phases (19.1, 19.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 19: Core Detection Framework** - Severity tiers, warning display, advisory pattern
-- [ ] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
+- [x] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
 - [ ] **Phase 21: Content-aware Detection** - Private key markers, GCP service accounts, npmrc auth
 - [ ] **Phase 22: Extended Patterns** - Cloud creds, package managers, app secrets
 - [ ] **Phase 23: Context Awareness & Configuration** - Gitignore context, mount tracking, custom patterns
@@ -72,8 +72,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 20-01: Environment file detection with threshold-based grouping
-- [ ] 20-02: SSH key, key container, and PEM/key file detection
+- [x] 20-01: Environment file detection with threshold-based grouping
+- [x] 20-02: SSH key, key container, and PEM/key file detection
 
 ### Phase 21: Content-aware Detection
 **Goal**: Users are warned about sensitive data detected by inspecting file contents
@@ -135,11 +135,11 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 |-------|-----------|----------------|--------|-----------|
 | 18.1 Default Harness Args (INSERTED) | v2.1 | 1/1 | ✓ Complete | 2026-01-22 |
 | 19. Core Detection Framework | v2.1 | 1/1 | ✓ Complete | 2026-01-23 |
-| 20. Filename-based Detection | v2.1 | 0/2 | Not started | - |
+| 20. Filename-based Detection | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 21. Content-aware Detection | v2.1 | 0/2 | Not started | - |
 | 22. Extended Patterns | v2.1 | 0/3 | Not started | - |
 | 23. Context Awareness & Configuration | v2.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Phase 19 complete)*
+*Last updated: 2026-01-23 (Phase 20 complete)*
