@@ -9,9 +9,9 @@ Requirements for v2.1 Safe AI Context Protection. Extends existing security warn
 
 ### Core Detection Framework
 
-- [ ] **FRMW-01**: Detection system supports severity tiers (high/medium/low) for different finding types
-- [ ] **FRMW-02**: Warnings display during `aishell` / `aishell claude` / `aishell opencode` before container runs
-- [ ] **FRMW-03**: Warnings are advisory only (never block) consistent with existing security warning pattern
+- [x] **FRMW-01**: Detection system supports severity tiers (high/medium/low) for different finding types
+- [x] **FRMW-02**: Warnings display during `aishell` / `aishell claude` / `aishell opencode` before container runs
+- [x] **FRMW-03**: Warnings are advisory only (never block) consistent with existing security warning pattern
 
 ### Environment Files
 
@@ -101,9 +101,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FRMW-01 | Phase 19 | Pending |
-| FRMW-02 | Phase 19 | Pending |
-| FRMW-03 | Phase 19 | Pending |
+| FRMW-01 | Phase 19 | Complete |
+| FRMW-02 | Phase 19 | Complete |
+| FRMW-03 | Phase 19 | Complete |
 | ENVF-01 | Phase 20 | Pending |
 | ENVF-02 | Phase 20 | Pending |
 | ENVF-03 | Phase 20 | Pending |
@@ -136,4 +136,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 - traceability updated with phase mappings*
+*Last updated: 2026-01-23 - Phase 19 requirements complete*

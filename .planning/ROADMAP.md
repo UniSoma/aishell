@@ -25,7 +25,7 @@ See MILESTONES.md for completed milestone details.
 - Integer phases (19, 20, 21): Planned milestone work
 - Decimal phases (19.1, 19.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 19: Core Detection Framework** - Severity tiers, warning display, advisory pattern
+- [x] **Phase 19: Core Detection Framework** - Severity tiers, warning display, advisory pattern
 - [ ] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
 - [ ] **Phase 21: Content-aware Detection** - Private key markers, GCP service accounts, npmrc auth
 - [ ] **Phase 22: Extended Patterns** - Cloud creds, package managers, app secrets
@@ -57,7 +57,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 19-01: Detection framework with severity tiers and display
+- [x] 19-01: Detection framework with severity tiers and display
 
 ### Phase 20: Filename-based Detection
 **Goal**: Users are warned about sensitive files detected by filename patterns (no content inspection)
@@ -134,7 +134,7 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 18.1 Default Harness Args (INSERTED) | v2.1 | 1/1 | ✓ Complete | 2026-01-22 |
-| 19. Core Detection Framework | v2.1 | 0/1 | Not started | - |
+| 19. Core Detection Framework | v2.1 | 1/1 | ✓ Complete | 2026-01-23 |
 | 20. Filename-based Detection | v2.1 | 0/2 | Not started | - |
 | 21. Content-aware Detection | v2.1 | 0/2 | Not started | - |
 | 22. Extended Patterns | v2.1 | 0/3 | Not started | - |
@@ -142,4 +142,4 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-22 (Phase 18.1 complete)*
+*Last updated: 2026-01-23 (Phase 19 complete)*
