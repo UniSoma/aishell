@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 
 ## Current Position
 
-Phase: 22 of 23 (Gitleaks Integration) - IN PROGRESS
-Plan: 1 of 2 in current phase - COMPLETE
-Status: In progress
-Last activity: 2026-01-23 - Completed 22-01-PLAN.md (gitleaks binary and command integration)
+Phase: 22 of 23 (Gitleaks Integration) - COMPLETE
+Plan: 2 of 2 in current phase - COMPLETE
+Status: Phase complete
+Last activity: 2026-01-23 - Completed 22-02-PLAN.md (gitleaks freshness tracking)
 
-Progress: [####################] 100% v2.0 | [███████░░░] 70% v2.1 (7/10 plans)
+Progress: [####################] 100% v2.0 | [████████░░] 80% v2.1 (8/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [███████░░░] 70
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 7
-- Average duration: 2.6 min
-- Total execution time: 18.6 min
+- Total plans completed: 8
+- Average duration: 2.5 min
+- Total execution time: 21.0 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [####################] 100% v2.0 | [███████░░░] 70
 | 19-core-framework | 1/1 | 4min | 4.0min |
 | 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
-| 22-gitleaks-integration | 1/2 | 2.6min | 2.6min |
+| 22-gitleaks-integration | 2/2 | 5min | 2.5min |
 | 23-context-config | 0/2 | - | - |
 
 **v2.0 Reference (for comparison):**
@@ -52,6 +52,11 @@ Progress: [####################] 100% v2.0 | [███████░░░] 70
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [22-02]: Default staleness threshold: 7 days (balances nudging without annoyance)
+- [22-02]: State file location: ~/.local/state/aishell/gitleaks-scans.edn (XDG Base Directory spec)
+- [22-02]: Absolute paths as state keys for debuggability
+- [22-02]: Shell vs exec for gitleaks to capture exit code for timestamp updates
+- [22-02]: Config key: gitleaks_freshness_check (defaults to enabled)
 - [22-01]: Gitleaks v8.30.0 pinned with multi-arch support (amd64, arm64, armv7)
 - [22-01]: Skip-pre-start via `-e PRE_START=` to unset env var in entrypoint
 - [22-01]: Gitleaks command is pure passthrough (no defaults merging)
@@ -103,5 +108,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 22-01-PLAN.md (gitleaks binary and command integration)
+Stopped at: Completed 22-02-PLAN.md (gitleaks freshness tracking) - Phase 22 complete
 Resume file: None
+
+22-02 Summary:
+Per-project scan timestamp persistence in XDG state directory with 7-day staleness warnings before container launch.
+
+Commits from 22-02:
+- 87a471e: feat(22-02): add scan state persistence for gitleaks
+- 7c0ae14: feat(22-02): add freshness warning display for gitleaks
+- a0cb8b5: feat(22-02): integrate gitleaks freshness warnings
