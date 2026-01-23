@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 20 (Filename-based Detection)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-23 — Completed 20-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-23 — Completed 20-02-PLAN.md
 
-Progress: [####################] 100% v2.0 | [████░░░░░░] 27% v2.1 (3/11 plans)
+Progress: [####################] 100% v2.0 | [████░░░░░░] 36% v2.1 (4/11 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 27
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 3
-- Average duration: 2.7 min
-- Total execution time: 8 min
+- Total plans completed: 4
+- Average duration: 2.5 min
+- Total execution time: 10 min
 
 **By Phase:**
 
@@ -35,7 +35,7 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 27
 |-------|-------|-------|----------|
 | 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 1/1 | 4min | 4.0min |
-| 20-filename-detection | 1/2 | 2min | 2.0min |
+| 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-content-detection | 0/2 | - | - |
 | 22-extended-patterns | 0/3 | - | - |
 | 23-context-config | 0/2 | - | - |
@@ -52,6 +52,9 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 27
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [20-02]: SSH keys (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk) classified as high severity
+- [20-02]: Key containers (*.p12, *.pfx, *.jks, *.keystore) classified as high severity
+- [20-02]: PEM/key files (*.pem, *.key) classified as medium severity (may be certificates or keys)
 - [20-01]: Threshold-of-3 grouping: show files individually if ≤3, summarize with count if >3
 - [20-01]: Case-insensitive matching via clojure.string/lower-case post-filtering
 - [20-01]: Template detection: .env files with 'example' or 'sample' in name are low-severity
@@ -84,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 20-01-PLAN.md (environment file detection)
+Stopped at: Completed 20-02-PLAN.md (SSH key and cryptographic file detection) - Phase 20 complete
 Resume file: None
