@@ -103,3 +103,19 @@ harness_args:
 # String shorthand (single arg):
 # harness_args:
 #   claude: "--verbose"                    # Auto-converts to ["--verbose"]
+
+# =============================================================================
+# GITLEAKS_FRESHNESS_CHECK - Gitleaks scan freshness warning toggle
+# =============================================================================
+# When true (default), shows a warning before container launch if gitleaks
+# scan is stale (>7 days old) or has never been run. Advisory only - never
+# blocks execution.
+#
+# The warning reminds you to run: aishell gitleaks dir .
+#
+# Set to false to disable the freshness warning entirely.
+
+gitleaks_freshness_check: true
+
+# To disable:
+# gitleaks_freshness_check: false
