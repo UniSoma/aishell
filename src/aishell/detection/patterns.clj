@@ -123,10 +123,11 @@
   "Detect terraform.tfstate* files (high severity - contains plaintext secrets).
    Returns vector of findings."
   [project-dir excluded-dirs]
-  (let [;; Match terraform.tfstate and terraform.tfstate.backup etc
-        state-files (fs/glob project-dir "**/terraform.tfstate*" {:hidden true})
-        filtered (remove #(in-excluded-dir? % excluded-dirs) state-files)
-        ;; Case-insensitive post-filtering
+  (let [;; Glob all files and filter by filename pattern (case-insensitive)
+        ;; This catches terraform.tfstate and terraform.tfstate.backup at any depth
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Case-insensitive match for terraform.tfstate* pattern
         matches (filter (fn [path]
                          (str/starts-with?
                            (str/lower-case (str (fs/file-name path)))
