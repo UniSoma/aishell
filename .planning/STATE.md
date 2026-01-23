@@ -5,29 +5,29 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 21 - Extended Filename Patterns (next up)
+**Current focus:** Phase 22 - Gitleaks Integration (next up)
 
 ## Current Position
 
-Phase: 21 (Extended Filename Patterns)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-23 — Completed 21-01-PLAN.md (cloud credential detection)
+Phase: 21 of 23 (Extended Filename Patterns) - COMPLETE
+Plan: 2 of 2 in current phase - COMPLETE
+Status: Phase complete
+Last activity: 2026-01-23 - Completed 21-02-PLAN.md (package manager and application secrets)
 
-Progress: [####################] 100% v2.0 | [█████░░░░░] 50% v2.1 (5/10 plans)
+Progress: [####################] 100% v2.0 | [██████░░░░] 60% v2.1 (6/10 plans)
 
 **Shipped Milestones:**
-- v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
-- v1.1 Runtime Config — Phases 9-10 (shipped 2026-01-19)
-- v1.2 Hardening — Phases 11-12 (shipped 2026-01-19)
-- v2.0 Babashka Rewrite — Phases 13-18 (shipped 2026-01-21)
+- v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
+- v1.1 Runtime Config - Phases 9-10 (shipped 2026-01-19)
+- v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
+- v2.0 Babashka Rewrite - Phases 13-18 (shipped 2026-01-21)
 
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 5
-- Average duration: 2.6 min
-- Total execution time: 13 min
+- Total plans completed: 6
+- Average duration: 2.7 min
+- Total execution time: 16 min
 
 **By Phase:**
 
@@ -36,7 +36,7 @@ Progress: [####################] 100% v2.0 | [█████░░░░░] 50
 | 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 1/1 | 4min | 4.0min |
 | 20-filename-detection | 2/2 | 4min | 2.0min |
-| 21-extended-filename-patterns | 1/2 | 3min | 3.0min |
+| 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
 | 22-gitleaks-integration | 0/2 | - | - |
 | 23-context-config | 0/2 | - | - |
 
@@ -55,6 +55,12 @@ Recent decisions affecting current work:
 - [roadmap]: Content-based detection delegated to Gitleaks (runs inside container via `aishell gitleaks`)
 - [roadmap]: Filename-based detection stays in aishell (pre-container, fast checks)
 - [roadmap]: Gitleaks freshness warning on all commands if scan is stale (default 7 days)
+- [21-02]: Package manager creds (.pypirc, .netrc) classified as high severity
+- [21-02]: Rails master.key classified as high severity - decrypts all secrets
+- [21-02]: Tool configs (.npmrc, .docker/config.json) classified as medium severity
+- [21-02]: Secret pattern files (secret.*, token.*) classified as medium severity
+- [21-02]: Database configs (.pgpass, .my.cnf, database.yml) classified as medium severity
+- [21-02]: Use filename filtering not glob patterns for secret.* matching (babashka.fs quirk)
 - [21-01]: GCP ADC classified as high severity - long-lived service account credentials
 - [21-01]: Terraform state classified as high severity - may contain plaintext secrets
 - [21-01]: Kubeconfig classified as medium severity - cluster access credentials
@@ -62,7 +68,7 @@ Recent decisions affecting current work:
 - [20-02]: SSH keys (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk) classified as high severity
 - [20-02]: Key containers (*.p12, *.pfx, *.jks, *.keystore) classified as high severity
 - [20-02]: PEM/key files (*.pem, *.key) classified as medium severity (may be certificates or keys)
-- [20-01]: Threshold-of-3 grouping: show files individually if ≤3, summarize with count if >3
+- [20-01]: Threshold-of-3 grouping: show files individually if <=3, summarize with count if >3
 - [20-01]: Case-insensitive matching via clojure.string/lower-case post-filtering
 - [20-01]: Template detection: .env files with 'example' or 'sample' in name are low-severity
 - [20-01]: Summary format shows count + 2 sample filenames for context
@@ -79,7 +85,7 @@ Recent decisions affecting current work:
 
 ### Roadmap Evolution
 
-- Phase 18.1 inserted after Phase 18: Default harness arguments in config (URGENT) — from pending todo
+- Phase 18.1 inserted after Phase 18: Default harness arguments in config (URGENT) - from pending todo
 
 ### Blockers/Concerns
 
@@ -94,5 +100,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 21-01-PLAN.md (cloud credential detection)
+Stopped at: Completed 21-02-PLAN.md (package manager and application secrets) - Phase 21 complete
 Resume file: None
