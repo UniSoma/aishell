@@ -186,7 +186,7 @@
 
     ;; No command, no flags - run shell
     :else
-    (run/run-container nil [])))
+    (run/run-container nil [] {})))
 
 (def update-spec
   {:verbose {:alias :v :coerce :boolean :desc "Show full Docker build output"}})
@@ -211,11 +211,18 @@
     (output/error msg)))
 
 (defn dispatch [args]
-  ;; Handle pass-through commands before standard dispatch
-  ;; This ensures all args (including --help, --version) go to the harness
-  (case (first args)
-    "claude" (run/run-container "claude" (vec (rest args)))
-    "opencode" (run/run-container "opencode" (vec (rest args)))
-    ;; Standard dispatch for other commands
-    (cli/dispatch dispatch-table args {:error-fn handle-error
-                                        :restrict true})))
+  ;; Extract --unsafe flag before pass-through (used by detection framework)
+  (let [unsafe? (boolean (some #{"--unsafe"} args))
+        clean-args (vec (remove #{"--unsafe"} args))]
+    ;; Handle pass-through commands before standard dispatch
+    ;; This ensures all args (including --help, --version) go to the harness
+    (case (first clean-args)
+      "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
+      "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
+      ;; Standard dispatch for other commands (build, update, help)
+      (if unsafe?
+        ;; --unsafe with no harness command -> shell mode with unsafe
+        (run/run-container nil [] {:unsafe true})
+        ;; Normal dispatch
+        (cli/dispatch dispatch-table args {:error-fn handle-error
+                                           :restrict true})))))

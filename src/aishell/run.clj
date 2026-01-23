@@ -10,7 +10,8 @@
             [aishell.config :as config]
             [aishell.state :as state]
             [aishell.output :as output]
-            [aishell.validation :as validation]))
+            [aishell.validation :as validation]
+            [aishell.detection.core :as detection]))
 
 (defn- verify-harness-available
   "Check that harness was included in build. Exit with error if not."
@@ -55,8 +56,9 @@
 
    Arguments:
    - cmd: nil (shell), \"claude\", or \"opencode\"
-   - harness-args: Extra arguments to pass to harness (vector)"
-  [cmd harness-args]
+   - harness-args: Extra arguments to pass to harness (vector)
+   - opts: Optional map with :unsafe (skip detection warnings)"
+  [cmd harness-args & [opts]]
   ;; Check Docker available
   (docker/check-docker!)
 
@@ -117,6 +119,14 @@
             ;; Warn about dangerous mount paths (advisory warning)
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
+
+            ;; Scan for sensitive files (unless --unsafe)
+            ;; Uses project-dir already bound at line 71
+            _ (when-not (:unsafe opts)
+                (let [findings (detection/scan-project project-dir)]
+                  (when (seq findings)
+                    (detection/display-warnings findings)
+                    (detection/confirm-if-needed findings))))
 
             ;; Build docker args
             docker-args (docker-run/build-docker-args
