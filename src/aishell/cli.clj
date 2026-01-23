@@ -76,6 +76,7 @@
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
   (println (str "  " output/CYAN "claude" output/NC "     Run Claude Code"))
   (println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode"))
+  (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
@@ -219,6 +220,7 @@
     (case (first clean-args)
       "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
+      "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args)) {:unsafe unsafe? :skip-pre-start true})
       ;; Standard dispatch for other commands (build, update, help)
       (if unsafe?
         ;; --unsafe with no harness command -> shell mode with unsafe
