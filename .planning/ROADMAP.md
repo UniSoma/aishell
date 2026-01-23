@@ -27,7 +27,7 @@ See MILESTONES.md for completed milestone details.
 
 - [x] **Phase 19: Core Detection Framework** - Severity tiers, warning display, advisory pattern
 - [x] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
-- [ ] **Phase 21: Extended Filename Patterns** - Cloud creds, package managers, app secrets (file presence only)
+- [x] **Phase 21: Extended Filename Patterns** - Cloud creds, package managers, app secrets (file presence only)
 - [ ] **Phase 22: Gitleaks Integration** - Base image, `aishell gitleaks` command, scan freshness warning
 - [ ] **Phase 23: Context & Configuration** - Gitignore awareness, custom patterns, allowlist
 
@@ -90,8 +90,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 21-01-PLAN.md — Cloud credential file detection (GCP ADC, terraform state, kubeconfig)
-- [ ] 21-02-PLAN.md — Package manager and application secret file detection
+- [x] 21-01-PLAN.md — Cloud credential file detection (GCP ADC, terraform state, kubeconfig)
+- [x] 21-02-PLAN.md — Package manager and application secret file detection
 
 ### Phase 22: Gitleaks Integration
 **Goal**: Users can run gitleaks for deep content-based secret scanning inside the container
@@ -134,10 +134,10 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 | 18.1 Default Harness Args (INSERTED) | v2.1 | 1/1 | ✓ Complete | 2026-01-22 |
 | 19. Core Detection Framework | v2.1 | 1/1 | ✓ Complete | 2026-01-23 |
 | 20. Filename-based Detection | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
-| 21. Extended Filename Patterns | v2.1 | 0/2 | Not started | - |
+| 21. Extended Filename Patterns | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 22. Gitleaks Integration | v2.1 | 0/2 | Not started | - |
 | 23. Context & Configuration | v2.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Phase 21 planned)*
+*Last updated: 2026-01-23 (Phase 21 complete)*
