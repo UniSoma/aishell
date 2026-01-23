@@ -122,9 +122,9 @@
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
 
-            ;; Scan for sensitive files (unless --unsafe)
+            ;; Scan for sensitive files (unless --unsafe or gitleaks command)
             ;; Uses project-dir already bound at line 71
-            _ (when-not (:unsafe opts)
+            _ (when-not (or (:unsafe opts) (= cmd "gitleaks"))
                 (let [findings (detection/scan-project project-dir)]
                   (when (seq findings)
                     (detection/display-warnings findings)
