@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 22 - Gitleaks Integration (next up)
+**Current focus:** Phase 23 - Context & Configuration (next up)
 
 ## Current Position
 
@@ -52,6 +52,8 @@ Progress: [####################] 100% v2.0 | [████████░░] 80
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [22-UAT]: Only update timestamp for actual scans (dir/git/detect/protect), not help
+- [22-UAT]: Use contains? not if-let for scalar config merge (handles false values)
 - [22-02]: Default staleness threshold: 7 days (balances nudging without annoyance)
 - [22-02]: State file location: ~/.local/state/aishell/gitleaks-scans.edn (XDG Base Directory spec)
 - [22-02]: Absolute paths as state keys for debuggability
