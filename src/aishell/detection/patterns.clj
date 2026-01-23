@@ -39,6 +39,69 @@
                    "Environment template file"
                    "Environment configuration file")}))))
 
+(defn detect-ssh-keys
+  "Detect SSH private key files (high severity).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [;; Exact filenames (case-insensitive)
+        exact-names ["id_rsa" "id_dsa" "id_ed25519" "id_ecdsa"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Match exact SSH key filenames
+        ssh-keys (filter (fn [path]
+                          (let [name-lower (str/lower-case (str (fs/file-name path)))]
+                            (some #(= name-lower %) exact-names)))
+                        filtered)
+        ;; Match *.ppk files (PuTTY keys)
+        ppk-files (filter (fn [path]
+                           (str/ends-with? (str/lower-case (str path)) ".ppk"))
+                         filtered)]
+    (concat
+      (for [path ssh-keys]
+        {:path (str path)
+         :type :ssh-key
+         :severity :high
+         :reason "SSH private key file"})
+      (for [path ppk-files]
+        {:path (str path)
+         :type :ssh-key
+         :severity :high
+         :reason "SSH private key file"}))))
+
+(defn detect-key-containers
+  "Detect key container files (high severity).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [extensions [".p12" ".pfx" ".jks" ".keystore"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        key-containers (filter (fn [path]
+                                (let [path-lower (str/lower-case (str path))]
+                                  (some #(str/ends-with? path-lower %) extensions)))
+                              filtered)]
+    (for [path key-containers]
+      {:path (str path)
+       :type :key-container
+       :severity :high
+       :reason "Key container file (PKCS12/JKS)"})))
+
+(defn detect-pem-key-files
+  "Detect PEM and key files (medium severity).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [extensions [".pem" ".key"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        pem-key-files (filter (fn [path]
+                               (let [path-lower (str/lower-case (str path))]
+                                 (some #(str/ends-with? path-lower %) extensions)))
+                             filtered)]
+    (for [path pem-key-files]
+      {:path (str path)
+       :type :pem-key
+       :severity :medium
+       :reason "PEM/key file (may contain private key or certificate)"})))
+
 (defn group-findings
   "Group findings by type and apply threshold-of-3 summarization.
    Returns seq of findings (individual or summary)."
