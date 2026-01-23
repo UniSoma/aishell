@@ -173,12 +173,13 @@
    - image-tag: Docker image to run
    - config: Parsed config map from config.clj (or nil)
    - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
+   - skip-pre-start: When true, disable pre_start hooks (for gitleaks command)
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity]}]
+  [{:keys [project-dir image-tag config git-identity skip-pre-start]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
@@ -226,8 +227,13 @@
 
         ;; Config: pre_start (passed to entrypoint via env var)
         ;; Entrypoint handles execution: sh -c "$PRE_START" > /tmp/pre-start.log 2>&1 &
-        (cond-> (:pre_start config)
+        ;; Skip pre_start if skip-pre-start flag is true (for gitleaks command)
+        (cond-> (and (:pre_start config) (not skip-pre-start))
           (into ["-e" (str "PRE_START=" (:pre_start config))]))
+
+        ;; Unset PRE_START if skip-pre-start is true
+        (cond-> skip-pre-start
+          (into ["-e" "PRE_START="]))
 
         ;; Config: docker_args (must be before image)
         (cond-> (:docker_args config)

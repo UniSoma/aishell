@@ -133,7 +133,8 @@
                           {:project-dir project-dir
                            :image-tag image-tag
                            :config cfg
-                           :git-identity git-id})
+                           :git-identity git-id
+                           :skip-pre-start (:skip-pre-start opts)})
 
             ;; Determine command to run in container
             container-cmd (case cmd
@@ -143,6 +144,9 @@
 
                             "opencode"
                             (into ["opencode"] merged-args)
+
+                            "gitleaks"
+                            (into ["gitleaks"] harness-args)
 
                             ;; Default: bash shell
                             ["/bin/bash"])]
