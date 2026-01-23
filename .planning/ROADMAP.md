@@ -103,11 +103,11 @@ Plans:
   4. Last gitleaks scan timestamp is tracked in state file
   5. User sees warning on claude/opencode/shell if gitleaks hasn't been run recently (configurable threshold, default 7 days)
   6. Warning includes command to run gitleaks scan
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 22-01: Add gitleaks to base Dockerfile and create gitleaks command
-- [ ] 22-02: Scan freshness tracking and staleness warning
+- [ ] 22-01-PLAN.md — Add gitleaks to base Dockerfile and create gitleaks command
+- [ ] 22-02-PLAN.md — Scan freshness tracking and staleness warning
 
 ### Phase 23: Context & Configuration
 **Goal**: Users can customize filename detection and get extra warnings for unprotected sensitive files
@@ -140,4 +140,4 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Phase 21 complete)*
+*Last updated: 2026-01-23 (Phase 22 planned)*
