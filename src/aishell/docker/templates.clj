@@ -70,6 +70,21 @@ RUN set -eux; \\
     gosu --version; \\
     gosu nobody true
 
+# Install Gitleaks for secret scanning
+ARG GITLEAKS_VERSION=8.30.0
+RUN set -eux; \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch##*-}\" in \\
+        amd64) glArch='x64' ;; \\
+        arm64) glArch='arm64' ;; \\
+        armhf) glArch='armv7' ;; \\
+        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL \"https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${glArch}.tar.gz\" \\
+    | tar -xz -C /usr/local/bin gitleaks; \\
+    chmod +x /usr/local/bin/gitleaks; \\
+    gitleaks version
+
 # Install Claude Code if requested (npm global)
 # npm global installs to /usr/local/bin/claude which matches doctor's expectations
 RUN if [ \"$WITH_CLAUDE\" = \"true\" ]; then \\
