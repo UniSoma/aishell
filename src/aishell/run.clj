@@ -158,8 +158,9 @@
                             ["/bin/bash"])]
 
         ;; For gitleaks, use shell instead of exec so we can update timestamp after
+        ;; :continue true prevents p/shell from throwing on non-zero exit
         (if (= cmd "gitleaks")
-          (let [result (apply p/shell {:inherit true} (concat docker-args container-cmd))
+          (let [result (apply p/shell {:inherit true :continue true} (concat docker-args container-cmd))
                 ;; Only update timestamp for actual scan subcommands, not help/version
                 scan-subcommands #{"dir" "git" "detect" "protect"}
                 first-arg (first harness-args)
