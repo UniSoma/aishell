@@ -159,6 +159,111 @@
        :severity :medium
        :reason "Kubernetes cluster configuration file"})))
 
+(defn detect-package-manager-credentials
+  "Detect package manager credential files (high severity).
+   Matches .pypirc and .netrc files.
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [exact-names [".pypirc" ".netrc"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        matches (filter (fn [path]
+                         (let [name-lower (str/lower-case (str (fs/file-name path)))]
+                           (some #(= name-lower %) exact-names)))
+                       filtered)]
+    (for [path matches]
+      {:path (str path)
+       :type :package-manager-creds
+       :severity :high
+       :reason "Package manager credentials file"})))
+
+(defn detect-tool-configs
+  "Detect tool configuration files (medium severity).
+   Matches .npmrc, .yarnrc.yml, .docker/config.json, .terraformrc, credentials.tfrc.json.
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [exact-names [".npmrc" ".yarnrc.yml" ".terraformrc" "credentials.tfrc.json"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Match exact filenames
+        name-matches (filter (fn [path]
+                              (let [name-lower (str/lower-case (str (fs/file-name path)))]
+                                (some #(= name-lower %) exact-names)))
+                            filtered)
+        ;; Match .docker/config.json path pattern
+        docker-config (filter (fn [path]
+                               (let [path-lower (str/lower-case (str path))]
+                                 (and (str/includes? path-lower ".docker/")
+                                      (= (str/lower-case (str (fs/file-name path))) "config.json"))))
+                             filtered)]
+    (for [path (distinct (concat name-matches docker-config))]
+      {:path (str path)
+       :type :tool-config
+       :severity :medium
+       :reason "Tool configuration file (may contain credentials)"})))
+
+(defn detect-rails-secrets
+  "Detect Rails secret files (high severity).
+   Matches master.key and credentials*.yml.enc files.
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Match master.key
+        master-keys (filter (fn [path]
+                             (= (str/lower-case (str (fs/file-name path))) "master.key"))
+                           filtered)
+        ;; Match credentials*.yml.enc pattern
+        cred-enc-files (filter (fn [path]
+                                (let [name-lower (str/lower-case (str (fs/file-name path)))]
+                                  (and (str/starts-with? name-lower "credentials")
+                                       (str/ends-with? name-lower ".yml.enc"))))
+                              filtered)]
+    (concat
+      (for [path master-keys]
+        {:path (str path)
+         :type :rails-secret
+         :severity :high
+         :reason "Rails master key (decrypts all application secrets)"})
+      (for [path cred-enc-files]
+        {:path (str path)
+         :type :rails-secret
+         :severity :high
+         :reason "Rails encrypted credentials file"}))))
+
+(defn detect-secret-pattern-files
+  "Detect files with secret-like naming patterns (medium severity).
+   Matches secret.*, secrets.*, vault.*, token.*, apikey.*, private.*.
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [patterns ["**/secret.*" "**/secrets.*" "**/vault.*"
+                  "**/token.*" "**/apikey.*" "**/private.*"]
+        all-matches (mapcat #(fs/glob project-dir % {:hidden true}) patterns)
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-matches)]
+    (for [path (distinct filtered)]
+      {:path (str path)
+       :type :secret-pattern-file
+       :severity :medium
+       :reason "File with secret-like naming pattern"})))
+
+(defn detect-database-credentials
+  "Detect database credential files (medium severity).
+   Matches .pgpass, .my.cnf, and database.yml files.
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [exact-names [".pgpass" ".my.cnf" "database.yml"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        matches (filter (fn [path]
+                         (let [name-lower (str/lower-case (str (fs/file-name path)))]
+                           (some #(= name-lower %) exact-names)))
+                       filtered)]
+    (for [path matches]
+      {:path (str path)
+       :type :database-credentials
+       :severity :medium
+       :reason "Database credentials file"})))
+
 (defn group-findings
   "Group findings by type and apply threshold-of-3 summarization.
    Returns seq of findings (individual or summary)."
