@@ -163,8 +163,10 @@
                 ;; Only update timestamp for actual scan subcommands, not help/version
                 scan-subcommands #{"dir" "git" "detect" "protect"}
                 first-arg (first harness-args)
-                is-scan? (contains? scan-subcommands first-arg)]
-            (when (and (zero? (:exit result)) is-scan?)
+                is-scan? (contains? scan-subcommands first-arg)
+                ;; Gitleaks exit codes: 0=no leaks, 1=leaks found (both are successful scans)
+                scan-completed? (contains? #{0 1} (:exit result))]
+            (when (and scan-completed? is-scan?)
               (scan-state/write-scan-timestamp project-dir))
             (System/exit (:exit result)))
           ;; All other commands - execute (replaces current process)
