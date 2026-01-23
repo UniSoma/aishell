@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 
 ## Current Position
 
-Phase: 20 (Filename-based Detection)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-23 — Roadmap revised (content detection delegated to Gitleaks)
+Phase: 21 (Extended Filename Patterns)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-23 — Completed 21-01-PLAN.md (cloud credential detection)
 
-Progress: [####################] 100% v2.0 | [████░░░░░░] 40% v2.1 (4/10 plans)
+Progress: [####################] 100% v2.0 | [█████░░░░░] 50% v2.1 (5/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 40
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 4
-- Average duration: 2.5 min
-- Total execution time: 10 min
+- Total plans completed: 5
+- Average duration: 2.6 min
+- Total execution time: 13 min
 
 **By Phase:**
 
@@ -36,7 +36,7 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 40
 | 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 1/1 | 4min | 4.0min |
 | 20-filename-detection | 2/2 | 4min | 2.0min |
-| 21-extended-filename-patterns | 0/2 | - | - |
+| 21-extended-filename-patterns | 1/2 | 3min | 3.0min |
 | 22-gitleaks-integration | 0/2 | - | - |
 | 23-context-config | 0/2 | - | - |
 
@@ -55,6 +55,10 @@ Recent decisions affecting current work:
 - [roadmap]: Content-based detection delegated to Gitleaks (runs inside container via `aishell gitleaks`)
 - [roadmap]: Filename-based detection stays in aishell (pre-container, fast checks)
 - [roadmap]: Gitleaks freshness warning on all commands if scan is stale (default 7 days)
+- [21-01]: GCP ADC classified as high severity - long-lived service account credentials
+- [21-01]: Terraform state classified as high severity - may contain plaintext secrets
+- [21-01]: Kubeconfig classified as medium severity - cluster access credentials
+- [21-01]: Use glob ** with filename filter for root+subdirectory coverage (babashka.fs quirk)
 - [20-02]: SSH keys (id_rsa, id_dsa, id_ed25519, id_ecdsa, *.ppk) classified as high severity
 - [20-02]: Key containers (*.p12, *.pfx, *.jks, *.keystore) classified as high severity
 - [20-02]: PEM/key files (*.pem, *.key) classified as medium severity (may be certificates or keys)
@@ -90,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 20-02-PLAN.md (SSH key and cryptographic file detection) - Phase 20 complete
+Stopped at: Completed 21-01-PLAN.md (cloud credential detection)
 Resume file: None
