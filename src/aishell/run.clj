@@ -11,7 +11,9 @@
             [aishell.state :as state]
             [aishell.output :as output]
             [aishell.validation :as validation]
-            [aishell.detection.core :as detection]))
+            [aishell.detection.core :as detection]
+            [aishell.gitleaks.warnings :as gitleaks-warnings]
+            [aishell.gitleaks.scan-state :as scan-state]))
 
 (defn- verify-harness-available
   "Check that harness was included in build. Exit with error if not."
@@ -128,6 +130,10 @@
                     (detection/display-warnings findings)
                     (detection/confirm-if-needed findings))))
 
+            ;; Display gitleaks freshness warning (for shell/claude/opencode, not gitleaks itself)
+            _ (when-not (= cmd "gitleaks")
+                (gitleaks-warnings/display-freshness-warning project-dir cfg))
+
             ;; Build docker args
             docker-args (docker-run/build-docker-args
                           {:project-dir project-dir
@@ -151,5 +157,11 @@
                             ;; Default: bash shell
                             ["/bin/bash"])]
 
-        ;; Execute - replaces current process
-        (apply p/exec (concat docker-args container-cmd))))))
+        ;; For gitleaks, use shell instead of exec so we can update timestamp after
+        (if (= cmd "gitleaks")
+          (let [result (apply p/shell {:inherit true} (concat docker-args container-cmd))]
+            (when (zero? (:exit result))
+              (scan-state/write-scan-timestamp project-dir))
+            (System/exit (:exit result)))
+          ;; All other commands - execute (replaces current process)
+          (apply p/exec (concat docker-args container-cmd)))))))

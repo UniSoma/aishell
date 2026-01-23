@@ -1,6 +1,8 @@
 (ns aishell.core
   (:require [aishell.cli :as cli]
-            [aishell.output :as output]))
+            [aishell.output :as output]
+            [aishell.gitleaks.scan-state]
+            [aishell.gitleaks.warnings]))
 
 (defn -main [& args]
   (try

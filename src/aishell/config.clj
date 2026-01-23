@@ -8,7 +8,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
