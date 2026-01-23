@@ -72,8 +72,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 20-01: Environment file detection (.env patterns)
-- [ ] 20-02: SSH key and certificate container detection by filename
+- [ ] 20-01: Environment file detection with threshold-based grouping
+- [ ] 20-02: SSH key, key container, and PEM/key file detection
 
 ### Phase 21: Content-aware Detection
 **Goal**: Users are warned about sensitive data detected by inspecting file contents
