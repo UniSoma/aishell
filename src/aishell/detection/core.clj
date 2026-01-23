@@ -30,10 +30,15 @@
    Returns vector of findings: [{:path :type :severity :reason}]"
   [project-dir]
   (let [all-findings (concat
+                       ;; Phase 20 detectors
                        (patterns/detect-env-files project-dir excluded-dirs)
                        (patterns/detect-ssh-keys project-dir excluded-dirs)
                        (patterns/detect-key-containers project-dir excluded-dirs)
-                       (patterns/detect-pem-key-files project-dir excluded-dirs))]
+                       (patterns/detect-pem-key-files project-dir excluded-dirs)
+                       ;; Phase 21 cloud credential detectors
+                       (patterns/detect-gcp-credentials project-dir excluded-dirs)
+                       (patterns/detect-terraform-state project-dir excluded-dirs)
+                       (patterns/detect-kubeconfig project-dir excluded-dirs))]
     (patterns/group-findings all-findings)))
 
 (defn group-by-severity
