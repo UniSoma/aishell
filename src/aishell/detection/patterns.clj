@@ -236,11 +236,17 @@
    Matches secret.*, secrets.*, vault.*, token.*, apikey.*, private.*.
    Returns vector of findings."
   [project-dir excluded-dirs]
-  (let [patterns ["**/secret.*" "**/secrets.*" "**/vault.*"
-                  "**/token.*" "**/apikey.*" "**/private.*"]
-        all-matches (mapcat #(fs/glob project-dir % {:hidden true}) patterns)
-        filtered (remove #(in-excluded-dir? % excluded-dirs) all-matches)]
-    (for [path (distinct filtered)]
+  (let [prefixes ["secret" "secrets" "vault" "token" "apikey" "private"]
+        all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        matches (filter (fn [path]
+                         (let [name-lower (str/lower-case (str (fs/file-name path)))
+                               ;; Check if filename starts with prefix followed by dot
+                               has-dot? (str/includes? name-lower ".")]
+                           (and has-dot?
+                                (some #(str/starts-with? name-lower (str % ".")) prefixes))))
+                       filtered)]
+    (for [path (distinct matches)]
       {:path (str path)
        :type :secret-pattern-file
        :severity :medium
