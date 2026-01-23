@@ -87,11 +87,11 @@ Plans:
   6. User sees high warning when Rails master.key or credentials*.yml.enc exist
   7. User sees medium warning when secret.*, secrets.*, vault.*, token.*, apikey.*, or private.* files exist
   8. User sees medium warning when .pgpass, .my.cnf, or database.yml exist
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 21-01: Cloud credential file detection (ADC, terraform state, kubeconfig)
-- [ ] 21-02: Package manager and application secret file detection
+- [ ] 21-01-PLAN.md — Cloud credential file detection (GCP ADC, terraform state, kubeconfig)
+- [ ] 21-02-PLAN.md — Package manager and application secret file detection
 
 ### Phase 22: Gitleaks Integration
 **Goal**: Users can run gitleaks for deep content-based secret scanning inside the container
@@ -140,4 +140,4 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Roadmap revised - content detection delegated to Gitleaks)*
+*Last updated: 2026-01-23 (Phase 21 planned)*
