@@ -102,6 +102,62 @@
        :severity :medium
        :reason "PEM/key file (may contain private key or certificate)"})))
 
+(defn detect-gcp-credentials
+  "Detect GCP application_default_credentials.json (high severity).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Case-insensitive exact match
+        matches (filter (fn [path]
+                         (= (str/lower-case (str (fs/file-name path)))
+                            "application_default_credentials.json"))
+                       filtered)]
+    (for [path matches]
+      {:path (str path)
+       :type :gcp-credentials
+       :severity :high
+       :reason "GCP application default credentials file"})))
+
+(defn detect-terraform-state
+  "Detect terraform.tfstate* files (high severity - contains plaintext secrets).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [;; Match terraform.tfstate and terraform.tfstate.backup etc
+        state-files (fs/glob project-dir "**/terraform.tfstate*" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) state-files)
+        ;; Case-insensitive post-filtering
+        matches (filter (fn [path]
+                         (str/starts-with?
+                           (str/lower-case (str (fs/file-name path)))
+                           "terraform.tfstate"))
+                       filtered)]
+    (for [path matches]
+      {:path (str path)
+       :type :terraform-state
+       :severity :high
+       :reason "Terraform state file (may contain plaintext secrets)"})))
+
+(defn detect-kubeconfig
+  "Detect kubeconfig or .kube/config patterns (medium severity).
+   Returns vector of findings."
+  [project-dir excluded-dirs]
+  (let [all-files (fs/glob project-dir "**" {:hidden true})
+        filtered (remove #(in-excluded-dir? % excluded-dirs) all-files)
+        ;; Match "kubeconfig" filename (case-insensitive)
+        kubeconfig-files (filter (fn [path]
+                                  (= (str/lower-case (str (fs/file-name path))) "kubeconfig"))
+                                filtered)
+        ;; Match .kube/config path pattern
+        kube-configs (filter (fn [path]
+                              (str/includes? (str/lower-case (str path)) ".kube/config"))
+                            filtered)]
+    (for [path (distinct (concat kubeconfig-files kube-configs))]
+      {:path (str path)
+       :type :kubeconfig
+       :severity :medium
+       :reason "Kubernetes cluster configuration file"})))
+
 (defn group-findings
   "Group findings by type and apply threshold-of-3 summarization.
    Returns seq of findings (individual or summary)."
