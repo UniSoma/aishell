@@ -159,8 +159,12 @@
 
         ;; For gitleaks, use shell instead of exec so we can update timestamp after
         (if (= cmd "gitleaks")
-          (let [result (apply p/shell {:inherit true} (concat docker-args container-cmd))]
-            (when (zero? (:exit result))
+          (let [result (apply p/shell {:inherit true} (concat docker-args container-cmd))
+                ;; Only update timestamp for actual scan subcommands, not help/version
+                scan-subcommands #{"dir" "git" "detect" "protect"}
+                first-arg (first harness-args)
+                is-scan? (contains? scan-subcommands first-arg)]
+            (when (and (zero? (:exit result)) is-scan?)
               (scan-state/write-scan-timestamp project-dir))
             (System/exit (:exit result)))
           ;; All other commands - execute (replaces current process)
