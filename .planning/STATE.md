@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 19 - Core Detection Framework
+**Current focus:** Phase 20 - Filename-based Detection
 
 ## Current Position
 
-Phase: 19 (Core Detection Framework)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-01-23 — Completed 19-01-PLAN.md
+Phase: 20 (Filename-based Detection)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-23 — Completed 20-01-PLAN.md
 
-Progress: [####################] 100% v2.0 | [████░░░░░░] 18% v2.1 (2/11 plans)
+Progress: [####################] 100% v2.0 | [████░░░░░░] 27% v2.1 (3/11 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP — Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 18
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 2
-- Average duration: 3.0 min
-- Total execution time: 6 min
+- Total plans completed: 3
+- Average duration: 2.7 min
+- Total execution time: 8 min
 
 **By Phase:**
 
@@ -35,7 +35,7 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 18
 |-------|-------|-------|----------|
 | 18.1-default-harness-args | 1/1 | 2min | 2.0min |
 | 19-core-framework | 1/1 | 4min | 4.0min |
-| 20-filename-detection | 0/2 | - | - |
+| 20-filename-detection | 1/2 | 2min | 2.0min |
 | 21-content-detection | 0/2 | - | - |
 | 22-extended-patterns | 0/3 | - | - |
 | 23-context-config | 0/2 | - | - |
@@ -52,16 +52,16 @@ Progress: [####################] 100% v2.0 | [████░░░░░░] 18
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [20-01]: Threshold-of-3 grouping: show files individually if ≤3, summarize with count if >3
+- [20-01]: Case-insensitive matching via clojure.string/lower-case post-filtering
+- [20-01]: Template detection: .env files with 'example' or 'sample' in name are low-severity
+- [20-01]: Summary format shows count + 2 sample filenames for context
 - [19-01]: Use defmulti for format-finding to enable extension in later phases
 - [19-01]: High-severity requires y/n in interactive mode, exit 1 in non-interactive
 - [19-01]: Medium/low severity auto-proceeds in all modes
 - [19-01]: Detection hook placed after warn-dangerous-mounts, before docker-args
 - [18.1-01]: Global defaults prepend to project defaults (concatenate lists per harness)
 - [18.1-01]: String values auto-normalize to single-element lists for better DX
-- [18.1-01]: Defaults prepend to CLI args (CLI can override by position)
-- [v2.0]: Advisory security warnings (never block, just inform)
-- [v2.0]: Babashka over Bash for cross-platform support
-- [v2.0]: YAML config format for structured configuration
 
 ### Pending Todos
 
@@ -84,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 19-01-PLAN.md (core detection framework)
+Stopped at: Completed 20-01-PLAN.md (environment file detection)
 Resume file: None
