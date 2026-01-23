@@ -117,13 +117,12 @@
                         (assoc acc k (merge-harness-args global-val project-val))
                         acc))
 
-                    ;; Scalar keys - project wins
+                    ;; Scalar keys - project wins (use contains? to handle false values)
                     (contains? scalar-keys k)
-                    (if-let [project-val (get project-config k)]
-                      (assoc acc k project-val)
-                      (if-let [global-val (get global-config k)]
-                        (assoc acc k global-val)
-                        acc))
+                    (cond
+                      (contains? project-config k) (assoc acc k (get project-config k))
+                      (contains? global-config k) (assoc acc k (get global-config k))
+                      :else acc)
 
                     :else acc))
                 {}
