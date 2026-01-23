@@ -89,7 +89,7 @@
   (let [list-keys #{:mounts :ports :docker_args}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
-        scalar-keys #{:pre_start}
+        scalar-keys #{:pre_start :gitleaks_freshness_check}
         merged (reduce
                 (fn [acc k]
                   (cond
