@@ -35,10 +35,16 @@
                        (patterns/detect-ssh-keys project-dir excluded-dirs)
                        (patterns/detect-key-containers project-dir excluded-dirs)
                        (patterns/detect-pem-key-files project-dir excluded-dirs)
-                       ;; Phase 21 cloud credential detectors
+                       ;; Phase 21-01 cloud credential detectors
                        (patterns/detect-gcp-credentials project-dir excluded-dirs)
                        (patterns/detect-terraform-state project-dir excluded-dirs)
-                       (patterns/detect-kubeconfig project-dir excluded-dirs))]
+                       (patterns/detect-kubeconfig project-dir excluded-dirs)
+                       ;; Phase 21-02 package manager, app secrets, database detectors
+                       (patterns/detect-package-manager-credentials project-dir excluded-dirs)
+                       (patterns/detect-tool-configs project-dir excluded-dirs)
+                       (patterns/detect-rails-secrets project-dir excluded-dirs)
+                       (patterns/detect-secret-pattern-files project-dir excluded-dirs)
+                       (patterns/detect-database-credentials project-dir excluded-dirs))]
     (patterns/group-findings all-findings)))
 
 (defn group-by-severity
