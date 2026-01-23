@@ -5,7 +5,8 @@
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
             [aishell.output :as output]
-            [aishell.detection.formatters :as formatters]))
+            [aishell.detection.formatters :as formatters]
+            [aishell.detection.patterns :as patterns]))
 
 ;; Directories to skip during scanning (performance optimization)
 (def excluded-dirs
@@ -26,21 +27,10 @@
 
 (defn scan-project
   "Scan project directory for sensitive files.
-   Returns vector of findings: [{:path :type :severity :reason}]
-
-   NOTE: This phase (19) returns empty findings.
-   Phase 20+ will add actual pattern matching here."
+   Returns vector of findings: [{:path :type :severity :reason}]"
   [project-dir]
-  ;; Infrastructure for file globbing with exclusions:
-  ;; (let [all-files (fs/glob project-dir "**" {:hidden true})
-  ;;       filtered (remove in-excluded-dir? all-files)]
-  ;;   ;; Apply pattern matchers here in Phase 20+
-  ;;   [])
-  ;;
-  ;; TODO: Phase 20 will add filename pattern detection
-  ;; TODO: Phase 21 will add content inspection
-  ;; TODO: Phase 22 will add extended patterns
-  [])
+  (let [env-findings (patterns/detect-env-files project-dir excluded-dirs)]
+    (patterns/group-findings env-findings)))
 
 (defn group-by-severity
   "Group findings by severity and sort (high first, then medium, then low)."

@@ -1,6 +1,8 @@
 (ns aishell.detection.formatters
   "Severity-specific terminal output formatting for detection findings."
-  (:require [aishell.output :as output]))
+  (:require [aishell.output :as output]
+            [babashka.fs :as fs]
+            [clojure.string :as str]))
 
 ;; Extended ANSI code for low-severity (dim/muted)
 (def ^:private DIM (if (some? (System/console)) "\u001b[2m" ""))
@@ -29,12 +31,22 @@
 
 ;; Default formatter for any finding type
 (defmethod format-finding :default
-  [{:keys [severity path reason]}]
-  (str "  "
-       (format-severity-label severity)
-       " "
-       path
-       (when reason (str " - " reason))))
+  [{:keys [severity path reason summary? sample-paths]}]
+  (if summary?
+    ;; Summary format: "  MEDIUM 15 files detected (e.g., .env, .env.local)"
+    (str "  "
+         (format-severity-label severity)
+         " "
+         reason
+         (when (seq sample-paths)
+           (let [names (map (fn [p] (str (fs/file-name p))) sample-paths)]
+             (str " (e.g., " (str/join ", " names) ")"))))
+    ;; Individual format: "  MEDIUM path - reason"
+    (str "  "
+         (format-severity-label severity)
+         " "
+         path
+         (when reason (str " - " reason)))))
 
 ;; Convenience alias for the multimethod
 (def format-finding-line format-finding)
