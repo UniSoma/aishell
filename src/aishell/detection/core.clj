@@ -29,8 +29,12 @@
   "Scan project directory for sensitive files.
    Returns vector of findings: [{:path :type :severity :reason}]"
   [project-dir]
-  (let [env-findings (patterns/detect-env-files project-dir excluded-dirs)]
-    (patterns/group-findings env-findings)))
+  (let [all-findings (concat
+                       (patterns/detect-env-files project-dir excluded-dirs)
+                       (patterns/detect-ssh-keys project-dir excluded-dirs)
+                       (patterns/detect-key-containers project-dir excluded-dirs)
+                       (patterns/detect-pem-key-files project-dir excluded-dirs))]
+    (patterns/group-findings all-findings)))
 
 (defn group-by-severity
   "Group findings by severity and sort (high first, then medium, then low)."
