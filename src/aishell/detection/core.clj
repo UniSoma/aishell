@@ -40,7 +40,7 @@
                 (when pattern  ;; Guard against entries without :path
                   (or (= pattern rel-path)
                       (= pattern (fs/file-name file-path))  ;; Allow filename-only matching
-                      (fs/match rel-path (str "glob:" pattern))))))
+                      (seq (fs/match rel-path (str "glob:" pattern)))))))  ;; fs/match returns collection, use seq
             allowlist))))
 
 (defn filter-allowlisted
