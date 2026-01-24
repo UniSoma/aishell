@@ -1,594 +1,425 @@
-# Stack Research: Babashka CLI Rewrite
+# Stack Research: Multi-Harness Support
 
-**Project:** aishell rewrite from Bash to Babashka
-**Researched:** 2026-01-20
-**Babashka Version:** v1.12.214 (released 2026-01-13)
+**Project:** aishell - Multi-Harness Support (v2.4.0)
+**Researched:** 2026-01-24
+**Focus:** OpenAI Codex CLI and Google Gemini CLI integration
 
----
+## Executive Summary
 
-## Summary
+Both OpenAI Codex CLI and Google Gemini CLI are distributed via npm and follow similar patterns to the existing Claude Code installation. **Critical finding:** OpenAI Codex CLI requires Node.js 22+ (higher than current base image Node.js 24), while Google Gemini CLI requires Node.js 20+. The existing Node.js 24 base satisfies both requirements.
 
-Babashka provides a complete replacement for the current 1,655 LOC Bash implementation with built-in libraries that cover all required functionality: CLI argument parsing (`babashka.cli`), process execution (`babashka.process`), file system operations (`babashka.fs`), config parsing (EDN native, YAML via built-in `clj-yaml`), and JSON handling (built-in `cheshire`). The cross-platform story is strong - Babashka binaries exist for Linux, macOS, and Windows, and the `babashka.process` library abstracts platform differences. **No external dependencies (pods) are needed; all functionality is built-in.**
+**Integration complexity:** LOW - Both harnesses follow npm global install patterns similar to Claude Code, with straightforward config directory mounting and environment variable passthrough.
 
----
+## OpenAI Codex CLI
 
-## Recommended Stack
+### Installation
 
-### Core (Babashka Built-ins)
+**Package:** `@openai/codex`
+**Method:** npm global install
+**Current version:** 0.89.0 (released 2026-01-22)
 
-| Need | Babashka Solution | Notes |
-|------|-------------------|-------|
-| CLI argument parsing | `babashka.cli` | Built-in since v0.9.160. Supports subcommands, coercion, validation, help generation |
-| Process execution (docker) | `babashka.process` | `shell` for streaming output, `process` for fine control. Cross-platform |
-| File system operations | `babashka.fs` | Temp files, deletion, glob, path manipulation. Cross-platform via java.nio |
-| Config file parsing | `clojure.edn` + `clj-yaml.core` | Both built-in. EDN is native; YAML via built-in clj-yaml |
-| JSON handling | `cheshire.core` | Built-in. For Docker inspect output parsing |
-| String manipulation | `clojure.string` | Built-in. For path manipulation, output parsing |
-| Regex validation | `clojure.core` | `re-matches`, `re-pattern` built-in. Same as Clojure |
-| Hash computation | `java.security.MessageDigest` | Built-in. For Dockerfile hash detection |
-| Environment variables | `System/getenv`, `System/getProperty` | Built-in Java interop |
-| Cleanup on exit | `Runtime/addShutdownHook` | Java interop. Equivalent to Bash `trap EXIT` |
+```dockerfile
+# In Dockerfile with build arg pattern (matches existing Claude Code pattern)
+ARG WITH_CODEX=false
+ARG CODEX_VERSION=""
 
-### External Dependencies
-
-**None required.** All functionality is available in Babashka's built-in libraries.
-
-| Library | Version | Purpose | Required? |
-|---------|---------|---------|-----------|
-| N/A | - | All needs covered by built-ins | No |
-
----
-
-## Bash-to-Babashka Translation
-
-### Argument Parsing
-
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `case $1 in --flag)` | `babashka.cli/parse-opts` |
-| `shift` / `$@` | Automatic via `parse-args` returns `:args` |
-| `getopts` | `babashka.cli` with `:alias` for short opts |
-
-```clojure
-;; Bash: case/esac argument parsing
-;; while [[ $# -gt 0 ]]; do case $1 in --with-claude) WITH_CLAUDE=true;; esac; done
-
-;; Babashka equivalent:
-(require '[babashka.cli :as cli])
-
-(def cli-spec
-  {:spec {:with-claude    {:coerce :boolean :desc "Include Claude Code"}
-          :with-opencode  {:coerce :boolean :desc "Include OpenCode"}
-          :claude-version {:desc "Claude Code version (X.Y.Z)"}
-          :opencode-version {:desc "OpenCode version (X.Y.Z)"}
-          :verbose        {:coerce :boolean :alias :v :desc "Verbose output"}
-          :help           {:coerce :boolean :alias :h :desc "Show help"}
-          :no-cache       {:coerce :boolean :desc "Force rebuild"}}})
-
-(defn parse-args [args]
-  (cli/parse-opts args cli-spec))
-;; (parse-args ["--with-claude" "--verbose"])
-;; => {:with-claude true, :verbose true}
+RUN if [ "$WITH_CODEX" = "true" ]; then \
+        if [ -n "$CODEX_VERSION" ]; then \
+            npm install -g @openai/codex@"$CODEX_VERSION"; \
+        else \
+            npm install -g @openai/codex; \
+        fi \
+    fi
 ```
 
-### Subcommand Dispatch
+**Alternative installation methods:**
+- Homebrew: `brew install --cask codex` (macOS only, not relevant for container)
+- Standalone binaries available for macOS (ARM64), Windows (ARM64, x86-64), Linux (ARM64)
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| First positional arg check | `babashka.cli/dispatch` |
-| `case "$HARNESS_CMD" in build)` | Multi-method or table dispatch |
+### Config Location
 
-```clojure
-;; Bash: HARNESS_CMD dispatch
-;; case "$HARNESS_CMD" in build) do_build "${HARNESS_ARGS[@]}";; esac
+**Primary config directory:** `~/.codex/`
+**Config file:** `~/.codex/config.toml`
+**Auth storage:** `~/.codex/auth.json` (default) or OS keyring
 
-;; Babashka equivalent:
-(def table
-  [{:cmds ["build"]   :fn do-build   :spec build-spec}
-   {:cmds ["update"]  :fn do-update  :spec update-spec}
-   {:cmds ["claude"]  :fn do-claude  :spec run-spec}
-   {:cmds ["opencode"] :fn do-opencode :spec run-spec}
-   {:cmds []          :fn do-shell   :spec run-spec}])  ; default
+**Environment variable override:**
+- `CODEX_HOME` - overrides default `~/.codex/` location
 
-(defn -main [& args]
-  (cli/dispatch table args))
-```
-
-### Process Execution (Docker Commands)
-
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `docker build ...` | `(p/shell "docker" "build" ...)` |
-| `$(docker inspect ...)` | `(-> (p/shell {:out :string} ...) :out)` |
-| `command -v docker` | `(fs/which "docker")` |
-| `$?` exit code | `(:exit (p/shell {:continue true} ...))` |
-| `> "$build_log" 2>&1` | `{:out :string :err :string}` |
-
-```clojure
-;; Bash: docker build with captured output
-;; if ! docker build "${build_args[@]}" -t "$target_tag" "$build_dir" > "$build_log" 2>&1; then
-
-;; Babashka equivalent:
-(require '[babashka.process :as p])
-
-(defn docker-build [{:keys [build-args target-tag build-dir verbose]}]
-  (let [cmd (concat ["docker" "build"]
-                    build-args
-                    ["-t" target-tag build-dir])]
-    (if verbose
-      ;; Streaming output (like original verbose mode)
-      (apply p/shell cmd)
-      ;; Captured output (like original quiet mode)
-      (let [result (apply p/shell {:out :string :err :string :continue true} cmd)]
-        (when-not (zero? (:exit result))
-          (throw (ex-info "Build failed" {:error (:err result)})))
-        result))))
-
-;; Check if docker exists
-(defn check-docker []
-  (when-not (fs/which "docker")
-    (error "Docker is not installed. Please install Docker and try again."))
-  (let [result (p/shell {:out :string :err :string :continue true} "docker" "info")]
-    (when-not (zero? (:exit result))
-      (error "Docker is not running. Please start Docker and try again."))))
-```
-
-### Temp Files and Cleanup
-
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `mktemp -d` | `(fs/create-temp-dir)` |
-| `trap cleanup EXIT` | `Runtime/addShutdownHook` |
-| `rm -rf "$dir"` | `(fs/delete-tree dir)` |
-| Array of cleanup paths | `atom` with paths |
-
-```clojure
-;; Bash: trap cleanup EXIT with temp files
-;; declare -a CLEANUP_FILES=()
-;; trap cleanup EXIT
-;; register_cleanup() { CLEANUP_FILES+=("$1"); }
-
-;; Babashka equivalent:
-(require '[babashka.fs :as fs])
-
-(def cleanup-paths (atom []))
-
-(defn register-cleanup [path]
-  (swap! cleanup-paths conj (str path)))
-
-(defn cleanup []
-  (doseq [path @cleanup-paths]
-    (when (fs/exists? path)
-      (fs/delete-tree path))))
-
-;; Register shutdown hook ONCE at startup (like Bash trap EXIT)
-(defn setup-cleanup-hook []
-  (-> (Runtime/getRuntime)
-      (.addShutdownHook (Thread. cleanup))))
-
-;; Usage:
-(defn with-build-dir [f]
-  (let [build-dir (fs/create-temp-dir {:prefix "aishell-"})]
-    (register-cleanup build-dir)
-    (f build-dir)))
-```
-
-### Config File Parsing (run.conf to run.edn)
-
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `source config.sh` | `(edn/read-string (slurp ...))` |
-| Shell variable syntax | EDN maps |
-| Line-by-line parsing | Native EDN parsing |
-| `IFS= read -r line` | Not needed |
-
-**Config format change: `run.conf` (shell) to `run.edn` (EDN)**
-
-```clojure
-;; Bash run.conf format:
-;; MOUNTS="$HOME/.ssh $HOME/.config/git"
-;; ENV="EDITOR DEBUG_MODE=1"
-;; PORTS="3000:3000 8080:80"
-;; DOCKER_ARGS="--cap-add=SYS_PTRACE"
-;; PRE_START="redis-server --daemonize yes"
-
-;; Babashka run.edn format (new):
-;; {:mounts ["$HOME/.ssh" "$HOME/.config/git"]
-;;  :env {"EDITOR" :passthrough   ; nil or :passthrough = inherit from host
-;;        "DEBUG_MODE" "1"}       ; string = literal value
-;;  :ports ["3000:3000" "8080:80"]
-;;  :docker-args ["--cap-add=SYS_PTRACE"]
-;;  :pre-start "redis-server --daemonize yes"}
-
-(require '[clojure.edn :as edn])
-
-(defn expand-home [s]
-  (let [home (or (System/getenv "HOME")
-                 (System/getProperty "user.home"))]
-    (-> s
-        (str/replace "$HOME" home)
-        (str/replace "${HOME}" home)
-        (str/replace #"^~" home))))
-
-(defn parse-run-conf [project-dir]
-  (let [config-file (fs/path project-dir ".aishell" "run.edn")]
-    (if (fs/exists? config-file)
-      (edn/read-string (slurp (str config-file)))
-      {})))
-
-;; Backward compatibility: also support YAML
-(require '[clj-yaml.core :as yaml])
-
-(defn parse-run-conf-yaml [project-dir]
-  (let [config-file (fs/path project-dir ".aishell" "run.yaml")]
-    (if (fs/exists? config-file)
-      (yaml/parse-string (slurp (str config-file)) :keywords true)
-      {})))
-```
-
-### Input Validation (Regex)
-
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `[[ "$v" =~ $REGEX ]]` | `(re-matches regex v)` |
-| `readonly REGEX='...'` | `(def regex #"...")` |
-
-```clojure
-;; Bash: VERSION_REGEX validation
-;; readonly VERSION_REGEX='^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'
-;; if [[ ! "$version" =~ $VERSION_REGEX ]]; then error "Invalid version"; fi
-
-;; Babashka equivalent:
-(def version-regex
-  #"^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$")
-
-(def dangerous-chars-regex
-  #"[;&|`$(){}[\]<>!\\]")
-
-(defn validate-version [version name]
-  (cond
-    (nil? version) nil  ; empty is OK (means "latest")
-
-    (re-find dangerous-chars-regex version)
-    (throw (ex-info (str "Invalid " name " version: contains shell metacharacters")
-                    {:version version}))
-
-    (not (re-matches version-regex version))
-    (throw (ex-info (str "Invalid " name " version format: " version)
-                    {:version version
-                     :expected "X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)"}))
-
-    :else version))
+**Mount pattern for aishell:**
+```yaml
+# In config.yaml volumes section
+- ~/.codex:/home/developer/.codex
 ```
 
 ### Environment Variables
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `${VAR:-default}` | `(or (System/getenv "VAR") "default")` |
-| `[[ -n "$VAR" ]]` | `(some? (System/getenv "VAR"))` |
-| `export VAR=val` | `:extra-env` in process call |
+**Authentication (multiple methods):**
+
+1. **ChatGPT Login** (primary method):
+   - No environment variable needed
+   - Browser-based OAuth flow
+   - Credentials cached in `~/.codex/auth.json` or system keyring
+
+2. **API Key Authentication:**
+   - `CODEX_API_KEY` - for non-interactive use (CI/CD)
+   - Can also configure via `config.toml` with `env_key` pointing to custom env var name
+   - Example: `env_key = "OPENAI_API_KEY"` (then set OPENAI_API_KEY in environment)
+
+**Configuration:**
+- `CODEX_HOME` - config directory location (optional, defaults to `~/.codex`)
+
+**Passthrough for aishell:**
+```yaml
+# In config.yaml environment section
+environment:
+  passthrough:
+    - CODEX_API_KEY
+    - OPENAI_API_KEY  # if using custom env_key config
+```
+
+### Dependencies
+
+**Node.js:** Version 22 or higher (REQUIRED)
+**Platform:** Linux (amd64, arm64), macOS, Windows
+**System libraries:** Standard glibc (Debian bookworm-slim compatible)
+
+**Current aishell base:** Node.js 24 ✓ (satisfies requirement)
+
+### Runtime Notes
+
+**Binary location:** `/usr/local/bin/codex` (npm global install)
+**Command invocation:** `codex` (interactive) or `codex <args>` (with commands)
+**Launch command for aishell:** `aishell codex` → execs `codex` in container
+
+**Authentication flow:**
+- First run prompts for ChatGPT login or API key
+- Opens browser for OAuth (may need device code flow in headless environments)
+- Credentials cached in mounted `~/.codex/` directory
+
+**Model Context Protocol (MCP):** Supported via `config.toml` configuration
+
+## Google Gemini CLI
+
+### Installation
+
+**Package:** `@google/gemini-cli`
+**Method:** npm global install
+**Current version:** 0.25.2 (released 2026-01-23)
+
+```dockerfile
+# In Dockerfile with build arg pattern
+ARG WITH_GEMINI=false
+ARG GEMINI_VERSION=""
+
+RUN if [ "$WITH_GEMINI" = "true" ]; then \
+        if [ -n "$GEMINI_VERSION" ]; then \
+            npm install -g @google/gemini-cli@"$GEMINI_VERSION"; \
+        else \
+            npm install -g @google/gemini-cli; \
+        fi \
+    fi
+```
+
+**Alternative installation methods:**
+- Homebrew: `brew install gemini-cli`
+- Anaconda/Conda (for restricted environments)
+- Google Cloud Shell (pre-installed, not relevant for aishell)
+- npx: `npx @google/gemini-cli` (one-off execution)
+
+### Config Location
+
+**Primary config directory:** `~/.gemini/`
+**User settings:** `~/.gemini/settings.json`
+**Project settings:** `.gemini/settings.json` (in project root, optional)
+
+**Hierarchy:** Project settings → User settings → System defaults
+
+**System defaults (informational only, not user-editable):**
+- Linux: `/etc/gemini-cli/system-defaults.json`
+- macOS: `/Library/Application Support/GeminiCli/system-defaults.json`
+- Windows: `C:\ProgramData\gemini-cli\system-defaults.json`
+
+**Mount pattern for aishell:**
+```yaml
+# In config.yaml volumes section
+- ~/.gemini:/home/developer/.gemini
+```
+
+**Note on .env files:**
+Gemini CLI automatically loads `.env` files from current directory upward. This interacts with aishell's project mount - `.env` files in project root will be detected.
+
+### Environment Variables
+
+**Authentication (multiple methods):**
+
+1. **Gemini API Key** (simplest):
+   - `GEMINI_API_KEY` - authentication credential
+   - Obtain from Google AI Studio
+
+2. **Google Cloud API Key** (alternative):
+   - `GOOGLE_API_KEY` - for Vertex AI access
+   - Takes precedence over GEMINI_API_KEY if both set
+
+3. **Application Default Credentials (ADC)**:
+   - `GOOGLE_APPLICATION_CREDENTIALS` - path to credentials JSON file
+   - `GOOGLE_CLOUD_PROJECT` - GCP project identifier
+   - Note: Must unset GEMINI_API_KEY and GOOGLE_API_KEY to use ADC
+
+4. **Gemini Code Assist License** (OAuth):
+   - Login with personal Google account
+   - No environment variable needed
+   - Grants access to Gemini 2.5 Pro (1M token context)
+   - Free tier: 60 req/min, 1000 req/day
+
+**Configuration:**
+- `GEMINI_MODEL` - default model to use (optional)
+- `GOOGLE_GENAI_USE_VERTEXAI` - set to "true" for Vertex AI mode
+
+**Passthrough for aishell:**
+```yaml
+# In config.yaml environment section
+environment:
+  passthrough:
+    - GEMINI_API_KEY
+    - GOOGLE_API_KEY
+    - GOOGLE_APPLICATION_CREDENTIALS
+    - GOOGLE_CLOUD_PROJECT
+    - GOOGLE_CLOUD_LOCATION  # for Vertex AI
+    - GEMINI_MODEL
+```
+
+### Dependencies
+
+**Node.js:** Version 20 or higher (REQUIRED)
+**Platform:** Linux, macOS, Windows
+**System libraries:** Standard glibc (Debian bookworm-slim compatible)
+
+**Current aishell base:** Node.js 24 ✓ (satisfies requirement)
+
+### Runtime Notes
+
+**Binary location:** `/usr/local/bin/gemini` (npm global install)
+**Command invocation:** `gemini` (interactive) or `gemini <args>`
+**Launch command for aishell:** `aishell gemini` → execs `gemini` in container
+
+**Authentication flow:**
+- Multiple methods supported (API key is simplest for container use)
+- API key can be set via environment variable or settings.json
+- OAuth login available for Code Assist license (browser-based)
+
+**Model Context Protocol (MCP):** Supported with custom integrations
+
+**Special features:**
+- Built-in Google Search grounding
+- File operations tools
+- Shell command execution
+- Web fetching capabilities
+
+## Integration with Aishell Patterns
+
+### Dockerfile Changes
+
+Both harnesses integrate cleanly with the existing Dockerfile pattern:
+
+```dockerfile
+# Add to existing build args section
+ARG WITH_CODEX=false
+ARG WITH_GEMINI=false
+ARG CODEX_VERSION=""
+ARG GEMINI_VERSION=""
+
+# Add after existing Claude Code / OpenCode installation blocks
+# Install OpenAI Codex CLI if requested (npm global)
+RUN if [ "$WITH_CODEX" = "true" ]; then \
+        if [ -n "$CODEX_VERSION" ]; then \
+            npm install -g @openai/codex@"$CODEX_VERSION"; \
+        else \
+            npm install -g @openai/codex; \
+        fi \
+    fi
+
+# Install Google Gemini CLI if requested (npm global)
+RUN if [ "$WITH_GEMINI" = "true" ]; then \
+        if [ -n "$GEMINI_VERSION" ]; then \
+            npm install -g @google/gemini-cli@"$GEMINI_VERSION"; \
+        else \
+            npm install -g @google/gemini-cli; \
+        fi \
+    fi
+```
+
+**No additional system packages required** - both use existing Node.js 24.
+
+### Config Mounting
+
+Extend the existing config mount pattern in `docker/run.clj`:
 
 ```clojure
-;; Bash: build_api_env function
-;; for var in "${api_vars[@]}"; do
-;;     [[ -n "${!var:-}" ]] && echo "-e $var=${!var}"
-;; done
+;; Existing: Claude Code ~/.claude, OpenCode ~/.config/opencode
+;; Add: Codex ~/.codex, Gemini ~/.gemini
 
-;; Babashka equivalent:
-(def api-vars
-  ["ANTHROPIC_API_KEY" "OPENAI_API_KEY" "GEMINI_API_KEY"
-   "GROQ_API_KEY" "GITHUB_TOKEN" "AWS_ACCESS_KEY_ID"
-   "AWS_SECRET_ACCESS_KEY" "AWS_REGION" "AWS_PROFILE"
-   "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"
-   "GOOGLE_CLOUD_PROJECT" "GOOGLE_APPLICATION_CREDENTIALS"])
-
-(defn build-api-env []
-  (into {"DISABLE_AUTOUPDATER" "1"}
-        (for [v api-vars
-              :let [val (System/getenv v)]
-              :when val]
-          [v val])))
-
-;; Pass to docker via :extra-env (not as -e flags)
-;; Note: babashka.process handles this properly
+(defn config-mounts []
+  (let [home (System/getenv "HOME")]
+    ["-v" (str home "/.claude:/home/developer/.claude")
+     "-v" (str home "/.config/opencode:/home/developer/.config/opencode")
+     "-v" (str home "/.codex:/home/developer/.codex")
+     "-v" (str home "/.gemini:/home/developer/.gemini")]))
 ```
 
-### Heredoc / Embedded Files
+**Directory creation:** No pre-creation needed - harnesses create config dirs on first run.
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `cat << 'EOF'` | Multi-line string literal |
-| Variable substitution | `str` or `format` |
+### Build Command Flags
+
+Add new version flags to `build` command:
+
+```bash
+aishell build --codex-version 0.89.0 --gemini-version 0.25.2
+```
+
+**State persistence:** Extend `state.edn` to track codex/gemini versions:
 
 ```clojure
-;; Bash: write_dockerfile with heredoc
-;; cat > "${target_dir}/Dockerfile" << 'DOCKERFILE_EOF'
-;; ...
-;; DOCKERFILE_EOF
-
-;; Babashka equivalent:
-(def dockerfile-template
-  "# Aishell Base Image
-FROM debian:bookworm-slim
-
-ARG WITH_CLAUDE=false
-ARG WITH_OPENCODE=false
-ARG CLAUDE_VERSION=\"\"
-ARG OPENCODE_VERSION=\"\"
-ARG BABASHKA_VERSION=1.12.214
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    bash ca-certificates curl file git htop jq less \\
-    ripgrep sqlite3 sudo tree unzip vim watch \\
-    && rm -rf /var/lib/apt/lists/*
-
-# ... rest of Dockerfile
-")
-
-(defn write-dockerfile [target-dir]
-  (spit (str (fs/path target-dir "Dockerfile")) dockerfile-template))
+{:claude-version "1.2.3"
+ :opencode-version "1.1.25"
+ :codex-version "0.89.0"     ;; NEW
+ :gemini-version "0.25.2"    ;; NEW
+ :dockerfile-hash "abc123..."}
 ```
 
-### Color Output
+### Launch Commands
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `echo -e "${RED}Error${NC}"` | ANSI escape codes |
-| `tput colors` | Check `TERM` env var |
-| `[[ -t 1 ]]` | `(System/console)` |
+Add new harness launch commands:
+
+```bash
+aishell codex      # Launches codex in container
+aishell gemini     # Launches gemini in container
+```
+
+**Command routing:** Extend `core.clj` pre-dispatch logic:
 
 ```clojure
-;; Bash: color support detection
-;; supports_color() { [[ ! -t 1 ]] && return 1; ... }
-
-;; Babashka equivalent:
-(def colors-enabled?
-  (and (some? (System/console))  ; TTY check
-       (nil? (System/getenv "NO_COLOR"))
-       (or (some? (System/getenv "FORCE_COLOR"))
-           (not= "dumb" (System/getenv "TERM")))))
-
-(def red (if colors-enabled? "\u001b[0;31m" ""))
-(def yellow (if colors-enabled? "\u001b[0;33m" ""))
-(def nc (if colors-enabled? "\u001b[0m" ""))
-
-(defn error [msg]
-  (binding [*out* *err*]
-    (println (str red "Error:" nc " " msg)))
-  (System/exit 1))
-
-(defn warn [msg]
-  (binding [*out* *err*]
-    (println (str yellow "Warning:" nc " " msg))))
+(case (first args)
+  "claude" (run-harness "claude" (rest args))
+  "opencode" (run-harness "opencode" (rest args))
+  "codex" (run-harness "codex" (rest args))      ;; NEW
+  "gemini" (run-harness "gemini" (rest args))    ;; NEW
+  ;; ... fall through to CLI parsing
+  )
 ```
 
-### SHA256 Hash Computation
+### Environment Variable Passthrough
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| `sha256sum file \| cut -c1-12` | `MessageDigest` |
+Both harnesses need API key passthrough. Current aishell pattern:
 
-```clojure
-;; Bash: get_dockerfile_hash
-;; hash=$(sha256sum "${temp_dir}/Dockerfile" | cut -c1-12)
-
-;; Babashka equivalent:
-(import '[java.security MessageDigest])
-
-(defn sha256-hex [s]
-  (let [md (MessageDigest/getInstance "SHA-256")
-        bytes (.digest md (.getBytes s "UTF-8"))]
-    (apply str (map #(format "%02x" %) bytes))))
-
-(defn get-dockerfile-hash []
-  (subs (sha256-hex dockerfile-template) 0 12))
+```yaml
+# .aishell/config.yaml
+environment:
+  passthrough:
+    - ANTHROPIC_API_KEY
+    - OPENAI_API_KEY  # OpenCode uses this
+    - CODEX_API_KEY   # NEW - for Codex
+    - GEMINI_API_KEY  # NEW - for Gemini
+    - GOOGLE_API_KEY  # NEW - alternative for Gemini
 ```
 
-### State File Management
+**Validation consideration:** Don't fail if API keys are missing (user may use OAuth login instead).
 
-| Bash Pattern | Babashka Idiom |
-|--------------|----------------|
-| Shell-style key=value | EDN format |
-| Atomic write via mv | `spit` (atomic on POSIX) |
+## Comparison Matrix
 
-```clojure
-;; Bash state file format:
-;; BUILD_WITH_CLAUDE=true
-;; BUILD_IMAGE_TAG="aishell:claude-2.0.22"
+| Aspect | Claude Code | OpenCode | OpenAI Codex CLI | Google Gemini CLI |
+|--------|-------------|----------|------------------|-------------------|
+| **Install method** | npm global | curl binary | npm global | npm global |
+| **Package name** | @anthropic-ai/claude-code | n/a (binary) | @openai/codex | @google/gemini-cli |
+| **Config dir** | ~/.claude | ~/.config/opencode | ~/.codex | ~/.gemini |
+| **Config format** | JSON | TOML | TOML | JSON |
+| **Node.js version** | 18+ | n/a | 22+ | 20+ |
+| **Auth env var** | ANTHROPIC_API_KEY | OPENAI_API_KEY | CODEX_API_KEY | GEMINI_API_KEY |
+| **OAuth support** | Yes | No | Yes (ChatGPT) | Yes (Google) |
+| **MCP support** | Yes | Unknown | Yes | Yes |
+| **Current version** | (varies) | 1.1.25 | 0.89.0 | 0.25.2 |
 
-;; Babashka state file format (EDN):
-;; {:with-claude true
-;;  :with-opencode false
-;;  :claude-version "2.0.22"
-;;  :image-tag "aishell:claude-2.0.22"
-;;  :timestamp "2026-01-20T12:00:00Z"}
+## Dependencies Summary
 
-(defn get-state-file [project-dir]
-  (let [state-base (or (System/getenv "XDG_STATE_HOME")
-                       (str (System/getProperty "user.home") "/.local/state"))
-        hash (subs (sha256-hex (str (fs/canonicalize project-dir))) 0 12)]
-    (fs/path state-base "aishell" "builds" (str hash ".edn"))))
+### No New System Packages Required
 
-(defn write-state [state-file state]
-  (fs/create-dirs (fs/parent state-file))
-  (spit (str state-file) (pr-str state)))
+Both harnesses install via npm and run on Node.js, which is already present in the base image.
 
-(defn read-state [state-file]
-  (when (fs/exists? state-file)
-    (edn/read-string (slurp (str state-file)))))
-```
+**Current base image:**
+- Node.js 24.x (satisfies Codex's Node 22+ and Gemini's Node 20+ requirements)
+- npm (bundled with Node.js)
+- Debian bookworm-slim with glibc (compatible with both harnesses)
 
----
+**No changes needed to:**
+- Babashka installation
+- System packages (curl, git, vim, etc.)
+- gosu or entrypoint.sh
+- bashrc configuration
 
-## Cross-Platform Considerations
+### Version Compatibility Matrix
 
-### Windows-Specific
+| Component | Required By | Current | Status |
+|-----------|-------------|---------|--------|
+| Node.js 20+ | Gemini CLI | 24.x | ✓ Pass |
+| Node.js 22+ | Codex CLI | 24.x | ✓ Pass |
+| npm | Both | Bundled | ✓ Pass |
+| glibc | Both | Debian bookworm | ✓ Pass |
 
-| Issue | Solution |
-|-------|----------|
-| No shebang support | Distribute `aishell.bat` wrapper or use `bb.exe` directly |
-| Path separators | Use `babashka.fs` functions (handles `\` vs `/` automatically) |
-| Executable extensions | `babashka.process` auto-resolves `.exe`, `.cmd`, `.bat` |
-| Case-sensitive env vars | Use exact case in `:extra-env` (e.g., `"Path"` not `"PATH"`) |
-| HOME directory | `(System/getProperty "user.home")` works cross-platform |
-| `$HOME` expansion | Use Babashka function, not shell expansion |
+## Implementation Checklist
 
-```clojure
-;; Cross-platform HOME resolution
-(defn get-home []
-  (or (System/getenv "HOME")
-      (System/getProperty "user.home")))
+- [ ] Add WITH_CODEX, WITH_GEMINI, CODEX_VERSION, GEMINI_VERSION build args to Dockerfile
+- [ ] Add npm install blocks for @openai/codex and @google/gemini-cli
+- [ ] Add config directory mounts for ~/.codex and ~/.gemini
+- [ ] Add --codex-version and --gemini-version flags to build command
+- [ ] Extend state.edn schema with :codex-version and :gemini-version
+- [ ] Add "codex" and "gemini" commands to CLI dispatcher
+- [ ] Document environment variables (CODEX_API_KEY, GEMINI_API_KEY, etc.) in README
+- [ ] Add passthrough examples to config.yaml template
+- [ ] Update security detection if needed (API key patterns already covered)
 
-;; Cross-platform path joining (NOT string concat)
-(fs/path (get-home) ".aishell" "run.edn")
+## Risk Assessment
 
-;; Windows wrapper (aishell.bat):
-;; @echo off
-;; bb "%~dp0aishell.bb" %*
-```
+**Integration risk:** LOW
 
-### macOS-Specific
+Both harnesses follow patterns nearly identical to existing Claude Code integration:
+- npm global install (same as Claude Code)
+- Config directory in user home (same pattern as ~/.claude)
+- Environment variable passthrough (same pattern as ANTHROPIC_API_KEY)
+- No special system dependencies beyond Node.js
 
-| Issue | Solution |
-|-------|----------|
-| Apple Silicon | Babashka provides `aarch64` builds |
-| `realpath` differences | Use `(fs/canonicalize path)` |
-| Docker Desktop SSH socket | Different path than Linux |
+**Differences from existing harnesses:**
+1. Codex uses TOML config (like OpenCode) instead of JSON (like Claude)
+2. Gemini supports multiple auth methods (API key, OAuth, ADC)
+3. Both support MCP (like Claude Code)
 
-```clojure
-;; SSH agent socket detection (cross-platform)
-(defn get-ssh-agent-socket []
-  (cond
-    ;; macOS Docker Desktop magic socket
-    (and (= "Mac OS X" (System/getProperty "os.name"))
-         (fs/exists? "/run/host-services/ssh-auth.sock"))
-    "/run/host-services/ssh-auth.sock"
-
-    ;; Linux/standard SSH_AUTH_SOCK
-    (System/getenv "SSH_AUTH_SOCK")
-    (System/getenv "SSH_AUTH_SOCK")
-
-    :else nil))
-```
-
-### Linux-Specific
-
-| Issue | Solution |
-|-------|----------|
-| Static binary for containers | Use `babashka-*-linux-amd64-static.tar.gz` |
-| Alpine/musl | Static binary works; no glibc dependency |
-| Docker socket permissions | User must be in `docker` group |
-
----
-
-## Project Structure
-
-Recommended structure for the Babashka rewrite:
-
-```
-aishell                 ; Main script (shebang: #!/usr/bin/env bb)
-bb.edn                  ; Dependencies, paths, tasks
-src/
-  aishell/
-    core.clj            ; Main entry, CLI dispatch
-    cli.clj             ; Argument parsing with babashka.cli
-    config.clj          ; Config file parsing (run.edn)
-    docker.clj          ; Docker build/run operations
-    state.clj           ; Build state management
-    validation.clj      ; Input validation (versions, paths)
-    output.clj          ; Color output, spinners, logging
-    templates.clj       ; Embedded Dockerfile, entrypoint, bashrc
-```
-
-### bb.edn Configuration
-
-```clojure
-{:paths ["src"]
- :min-bb-version "1.12.214"
- :tasks
- {build   {:doc "Build the container image"
-           :task (exec 'aishell.core/build)}
-  update  {:doc "Rebuild with latest versions"
-           :task (exec 'aishell.core/update)}
-  claude  {:doc "Run Claude Code"
-           :task (exec 'aishell.core/claude)}
-  opencode {:doc "Run OpenCode"
-            :task (exec 'aishell.core/opencode)}}}
-```
-
-### Single-File Alternative
-
-For simpler distribution, the entire CLI can be a single `.bb` file:
-
-```clojure
-#!/usr/bin/env bb
-;; aishell - AI Shell Container Launcher
-
-(ns aishell.core
-  (:require [babashka.cli :as cli]
-            [babashka.fs :as fs]
-            [babashka.process :as p]
-            [clojure.edn :as edn]
-            [clojure.string :as str]))
-
-;; ... all code in single file ...
-
-(when (= *file* (System/getProperty "babashka.file"))
-  (apply -main *command-line-args*))
-```
-
----
-
-## Migration Strategy
-
-### Phase 1: Core Structure
-1. Set up `bb.edn` with paths
-2. Create `aishell.core` with main entry
-3. Port CLI parsing using `babashka.cli`
-4. Port output functions (error, warn, verbose)
-
-### Phase 2: Docker Operations
-1. Port `check-docker` function
-2. Port `docker-build` with captured/streaming output
-3. Port `docker-run` with all mount/env logic
-4. Test on Linux first
-
-### Phase 3: Config and State
-1. Design `run.edn` format (simpler than `run.conf`)
-2. Port state file management (use EDN)
-3. Port Dockerfile hash detection
-4. Maintain backward compat with `run.conf` if needed
-
-### Phase 4: Cross-Platform
-1. Test on macOS
-2. Add Windows support (wrapper script)
-3. Handle platform-specific SSH agent sockets
-
----
-
-## Confidence Assessment
-
-| Area | Confidence | Reasoning |
-|------|------------|-----------|
-| Built-in libraries | HIGH | Verified via Babashka book and v1.12.214 release notes |
-| babashka.process | HIGH | Verified via babashka/process GitHub repo and API docs |
-| babashka.fs | HIGH | Verified via babashka/fs API.md |
-| babashka.cli | HIGH | Verified via babashka/cli GitHub repo |
-| clj-yaml built-in | HIGH | Confirmed: "No installation required. Clj-yaml is built into babashka" |
-| Cross-platform Linux/macOS | HIGH | Documented in Babashka book |
-| Windows support | MEDIUM | Documented but less battle-tested than Unix |
-| Docker integration | HIGH | Just shell commands via babashka.process |
-
----
+**No breaking changes** - existing harnesses continue to work unchanged.
 
 ## Sources
 
-- [Babashka Book](https://book.babashka.org/) - Official documentation
-- [babashka/babashka GitHub](https://github.com/babashka/babashka) - v1.12.214 release
-- [babashka/process GitHub](https://github.com/babashka/process) - Process execution API
-- [babashka/fs API](https://github.com/babashka/fs/blob/master/API.md) - File system functions
-- [babashka/cli GitHub](https://github.com/babashka/cli) - CLI argument parsing
-- [clj-yaml in Babashka](https://github.com/babashka/babashka/blob/master/feature-yaml/babashka/impl/yaml.clj) - Built-in YAML
+### OpenAI Codex CLI
+
+- [OpenAI Codex CLI Documentation](https://developers.openai.com/codex/cli/)
+- [OpenAI Codex GitHub Repository](https://github.com/openai/codex)
+- [OpenAI Codex CLI Releases](https://github.com/openai/codex/releases)
+- [OpenAI Codex Authentication](https://developers.openai.com/codex/auth/)
+- [OpenAI Codex Configuration Reference](https://developers.openai.com/codex/config-reference/)
+- [@openai/codex npm package](https://www.npmjs.com/package/@openai/codex)
+- [Node.js 22+ requirement discussion](https://github.com/openai/codex/issues/164)
+
+### Google Gemini CLI
+
+- [Google Gemini CLI GitHub Repository](https://github.com/google-gemini/gemini-cli)
+- [Gemini CLI Official Documentation](https://geminicli.com/docs/)
+- [Gemini CLI Installation Guide](https://geminicli.com/docs/get-started/installation/)
+- [Gemini CLI Configuration](https://geminicli.com/docs/get-started/configuration/)
+- [Gemini CLI Authentication Setup](https://geminicli.com/docs/get-started/authentication/)
+- [Gemini CLI Releases](https://github.com/google-gemini/gemini-cli/releases)
+- [Google Developers - Gemini Code Assist CLI](https://developers.google.com/gemini-code-assist/docs/gemini-cli)
+- [Google Codelabs - Hands-on with Gemini CLI](https://codelabs.developers.google.com/gemini-cli-hands-on)
+
+### Cross-Reference
+
+- [SmartScope OpenAI Codex CLI Guide](https://smartscope.blog/en/generative-ai/chatgpt/openai-codex-cli-comprehensive-guide/) (2025-12 update)
+- [DeployHQ - Getting Started with OpenAI Codex CLI](https://www.deployhq.com/blog/getting-started-with-openai-codex-cli-ai-powered-code-generation-from-your-terminal)
+- [Google Blog - Introducing Gemini CLI](https://blog.google/technology/developers/introducing-gemini-cli-open-source-ai-agent/)
+
+**Confidence Level:** HIGH - All critical details verified from official documentation and GitHub repositories (Context7 not available for these tools, but official sources are authoritative and current as of January 2026).

@@ -1,652 +1,527 @@
-# Architecture Research: Babashka CLI Structure
+# Architecture Research: Multi-Harness Support
 
-**Project:** aishell (Bash to Babashka rewrite)
-**Researched:** 2026-01-20
-**Overall Confidence:** HIGH
+**Domain:** Adding OpenAI Codex CLI and Google Gemini CLI to existing aishell harness sandbox
+**Researched:** 2026-01-24
+**Confidence:** HIGH
 
-## Summary
+## Current Architecture Summary
 
-Babashka provides a mature ecosystem for CLI development with built-in libraries that directly map to the existing Bash implementation's needs. The recommended architecture separates concerns into distinct namespaces: CLI parsing (babashka.cli), process execution (babashka.process), file operations (babashka.fs), and domain logic. The key architectural wins over Bash are structured data (EDN for config/state), proper error handling with try/catch, and cross-platform process execution without shell metacharacter concerns. Docker integration uses `babashka.process/shell` for synchronous commands with output capture, avoiding the complexity of the Docker pod for this use case.
+The aishell Babashka CLI follows a modular namespace pattern:
 
-## Recommended Structure
+**Core namespaces:**
+- `aishell.cli` - CLI routing and argument parsing using babashka.cli dispatch tables
+- `aishell.run` - Run command orchestration (handles shell, claude, opencode execution)
+- `aishell.docker.build` - Image building with embedded Dockerfile templates
+- `aishell.docker.run` - Docker run argument construction
+- `aishell.docker.templates` - Embedded Dockerfile, entrypoint.sh, bashrc.aishell
+- `aishell.state` - Build state persistence (~/.aishell/state.edn)
+- `aishell.config` - YAML config loading with merge strategy
 
+**Key patterns:**
+1. **Embedded Dockerfile** - Dockerfile stored as multiline string in `templates.clj`, written to temp dir during build
+2. **Conditional harness installation** - Build args (WITH_CLAUDE, WITH_OPENCODE) control npm/curl installations
+3. **Pass-through commands** - CLI routes `aishell claude` to `run-container "claude" args` which execs docker with `["claude" ...args]`
+4. **Config mounting** - `build-harness-config-mounts` in docker/run.clj mounts ~/.claude, ~/.config/opencode if they exist
+5. **Version pinning** - `--with-claude=2.0.22` syntax parsed by `parse-with-flag`, stored in state.edn
+6. **State tracking** - state.edn stores {:with-claude true :claude-version "2.0.22" ...}
+
+**Harness installation locations:**
+- Claude Code: `npm install -g @anthropic-ai/claude-code` → /usr/local/bin/claude
+- OpenCode: `curl -fsSL https://opencode.ai/install | bash` → /root/.opencode/bin/opencode (copied to /usr/local/bin)
+
+## Integration Points
+
+### 1. Dockerfile Changes
+
+**File:** `src/aishell/docker/templates.clj` → `base-dockerfile` string
+
+**Add build args:**
+```dockerfile
+ARG WITH_CODEX=false
+ARG WITH_GEMINI=false
+ARG CODEX_VERSION=""
+ARG GEMINI_VERSION=""
 ```
-aishell/
-|-- bb.edn                    # Babashka project config
-|-- aishell                   # Executable entry point (shebang script)
-|-- src/
-|   +-- aishell/
-|       |-- core.clj          # Entry point, main dispatch
-|       |-- cli.clj           # Argument parsing, subcommand dispatch
-|       |-- docker.clj        # Docker CLI wrapper functions
-|       |-- build.clj         # Image build logic (Dockerfile generation)
-|       |-- run.clj           # Container run logic
-|       |-- config.clj        # run.conf parsing, validation
-|       |-- state.clj         # Build state persistence (EDN files)
-|       |-- output.clj        # Terminal output, colors, spinners
-|       +-- util.clj          # Shared utilities
-|-- resources/
-|   |-- Dockerfile.edn        # Dockerfile template as data
-|   |-- entrypoint.sh         # Container entrypoint (unchanged)
-|   +-- bashrc.aishell        # Container bashrc (unchanged)
-+-- test/
-    +-- aishell/
-        +-- *_test.clj        # Test files mirror src structure
+
+**Add installation blocks (after OpenCode section, before entrypoint):**
+```dockerfile
+# Install OpenAI Codex CLI if requested (npm global)
+RUN if [ "$WITH_CODEX" = "true" ]; then \\
+        if [ -n "$CODEX_VERSION" ]; then \\
+            npm install -g @openai/codex@"$CODEX_VERSION"; \\
+        else \\
+            npm install -g @openai/codex; \\
+        fi \\
+    fi
+
+# Install Google Gemini CLI if requested (npm global)
+RUN if [ "$WITH_GEMINI" = "true" ]; then \\
+        if [ -n "$GEMINI_VERSION" ]; then \\
+            npm install -g @google/gemini-cli@"$GEMINI_VERSION"; \\
+        else \\
+            npm install -g @google/gemini-cli; \\
+        fi \\
+    fi
 ```
 
-### bb.edn Configuration
+**Rationale:** Both harnesses install via npm like Claude Code. This follows the established pattern exactly.
 
+### 2. CLI Routing
+
+**File:** `src/aishell/cli.clj`
+
+**Changes:**
+
+1. **Build spec** - Add new flags to `build-spec` (line 62):
 ```clojure
-{:paths ["src" "resources"]
- :min-bb-version "1.3.0"
- :tasks
- {test {:doc "Run tests"
-        :task (shell "bb test")}
-  build {:doc "Build uberscript"
-         :task (shell "bb uberscript aishell -m aishell.core")}}}
-```
-
-### Entry Point Pattern
-
-The executable `aishell` file uses a shebang to invoke Babashka:
-
-```bash
-#!/usr/bin/env bb
-(require '[aishell.core :as core])
-(core/-main *command-line-args*)
-```
-
-Or directly in bb.edn with `-m` flag support.
-
-## Namespace Responsibilities
-
-| Namespace | Responsibility | Key Functions |
-|-----------|----------------|---------------|
-| `aishell.core` | Entry point, top-level dispatch | `-main`, version handling |
-| `aishell.cli` | Argument parsing, subcommand routing | `parse-args`, `dispatch`, command specs |
-| `aishell.docker` | Docker CLI invocation abstraction | `image-exists?`, `build-image`, `run-container`, `inspect` |
-| `aishell.build` | Build command logic, Dockerfile generation | `do-build`, `write-dockerfile`, `compute-image-tag` |
-| `aishell.run` | Run/shell/exec command logic | `do-run`, `build-docker-args`, `apply-runtime-config` |
-| `aishell.config` | run.conf parsing, validation | `parse-run-conf`, `build-mount-args`, `build-env-args` |
-| `aishell.state` | Build state persistence | `read-state`, `write-state`, `get-state-file` |
-| `aishell.output` | User-facing output | `error`, `warn`, `verbose`, `spinner` |
-| `aishell.util` | Cross-cutting utilities | `validate-version`, `project-hash`, `home-dir` |
-
-## Data Flow
-
-### Build Command
-
-```
-User: aishell build --with-claude
-           |
-           v
-+-----------------------------+
-|     aishell.cli             |
-|  parse-args -> {:command :build
-|                :with-claude true}
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.build           |
-|  1. Validate inputs         |
-|  2. Compute image tag       |
-|  3. Generate Dockerfile     |<-- aishell.util (templates)
-|  4. Write temp build files  |<-- babashka.fs
-|  5. Call docker build       |<-- aishell.docker
-|  6. Persist state           |<-- aishell.state
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.docker          |
-|  (shell {:out :string}      |
-|    "docker" "build" args)   |
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.state           |
-|  (spit state-file           |
-|    (pr-str state-map))      |
-+-----------------------------+
-```
-
-### Run/Shell Command
-
-```
-User: aishell claude
-           |
-           v
-+-----------------------------+
-|     aishell.cli             |
-|  parse-args -> {:command :claude
-|                :args [...]}
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.run             |
-|  1. Load state              |<-- aishell.state
-|  2. Verify image exists     |<-- aishell.docker
-|  3. Handle extension        |
-|  4. Load run.conf           |<-- aishell.config
-|  5. Build docker args       |
-|  6. Read git identity       |
-|  7. Exec container          |<-- aishell.docker
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.config          |
-|  parse-run-conf -> {:mounts [...]
-|                    :env {...}
-|                    :ports [...]}
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.docker          |
-|  (shell "docker" "run"      |
-|    "-it" "--rm" ...args     |
-|    image command)           |
-+-----------------------------+
-```
-
-### Update Command
-
-```
-User: aishell update --with-opencode
-           |
-           v
-+-----------------------------+
-|     aishell.cli             |
-|  parse-args -> {:command :update
-|                :with-opencode true}
-+-----------------------------+
-           |
-           v
-+-----------------------------+
-|     aishell.build           |
-|  1. Load existing state     |<-- aishell.state
-|  2. Merge new flags         |
-|  3. Rebuild (--no-cache)    |<-- aishell.docker
-|  4. Update state            |<-- aishell.state
-+-----------------------------+
-```
-
-## Docker Integration Pattern
-
-### Recommended: babashka.process/shell
-
-Use `shell` for synchronous Docker commands with proper output handling:
-
-```clojure
-(ns aishell.docker
-  (:require [babashka.process :refer [shell sh]]
-            [clojure.string :as str]))
-
-;; Check if image exists
-(defn image-exists? [tag]
-  (try
-    (shell {:out :string :err :string}
-           "docker" "image" "inspect" tag)
-    true
-    (catch Exception _ false)))
-
-;; Build image with progress output (inherit stdout/stderr)
-(defn build-image [{:keys [dockerfile-dir tag build-args no-cache?]}]
-  (let [args (cond-> ["docker" "build" "-t" tag]
-               no-cache? (conj "--no-cache")
-               build-args (into (mapcat (fn [[k v]] ["--build-arg" (str k "=" v)]) build-args))
-               true (conj dockerfile-dir))]
-    (apply shell args)))
-
-;; Build image with captured output (for non-verbose mode)
-(defn build-image-quiet [{:keys [dockerfile-dir tag build-args no-cache?]}]
-  (let [args (cond-> ["docker" "build" "-t" tag]
-               no-cache? (conj "--no-cache")
-               build-args (into (mapcat (fn [[k v]] ["--build-arg" (str k "=" v)]) build-args))
-               true (conj dockerfile-dir))
-        result (apply sh args)]
-    (when-not (zero? (:exit result))
-      (throw (ex-info "Build failed" {:output (:err result)})))
-    result))
-
-;; Run interactive container (replaces current process)
-(defn run-container [{:keys [image docker-args command]}]
-  (let [args (concat ["docker" "run" "--rm" "-it" "--init"]
-                     docker-args
-                     [image]
-                     command)]
-    ;; Use exec semantics - this replaces the process
-    (apply shell {:inherit true} args)))
-
-;; Inspect image for labels
-(defn get-image-label [image label]
-  (let [result (sh "docker" "inspect"
-                   (str "--format={{index .Config.Labels \"" label "\"}}")
-                   image)]
-    (when (zero? (:exit result))
-      (str/trim (:out result)))))
-```
-
-### Why Not the Docker Pod?
-
-The [pod-lispyclouds-docker](https://github.com/lispyclouds/pod-lispyclouds-docker) pod provides programmatic Docker API access. However, for this project:
-
-1. **Shell commands suffice** - We only need build, run, inspect
-2. **Output handling matters** - Build progress should stream to terminal
-3. **Exec semantics required** - `docker run -it` replaces the process
-4. **Fewer dependencies** - No pod binary to distribute
-
-The pod would be useful if we needed complex container orchestration, but CLI wrapping via `shell` is simpler and more maintainable.
-
-### Cross-Platform Considerations
-
-```clojure
-;; babashka.process handles command tokenization cross-platform
-;; This works on Linux, macOS, Windows:
-(shell "docker" "run" "--rm" image)
-
-;; For paths with spaces, quoting is handled automatically:
-(shell "docker" "run" "-v" (str project-dir ":" project-dir) image)
-
-;; Environment variables via :extra-env (case-sensitive on Windows)
-(shell {:extra-env {"FOO" "bar"}} "docker" "run" image)
-```
-
-## Configuration Approach
-
-### Recommendation: EDN for State, Plain Text for run.conf
-
-**State files (`.local/state/aishell/builds/*.edn`):**
-
-```clojure
-;; EDN - machine-readable, Clojure-native
-{:project-path "/home/user/myproject"
- :with-claude true
- :with-opencode false
- :claude-version "2.0.22"
- :opencode-version nil
- :image-tag "aishell:claude-2.0.22"
- :built-at #inst "2026-01-20T10:30:00Z"
- :dockerfile-hash "abc123def456"}
-```
-
-**Runtime config (`.aishell/run.conf`):**
-
-Keep the existing shell-variable format for user familiarity, but parse it into structured data:
-
-```clojure
-(ns aishell.config
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io]))
-
-(def allowed-vars #{"MOUNTS" "ENV" "PORTS" "DOCKER_ARGS" "PRE_START"})
-
-(defn parse-run-conf [path]
-  (when (.exists (io/file path))
-    (reduce
-     (fn [config line]
-       (let [line (str/trim line)]
-         (cond
-           (str/blank? line) config
-           (str/starts-with? line "#") config
-           :else
-           (let [[_ var value] (re-matches #"([A-Z_]+)=\"?([^\"]*)\"?" line)]
-             (if (allowed-vars var)
-               (assoc config (keyword (str/lower-case var)) value)
-               (throw (ex-info (str "Unknown config variable: " var)
-                               {:line line})))))))
-     {}
-     (str/split-lines (slurp path)))))
-```
-
-### Why Not YAML?
-
-1. **EDN is native** - No parsing library needed, `edn/read-string` is built-in
-2. **Clojure data** - Maps, keywords, sets work directly
-3. **Instants supported** - `#inst` for timestamps
-4. **Consistent** - Same format as bb.edn
-
-### Why Keep run.conf Format?
-
-1. **User familiarity** - Users already have these files
-2. **Shell compatibility** - Can still be sourced by shell if needed
-3. **Migration path** - No breaking change for existing users
-
-## State Management
-
-### State File Location
-
-Follow XDG Base Directory spec (matching current Bash implementation):
-
-```clojure
-(ns aishell.state
-  (:require [babashka.fs :as fs]
-            [clojure.edn :as edn]))
-
-(defn state-dir []
-  (let [base (or (System/getenv "XDG_STATE_HOME")
-                 (str (System/getProperty "user.home") "/.local/state"))]
-    (fs/path base "aishell" "builds")))
-
-(defn project-hash [project-dir]
-  (-> project-dir
-      fs/canonicalize
-      str
-      hash
-      (format "%012x")))
-
-(defn state-file [project-dir]
-  (fs/path (state-dir) (str (project-hash project-dir) ".edn")))
-```
-
-### Atomic State Updates
-
-```clojure
-(defn write-state [project-dir state]
-  (let [path (state-file project-dir)
-        temp (fs/create-temp-file)]
-    (fs/create-dirs (fs/parent path))
-    (spit (str temp) (pr-str state))
-    (fs/move temp path {:replace-existing true})))
-
-(defn read-state [project-dir]
-  (let [path (state-file project-dir)]
-    (when (fs/exists? path)
-      (edn/read-string (slurp (str path))))))
-```
-
-## Cleanup and Shutdown Hooks
-
-Babashka supports JVM shutdown hooks for cleanup:
-
-```clojure
-(ns aishell.util
-  (:import [java.lang Runtime]))
-
-(defonce cleanup-registry (atom []))
-
-(defn register-cleanup [f]
-  (swap! cleanup-registry conj f))
-
-(defn- run-cleanups []
-  (doseq [f @cleanup-registry]
-    (try (f) (catch Exception _))))
-
-;; Register once at startup
-(defn init-cleanup-handler []
-  (-> (Runtime/getRuntime)
-      (.addShutdownHook (Thread. run-cleanups))))
-
-;; Usage:
-(let [temp-dir (fs/create-temp-dir)]
-  (register-cleanup #(fs/delete-tree temp-dir))
-  ;; ... use temp-dir ...
-  )
-```
-
-Note: `babashka.process/shell` automatically kills subprocesses on shutdown, so the main cleanup needs are for temp files.
-
-## Error Handling Pattern
-
-```clojure
-(ns aishell.output
-  (:require [clojure.string :as str]))
-
-(def ^:dynamic *verbose* false)
-
-(defn supports-color? []
-  (and (System/console)
-       (nil? (System/getenv "NO_COLOR"))
-       (or (System/getenv "FORCE_COLOR")
-           (some-> (System/getenv "TERM")
-                   (str/includes? "color")))))
-
-(def RED (if (supports-color?) "\u001b[31m" ""))
-(def YELLOW (if (supports-color?) "\u001b[33m" ""))
-(def NC (if (supports-color?) "\u001b[0m" ""))
-
-(defn error [msg]
-  (binding [*out* *err*]
-    (println (str RED "Error:" NC " " msg)))
-  (System/exit 1))
-
-(defn warn [msg]
-  (binding [*out* *err*]
-    (println (str YELLOW "Warning:" NC " " msg))))
-
-(defn verbose [msg]
-  (when *verbose*
-    (binding [*out* *err*]
-      (println msg))))
-```
-
-## CLI Parsing with babashka.cli
-
-```clojure
-(ns aishell.cli
-  (:require [babashka.cli :as cli]))
-
-(def global-spec
-  {:verbose {:alias :v
-             :desc "Show detailed output"
-             :coerce :boolean}
-   :help {:alias :h
-          :desc "Show help"
-          :coerce :boolean}
-   :version {:desc "Show version"
-             :coerce :boolean}})
-
 (def build-spec
-  {:with-claude {:desc "Include Claude Code"
-                 :coerce :boolean}
-   :with-opencode {:desc "Include OpenCode"
-                   :coerce :boolean}
-   :claude-version {:desc "Claude Code version (e.g., 2.0.22)"
-                    :coerce :string}
-   :opencode-version {:desc "OpenCode version"
-                      :coerce :string}
-   :no-cache {:desc "Force fresh build"
-              :coerce :boolean}})
-
-(defn parse-args [args]
-  (let [parsed (cli/parse-args args {:spec global-spec
-                                     :args->opts [:command]})]
-    (case (:command parsed)
-      "build" (merge parsed (cli/parse-args (:args parsed) {:spec build-spec}))
-      "update" (merge parsed (cli/parse-args (:args parsed) {:spec build-spec}))
-      "claude" (assoc parsed :harness-args (:args parsed))
-      "opencode" (assoc parsed :harness-args (:args parsed))
-      parsed)))
+  {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
+   :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
+   :with-codex    {:desc "Include OpenAI Codex CLI (optional: =VERSION)"}  ; ADD
+   :with-gemini   {:desc "Include Google Gemini CLI (optional: =VERSION)"}  ; ADD
+   :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
+   :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
+   :help          {:alias :h :coerce :boolean :desc "Show build help"}})
 ```
 
-## Build Order for Incremental Delivery
-
-Based on dependencies between components:
-
-### Phase 1: Foundation
-**Goal:** Basic project structure, can invoke `aishell --version`
-
-1. `bb.edn` - Project configuration
-2. `aishell.util` - Version, home directory, validation
-3. `aishell.output` - Error/warn/verbose (minimal, no spinner)
-4. `aishell.cli` - Argument parsing (global options only)
-5. `aishell.core` - Entry point, version/help dispatch
-
-**Exit criteria:** `./aishell --version` works
-
-### Phase 2: Docker Integration
-**Goal:** Can check Docker status, inspect images
-
-1. `aishell.docker` - Docker CLI wrapper functions
-   - `check-docker` (is Docker running?)
-   - `image-exists?`
-   - `get-image-label`
-
-**Exit criteria:** `./aishell` shows "Docker not running" or "No build found"
-
-### Phase 3: Build Command
-**Goal:** `aishell build --with-claude` creates image
-
-1. `aishell.state` - State file read/write
-2. `aishell.build` - Build command implementation
-   - Dockerfile generation (port embedded heredocs)
-   - Build argument handling
-   - State persistence
-
-**Exit criteria:** Can build image, state file created
-
-### Phase 4: Run Commands
-**Goal:** `aishell claude` launches container
-
-1. `aishell.config` - run.conf parsing
-2. `aishell.run` - Run/shell/exec logic
-   - Git identity detection
-   - Config mount building
-   - API env vars
-   - run.conf application
-
-**Exit criteria:** Full `aishell claude` flow works
-
-### Phase 5: Polish
-**Goal:** Feature parity with Bash version
-
-1. Update command (merge state)
-2. Extension Dockerfile handling
-3. Spinner for build progress
-4. Dockerfile hash change detection
-5. Security warnings for dangerous Docker args
-
-**Exit criteria:** All Bash features ported
-
-### Phase 6: Testing and Distribution
-**Goal:** Production-ready
-
-1. Unit tests for each namespace
-2. Integration tests for full flows
-3. Uberscript generation for single-file distribution
-4. Documentation
-
-## Patterns to Follow
-
-### Pattern 1: Pure Functions with Side Effects at Edges
-
-**What:** Keep business logic pure; isolate I/O at namespace boundaries.
-
-**Example:**
+2. **handle-build function** - Extend parsing and validation (line 107):
 ```clojure
-;; Pure: compute what to do
-(defn compute-build-args [opts]
+(defn handle-build [{:keys [opts]}]
+  (if (:help opts)
+    (print-build-help)
+    (let [;; Parse flags
+          claude-config (parse-with-flag (:with-claude opts))
+          opencode-config (parse-with-flag (:with-opencode opts))
+          codex-config (parse-with-flag (:with-codex opts))      ; ADD
+          gemini-config (parse-with-flag (:with-gemini opts))    ; ADD
+
+          ;; Validate versions before build
+          _ (validate-version (:version claude-config) "Claude Code")
+          _ (validate-version (:version opencode-config) "OpenCode")
+          _ (validate-version (:version codex-config) "OpenAI Codex CLI")   ; ADD
+          _ (validate-version (:version gemini-config) "Google Gemini CLI") ; ADD
+
+          ;; ... rest of build logic
+          result (build/build-base-image
+                   {:with-claude (:enabled? claude-config)
+                    :with-opencode (:enabled? opencode-config)
+                    :with-codex (:enabled? codex-config)         ; ADD
+                    :with-gemini (:enabled? gemini-config)       ; ADD
+                    :claude-version (:version claude-config)
+                    :opencode-version (:version opencode-config)
+                    :codex-version (:version codex-config)       ; ADD
+                    :gemini-version (:version gemini-config)     ; ADD
+                    :verbose (:verbose opts)
+                    :force (:force opts)})]
+
+      ;; Persist state
+      (state/write-state
+        {:with-claude (:enabled? claude-config)
+         :with-opencode (:enabled? opencode-config)
+         :with-codex (:enabled? codex-config)         ; ADD
+         :with-gemini (:enabled? gemini-config)       ; ADD
+         :claude-version (:version claude-config)
+         :opencode-version (:version opencode-config)
+         :codex-version (:version codex-config)       ; ADD
+         :gemini-version (:version gemini-config)     ; ADD
+         :image-tag (:image result)
+         :build-time (str (java.time.Instant/now))
+         :dockerfile-hash (hash/compute-hash templates/base-dockerfile)}))))
+```
+
+3. **dispatch function** - Add pass-through commands (line 214):
+```clojure
+(defn dispatch [args]
+  (let [unsafe? (boolean (some #{"--unsafe"} args))
+        clean-args (vec (remove #{"--unsafe"} args))]
+    (case (first clean-args)
+      "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
+      "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
+      "codex" (run/run-container "codex" (vec (rest clean-args)) {:unsafe unsafe?})     ; ADD
+      "gemini" (run/run-container "gemini" (vec (rest clean-args)) {:unsafe unsafe?})   ; ADD
+      "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args)) {:unsafe unsafe? :skip-pre-start true})
+      ;; Standard dispatch for other commands
+      (if unsafe?
+        (run/run-container nil [] {:unsafe true})
+        (cli/dispatch dispatch-table args {:error-fn handle-error :restrict true})))))
+```
+
+4. **print-help function** - Update commands list (line 69):
+```clojure
+(println (str "  " output/CYAN "claude" output/NC "     Run Claude Code"))
+(println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode"))
+(println (str "  " output/CYAN "codex" output/NC "      Run OpenAI Codex CLI"))     ; ADD
+(println (str "  " output/CYAN "gemini" output/NC "     Run Google Gemini CLI"))    ; ADD
+(println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))
+```
+
+**Rationale:** Follows exact same pattern as existing claude/opencode commands. No new abstractions needed.
+
+### 3. Run Commands
+
+**File:** `src/aishell/run.clj`
+
+**Changes:**
+
+1. **verify-harness-available function** - Add new cases (line 18):
+```clojure
+(defn- verify-harness-available
+  [harness-name state-key state]
+  (when-not (get state state-key)
+    (output/error
+      (str (case harness-name
+             "claude" "Claude Code"
+             "opencode" "OpenCode"
+             "codex" "OpenAI Codex CLI"      ; ADD
+             "gemini" "Google Gemini CLI")   ; ADD
+           " not installed. Run: aishell build --with-"
+           harness-name))))
+```
+
+2. **run-container function** - Add verification and command cases (line 83, 151):
+```clojure
+;; Verify harness if requested (around line 83)
+(case cmd
+  "claude" (verify-harness-available "claude" :with-claude state)
+  "opencode" (verify-harness-available "opencode" :with-opencode state)
+  "codex" (verify-harness-available "codex" :with-codex state)       ; ADD
+  "gemini" (verify-harness-available "gemini" :with-gemini state)    ; ADD
+  nil)
+
+;; Determine command to run in container (around line 151)
+container-cmd (case cmd
+                "claude"
+                (into ["claude" "--dangerously-skip-permissions"]
+                      merged-args)
+
+                "opencode"
+                (into ["opencode"] merged-args)
+
+                "codex"                             ; ADD
+                (into ["codex"] merged-args)        ; ADD
+
+                "gemini"                            ; ADD
+                (into ["gemini"] merged-args)       ; ADD
+
+                "gitleaks"
+                (into ["gitleaks"] harness-args)
+
+                ;; Default: bash shell
+                ["/bin/bash"])
+```
+
+**Rationale:** Direct pass-through like OpenCode. No special flags needed (unlike Claude's --dangerously-skip-permissions).
+
+### 4. Config Mounting
+
+**File:** `src/aishell/docker/run.clj`
+
+**Changes:**
+
+**build-harness-config-mounts function** - Add config paths (line 132):
+```clojure
+(defn- build-harness-config-mounts
+  []
+  (let [home (util/get-home)
+        config-paths [[(str home "/.claude") (str home "/.claude")]
+                      [(str home "/.claude.json") (str home "/.claude.json")]
+                      [(str home "/.config/opencode") (str home "/.config/opencode")]
+                      [(str home "/.local/share/opencode") (str home "/.local/share/opencode")]
+                      [(str home "/.config/codex") (str home "/.config/codex")]           ; ADD (Codex config)
+                      [(str home "/.local/share/codex") (str home "/.local/share/codex")] ; ADD (Codex data)
+                      [(str home "/.config/gemini-cli") (str home "/.config/gemini-cli")] ; ADD (Gemini config)
+                      [(str home "/.local/share/gemini-cli") (str home "/.local/share/gemini-cli")]]] ; ADD (Gemini data)
+    (->> config-paths
+         (filter (fn [[src _]] (fs/exists? src)))
+         (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
+```
+
+**Rationale:**
+- Codex likely uses ~/.config/codex (XDG standard, similar to OpenCode)
+- Gemini CLI likely uses ~/.config/gemini-cli (per npm package name pattern)
+- Both may use ~/.local/share for auth/cache (standard XDG data location)
+- Mounting conditionally (only if exists) prevents mount errors
+
+**Note:** These paths are inferred from standard XDG conventions and npm package patterns. During implementation, verify actual config locations by:
+1. Installing harness locally
+2. Running `codex` or `gemini` command
+3. Checking `ls -la ~/.*` and `ls -la ~/.config/` for created directories
+4. Adjust paths in implementation if different
+
+### 5. Build State
+
+**File:** `src/aishell/state.clj`
+
+**Changes:**
+
+**State schema documentation** - Update comment (line 25):
+```clojure
+"Write state to file, creating directory if needed.
+
+   State schema:
+   {:with-claude true            ; boolean
+    :with-opencode false         ; boolean
+    :with-codex false            ; boolean  (ADD)
+    :with-gemini false           ; boolean  (ADD)
+    :claude-version \"2.0.22\"   ; string or nil
+    :opencode-version nil        ; string or nil
+    :codex-version nil           ; string or nil  (ADD)
+    :gemini-version nil          ; string or nil  (ADD)
+    :image-tag \"aishell:base\"  ; string
+    :build-time \"2026-01-20...\" ; ISO-8601 string
+    :dockerfile-hash \"abc123def456\"} ; 12-char SHA-256 hash"
+```
+
+**Rationale:** State schema is just documentation. The map is flexible (EDN accepts any keys).
+
+### 6. Version Pinning
+
+**Already implemented!** The existing `parse-with-flag` function (cli.clj line 44) handles `--with-X=VERSION` syntax generically.
+
+**Usage examples:**
+```bash
+# Latest versions
+aishell build --with-codex --with-gemini
+
+# Pinned versions
+aishell build --with-codex=1.2.0 --with-gemini=0.24.0
+
+# Mixed
+aishell build --with-claude=2.0.22 --with-codex
+```
+
+**Rationale:** No new code needed. Existing flag parser works for any `--with-X` flag.
+
+### 7. Docker Build Args
+
+**File:** `src/aishell/docker/build.clj`
+
+**Changes:**
+
+1. **build-docker-args function** - Add new build args (line 60):
+```clojure
+(defn- build-docker-args
+  [{:keys [with-claude with-opencode with-codex with-gemini
+           claude-version opencode-version codex-version gemini-version]} dockerfile-hash]
   (cond-> []
-    (:no-cache opts) (conj "--no-cache")
-    (:with-claude opts) (conj "--build-arg" "WITH_CLAUDE=true")))
-
-;; Impure: execute it
-(defn do-build [opts]
-  (let [args (compute-build-args opts)]
-    (apply shell "docker" "build" args)))
+    with-claude (conj "--build-arg" "WITH_CLAUDE=true")
+    with-opencode (conj "--build-arg" "WITH_OPENCODE=true")
+    with-codex (conj "--build-arg" "WITH_CODEX=true")         ; ADD
+    with-gemini (conj "--build-arg" "WITH_GEMINI=true")       ; ADD
+    claude-version (conj "--build-arg" (str "CLAUDE_VERSION=" claude-version))
+    opencode-version (conj "--build-arg" (str "OPENCODE_VERSION=" opencode-version))
+    codex-version (conj "--build-arg" (str "CODEX_VERSION=" codex-version))      ; ADD
+    gemini-version (conj "--build-arg" (str "GEMINI_VERSION=" gemini-version))   ; ADD
+    true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))))
 ```
 
-### Pattern 2: Data-Driven Dispatch
-
-**What:** Use maps for command dispatch rather than long case statements.
-
-**Example:**
+2. **version-changed? function** - Add new version checks (line 38):
 ```clojure
-(def commands
-  {:build   {:fn do-build   :spec build-spec}
-   :update  {:fn do-update  :spec build-spec}
-   :claude  {:fn do-claude  :spec run-spec}
-   :opencode {:fn do-opencode :spec run-spec}})
-
-(defn dispatch [{:keys [command] :as opts}]
-  (if-let [cmd (commands (keyword command))]
-    ((:fn cmd) opts)
-    (do-shell opts)))
+(defn version-changed?
+  [opts state]
+  (or
+    ;; Claude version changed
+    (and (:with-claude opts)
+         (not= (:claude-version opts) (:claude-version state)))
+    ;; OpenCode version changed
+    (and (:with-opencode opts)
+         (not= (:opencode-version opts) (:opencode-version state)))
+    ;; Codex version changed (ADD)
+    (and (:with-codex opts)
+         (not= (:codex-version opts) (:codex-version state)))
+    ;; Gemini version changed (ADD)
+    (and (:with-gemini opts)
+         (not= (:gemini-version opts) (:gemini-version state)))
+    ;; Harness added that wasn't in previous build
+    (and (:with-claude opts) (not (:with-claude state)))
+    (and (:with-opencode opts) (not (:with-opencode state)))
+    (and (:with-codex opts) (not (:with-codex state)))       ; ADD
+    (and (:with-gemini opts) (not (:with-gemini state)))))   ; ADD
 ```
 
-### Pattern 3: Explicit Error Boundaries
-
-**What:** Catch exceptions at command boundaries, not deep in call stack.
-
-**Example:**
+3. **build-base-image function** - Add to build summary output (line 165):
 ```clojure
-(defn -main [& args]
-  (try
-    (let [opts (parse-args args)]
-      (dispatch opts))
-    (catch clojure.lang.ExceptionInfo e
-      (error (ex-message e)))
-    (catch Exception e
-      (error (str "Unexpected error: " (.getMessage e))))))
+(when-not quiet
+  (println (str "Built " base-image-tag
+                " (" (format-duration duration)
+                (when size (str ", " size)) ")"))
+  (when (:with-claude opts)
+    (println (format-harness-line "Claude Code" (:claude-version opts))))
+  (when (:with-opencode opts)
+    (println (format-harness-line "OpenCode" (:opencode-version opts))))
+  (when (:with-codex opts)                                                      ; ADD
+    (println (format-harness-line "OpenAI Codex CLI" (:codex-version opts))))  ; ADD
+  (when (:with-gemini opts)                                                     ; ADD
+    (println (format-harness-line "Google Gemini CLI" (:gemini-version opts)))) ; ADD
 ```
 
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Global Mutable State
-
-**What:** Using `def` or `defonce` atoms for state that should be threaded through functions.
-
-**Why bad:** Hard to test, implicit dependencies.
-
-**Instead:** Pass state as arguments, return updated state.
-
-### Anti-Pattern 2: String Building for Commands
-
-**What:** Building command strings then splitting them.
-
+4. **build-base-image return map** - Add to result (line 169):
 ```clojure
-;; Bad
-(shell (str "docker build " (when no-cache "--no-cache") " -t " tag))
+{:success true
+ :image base-image-tag
+ :duration duration
+ :size size
+ :with-claude (:with-claude opts)
+ :with-opencode (:with-opencode opts)
+ :with-codex (:with-codex opts)         ; ADD
+ :with-gemini (:with-gemini opts)       ; ADD
+ :claude-version (:claude-version opts)
+ :opencode-version (:opencode-version opts)
+ :codex-version (:codex-version opts)   ; ADD
+ :gemini-version (:gemini-version opts)} ; ADD
 ```
 
-**Why bad:** Shell injection risk, quoting issues.
+**Rationale:** Mechanically adds new harnesses to existing build pipeline. No logic changes.
 
-**Instead:** Use varargs with `shell`:
+### 8. Config YAML Support
+
+**File:** `src/aishell/config.clj`
+
+**Changes:**
+
+1. **known-harnesses set** - Add new harness names (line 13):
 ```clojure
-;; Good
-(apply shell (cond-> ["docker" "build"]
-               no-cache (conj "--no-cache")
-               true (conj "-t" tag)))
+(def known-harnesses
+  #{"claude" "opencode" "codex" "gemini"})  ; ADD codex and gemini
 ```
 
-### Anti-Pattern 3: Deep Nesting
+**Rationale:** Enables `harness_args` validation for new harnesses in config.yaml:
+```yaml
+harness_args:
+  codex:
+    - --model=gpt-4
+  gemini:
+    - --temperature=0.7
+```
 
-**What:** Deeply nested `let`/`if`/`when` forms.
+## Suggested Build Order
 
-**Instead:** Use threading macros, early returns via `when-not`/`throw`.
+Implement changes in this order to maintain working state:
 
-## Confidence Assessment
+1. **Dockerfile template** (templates.clj)
+   - Add WITH_CODEX, WITH_GEMINI build args
+   - Add npm install blocks for both harnesses
+   - Test: `aishell build --with-codex --with-gemini` (should build successfully)
 
-| Area | Level | Reasoning |
-|------|-------|-----------|
-| Project Structure | HIGH | Standard Babashka patterns, well-documented in [Babashka book](https://book.babashka.org/) |
-| CLI Parsing | HIGH | [babashka.cli](https://github.com/babashka/cli) is built-in since bb 0.9.160 |
-| Process Execution | HIGH | [babashka.process](https://github.com/babashka/process) is mature, built-in |
-| Docker Integration | HIGH | Shell wrapping is straightforward, no complex API needed |
-| State Management | HIGH | EDN read/write is trivial, atomic file ops via babashka.fs |
-| Cleanup Handlers | MEDIUM | JVM shutdown hooks work, but less battle-tested than Bash traps |
-| Cross-Platform | MEDIUM | babashka.process handles tokenization, but Windows path edge cases possible |
+2. **Build orchestration** (docker/build.clj)
+   - Add codex/gemini to build-docker-args
+   - Add to version-changed? checks
+   - Add to build summary output
+   - Test: Rebuild should detect version changes
 
-## Open Questions
+3. **CLI routing** (cli.clj)
+   - Add :with-codex and :with-gemini to build-spec
+   - Extend handle-build with parsing and validation
+   - Add "codex" and "gemini" cases to dispatch
+   - Update help text
+   - Test: `aishell build --help` shows new flags, `aishell --help` shows new commands
 
-1. **Uberscript vs bb invocation:** Should the distributed artifact be a single uberscript file, or require bb installation?
-   - Recommendation: Uberscript for portability
+4. **State management** (state.clj)
+   - Update state schema documentation
+   - Test: Build state persists new fields
 
-2. **Spinner implementation:** Native Babashka or shell out to external tool?
-   - Recommendation: Native using threads and `System.console`
+5. **Run commands** (run.clj)
+   - Add codex/gemini to verify-harness-available
+   - Add to container-cmd case
+   - Test: `aishell codex` fails with "not installed" if not built
+   - Test: `aishell build --with-codex && aishell codex` runs successfully
 
-3. **Windows support:** Current Bash script is Linux/macOS only. Extend to Windows?
-   - Recommendation: Defer to post-MVP; Babashka enables this but Docker behavior differs
+6. **Config mounting** (docker/run.clj)
+   - Add codex/gemini paths to build-harness-config-mounts
+   - Test: Install harnesses locally, verify config dirs are mounted
+   - Adjust paths if actual locations differ from XDG standard assumptions
+
+7. **Config YAML support** (config.clj)
+   - Add to known-harnesses set
+   - Test: harness_args validation works for new harnesses
+
+**Testing progression:**
+- After step 1: Can build image with new harnesses
+- After step 3: Can invoke new run commands
+- After step 5: Full integration working
+- After step 6: Config persistence working
+- After step 7: YAML config support complete
+
+## Files to Modify
+
+| File | Lines Changed | Purpose | Complexity |
+|------|---------------|---------|------------|
+| src/aishell/docker/templates.clj | ~20 | Add Dockerfile build args and npm install blocks | Low |
+| src/aishell/docker/build.clj | ~15 | Add to build-docker-args, version-changed?, output | Low |
+| src/aishell/cli.clj | ~30 | Add build flags, dispatch cases, help text | Low |
+| src/aishell/state.clj | ~5 | Update state schema docs | Trivial |
+| src/aishell/run.clj | ~10 | Add harness verification and command cases | Low |
+| src/aishell/docker/run.clj | ~5 | Add config mount paths | Low |
+| src/aishell/config.clj | ~1 | Add to known-harnesses set | Trivial |
+
+**Total estimated changes:** ~85 lines across 7 files
+
+**Complexity assessment:** LOW - All changes follow established patterns mechanically. No new abstractions or logic needed.
+
+## Architecture Patterns Followed
+
+1. **Consistent harness treatment** - Codex and Gemini added exactly like Claude/OpenCode
+2. **Version pinning via build args** - Same `--with-X=VERSION` pattern
+3. **Conditional mounting** - Only mount config dirs if they exist (prevents errors)
+4. **Pass-through commands** - CLI routes to docker exec without interception
+5. **State-based verification** - Check build state before running harness
+6. **XDG compliance** - Config paths follow XDG Base Directory spec
+
+## Known Unknowns
+
+Items requiring verification during implementation:
+
+1. **Codex config location** - Assumed ~/.config/codex but needs verification
+   - Verify: Install `@openai/codex` globally, run `codex`, check created directories
+   - Update: docker/run.clj config paths if different
+
+2. **Gemini CLI config location** - Assumed ~/.config/gemini-cli but needs verification
+   - Verify: Install `@google/gemini-cli` globally, run `gemini`, check created directories
+   - Update: docker/run.clj config paths if different
+
+3. **Codex/Gemini permission flags** - Assumed none needed (unlike Claude's --dangerously-skip-permissions)
+   - Verify: Run in container, check for permission prompts
+   - Update: run.clj container-cmd if flags needed
+
+4. **npm version syntax** - Assumed `@openai/codex@VERSION` works
+   - Verify: Test `npm install -g @openai/codex@1.2.0` syntax
+   - Update: templates.clj if syntax differs
+
+## Migration from Claude/OpenCode Pattern
+
+If implementation reveals differences from Claude/OpenCode patterns:
+
+**If Codex/Gemini use native installers (not npm):**
+- Update templates.clj to use curl installer like OpenCode
+- Adjust PATH or symlink strategy accordingly
+
+**If config locations differ from XDG standard:**
+- Update docker/run.clj mount paths based on actual locations
+- Document actual paths in code comments
+
+**If special flags needed:**
+- Add to run.clj container-cmd case like Claude's --dangerously-skip-permissions
+
+**If authentication differs:**
+- Update API key passthrough in docker/run.clj if needed
+- Document in config.yaml examples
 
 ## Sources
 
-- [Babashka CLI](https://github.com/babashka/cli) - Argument parsing library
-- [Babashka Process](https://github.com/babashka/process) - Subprocess execution
-- [Babashka FS](https://github.com/babashka/fs) - File system utilities
-- [Babashka Book](https://book.babashka.org/) - Project structure and organization
-- [cli-tools](https://github.com/hlship/cli-tools) - Subcommand patterns
-- [Bash and Babashka Equivalents](https://github.com/babashka/babashka/wiki/Bash-and-Babashka-equivalents) - Migration patterns
+**Official Documentation (HIGH confidence):**
+- [OpenAI Codex CLI - npm package](https://www.npmjs.com/package/@openai/codex) - Installation method, version info
+- [OpenAI Codex CLI Docs](https://developers.openai.com/codex/cli/) - Configuration, usage
+- [Google Gemini CLI - npm package](https://www.npmjs.com/package/@google/gemini-cli) - Installation method, version 0.24.0
+- [Google Gemini CLI Docs](https://geminicli.com/docs/) - Installation, configuration
+
+**Existing Codebase (HIGH confidence):**
+- Phase 03 Research (harness-integration/03-RESEARCH.md) - Claude/OpenCode installation patterns
+- Current implementation analysis - Established architecture patterns
+
+**Standards (HIGH confidence):**
+- [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) - Config path conventions
+
+---
+
+**Research completed:** 2026-01-24
+**Implementation ready:** Yes - All integration points identified with line-level precision
