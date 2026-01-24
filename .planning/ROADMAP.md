@@ -118,11 +118,12 @@ Plans:
   3. Custom patterns extend default patterns (not replace)
   4. User can allowlist specific files to suppress false positives
   5. YAML config parsing is safe (no arbitrary object instantiation)
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 23-01-PLAN.md — Gitignore awareness for high-severity findings
 - [x] 23-02-PLAN.md — Custom patterns and allowlist configuration
+- [x] 23-03-PLAN.md — UAT gap fixes (custom severity, allowlist nil paths)
 
 ## Progress
 
@@ -136,7 +137,7 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 | 20. Filename-based Detection | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 21. Extended Filename Patterns | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 22. Gitleaks Integration | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
-| 23. Context & Configuration | v2.1 | 2/2 | ✓ Complete | 2026-01-24 |
+| 23. Context & Configuration | v2.1 | 3/3 | ✓ Complete | 2026-01-24 |
 
 ---
 *Roadmap created: 2026-01-22*
