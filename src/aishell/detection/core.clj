@@ -30,15 +30,14 @@
 (defn- file-allowlisted?
   "Check if file path matches any allowlist entry.
    Supports exact paths and glob patterns.
-   Allowlist entries can be strings or maps with :path key.
+   Allowlist entries must be maps with :path key (and :reason for documentation).
    Returns false for nil paths (summary findings should never be allowlisted)."
   [file-path allowlist project-dir]
   (when (and file-path (seq allowlist))  ;; Guard against nil file-path
     (let [rel-path (str (fs/relativize project-dir (fs/absolutize file-path)))]
       (some (fn [entry]
-              ;; Handle both string entries and map entries with :path
-              (let [pattern (if (string? entry) entry (:path entry))]
-                (when pattern  ;; Guard against nil pattern
+              (let [pattern (:path entry)]
+                (when pattern  ;; Guard against entries without :path
                   (or (= pattern rel-path)
                       (= pattern (fs/file-name file-path))  ;; Allow filename-only matching
                       (fs/match rel-path (str "glob:" pattern))))))
