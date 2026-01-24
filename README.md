@@ -12,6 +12,8 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in
 - **Config persistence** - Mounts `~/.claude` and OpenCode configs automatically
 - **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
 - **Pre-start commands** - Run sidecar services before shell/harness
+- **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
+- **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
 
 ## Why aishell?
 
@@ -105,6 +107,9 @@ aishell opencode
 
 # Pass arguments to harness
 aishell claude --help
+
+# Run Gitleaks secret scanner
+aishell gitleaks detect
 ```
 
 ### Update to latest versions
@@ -155,6 +160,73 @@ pre_start: "redis-server --daemonize yes"
 
 **Config inheritance:** Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.
 
+### Sensitive file detection
+
+Before launching a container, aishell scans your project for potentially sensitive files and warns you before AI agents can access them.
+
+**Severity levels:**
+- **High** - SSH keys, private keys, cloud credentials, package manager tokens → requires confirmation
+- **Medium** - Environment files, tool configs, database credentials → informational warning
+- **Low** - Template files (.env.example) → informational notice
+
+```
+$ aishell claude
+⚠ Sensitive files detected:
+
+  HIGH: SSH private key
+    ~/.ssh/id_rsa
+
+  MEDIUM: Environment file
+    .env
+    .env.local
+
+Proceed? (y/n)
+```
+
+**Bypass for CI/automation:**
+
+```bash
+aishell claude --unsafe  # Skip confirmation prompts
+```
+
+**Gitleaks for deep scanning:**
+
+Use `aishell gitleaks` for content-based secret detection inside the container:
+
+```bash
+# Run gitleaks scan
+aishell gitleaks detect
+
+# Run with specific options
+aishell gitleaks detect --verbose --no-git
+```
+
+aishell tracks when you last ran gitleaks and reminds you if it's been more than 7 days.
+
+**Custom patterns and allowlist:**
+
+Add to `.aishell/config.yaml`:
+
+```yaml
+detection:
+  # Add custom patterns (extends defaults)
+  custom_patterns:
+    "*.secret": high
+    "internal-*.json":
+      severity: medium
+
+  # Suppress false positives
+  allowlist:
+    - path: "test/fixtures/fake-key.pem"
+      reason: "Test fixture, not a real key"
+
+  # Disable freshness warnings (default: true)
+  gitleaks_freshness_check: false
+
+  # Custom staleness threshold in days (default: 7)
+  gitleaks_freshness_days: 14
+```
+
 ### Git safe.directory
 
 When you run a container, aishell configures git to trust the mounted project directory by adding it to `safe.directory` in the container's gitconfig.
@@ -185,6 +257,9 @@ Built on `debian:bookworm-slim` with:
 **Runtimes:**
 - Node.js 24 (with npm, npx)
 - Babashka
+
+**Security tools:**
+- Gitleaks v8.30.0 (secret scanning)
 
 **CLI tools:**
 - git, curl, jq, ripgrep, vim
