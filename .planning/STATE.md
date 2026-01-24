@@ -54,6 +54,8 @@ Recent decisions affecting current work:
 
 - [23-03]: Shorthand YAML syntax support: keyword/string opts used directly as severity
 - [23-03]: Nil path guard: summary findings bypass allowlist entirely
+- [23-03]: Allowlist entries must be maps with :path and :reason keys (not simple strings)
+- [23-03]: fs/match returns collection not boolean - use seq for truthy check
 - [23-02]: Custom patterns extend defaults (don't replace) via concatenation in scan-project
 - [23-02]: Allowlisted files completely hidden from output (not shown as 'allowed')
 - [23-02]: Invalid severity values in custom patterns skipped silently (no error, just warning)
