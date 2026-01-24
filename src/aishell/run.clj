@@ -125,10 +125,15 @@
             ;; Scan for sensitive files (unless --unsafe or gitleaks command)
             ;; Uses project-dir already bound at line 71
             _ (when-not (or (:unsafe opts) (= cmd "gitleaks"))
-                (let [findings (detection/scan-project project-dir)]
-                  (when (seq findings)
-                    (detection/display-warnings project-dir findings)
-                    (detection/confirm-if-needed findings))))
+                (let [detection-config (get cfg :detection {})
+                      allowlist (:allowlist detection-config [])
+                      ;; scan-project checks :enabled and uses :custom_patterns
+                      findings (detection/scan-project project-dir detection-config)
+                      ;; filter out allowlisted files
+                      filtered-findings (detection/filter-allowlisted findings allowlist project-dir)]
+                  (when (seq filtered-findings)
+                    (detection/display-warnings project-dir filtered-findings)
+                    (detection/confirm-if-needed filtered-findings))))
 
             ;; Display gitleaks freshness warning (for shell/claude/opencode, not gitleaks itself)
             _ (when-not (= cmd "gitleaks")

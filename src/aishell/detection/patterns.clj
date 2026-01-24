@@ -275,8 +275,10 @@
    Returns vector of findings with :custom? true marker."
   [project-dir excluded-dirs custom-patterns-map]
   (when (seq custom-patterns-map)
-    (for [[pattern-str opts] custom-patterns-map
-          :let [severity (keyword (or (:severity opts) "medium"))
+    (for [[pattern-key opts] custom-patterns-map
+          :let [;; Pattern may be keyword or string from YAML parsing
+                pattern-str (if (keyword? pattern-key) (name pattern-key) (str pattern-key))
+                severity (keyword (or (:severity opts) "medium"))
                 description (or (:description opts) "Custom pattern match")]
           :when (#{:high :medium :low} severity)  ;; Skip invalid severities
           path (fs/glob project-dir pattern-str {:hidden true})
