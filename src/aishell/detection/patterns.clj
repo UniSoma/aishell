@@ -270,6 +270,24 @@
        :severity :medium
        :reason "Database credentials file"})))
 
+(defn detect-custom-patterns
+  "Detect files matching custom glob patterns from config.
+   Returns vector of findings with :custom? true marker."
+  [project-dir excluded-dirs custom-patterns-map]
+  (when (seq custom-patterns-map)
+    (for [[pattern-str opts] custom-patterns-map
+          :let [severity (keyword (or (:severity opts) "medium"))
+                description (or (:description opts) "Custom pattern match")]
+          :when (#{:high :medium :low} severity)  ;; Skip invalid severities
+          path (fs/glob project-dir pattern-str {:hidden true})
+          :when (not (in-excluded-dir? path excluded-dirs))]
+      {:path (str path)
+       :type :custom-pattern
+       :severity severity
+       :reason description
+       :pattern pattern-str
+       :custom? true})))
+
 (defn group-findings
   "Group findings by type and apply threshold-of-3 summarization.
    Returns seq of findings (individual or summary)."

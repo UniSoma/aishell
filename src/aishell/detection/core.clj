@@ -7,7 +7,8 @@
             [aishell.output :as output]
             [aishell.detection.formatters :as formatters]
             [aishell.detection.patterns :as patterns]
-            [aishell.detection.gitignore :as gitignore]))
+            [aishell.detection.gitignore :as gitignore]
+            [aishell.config :as config]))
 
 ;; Directories to skip during scanning (performance optimization)
 (def excluded-dirs
@@ -26,27 +27,54 @@
   (let [path-str (str path)]
     (some #(str/includes? path-str (str "/" % "/")) excluded-dirs)))
 
+(defn- file-allowlisted?
+  "Check if file path matches any allowlist entry.
+   Supports exact paths and glob patterns."
+  [file-path allowlist project-dir]
+  (when (seq allowlist)
+    (let [rel-path (str (fs/relativize project-dir (fs/absolutize file-path)))]
+      (some (fn [{:keys [path]}]
+              (or (= path rel-path)
+                  (= path (fs/file-name file-path))  ;; Allow filename-only matching
+                  (fs/match rel-path (str "glob:" path))))
+            allowlist))))
+
+(defn filter-allowlisted
+  "Remove findings that match allowlist entries.
+   Allowlisted files are completely hidden (no 'allowed' status)."
+  [findings allowlist project-dir]
+  (if (seq allowlist)
+    (remove #(file-allowlisted? (:path %) allowlist project-dir) findings)
+    findings))
+
 (defn scan-project
   "Scan project directory for sensitive files.
-   Returns vector of findings: [{:path :type :severity :reason}]"
-  [project-dir]
-  (let [all-findings (concat
-                       ;; Phase 20 detectors
-                       (patterns/detect-env-files project-dir excluded-dirs)
-                       (patterns/detect-ssh-keys project-dir excluded-dirs)
-                       (patterns/detect-key-containers project-dir excluded-dirs)
-                       (patterns/detect-pem-key-files project-dir excluded-dirs)
-                       ;; Phase 21-01 cloud credential detectors
-                       (patterns/detect-gcp-credentials project-dir excluded-dirs)
-                       (patterns/detect-terraform-state project-dir excluded-dirs)
-                       (patterns/detect-kubeconfig project-dir excluded-dirs)
-                       ;; Phase 21-02 package manager, app secrets, database detectors
-                       (patterns/detect-package-manager-credentials project-dir excluded-dirs)
-                       (patterns/detect-tool-configs project-dir excluded-dirs)
-                       (patterns/detect-rails-secrets project-dir excluded-dirs)
-                       (patterns/detect-secret-pattern-files project-dir excluded-dirs)
-                       (patterns/detect-database-credentials project-dir excluded-dirs))]
-    (patterns/group-findings all-findings)))
+   Returns vector of findings, filtered by allowlist."
+  [project-dir & [detection-config]]
+  ;; Check if detection is disabled via config
+  (let [enabled? (get detection-config :enabled true)]
+    (if-not enabled?
+      []  ;; Detection disabled, return empty findings
+      (let [custom-patterns (get detection-config :custom_patterns {})
+            all-findings (concat
+                           ;; Phase 20 detectors
+                           (patterns/detect-env-files project-dir excluded-dirs)
+                           (patterns/detect-ssh-keys project-dir excluded-dirs)
+                           (patterns/detect-key-containers project-dir excluded-dirs)
+                           (patterns/detect-pem-key-files project-dir excluded-dirs)
+                           ;; Phase 21-01 cloud credential detectors
+                           (patterns/detect-gcp-credentials project-dir excluded-dirs)
+                           (patterns/detect-terraform-state project-dir excluded-dirs)
+                           (patterns/detect-kubeconfig project-dir excluded-dirs)
+                           ;; Phase 21-02 package manager, app secrets, database detectors
+                           (patterns/detect-package-manager-credentials project-dir excluded-dirs)
+                           (patterns/detect-tool-configs project-dir excluded-dirs)
+                           (patterns/detect-rails-secrets project-dir excluded-dirs)
+                           (patterns/detect-secret-pattern-files project-dir excluded-dirs)
+                           (patterns/detect-database-credentials project-dir excluded-dirs)
+                           ;; Phase 23-02 custom patterns
+                           (patterns/detect-custom-patterns project-dir excluded-dirs custom-patterns))]
+        (patterns/group-findings all-findings)))))
 
 (defn group-by-severity
   "Group findings by severity and sort (high first, then medium, then low)."
