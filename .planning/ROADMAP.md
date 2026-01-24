@@ -6,7 +6,7 @@
 - ✅ **v1.1 Per-project Runtime Configuration** - Phases 9-10 (shipped 2026-01-19)
 - ✅ **v1.2 Hardening & Edge Cases** - Phases 11-12 (shipped 2026-01-19)
 - ✅ **v2.0 Babashka Rewrite** - Phases 13-18 (shipped 2026-01-21)
-- 🚧 **v2.1 Safe AI Context Protection** - Phases 19-23 (in progress)
+- ✅ **v2.1 Safe AI Context Protection** - Phases 19-23 (shipped 2026-01-24)
 
 ## Phases
 
@@ -17,7 +17,7 @@ See MILESTONES.md for completed milestone details.
 
 </details>
 
-### 🚧 v2.1 Safe AI Context Protection (In Progress)
+### ✅ v2.1 Safe AI Context Protection (Shipped)
 
 **Milestone Goal:** Proactively warn users about sensitive data in their project directory before AI agents access it.
 
@@ -29,7 +29,7 @@ See MILESTONES.md for completed milestone details.
 - [x] **Phase 20: Filename-based Detection** - Env files, SSH keys by name, key containers
 - [x] **Phase 21: Extended Filename Patterns** - Cloud creds, package managers, app secrets (file presence only)
 - [x] **Phase 22: Gitleaks Integration** - Base image, `aishell gitleaks` command, scan freshness warning
-- [ ] **Phase 23: Context & Configuration** - Gitignore awareness, custom patterns, allowlist
+- [x] **Phase 23: Context & Configuration** - Gitignore awareness, custom patterns, allowlist
 
 ## Phase Details
 
@@ -121,8 +121,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 23-01-PLAN.md — Gitignore awareness for high-severity findings
-- [ ] 23-02-PLAN.md — Custom patterns and allowlist configuration
+- [x] 23-01-PLAN.md — Gitignore awareness for high-severity findings
+- [x] 23-02-PLAN.md — Custom patterns and allowlist configuration
 
 ## Progress
 
@@ -136,8 +136,8 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 | 20. Filename-based Detection | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 21. Extended Filename Patterns | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
 | 22. Gitleaks Integration | v2.1 | 2/2 | ✓ Complete | 2026-01-23 |
-| 23. Context & Configuration | v2.1 | 0/2 | Not started | - |
+| 23. Context & Configuration | v2.1 | 2/2 | ✓ Complete | 2026-01-24 |
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-24 (Phase 23 planned)*
+*Last updated: 2026-01-24 (v2.1 milestone complete)*
