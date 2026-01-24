@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-01-24
+
+### Added
+
+- **Sensitive file detection**: Warnings before AI agents access potentially sensitive files
+  - Severity tiers (high/medium/low) with appropriate UX per level
+  - High-severity requires confirmation in interactive mode, `--unsafe` flag in CI
+  - Medium/low severity auto-proceeds with informational warnings
+- **Filename-based pattern detection** for 20+ sensitive file types:
+  - Environment files: `.env`, `.env.local`, `.env.production`, `.envrc`
+  - SSH keys: `id_rsa`, `id_dsa`, `id_ed25519`, `id_ecdsa`, `*.ppk`
+  - Key containers: `*.p12`, `*.pfx`, `*.jks`, `*.keystore`
+  - PEM/key files: `*.pem`, `*.key`
+  - Cloud credentials: `application_default_credentials.json`, `terraform.tfstate*`, kubeconfig
+  - Package manager credentials: `.pypirc`, `.netrc`
+  - Tool configs: `.npmrc`, `.yarnrc.yml`, `.docker/config.json`, `.terraformrc`
+  - Rails secrets: `master.key`, `credentials*.yml.enc`
+  - Secret pattern files: `secret.*`, `secrets.*`, `vault.*`, `token.*`, `apikey.*`, `private.*`
+  - Database credentials: `.pgpass`, `.my.cnf`, `database.yml`
+- **Gitleaks integration**: `aishell gitleaks` command for deep content-based secret scanning
+  - Gitleaks v8.30.0 binary included in base container image
+  - All gitleaks arguments passed through (e.g., `aishell gitleaks detect --verbose`)
+- **Scan freshness tracking**: Warnings when gitleaks hasn't been run recently
+  - Default threshold: 7 days (configurable via `gitleaks_freshness_days`)
+  - Disable with `gitleaks_freshness_check: false` in config
+- **Gitignore awareness**: High-severity files not in `.gitignore` show "(risk: may be committed)"
+- **Custom detection patterns**: Add patterns via `detection.custom_patterns` in config.yaml
+- **Allowlist**: Suppress false positives via `detection.allowlist` with path and reason
+
+### Changed
+
+- Base container image now includes Gitleaks v8.30.0 (multi-arch: amd64, arm64, armv7)
+
 ## [2.2.0] - 2026-01-22
 
 ### Added
