@@ -118,11 +118,11 @@ Plans:
   3. Custom patterns extend default patterns (not replace)
   4. User can allowlist specific files to suppress false positives
   5. YAML config parsing is safe (no arbitrary object instantiation)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 23-01: Gitignore awareness for filename-based findings
-- [ ] 23-02: Custom patterns and allowlist configuration
+- [ ] 23-01-PLAN.md — Gitignore awareness for high-severity findings
+- [ ] 23-02-PLAN.md — Custom patterns and allowlist configuration
 
 ## Progress
 
@@ -140,4 +140,4 @@ Phases execute in numeric order: 18.1 -> 19 -> 19.1 -> 19.2 -> 20 -> etc.
 
 ---
 *Roadmap created: 2026-01-22*
-*Last updated: 2026-01-23 (Phase 22 complete)*
+*Last updated: 2026-01-24 (Phase 23 planned)*
