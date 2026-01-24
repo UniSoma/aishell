@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 23 of 23 (Context & Configuration) - COMPLETE
-Plan: 2 of 2 in current phase - COMPLETE
-Status: Phase complete
-Last activity: 2026-01-24 - Completed 23-02-PLAN.md (detection configuration)
+Plan: 3 of 3 in current phase - COMPLETE (gap closure)
+Status: Phase complete (all UAT gaps fixed)
+Last activity: 2026-01-24 - Completed 23-03-PLAN.md (UAT gap fixes)
 
-Progress: [####################] 100% v2.0 | [██████████] 100% v2.1 (10/10 plans)
+Progress: [####################] 100% v2.0 | [███████████] 100% v2.1 (11/11 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [██████████] 10
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 10
-- Average duration: 2.8 min
-- Total execution time: 28.0 min
+- Total plans completed: 11
+- Average duration: 2.7 min
+- Total execution time: 30.0 min
 
 **By Phase:**
 
@@ -38,7 +38,7 @@ Progress: [####################] 100% v2.0 | [██████████] 10
 | 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
 | 22-gitleaks-integration | 2/2 | 5min | 2.5min |
-| 23-context-config | 2/2 | 7min | 3.5min |
+| 23-context-config | 3/3 | 9min | 3.0min |
 
 **v2.0 Reference (for comparison):**
 - Total plans completed: 22
@@ -52,6 +52,8 @@ Progress: [####################] 100% v2.0 | [██████████] 10
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [23-03]: Shorthand YAML syntax support: keyword/string opts used directly as severity
+- [23-03]: Nil path guard: summary findings bypass allowlist entirely
 - [23-02]: Custom patterns extend defaults (don't replace) via concatenation in scan-project
 - [23-02]: Allowlisted files completely hidden from output (not shown as 'allowed')
 - [23-02]: Invalid severity values in custom patterns skipped silently (no error, just warning)
@@ -119,13 +121,12 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 23-02-PLAN.md (detection configuration)
+Stopped at: Completed 23-03-PLAN.md (UAT gap fixes)
 Resume file: None
 
-23-02 Summary:
-User-configurable custom patterns and allowlists with merge strategy enabling project-specific detection rules and false positive suppression.
+23-03 Summary:
+Fixed 2 bugs found during UAT: custom pattern shorthand severity parsing and allowlist nil path filtering.
 
-Commits from 23-02:
-- 5574856: feat(23-02): add detection config key with merge strategy
-- 1cb144b: feat(23-02): add custom pattern detection and allowlist filtering
-- a7e9de2: feat(23-02): wire detection config into run.clj execution flow
+Commits from 23-03:
+- f629253: fix(23-03): handle shorthand YAML syntax in custom pattern severity
+- 3a59f4e: fix(23-03): guard file-allowlisted? against nil paths
