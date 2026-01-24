@@ -6,7 +6,8 @@
             [clojure.string :as str]
             [aishell.output :as output]
             [aishell.detection.formatters :as formatters]
-            [aishell.detection.patterns :as patterns]))
+            [aishell.detection.patterns :as patterns]
+            [aishell.detection.gitignore :as gitignore]))
 
 ;; Directories to skip during scanning (performance optimization)
 (def excluded-dirs
@@ -54,12 +55,35 @@
        (group-by :severity)
        (sort-by #(get severity-order (key %) 99))))
 
+(defn- annotate-with-gitignore-status
+  "Annotate high-severity findings with gitignore status.
+
+   For high-severity findings:
+   - If NOT in .gitignore (gitignored? returns false): append ' (risk: may be committed)' to reason
+   - If in .gitignore or unknown (true/nil): leave reason unchanged
+
+   For medium/low severity: return unchanged (no gitignore annotation)."
+  [project-dir findings]
+  (mapv (fn [finding]
+          (if (= :high (:severity finding))
+            (let [ignored? (gitignore/gitignored? project-dir (:path finding))]
+              (if (false? ignored?)  ; Explicitly not ignored (at risk)
+                (update finding :reason str " (risk: may be committed)")
+                finding))
+            finding))
+        findings))
+
 (defn display-warnings
   "Display warnings block to stderr, grouped by severity.
-   Follows the existing validation.clj warning pattern."
-  [findings]
+   Follows the existing validation.clj warning pattern.
+
+   Arguments:
+   - project-dir: Project directory for gitignore checking
+   - findings: Vector of findings to display"
+  [project-dir findings]
   (when (seq findings)
-    (let [sorted-groups (group-by-severity findings)]
+    (let [annotated-findings (annotate-with-gitignore-status project-dir findings)
+          sorted-groups (group-by-severity annotated-findings)]
       (println)  ; Blank line before warning block
       (binding [*out* *err*]
         (println (str output/BOLD "Sensitive files detected in project directory" output/NC))

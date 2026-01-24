@@ -127,7 +127,7 @@
             _ (when-not (or (:unsafe opts) (= cmd "gitleaks"))
                 (let [findings (detection/scan-project project-dir)]
                   (when (seq findings)
-                    (detection/display-warnings findings)
+                    (detection/display-warnings project-dir findings)
                     (detection/confirm-if-needed findings))))
 
             ;; Display gitleaks freshness warning (for shell/claude/opencode, not gitleaks itself)
