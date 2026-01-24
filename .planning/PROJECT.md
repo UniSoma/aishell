@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode) in isolated, ephemeral containers. Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
+A Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode, OpenAI Codex CLI, Google Gemini CLI) in isolated, ephemeral containers. Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
 
 ## Core Value
 
@@ -62,7 +62,11 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None - planning next milestone)
+**v2.4.0 (in progress) - Multi-Harness Support:**
+- OpenAI Codex CLI: User can run OpenAI Codex CLI with `aishell codex`
+- Google Gemini CLI: User can run Google Gemini CLI with `aishell gemini`
+- Harness-specific config mounting: Each harness's config directory mounted appropriately
+- Version pinning: Support --codex-version and --gemini-version flags at build time
 
 ### Out of Scope
 
@@ -75,6 +79,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.3.0 on 2026-01-24
+**In Progress:** v2.4.0 Multi-Harness Support
 
 **Codebase:** ~2,565 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
@@ -143,4 +148,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | XDG state directory for scan timestamps | Follows spec, separates state from config | Good |
 
 ---
-*Last updated: 2026-01-24 after v2.3.0 milestone*
+*Last updated: 2026-01-24 after starting v2.4.0 milestone*

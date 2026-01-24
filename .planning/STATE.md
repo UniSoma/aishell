@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v2.4.0 Multi-Harness Support (OpenAI Codex CLI, Google Gemini CLI)
 
 ## Current Position
 
-Phase: 23 of 23 (v2.3.0 complete)
-Plan: All complete
-Status: Milestone shipped
-Last activity: 2026-01-24 — v2.3.0 milestone archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-24 — Milestone v2.4.0 started
 
-Progress: [####################] 100% all milestones
+Progress: [                    ] 0% v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -73,7 +73,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: v2.3.0 milestone complete
+Stopped at: Starting v2.4.0 milestone
 Resume file: None
 
-Next step: `/gsd:new-milestone` to start next milestone (use `/clear` first for fresh context)
+Next step: Define requirements and create roadmap
