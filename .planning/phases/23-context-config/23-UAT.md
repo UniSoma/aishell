@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 23-context-config
 source: 23-01-SUMMARY.md, 23-02-SUMMARY.md
 started: 2026-01-24T02:10:00Z
@@ -55,17 +55,21 @@ skipped: 0
   reason: "User reported: Severity is being ignored, showing medium irrespective of what I put on the yaml. Example: detection.custom_patterns '*.frubas': high shows MEDIUM instead of HIGH"
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "detect-custom-patterns assumes opts is always a map, but shorthand YAML syntax '*.frubas': high passes string not map. Line 281 calls (:severity opts) on string which returns nil, defaulting to medium."
+  artifacts:
+    - path: "src/aishell/detection/patterns.clj"
+      issue: "Line 281: severity extraction doesn't handle shorthand syntax where opts is a string/keyword"
+  missing:
+    - "Check if opts is a map before extracting :severity; if string/keyword, use it directly as severity"
 
 - truth: "Allowlist only suppresses the specific files listed, not all warnings"
   status: failed
   reason: "User reported: Allowlist silences ALL warnings, not just the specified file. With allowlist for '.env' and custom_patterns for '*.frubas', the frubas warnings are also silenced. Removing allowlist makes frubas warnings appear."
   severity: major
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "file-allowlisted? doesn't guard against nil file paths. Summary findings from group-findings have :path nil. When checked against allowlist, nil path causes incorrect match, filtering out all summaries."
+  artifacts:
+    - path: "src/aishell/detection/core.clj"
+      issue: "Line 35: file-allowlisted? doesn't guard against nil file paths from summary findings"
+  missing:
+    - "Add early return in file-allowlisted? when file-path is nil (summary findings should never be allowlisted)"
