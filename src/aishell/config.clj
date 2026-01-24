@@ -8,7 +8,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
@@ -52,6 +52,27 @@
                          " harness_args: "
                          (clojure.string/join ", " unknown)))))))
 
+(defn validate-detection-config
+  "Validate detection config. Warns on invalid severity and missing reason.
+   Returns config unchanged."
+  [detection-config source-path]
+  (when detection-config
+    ;; Validate custom_patterns severities
+    (when-let [patterns (:custom_patterns detection-config)]
+      (doseq [[pattern opts] patterns]
+        (when-let [severity (:severity opts)]
+          (when-not (contains? #{"high" "medium" "low"} severity)
+            (output/warn (str "Invalid severity in " source-path
+                             " custom pattern '" pattern "': " severity
+                             "\nValid values: high, medium, low"))))))
+    ;; Validate allowlist entries have reason
+    (when-let [allowlist (:allowlist detection-config)]
+      (doseq [entry allowlist]
+        (when-not (:reason entry)
+          (output/warn (str "Missing reason in " source-path
+                           " allowlist entry for path: " (:path entry)))))))
+  detection-config)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -61,9 +82,11 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection"))))
     (when-let [harness-args (:harness_args config)]
-      (validate-harness-names harness-args source-path)))
+      (validate-harness-names harness-args source-path))
+    (when-let [detection (:detection config)]
+      (validate-detection-config detection source-path)))
   config)
 
 (defn merge-harness-args
@@ -78,21 +101,47 @@
                 global-normalized
                 project-normalized)))
 
+(defn merge-detection
+  "Custom merge for detection config.
+   - enabled: project wins (scalar, use contains? for false values)
+   - custom_patterns: map merge (project overrides global per-pattern)
+   - allowlist: concatenate (both apply, list merge)"
+  [global-detection project-detection]
+  (let [enabled (cond
+                  (contains? project-detection :enabled) (:enabled project-detection)
+                  (contains? global-detection :enabled) (:enabled global-detection)
+                  :else nil)
+        patterns (merge (:custom_patterns global-detection)
+                        (:custom_patterns project-detection))
+        allowlist (vec (concat (:allowlist global-detection [])
+                              (:allowlist project-detection [])))]
+    (cond-> {}
+      (some? enabled) (assoc :enabled enabled)
+      (seq patterns) (assoc :custom_patterns patterns)
+      (seq allowlist) (assoc :allowlist allowlist))))
+
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
    - Lists (mounts, ports, docker_args): concatenate (global + project)
    - Maps (env): shallow merge (project overrides global)
    - Map-of-lists (harness_args): merge keys, concatenate per-key lists
    - Scalars (pre_start): project replaces global
+   - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
   (let [list-keys #{:mounts :ports :docker_args}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
         scalar-keys #{:pre_start :gitleaks_freshness_check}
+        ;; Extract detection config before reduce
+        global-detection (get global-config :detection)
+        project-detection (get project-config :detection)
         merged (reduce
                 (fn [acc k]
                   (cond
+                    ;; Skip :detection - handled separately after reduce
+                    (= k :detection) acc
+
                     ;; List keys - concatenate
                     (contains? list-keys k)
                     (let [global-val (get global-config k)
@@ -126,9 +175,15 @@
 
                     :else acc))
                 {}
-                (clojure.set/union (set (keys global-config)) (set (keys project-config))))]
+                (clojure.set/union (set (keys global-config)) (set (keys project-config))))
+        ;; Merge detection config using custom strategy
+        merged-with-detection (if (or global-detection project-detection)
+                                (assoc merged :detection
+                                       (merge-detection (or global-detection {})
+                                                       (or project-detection {})))
+                                merged)]
     ;; Remove :extends key from result
-    (dissoc merged :extends)))
+    (dissoc merged-with-detection :extends)))
 
 (defn load-yaml-config
   "Load and parse YAML config from path. Returns parsed config or nil on error."
