@@ -119,3 +119,52 @@ gitleaks_freshness_check: true
 
 # To disable:
 # gitleaks_freshness_check: false
+
+# =============================================================================
+# DETECTION - Sensitive file detection configuration
+# =============================================================================
+# Controls the filename-based sensitive file detection that runs before
+# container launch. Detects .env files, SSH keys, cloud credentials, etc.
+
+detection:
+  # Global toggle - set to false to disable all filename detection
+  # Default: true (enabled)
+  enabled: true
+
+  # Custom patterns - add project-specific sensitive file patterns
+  # Extends defaults (doesn't replace). Patterns use glob syntax.
+  #
+  # Full syntax with reason:
+  # custom_patterns:
+  #   "*.secret":
+  #     severity: high
+  #     reason: "Project secret file"
+  #   "config/credentials.*":
+  #     severity: medium
+  #     reason: "Credential config files"
+  #
+  # Shorthand syntax (severity only):
+  # custom_patterns:
+  #   "*.frubas": high
+  #   "internal/*.key": medium
+
+  custom_patterns:
+    # "*.custom-secret":
+    #   severity: high
+    #   reason: "Custom project secrets"
+
+  # Allowlist - suppress false positives for specific files
+  # Each entry requires 'path' and 'reason' keys.
+  # Path can be: exact path, filename-only, or glob pattern.
+  #
+  # Examples:
+  #   - path: ".env.ci"                    # Exact filename
+  #     reason: "CI template, no secrets"
+  #   - path: "test/fixtures/*.key"        # Glob pattern
+  #     reason: "Test fixture keys"
+  #   - path: "docs/example.pem"           # Specific file
+  #     reason: "Documentation example"
+
+  allowlist:
+    # - path: ".env.test"
+    #   reason: "Test environment template"
