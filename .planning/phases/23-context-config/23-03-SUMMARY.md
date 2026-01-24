@@ -62,6 +62,10 @@ Each task was committed atomically:
 1. **Task 1: Fix custom pattern severity extraction** - `f629253` (fix)
 2. **Task 2: Fix allowlist nil path handling** - `3a59f4e` (fix)
 
+Additional UAT-driven fixes:
+3. **Fix allowlist map format handling** - `bcfc771` (fix) - require map entries with :path and :reason
+4. **Fix fs/match return value handling** - `6511d54` (fix) - fs/match returns collection, use seq for boolean check
+
 ## Files Created/Modified
 - `src/aishell/detection/patterns.clj` - Fixed severity extraction to handle shorthand YAML syntax
 - `src/aishell/detection/core.clj` - Added nil guard in file-allowlisted? function
@@ -69,6 +73,8 @@ Each task was committed atomically:
 ## Decisions Made
 - **Shorthand YAML handling:** When `opts` is a keyword or string (not a map), use it directly as the severity value rather than trying to extract `:severity` key
 - **Nil path guard:** Summary findings have `nil` paths; these should never match allowlist entries, so guard with `(and file-path ...)` before processing
+- **Allowlist map format required:** Entries must be maps with `:path` and `:reason` keys (not simple strings)
+- **fs/match returns collection:** Must use `seq` to convert to boolean (empty collection is truthy in Clojure)
 
 ## Deviations from Plan
 None - plan executed exactly as written.
