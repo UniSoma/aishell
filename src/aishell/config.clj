@@ -65,12 +65,14 @@
             (output/warn (str "Invalid severity in " source-path
                              " custom pattern '" pattern "': " severity
                              "\nValid values: high, medium, low"))))))
-    ;; Validate allowlist entries have reason
+    ;; Validate allowlist entries (map entries should have reason)
     (when-let [allowlist (:allowlist detection-config)]
       (doseq [entry allowlist]
-        (when-not (:reason entry)
-          (output/warn (str "Missing reason in " source-path
-                           " allowlist entry for path: " (:path entry)))))))
+        ;; String entries are simple paths, maps should have :path and ideally :reason
+        (when (map? entry)
+          (when-not (:reason entry)
+            (output/warn (str "Missing reason in " source-path
+                             " allowlist entry for path: " (:path entry))))))))
   detection-config)
 
 (defn validate-config
