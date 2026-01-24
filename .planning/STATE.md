@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 
 ## Current Position
 
-Phase: 23 of 23 (Context & Configuration) - IN PROGRESS
-Plan: 1 of 2 in current phase - COMPLETE
-Status: In progress
-Last activity: 2026-01-24 - Completed 23-01-PLAN.md (gitignore status checking)
+Phase: 23 of 23 (Context & Configuration) - COMPLETE
+Plan: 2 of 2 in current phase - COMPLETE
+Status: Phase complete
+Last activity: 2026-01-24 - Completed 23-02-PLAN.md (detection configuration)
 
-Progress: [####################] 100% v2.0 | [█████████░] 90% v2.1 (9/10 plans)
+Progress: [####################] 100% v2.0 | [██████████] 100% v2.1 (10/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [█████████░] 90
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 9
-- Average duration: 2.5 min
-- Total execution time: 24.0 min
+- Total plans completed: 10
+- Average duration: 2.8 min
+- Total execution time: 28.0 min
 
 **By Phase:**
 
@@ -38,7 +38,7 @@ Progress: [####################] 100% v2.0 | [█████████░] 90
 | 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
 | 22-gitleaks-integration | 2/2 | 5min | 2.5min |
-| 23-context-config | 1/2 | 3min | 3.0min |
+| 23-context-config | 2/2 | 7min | 3.5min |
 
 **v2.0 Reference (for comparison):**
 - Total plans completed: 22
@@ -52,6 +52,11 @@ Progress: [####################] 100% v2.0 | [█████████░] 90
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [23-02]: Custom patterns extend defaults (don't replace) via concatenation in scan-project
+- [23-02]: Allowlisted files completely hidden from output (not shown as 'allowed')
+- [23-02]: Invalid severity values in custom patterns skipped silently (no error, just warning)
+- [23-02]: Pattern keys from YAML parsed as keywords - use (name pattern-key) to get string
+- [23-02]: Allowlist filtering happens in run.clj after scan-project returns findings
 - [23-01]: Only annotate high-severity findings with gitignore status (medium/low don't warrant overhead)
 - [23-01]: Show "(risk: may be committed)" only when gitignored? returns false (explicitly unprotected)
 - [23-01]: nil from gitignored? (non-git/error) treated as unknown - no annotation to avoid noise
@@ -114,12 +119,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 23-01-PLAN.md (gitignore status checking)
+Stopped at: Completed 23-02-PLAN.md (detection configuration)
 Resume file: None
 
-23-01 Summary:
-High-severity findings annotated with "(risk: may be committed)" when not protected by .gitignore.
+23-02 Summary:
+User-configurable custom patterns and allowlists with merge strategy enabling project-specific detection rules and false positive suppression.
 
-Commits from 23-01:
-- 84d5ed4: feat(23-01): create gitignore wrapper for git check-ignore
-- 55a3804: feat(23-01): integrate gitignore status into finding display
+Commits from 23-02:
+- 5574856: feat(23-02): add detection config key with merge strategy
+- 1cb144b: feat(23-02): add custom pattern detection and allowlist filtering
+- a7e9de2: feat(23-02): wire detection config into run.clj execution flow
