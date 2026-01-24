@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** v2.4.0 Multi-Harness Support (OpenAI Codex CLI, Google Gemini CLI)
+**Current focus:** Phase 24 - Dockerfile & Build Infrastructure (v2.4.0)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-24 — Milestone v2.4.0 started
+Phase: 24 of 26 (Dockerfile & Build Infrastructure)
+Plan: Ready to plan
+Status: Roadmap created, ready for planning
+Last activity: 2026-01-24 — Roadmap created for v2.4.0
 
-Progress: [                    ] 0% v2.4.0
+Progress: [                    ] 0% of v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -52,13 +52,15 @@ Progress: [                    ] 0% v2.4.0
 
 See PROJECT.md Key Decisions tables for full history.
 
+Recent decisions:
+- v2.3.0: Advisory-only warnings, never block user
+- v2.3.0: Content detection delegated to Gitleaks
+- v2.3.0: Filename detection pre-container for speed
+- v2.3.0: 7-day staleness threshold for scan freshness
+
 ### Pending Todos
 
 0 pending todos in `.planning/todos/pending/`
-
-### Roadmap Evolution
-
-All phases complete. No pending work.
 
 ### Blockers/Concerns
 
@@ -73,7 +75,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Starting v2.4.0 milestone
+Stopped at: Roadmap created for v2.4.0
 Resume file: None
 
-Next step: Define requirements and create roadmap
+Next step: Plan Phase 24 (Dockerfile & Build Infrastructure) with `/gsd:plan-phase 24`
