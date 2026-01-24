@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 
 ## Current Position
 
-Phase: 22 of 23 (Gitleaks Integration) - COMPLETE
-Plan: 2 of 2 in current phase - COMPLETE
-Status: Phase complete
-Last activity: 2026-01-23 - Completed 22-02-PLAN.md (gitleaks freshness tracking)
+Phase: 23 of 23 (Context & Configuration) - IN PROGRESS
+Plan: 1 of 2 in current phase - COMPLETE
+Status: In progress
+Last activity: 2026-01-24 - Completed 23-01-PLAN.md (gitignore status checking)
 
-Progress: [####################] 100% v2.0 | [████████░░] 80% v2.1 (8/10 plans)
+Progress: [####################] 100% v2.0 | [█████████░] 90% v2.1 (9/10 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,9 +25,9 @@ Progress: [####################] 100% v2.0 | [████████░░] 80
 ## Performance Metrics
 
 **v2.1 Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 2.5 min
-- Total execution time: 21.0 min
+- Total execution time: 24.0 min
 
 **By Phase:**
 
@@ -38,7 +38,7 @@ Progress: [####################] 100% v2.0 | [████████░░] 80
 | 20-filename-detection | 2/2 | 4min | 2.0min |
 | 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
 | 22-gitleaks-integration | 2/2 | 5min | 2.5min |
-| 23-context-config | 0/2 | - | - |
+| 23-context-config | 1/2 | 3min | 3.0min |
 
 **v2.0 Reference (for comparison):**
 - Total plans completed: 22
@@ -52,6 +52,10 @@ Progress: [####################] 100% v2.0 | [████████░░] 80
 See PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [23-01]: Only annotate high-severity findings with gitignore status (medium/low don't warrant overhead)
+- [23-01]: Show "(risk: may be committed)" only when gitignored? returns false (explicitly unprotected)
+- [23-01]: nil from gitignored? (non-git/error) treated as unknown - no annotation to avoid noise
+- [23-01]: Perform annotation before grouping by severity for cleaner separation of concerns
 - [22-UAT]: Only update timestamp for actual scans (dir/git/detect/protect), not help
 - [22-UAT]: Use contains? not if-let for scalar config merge (handles false values)
 - [22-02]: Default staleness threshold: 7 days (balances nudging without annoyance)
@@ -109,14 +113,13 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-23
-Stopped at: Completed 22-02-PLAN.md (gitleaks freshness tracking) - Phase 22 complete
+Last session: 2026-01-24
+Stopped at: Completed 23-01-PLAN.md (gitignore status checking)
 Resume file: None
 
-22-02 Summary:
-Per-project scan timestamp persistence in XDG state directory with 7-day staleness warnings before container launch.
+23-01 Summary:
+High-severity findings annotated with "(risk: may be committed)" when not protected by .gitignore.
 
-Commits from 22-02:
-- 87a471e: feat(22-02): add scan state persistence for gitleaks
-- 7c0ae14: feat(22-02): add freshness warning display for gitleaks
-- a0cb8b5: feat(22-02): integrate gitleaks freshness warnings
+Commits from 23-01:
+- 84d5ed4: feat(23-01): create gitignore wrapper for git check-ignore
+- 55a3804: feat(23-01): integrate gitignore status into finding display
