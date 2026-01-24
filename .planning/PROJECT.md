@@ -52,15 +52,17 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - State persistence: Build state in EDN format at ~/.aishell/state.edn
 - Pass-through args: Harness commands pass arguments directly (e.g., `aishell claude --help`)
 
+**v2.3.0 (2026-01-24) - Safe AI Context Protection:**
+- ✓ Severity-tiered detection framework: High/medium/low severity warnings for different finding types
+- ✓ Filename-based detection (pre-container): .env files, SSH keys, key containers, cloud creds, package manager files, app secrets
+- ✓ Gitleaks integration: `aishell gitleaks` command for deep content-based secret scanning inside container
+- ✓ Scan freshness warning: Alerts on claude/opencode/shell if gitleaks hasn't been run recently (7 days)
+- ✓ Context awareness: Extra warning when high-severity files NOT in .gitignore ("risk: may be committed")
+- ✓ Configuration: Additive custom filename patterns, allowlist for false positives
+
 ### Active
 
-**v2.1 Safe AI Context Protection:**
-- Severity-tiered detection framework: High/medium/low severity warnings for different finding types
-- Filename-based detection (pre-container): .env files, SSH keys, key containers, cloud creds, package manager files, app secrets
-- Gitleaks integration: `aishell gitleaks` command for deep content-based secret scanning inside container
-- Scan freshness warning: Alerts on claude/opencode/shell if gitleaks hasn't been run recently
-- Context awareness: Extra warning when sensitive files NOT in .gitignore
-- Configuration: Additive custom filename patterns, allowlist for false positives
+(None - planning next milestone)
 
 ### Out of Scope
 
@@ -72,19 +74,19 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.0 on 2026-01-21
+**Shipped:** v2.3.0 on 2026-01-24
 
-**Codebase:** ~1,650 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24
+**Codebase:** ~2,565 LOC Clojure (Babashka)
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
 
-**v2.0 accomplishments:**
-- Complete CLI rewrite from 1,655 LOC Bash to ~1,650 LOC Clojure
-- Cross-platform support: Linux and macOS (x86_64, aarch64)
-- YAML config format replacing shell-style run.conf
-- Single-file uberscript distribution (60KB)
-- curl|bash installer with checksum verification
-- All 33 requirements shipped (100% coverage)
-- Clean architecture with 15 namespaces
+**v2.3.0 accomplishments:**
+- Core detection framework with severity tiers (high/medium/low) and advisory-only warnings
+- 13 filename-based pattern detectors for 20+ sensitive file types
+- Gitleaks integration with `aishell gitleaks` command for deep content scanning
+- Scan freshness tracking with 7-day staleness warnings
+- Gitignore awareness for high-severity findings
+- Configurable custom patterns and allowlist for false positives
+- 23 of 27 requirements satisfied (4 intentionally deferred/delegated)
 
 ## Constraints
 
@@ -127,21 +129,18 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Advisory security warnings | Never block, just inform | Good |
 | requiring-resolve for state | Avoids circular dependency in build.clj | Good |
 
-## Current Milestone: v2.1 Safe AI Context Protection
+**v2.3.0 (Safe AI Context Protection):**
 
-**Goal:** Proactively warn users about sensitive data in their project directory before AI agents access it.
-
-**Approach:**
-- **Filename-based detection (pre-container):** Fast checks for sensitive file patterns before container starts
-- **Content-based detection (Gitleaks):** Deep scanning via `aishell gitleaks` command inside container
-
-**Scope:**
-- **Detection Framework:** Severity tiers (high/medium/low), advisory-only warnings, --unsafe bypass
-- **Filename Patterns:** .env files, SSH keys, key containers, cloud creds (ADC, terraform.tfstate, kubeconfig), package manager files (.npmrc, .pypirc, .netrc), app secrets (master.key, secret.*, database.yml)
-- **Gitleaks Integration:** Base image includes gitleaks, one-shot scan command, freshness tracking
-- **Context & Config:** Git-ignore awareness, additive custom patterns, allowlist for false positives
-
-**Research basis:** Deep dive on "Safe AI Sandboxing" (2026-01-21) identified context boundary protection as highest-impact opportunity.
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Content detection delegated to Gitleaks | Better coverage than reimplementing subset of patterns | Good |
+| Filename detection pre-container | Fast checks before container starts, no container overhead | Good |
+| defmulti for format-finding | Extensible pattern formatters without modifying core | Good |
+| High-severity requires confirmation | Ensures user acknowledges serious risks in interactive mode | Good |
+| 7-day staleness threshold | Balances nudging without annoyance | Good |
+| Custom patterns extend defaults | Additive config prevents accidental reduction of coverage | Good |
+| Allowlist requires path+reason | Forces documentation of why false positive was suppressed | Good |
+| XDG state directory for scan timestamps | Follows spec, separates state from config | Good |
 
 ---
-*Last updated: 2026-01-23 (roadmap revised - content detection delegated to Gitleaks)*
+*Last updated: 2026-01-24 after v2.3.0 milestone*

@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.3.0 Safe AI Context Protection (Shipped: 2026-01-24)
+
+**Delivered:** Proactive sensitive file detection with severity tiers, Gitleaks integration for deep content scanning, and configurable pattern allowlists to protect users' secrets before AI agents access them.
+
+**Phases completed:** 18.1-23 (11 plans total)
+
+**Key accomplishments:**
+
+- Core detection framework with high/medium/low severity tiers and advisory-only warnings
+- Filename-based detection for 20+ sensitive file patterns (.env, SSH keys, cloud creds, package manager files)
+- Gitleaks integration with `aishell gitleaks` command for deep content-based secret scanning
+- Scan freshness tracking with 7-day staleness warnings before container launch
+- Gitignore awareness highlighting high-severity files that may be accidentally committed
+- Configurable custom patterns and allowlist for false positive suppression
+
+**Stats:**
+
+- 58 files created/modified
+- ~2,565 lines of Clojure (total codebase)
+- 6 phases, 11 plans, ~30 tasks
+- 6 days from start to ship (2026-01-18 → 2026-01-24)
+
+**Git range:** `feat(18.1-01)` → `docs(v2.1)` (79 commits)
+
+**What's next:** v2.4 with audit command for CI/CD integration, strict blocking mode, or advanced secret patterns
+
+---
+
 ## v2.0 Babashka Rewrite (Shipped: 2026-01-21)
 
 **Delivered:** Complete CLI rewrite from Bash to Clojure Babashka with feature parity to v1.2, cross-platform support (Linux, macOS), and single-file uberscript distribution.
