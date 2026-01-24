@@ -278,8 +278,14 @@
     (for [[pattern-key opts] custom-patterns-map
           :let [;; Pattern may be keyword or string from YAML parsing
                 pattern-str (if (keyword? pattern-key) (name pattern-key) (str pattern-key))
-                severity (keyword (or (:severity opts) "medium"))
-                description (or (:description opts) "Custom pattern match")]
+                ;; Handle both map syntax {:severity high} and shorthand "*.ext": high
+                severity (keyword (cond
+                                    (map? opts) (or (:severity opts) "medium")
+                                    (keyword? opts) (name opts)
+                                    :else (str opts)))
+                description (if (map? opts)
+                              (or (:description opts) "Custom pattern match")
+                              "Custom pattern match")]
           :when (#{:high :medium :low} severity)  ;; Skip invalid severities
           path (fs/glob project-dir pattern-str {:hidden true})
           :when (not (in-excluded-dir? path excluded-dirs))]
