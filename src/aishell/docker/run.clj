@@ -172,6 +172,14 @@
        (filter #(System/getenv %))
        (mapcat (fn [var] ["-e" (str var "=" (System/getenv var))]))))
 
+(defn build-gcp-credentials-mount
+  "Mount GCP service account credentials file if GOOGLE_APPLICATION_CREDENTIALS is set.
+   The env var is passed through separately; this mounts the file it references."
+  []
+  (when-let [creds-path (System/getenv "GOOGLE_APPLICATION_CREDENTIALS")]
+    (when (fs/exists? creds-path)
+      ["-v" (str creds-path ":" creds-path ":ro")])))
+
 (defn build-docker-args
   "Build complete docker run argument vector.
 
@@ -211,8 +219,11 @@
           (into ["-e" (str "GIT_AUTHOR_EMAIL=" (:email git-identity))
                  "-e" (str "GIT_COMMITTER_EMAIL=" (:email git-identity))]))
 
-        ;; Harness config mounts (Claude, OpenCode configs)
+        ;; Harness config mounts (Claude, OpenCode, Codex, Gemini configs)
         (into (build-harness-config-mounts))
+
+        ;; GCP credentials file mount (for Vertex AI authentication)
+        (into (or (build-gcp-credentials-mount) []))
 
         ;; API keys
         (into (build-api-env-args))
