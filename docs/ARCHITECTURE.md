@@ -27,10 +27,10 @@ aishell orchestrates ephemeral Docker containers for AI harnesses. The system is
 graph TB
     subgraph Host["Host Machine"]
         CLI[CLI Entry<br/>aishell.cli]
-        Config[Config Loader<br/>aishell.config]
-        Build[Image Builder<br/>aishell.docker.build]
         State[State Manager<br/>aishell.state]
+        Config[Config Loader<br/>aishell.config]
         Detection[Detection<br/>aishell.detection.*]
+        Build[Image Builder<br/>aishell.docker.build]
     end
 
     subgraph Docker["Docker Container"]
@@ -40,12 +40,11 @@ graph TB
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
 
-    CLI --> Detection
-    Detection --> Config
-    Config --> Build
-    Build --> Docker
     CLI --> State
-    State --> Entry
+    State --> Config
+    Config --> Detection
+    Detection --> Build
+    Build --> Entry
     Entry --> Harness
     Harness --> Project
     Harness --> Tools
