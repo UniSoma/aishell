@@ -24,6 +24,19 @@
   []
   (str (fs/path (util/get-home) ".aishell" "config.yaml")))
 
+(defn normalize-pre-start
+  "Normalize pre_start: string passes through, list joins with ' && '.
+   Filters empty items from lists. Returns string or nil."
+  [pre-start-value]
+  (cond
+    (nil? pre-start-value) nil
+    (string? pre-start-value) pre-start-value
+    (sequential? pre-start-value)
+    (let [filtered (filter (comp not clojure.string/blank?) (map str pre-start-value))]
+      (when (seq filtered)
+        (clojure.string/join " && " filtered)))
+    :else nil))
+
 (defn normalize-harness-arg
   "Convert string to single-element list, pass lists through."
   [arg-val]
@@ -198,7 +211,8 @@
     (try
       (-> (slurp path)
           yaml/parse-string
-          (validate-config path))
+          (validate-config path)
+          (update :pre_start normalize-pre-start))
       (catch Exception e
         (output/error (str "Invalid YAML in " path ": " (.getMessage e)))))))
 
