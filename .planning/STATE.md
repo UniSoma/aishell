@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 25 of 27 (CLI & Runtime)
-Plan: Ready to plan
-Status: Phase 24 complete, ready to plan Phase 25
-Last activity: 2026-01-25 — Phase 24 complete
+Plan: 2 of 2 complete
+Status: Phase 25 complete
+Last activity: 2026-01-25 - Completed 25-02-PLAN.md
 
-Progress: [█████               ] 25% of v2.4.0
+Progress: [██████████          ] 50% of v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -26,15 +26,16 @@ Progress: [█████               ] 25% of v2.4.0
 ## Performance Metrics
 
 **v2.4.0 Velocity:**
-- Total plans completed: 2
+- Total plans completed: 4
 - Average duration: 2.0 min
-- Total execution time: ~4 min
+- Total execution time: ~8 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 24-dockerfile---build-infrastructure | 2/2 | ~4min | 2.0min |
+| 24-dockerfile-build-infrastructure | 2/2 | ~4min | 2.0min |
+| 25-cli-runtime | 2/2 | ~4min | 2.0min |
 
 **Previous Milestones:**
 
@@ -44,9 +45,9 @@ Progress: [█████               ] 25% of v2.4.0
 - Total time: 30.0 min
 
 **Cumulative (v1.0-v2.4.0):**
-- Total plans: 59
+- Total plans: 61
 - Milestones: 5 (6th in progress)
-- Days: 9 (2026-01-17 → 2026-01-25)
+- Days: 9 (2026-01-17 -> 2026-01-25)
 
 ## Accumulated Context
 
@@ -58,6 +59,7 @@ Recent decisions:
 - v2.4.0: State schema documentation updated to reflect all four harness options
 - v2.4.0: Codex and Gemini follow npm global install pattern
 - v2.4.0: ARG naming convention: WITH_{HARNESS} and {HARNESS}_VERSION
+- v2.4.0: Codex and Gemini use simple pass-through like opencode (no special flags)
 
 ### Pending Todos
 
@@ -76,7 +78,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Phase 24 complete
+Stopped at: Completed 25-02-PLAN.md
 Resume file: None
 
-Next step: Plan Phase 25 (CLI & Runtime) with `/gsd:discuss-phase 25` or `/gsd:plan-phase 25`
+Next step: Plan Phase 26 (Testing) with `/gsd:discuss-phase 26` or `/gsd:plan-phase 26`
