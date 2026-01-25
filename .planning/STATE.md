@@ -63,7 +63,9 @@ Recent decisions:
 
 ### Pending Todos
 
-0 pending todos in `.planning/todos/pending/`
+1 pending todo in `.planning/todos/pending/`
+
+- [Dynamic help based on installed harnesses](./todos/pending/2026-01-25-dynamic-help-based-on-installed-harnesses.md)
 
 ### Blockers/Concerns
 
