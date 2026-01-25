@@ -41,6 +41,12 @@ Plans:
 
 **Dependencies:** Phase 28 (stable base)
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 29-01-PLAN.md — Core exec infrastructure (TTY detection, run-exec, CLI dispatch)
+- [ ] 29-02-PLAN.md — Documentation (README, TROUBLESHOOTING)
+
 **Requirements:**
 - CLI-04: New `aishell exec <command>` subcommand runs command in container
 - CLI-05: Exec command uses all standard mounts/env from config
