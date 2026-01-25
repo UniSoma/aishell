@@ -85,10 +85,12 @@ Plans:
   3. docs/HARNESSES.md documents each harness (Claude, OpenCode, Codex, Gemini) with setup, usage, and tips
   4. docs/TROUBLESHOOTING.md covers common issues, error messages, and solutions
   5. docs/DEVELOPMENT.md explains how to add new harnesses or extend aishell functionality
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 27-01-PLAN.md — Architecture and Configuration documentation
+- [ ] 27-02-PLAN.md — Harnesses documentation (all four harnesses)
+- [ ] 27-03-PLAN.md — Troubleshooting, Development guide, and README links
 
 ## Progress
 
@@ -105,10 +107,10 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Build Infrastructure | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 25. CLI & Runtime | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 26. Documentation | v2.4.0 | 1/1 | Complete | 2026-01-25 |
-| 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
+| 27. Comprehensive Docs | v2.4.0 | 0/3 | Planned | - |
 
 **Total:** 62 plans completed across 5 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-25 after Phase 26 complete*
+*Last updated: 2026-01-25 after Phase 27 planning*
