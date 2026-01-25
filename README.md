@@ -331,7 +331,39 @@ OpenCode configuration directories (`~/.config/opencode`, `~/.local/share/openco
 
 ## Environment Variables
 
-| `AISHELL_SKIP_PERMISSIONS` | Set to `false` to enable Claude permission prompts |
+aishell automatically passes these environment variables to containers when set on your host:
+
+### Harness-Specific Keys
+
+| Variable | Purpose | Notes |
+|----------|---------|-------|
+| `ANTHROPIC_API_KEY` | Claude Code API access | Required for API key auth |
+| `OPENAI_API_KEY` | Codex login, OpenCode | Used by multiple harnesses |
+| `CODEX_API_KEY` | Codex CLI API access | Only works with `codex exec` mode |
+| `GEMINI_API_KEY` | Gemini CLI API access | From Google AI Studio |
+| `GOOGLE_API_KEY` | Gemini/Vertex AI access | Alternative to GEMINI_API_KEY |
+| `GROQ_API_KEY` | Groq API access | For Groq-hosted models |
+
+### Cloud Provider Credentials
+
+| Variable | Purpose | Notes |
+|----------|---------|-------|
+| `GOOGLE_APPLICATION_CREDENTIALS` | Vertex AI service account | Path to JSON key file |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID | Required for Vertex AI |
+| `GOOGLE_CLOUD_LOCATION` | GCP region | Required for Vertex AI |
+| `AWS_ACCESS_KEY_ID` | AWS access | For harnesses using AWS |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret | For harnesses using AWS |
+| `AWS_REGION` | AWS region | For harnesses using AWS |
+| `AWS_PROFILE` | AWS profile | Named profile support |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI | For Azure-hosted models |
+| `AZURE_OPENAI_ENDPOINT` | Azure endpoint | For Azure-hosted models |
+
+### Other
+
+| Variable | Purpose | Notes |
+|----------|---------|-------|
+| `GITHUB_TOKEN` | GitHub API access | For GitHub operations |
+| `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts |
 
 ## Base Image Contents
 
