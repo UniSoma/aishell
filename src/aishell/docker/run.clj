@@ -150,7 +150,9 @@
   "Environment variables to pass through for API access."
   ["ANTHROPIC_API_KEY"
    "OPENAI_API_KEY"
+   "CODEX_API_KEY"
    "GEMINI_API_KEY"
+   "GOOGLE_API_KEY"
    "GROQ_API_KEY"
    "GITHUB_TOKEN"
    "AWS_ACCESS_KEY_ID"
@@ -160,6 +162,7 @@
    "AZURE_OPENAI_API_KEY"
    "AZURE_OPENAI_ENDPOINT"
    "GOOGLE_CLOUD_PROJECT"
+   "GOOGLE_CLOUD_LOCATION"
    "GOOGLE_APPLICATION_CREDENTIALS"])
 
 (defn- build-api-env-args
