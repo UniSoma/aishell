@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 24 of 26 (Dockerfile & Build Infrastructure)
-Plan: Ready to plan
-Status: Roadmap created, ready for planning
-Last activity: 2026-01-24 — Roadmap created for v2.4.0
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-01-25 — Completed 24-01-PLAN.md
 
-Progress: [                    ] 0% of v2.4.0
+Progress: [█████               ] 33% of v2.4.0 (1/3 plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -25,26 +25,28 @@ Progress: [                    ] 0% of v2.4.0
 
 ## Performance Metrics
 
-**v2.3.0 Velocity:**
-- Total plans completed: 11
-- Average duration: 2.7 min
-- Total execution time: 30.0 min
+**v2.4.0 Velocity:**
+- Total plans completed: 1
+- Average duration: 3.0 min
+- Total execution time: 3.0 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 18.1-default-harness-args | 1/1 | 2min | 2.0min |
-| 19-core-framework | 1/1 | 4min | 4.0min |
-| 20-filename-detection | 2/2 | 4min | 2.0min |
-| 21-extended-filename-patterns | 2/2 | 6min | 3.0min |
-| 22-gitleaks-integration | 2/2 | 5min | 2.5min |
-| 23-context-config | 3/3 | 9min | 3.0min |
+| 24-dockerfile---build-infrastructure | 1/3 | 3min | 3.0min |
 
-**Cumulative (v1.0-v2.3.0):**
-- Total plans: 57
-- Milestones: 5
-- Days: 8 (2026-01-17 → 2026-01-24)
+**Previous Milestones:**
+
+**v2.3.0:**
+- Total plans: 11
+- Average: 2.7 min
+- Total time: 30.0 min
+
+**Cumulative (v1.0-v2.4.0):**
+- Total plans: 58
+- Milestones: 5 (shipping 6th)
+- Days: 8 (2026-01-17 → 2026-01-25)
 
 ## Accumulated Context
 
@@ -53,6 +55,8 @@ Progress: [                    ] 0% of v2.4.0
 See PROJECT.md Key Decisions tables for full history.
 
 Recent decisions:
+- v2.4.0: Codex and Gemini follow npm global install pattern
+- v2.4.0: ARG naming convention: WITH_{HARNESS} and {HARNESS}_VERSION
 - v2.3.0: Advisory-only warnings, never block user
 - v2.3.0: Content detection delegated to Gitleaks
 - v2.3.0: Filename detection pre-container for speed
@@ -74,8 +78,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Roadmap created for v2.4.0
+Last session: 2026-01-25
+Stopped at: Completed 24-01-PLAN.md
 Resume file: None
 
-Next step: Plan Phase 24 (Dockerfile & Build Infrastructure) with `/gsd:plan-phase 24`
+Next step: Continue with remaining Phase 24 plans
