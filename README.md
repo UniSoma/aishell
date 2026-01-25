@@ -264,6 +264,71 @@ If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the conta
 **To avoid modifying host gitconfig:**
 Don't mount your host gitconfig into the container. The container creates its own gitconfig that is discarded when the container exits.
 
+## Authentication
+
+aishell mounts harness configuration directories from your host (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.config/opencode`, `~/.local/share/opencode`), so authentication persists between container sessions.
+
+### Claude Code
+
+**Option 1: Interactive OAuth**
+
+Run `aishell claude` and follow the prompts. Claude Code displays a URL you can copy-paste into your browser, completing OAuth even from within the container.
+
+**Option 2: API Key**
+
+```bash
+export ANTHROPIC_API_KEY="your-key-here"
+aishell claude
+```
+
+### Codex CLI
+
+**Option 1: Interactive OAuth**
+
+Run `aishell codex` and select "Sign in with ChatGPT". In headless environments, use:
+
+```bash
+codex login --device-auth
+```
+
+This displays a code to enter at a URL in your browser.
+
+**Option 2: API Key**
+
+```bash
+export OPENAI_API_KEY="your-key-here"  # For login
+# or
+export CODEX_API_KEY="your-key-here"   # Only works with `codex exec`, not interactive
+aishell codex
+```
+
+### Gemini CLI
+
+**Option 1: Authenticate on host first**
+
+```bash
+# On your host machine (not in container)
+gemini  # Select "Login with Google"
+
+# Then run in container - credentials are mounted
+aishell gemini
+```
+
+**Option 2: API Key**
+
+```bash
+export GEMINI_API_KEY="your-key-here"
+# or
+export GOOGLE_API_KEY="your-key-here"
+aishell gemini
+```
+
+**Note:** Gemini CLI does not support device code flow for container authentication. Either authenticate on host first, or use an API key.
+
+### OpenCode
+
+OpenCode configuration directories (`~/.config/opencode`, `~/.local/share/opencode`) are mounted from your host. Refer to OpenCode's documentation for authentication methods.
+
 ## Environment Variables
 
 | `AISHELL_SKIP_PERMISSIONS` | Set to `false` to enable Claude permission prompts |
