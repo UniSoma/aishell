@@ -36,7 +36,7 @@ graph TB
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
         Harness[AI Harness<br/>claude/opencode/codex/gemini]
-        Project[Project Files<br/>mounted /project]
+        Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
 
@@ -141,7 +141,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 ┌──────────────────────────────────────────┐
 │ Docker Run                               │
 │ docker run --rm -it \                    │
-│   -v /project:/project \                 │
+│   -v /path/to/project:/path/to/project \ │
 │   -v ~/.ssh:/home/user/.ssh:ro \         │
 │   -e GIT_AUTHOR_NAME=... \               │
 │   aishell:base \                         │
@@ -162,7 +162,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 
 **Data mounts:**
 
-- `/project` → Current working directory (read-write)
+- Project directory → Mounted at same path as host (read-write)
 - `~/.ssh` → SSH keys (read-only)
 - `~/.gitconfig` → Git config (optional, read-only)
 - Additional mounts from `config.yaml`
@@ -275,7 +275,7 @@ aishell is organized into focused namespaces, each handling a specific concern.
 |------|---------|----------------|
 | `/entrypoint.sh` | Container initialization script | `aishell.docker.templates/entrypoint-script` |
 | `/etc/skel/.bashrc.aishell` | Shell customizations | `aishell.docker.templates/bashrc-content` |
-| `/project` | Mounted project directory | Host CWD |
+| `$PWD` | Project directory (mounted at same path as host) | Host CWD |
 | `/home/user` | Dynamic user home | Created by entrypoint.sh |
 
 **State file schema (`~/.aishell/state.edn`):**

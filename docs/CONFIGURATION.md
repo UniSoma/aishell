@@ -78,7 +78,7 @@ Use `extends: none` when:
 - **Conflicting requirements:** Global config interferes with project needs
 - **Explicit configuration:** You prefer to specify everything in project config
 
-**Note:** Even with `extends: none`, aishell always mounts the project directory at `/project` and `~/.ssh` (read-only). These are core mounts required for operation.
+**Note:** Even with `extends: none`, aishell always mounts the project directory (at the same path as on the host) and `~/.ssh` (read-only). These are core mounts required for operation.
 
 ---
 
@@ -165,7 +165,7 @@ docker_args:
 pre_start: "redis-server --daemonize yes"
 
 # More complex examples:
-# pre_start: "docker-compose -f /project/docker-compose.yml up -d"
+# pre_start: "docker-compose -f ./docker-compose.yml up -d"
 # pre_start: "postgres -D /data/postgres & nginx -g 'daemon off;' &"
 
 # =============================================================================
@@ -310,7 +310,7 @@ mounts:
 - Home directory expansion (`~`) works in source paths
 - Container paths are absolute (must start with `/`)
 - Read-only (`:ro`) prevents container from modifying host files
-- Project directory (`/project`) and `~/.ssh` are always mounted (built-in)
+- Project directory (at same path as host) and `~/.ssh` are always mounted (built-in)
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 
@@ -476,7 +476,7 @@ pre_start: "redis-server --daemonize yes"
 # pre_start: "redis-server --daemonize yes && nginx -g 'daemon off;' &"
 
 # Start docker-compose services
-# pre_start: "docker-compose -f /project/docker-compose.yml up -d"
+# pre_start: "docker-compose -f ./docker-compose.yml up -d"
 ```
 
 **Notes:**
@@ -495,7 +495,7 @@ pre_start: "redis-server --daemonize yes"
 |----------|---------|
 | Database | `postgres -D /data/postgres -c log_destination=stderr &` |
 | Redis | `redis-server --daemonize yes` |
-| Docker Compose | `docker-compose -f /project/compose.yml up -d` |
+| Docker Compose | `docker-compose -f ./compose.yml up -d` |
 | Web server | `nginx -g 'daemon off;' &` |
 
 ---
