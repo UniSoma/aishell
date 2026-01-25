@@ -74,20 +74,23 @@ RUN set -eux; \\
     gosu --version; \\
     gosu nobody true
 
-# Install Gitleaks for secret scanning
+# Install Gitleaks for secret scanning (conditional)
+ARG WITH_GITLEAKS=true
 ARG GITLEAKS_VERSION=8.30.0
-RUN set -eux; \\
-    dpkgArch=\"$(dpkg --print-architecture)\"; \\
-    case \"${dpkgArch##*-}\" in \\
-        amd64) glArch='x64' ;; \\
-        arm64) glArch='arm64' ;; \\
-        armhf) glArch='armv7' ;; \\
-        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
-    esac; \\
-    curl -fsSL \"https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${glArch}.tar.gz\" \\
-    | tar -xz -C /usr/local/bin gitleaks; \\
-    chmod +x /usr/local/bin/gitleaks; \\
-    gitleaks version
+RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
+        set -eux; \\
+        dpkgArch=\"$(dpkg --print-architecture)\"; \\
+        case \"${dpkgArch##*-}\" in \\
+            amd64) glArch='x64' ;; \\
+            arm64) glArch='arm64' ;; \\
+            armhf) glArch='armv7' ;; \\
+            *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+        esac; \\
+        curl -fsSL \"https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${glArch}.tar.gz\" \\
+        | tar -xz -C /usr/local/bin gitleaks; \\
+        chmod +x /usr/local/bin/gitleaks; \\
+        gitleaks version; \\
+    fi
 
 # Install Claude Code if requested (npm global)
 # npm global installs to /usr/local/bin/claude which matches doctor's expectations

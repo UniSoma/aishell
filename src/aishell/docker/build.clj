@@ -56,7 +56,9 @@
     (and (:with-claude opts) (not (:with-claude state)))
     (and (:with-opencode opts) (not (:with-opencode state)))
     (and (:with-codex opts) (not (:with-codex state)))
-    (and (:with-gemini opts) (not (:with-gemini state)))))
+    (and (:with-gemini opts) (not (:with-gemini state)))
+    ;; Gitleaks flag changed (default true for backwards compat with old state)
+    (not= (:with-gitleaks opts) (:with-gitleaks state true))))
 
 (defn write-build-files
   "Write embedded template files to build directory."
@@ -67,7 +69,7 @@
 
 (defn- build-docker-args
   "Construct docker build argument vector."
-  [{:keys [with-claude with-opencode with-codex with-gemini
+  [{:keys [with-claude with-opencode with-codex with-gemini with-gitleaks
            claude-version opencode-version codex-version gemini-version]} dockerfile-hash]
   (cond-> []
     with-claude (conj "--build-arg" "WITH_CLAUDE=true")
@@ -78,6 +80,8 @@
     opencode-version (conj "--build-arg" (str "OPENCODE_VERSION=" opencode-version))
     codex-version (conj "--build-arg" (str "CODEX_VERSION=" codex-version))
     gemini-version (conj "--build-arg" (str "GEMINI_VERSION=" gemini-version))
+    ;; Gitleaks is opt-out, so we always pass the arg (true or false)
+    true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))))
 
 (defn- format-duration
@@ -129,6 +133,7 @@
    - :with-opencode - Include OpenCode
    - :with-codex - Include Codex CLI
    - :with-gemini - Include Gemini CLI
+   - :with-gitleaks - Include Gitleaks (default true)
    - :claude-version - Specific Claude version
    - :opencode-version - Specific OpenCode version
    - :codex-version - Specific Codex version
