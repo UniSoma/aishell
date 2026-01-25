@@ -10,6 +10,12 @@
 
 **Dependencies:** None (builds on v2.4.0 stable base)
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — Pre-start list format + Gitleaks build flag infrastructure
+- [ ] 28-02-PLAN.md — Dynamic help output + Documentation updates
+
 **Requirements:**
 - CLI-01: Help output shows only installed harness commands (reads build state)
 - CLI-02: Build command accepts `--without-gitleaks` flag to skip Gitleaks installation
@@ -83,7 +89,7 @@
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 28 | Dynamic Help & Config | 8 | Pending |
+| 28 | Dynamic Help & Config | 8 | Planned |
 | 29 | Binary Install & Conditional Node.js | 10 | Pending |
 | 30 | Exec Command | 6 | Pending |
 
