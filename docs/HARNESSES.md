@@ -1,0 +1,614 @@
+# aishell Harness Guide
+
+This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
+
+**Last updated:** v2.4.0
+
+## What are Harnesses?
+
+Harnesses are agentic AI CLI tools that aishell runs in isolated containers. Each harness provides a different AI provider or multi-provider interface:
+
+- **Claude Code** - Anthropic's autonomous coding agent
+- **OpenCode** - Multi-provider AI coding agent (Anthropic, OpenAI, Google, etc.)
+- **Codex CLI** - OpenAI's ChatGPT integration for coding
+- **Gemini CLI** - Google's Gemini models for development
+
+## Harness Comparison
+
+| Feature | Claude Code | OpenCode | Codex CLI | Gemini CLI |
+|---------|-------------|----------|-----------|------------|
+| Provider | Anthropic | Multiple | OpenAI | Google |
+| Auth Methods | OAuth, API Key | Per-provider | OAuth, API Key | OAuth, API Key |
+| Container Auth | Copy-paste URL | Standard | Device code | Auth on host first |
+| Vertex AI | No | Yes | No | Yes |
+| Config Dir | ~/.claude | ~/.config/opencode | ~/.codex | ~/.gemini |
+| Best For | Autonomous coding | Multi-model flexibility | ChatGPT integration | Gemini models |
+
+## Claude Code
+
+### Overview
+
+Claude Code is Anthropic's official CLI for autonomous coding tasks. It provides deep IDE-like capabilities with file operations, code analysis, and multi-step execution.
+
+**Provider:** Anthropic
+**Models:** Claude 3.5 Sonnet, Claude Opus 4.5
+
+### Installation
+
+Build aishell with Claude Code support:
+
+```bash
+# Latest version
+aishell build --with-claude
+
+# Specific version
+aishell build --with-claude=2.0.22
+```
+
+**Version pinning recommended** for reproducible environments.
+
+### Authentication
+
+Claude Code supports two authentication methods:
+
+#### OAuth (Recommended for containers)
+
+OAuth works well in containers via copy-paste URL flow:
+
+```bash
+aishell claude
+# Follow prompts, copy URL to browser, authenticate
+```
+
+Container authentication uses the copy-paste URL method automatically.
+
+#### API Key
+
+Set the `ANTHROPIC_API_KEY` environment variable:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+aishell claude
+```
+
+Or pass via `--env` flag:
+
+```bash
+aishell --env ANTHROPIC_API_KEY=sk-ant-... claude
+```
+
+Get API keys from: https://console.anthropic.com/settings/keys
+
+### Usage
+
+Basic invocation:
+
+```bash
+aishell claude
+```
+
+Pass arguments to Claude Code:
+
+```bash
+aishell claude --help
+aishell claude "implement user authentication"
+```
+
+Set default arguments in `config.yaml`:
+
+```yaml
+harnesses:
+  claude:
+    args: ["--model", "claude-opus-4.5"]
+```
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `ANTHROPIC_API_KEY` | API key authentication | `sk-ant-api03-...` |
+| `CLAUDE_MAX_TOKENS` | Response token limit | `4096` |
+| `CLAUDE_TIMEOUT` | Request timeout (seconds) | `300` |
+
+### Configuration Directory
+
+- **Host:** `~/.claude`
+- **Container:** `/root/.claude`
+
+Config persists across container restarts via volume mount.
+
+### Tips & Best Practices
+
+1. **OAuth in containers:** Copy-paste URL flow works seamlessly
+2. **Model selection:** Use `--model` flag or config.yaml for Opus 4.5
+3. **Session handling:** Each `aishell claude` invocation is a new session
+4. **File operations:** Claude Code has full filesystem access within container
+
+## OpenCode
+
+### Overview
+
+OpenCode is a multi-provider AI coding agent supporting Anthropic, OpenAI, Google, and other providers. It provides flexibility to switch models and providers without changing tools.
+
+**Providers:** Anthropic, OpenAI, Google, Azure OpenAI, Vertex AI
+**Models:** Provider-dependent (Claude, GPT, Gemini, etc.)
+
+### Installation
+
+Build aishell with OpenCode support:
+
+```bash
+# Latest version
+aishell build --with-opencode
+
+# Specific version
+aishell build --with-opencode=0.2.3
+```
+
+### Authentication
+
+OpenCode authentication is **provider-specific**. Set the appropriate environment variable for your chosen provider.
+
+#### Anthropic
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+aishell opencode
+```
+
+#### OpenAI
+
+```bash
+export OPENAI_API_KEY=sk-...
+aishell opencode
+```
+
+#### Google (Gemini)
+
+```bash
+export GOOGLE_API_KEY=...
+aishell opencode
+```
+
+#### Vertex AI
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+aishell opencode
+```
+
+Pass credentials file into container:
+
+```bash
+aishell --mount $GOOGLE_APPLICATION_CREDENTIALS:/creds/gcp.json \
+  --env GOOGLE_APPLICATION_CREDENTIALS=/creds/gcp.json \
+  opencode
+```
+
+### Usage
+
+Basic invocation:
+
+```bash
+aishell opencode
+```
+
+Specify model/provider:
+
+```bash
+aishell opencode --model claude-3-5-sonnet-20241022
+aishell opencode --model gpt-4o
+aishell opencode --model gemini-2.0-flash-exp
+```
+
+Set default model in `config.yaml`:
+
+```yaml
+harnesses:
+  opencode:
+    args: ["--model", "claude-3-5-sonnet-20241022"]
+```
+
+### Environment Variables
+
+| Variable | Purpose | Provider |
+|----------|---------|----------|
+| `ANTHROPIC_API_KEY` | Anthropic API key | Anthropic |
+| `OPENAI_API_KEY` | OpenAI API key | OpenAI |
+| `GOOGLE_API_KEY` | Google AI API key | Google |
+| `GOOGLE_APPLICATION_CREDENTIALS` | GCP service account | Vertex AI |
+| `AZURE_OPENAI_API_KEY` | Azure API key | Azure OpenAI |
+| `AZURE_OPENAI_ENDPOINT` | Azure endpoint URL | Azure OpenAI |
+
+### Configuration Directories
+
+- **Host:** `~/.config/opencode`, `~/.local/share/opencode`
+- **Container:** `/root/.config/opencode`, `/root/.local/share/opencode`
+
+### Tips & Best Practices
+
+1. **Multi-provider workflows:** Switch models by changing `--model` flag
+2. **Vertex AI setup:** Pre-authenticate on host, mount credentials
+3. **Model availability:** Check OpenCode docs for supported models
+4. **Cost management:** Different providers/models have different pricing
+
+## Codex CLI
+
+### Overview
+
+Codex CLI provides command-line access to OpenAI's ChatGPT for coding tasks. It integrates conversational AI with shell workflows.
+
+**Provider:** OpenAI
+**Models:** GPT-4o, GPT-4, GPT-3.5-turbo
+
+### Installation
+
+Build aishell with Codex CLI support:
+
+```bash
+# Latest version
+aishell build --with-codex
+
+# Specific version
+aishell build --with-codex=1.0.7
+```
+
+### Authentication
+
+Codex CLI supports OAuth and API key authentication.
+
+#### OAuth
+
+**Standard OAuth:**
+
+```bash
+aishell codex
+# Follows OAuth flow
+```
+
+**Device code flow (recommended for containers):**
+
+```bash
+aishell codex login --device-auth
+```
+
+Device code flow provides a code to enter at a URL, working well in headless environments.
+
+#### API Key
+
+**For `codex` command (interactive chat):**
+
+Set `OPENAI_API_KEY`:
+
+```bash
+export OPENAI_API_KEY=sk-...
+aishell codex
+```
+
+**For `codex exec` (programmatic execution):**
+
+The `exec` subcommand uses `CODEX_API_KEY`:
+
+```bash
+export CODEX_API_KEY=sk-...
+aishell codex exec "write a Python script to parse JSON"
+```
+
+**Important:** `OPENAI_API_KEY` works for login/interactive mode. `CODEX_API_KEY` only works with `codex exec`.
+
+Get API keys from: https://platform.openai.com/api-keys
+
+### Usage
+
+Interactive chat:
+
+```bash
+aishell codex
+```
+
+Programmatic execution:
+
+```bash
+aishell codex exec "implement user authentication"
+```
+
+Pass arguments:
+
+```bash
+aishell codex --help
+aishell codex --model gpt-4o
+```
+
+Set defaults in `config.yaml`:
+
+```yaml
+harnesses:
+  codex:
+    args: ["--model", "gpt-4o"]
+```
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `OPENAI_API_KEY` | API key for interactive mode | `sk-...` |
+| `CODEX_API_KEY` | API key for `codex exec` | `sk-...` |
+| `CODEX_MODEL` | Default model | `gpt-4o` |
+
+### Configuration Directory
+
+- **Host:** `~/.codex`
+- **Container:** `/root/.codex`
+
+### Tips & Best Practices
+
+1. **Container auth:** Use device code flow: `codex login --device-auth`
+2. **Interactive vs exec:** Interactive for chat, exec for automation
+3. **Model selection:** GPT-4o recommended for coding tasks
+4. **API key distinction:** Remember `OPENAI_API_KEY` vs `CODEX_API_KEY` usage
+
+## Gemini CLI
+
+### Overview
+
+Gemini CLI provides command-line access to Google's Gemini models for development tasks. Supports both direct API access and Vertex AI.
+
+**Provider:** Google
+**Models:** Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
+
+### Installation
+
+Build aishell with Gemini CLI support:
+
+```bash
+# Latest version
+aishell build --with-gemini
+
+# Specific version
+aishell build --with-gemini=0.1.5
+```
+
+### Authentication
+
+Gemini CLI supports OAuth and API key authentication.
+
+#### OAuth (Important: Host authentication required)
+
+**CRITICAL:** OAuth requires authentication on the host system FIRST, then the container can use cached credentials.
+
+**Step 1 - Authenticate on host:**
+
+```bash
+# Install Gemini CLI on host
+npm install -g @google/generative-ai-cli
+
+# Authenticate
+gemini login
+```
+
+**Step 2 - Run in container:**
+
+```bash
+aishell gemini
+# Uses cached OAuth credentials
+```
+
+Container automatically mounts `~/.gemini` config directory.
+
+#### API Key
+
+Set `GEMINI_API_KEY` or `GOOGLE_API_KEY`:
+
+```bash
+export GEMINI_API_KEY=...
+aishell gemini
+```
+
+Or pass via `--env` flag:
+
+```bash
+aishell --env GEMINI_API_KEY=... gemini
+```
+
+Get API keys from: https://aistudio.google.com/app/apikey
+
+#### Vertex AI
+
+For Vertex AI access, set `GOOGLE_APPLICATION_CREDENTIALS`:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+aishell --mount $GOOGLE_APPLICATION_CREDENTIALS:/creds/gcp.json \
+  --env GOOGLE_APPLICATION_CREDENTIALS=/creds/gcp.json \
+  gemini
+```
+
+### Usage
+
+Basic invocation:
+
+```bash
+aishell gemini
+```
+
+Pass arguments:
+
+```bash
+aishell gemini --help
+aishell gemini --model gemini-2.0-flash-exp
+```
+
+Set default model in `config.yaml`:
+
+```yaml
+harnesses:
+  gemini:
+    args: ["--model", "gemini-2.0-flash-exp"]
+```
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `GEMINI_API_KEY` | Gemini API key | `AI...` |
+| `GOOGLE_API_KEY` | Alternative API key var | `AI...` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | GCP service account (Vertex AI) | `/path/to/creds.json` |
+| `GEMINI_MODEL` | Default model | `gemini-2.0-flash-exp` |
+
+### Configuration Directory
+
+- **Host:** `~/.gemini`
+- **Container:** `/root/.gemini`
+
+### Tips & Best Practices
+
+1. **OAuth setup:** Must authenticate on host first, then container uses cache
+2. **API key simplicity:** Use `GEMINI_API_KEY` for straightforward setup
+3. **Vertex AI:** Provides enterprise features (audit logs, VPC, quotas)
+4. **Model selection:** Gemini 2.0 Flash recommended for speed and quality balance
+
+## Running Multiple Harnesses
+
+### Building with Multiple Harnesses
+
+Build with any combination:
+
+```bash
+# Two harnesses
+aishell build --with-claude --with-opencode
+
+# Three harnesses
+aishell build --with-claude --with-opencode --with-codex
+
+# All harnesses
+aishell build --with-claude --with-opencode --with-codex --with-gemini
+```
+
+Image size increases with each harness added.
+
+### Switching Between Harnesses
+
+Each harness is invoked separately:
+
+```bash
+# Use Claude Code
+aishell claude "implement feature X"
+
+# Use OpenCode
+aishell opencode "implement feature Y"
+
+# Use Codex CLI
+aishell codex "implement feature Z"
+
+# Use Gemini CLI
+aishell gemini "implement feature W"
+```
+
+Containers are isolated per invocation.
+
+### Shared Environment Variables
+
+Some environment variables work across harnesses:
+
+```bash
+# Works for both Claude Code and OpenCode (Anthropic)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Works for both Codex CLI and OpenCode (OpenAI)
+export OPENAI_API_KEY=sk-...
+
+# Works for both Gemini CLI and OpenCode (Google)
+export GOOGLE_API_KEY=...
+```
+
+### Configuration Management
+
+Each harness has its own config section in `config.yaml`:
+
+```yaml
+harnesses:
+  claude:
+    args: ["--model", "claude-opus-4.5"]
+
+  opencode:
+    args: ["--model", "claude-3-5-sonnet-20241022"]
+
+  codex:
+    args: ["--model", "gpt-4o"]
+
+  gemini:
+    args: ["--model", "gemini-2.0-flash-exp"]
+```
+
+## Authentication Quick Reference
+
+### OAuth Authentication
+
+| Harness | Method | Container Support |
+|---------|--------|-------------------|
+| Claude Code | Copy-paste URL | ✓ Excellent |
+| OpenCode | Provider-dependent | ✓ Varies by provider |
+| Codex CLI | Device code flow | ✓ Good with `--device-auth` |
+| Gemini CLI | Host auth required | ✓ Requires host setup |
+
+### API Key Authentication
+
+| Harness | Environment Variable | Where to Get |
+|---------|---------------------|--------------|
+| Claude Code | `ANTHROPIC_API_KEY` | https://console.anthropic.com/settings/keys |
+| OpenCode (Anthropic) | `ANTHROPIC_API_KEY` | https://console.anthropic.com/settings/keys |
+| OpenCode (OpenAI) | `OPENAI_API_KEY` | https://platform.openai.com/api-keys |
+| OpenCode (Google) | `GOOGLE_API_KEY` | https://aistudio.google.com/app/apikey |
+| Codex CLI | `OPENAI_API_KEY` (chat) or `CODEX_API_KEY` (exec) | https://platform.openai.com/api-keys |
+| Gemini CLI | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | https://aistudio.google.com/app/apikey |
+
+### Vertex AI Authentication
+
+| Harness | Environment Variable | Setup |
+|---------|---------------------|-------|
+| OpenCode | `GOOGLE_APPLICATION_CREDENTIALS` | Service account JSON, mount into container |
+| Gemini CLI | `GOOGLE_APPLICATION_CREDENTIALS` | Service account JSON, mount into container |
+
+## Troubleshooting
+
+### Authentication Issues
+
+**OAuth fails in container:**
+- Claude Code: Ensure copy-paste URL flow completes
+- Codex CLI: Use `--device-auth` flag
+- Gemini CLI: Authenticate on host first with `gemini login`
+
+**API key not recognized:**
+- Check environment variable name matches harness requirements
+- Verify API key has correct format and permissions
+- Use `--env` flag to pass explicitly: `aishell --env KEY=value harness`
+
+### Configuration Persistence
+
+**Config not persisting:**
+- Verify volume mounts: `aishell info` shows mount points
+- Check config directory permissions in container
+- Ensure `~/.aishell/config.yaml` mounted correctly
+
+**Multiple configs conflicting:**
+- Remember config precedence: project > user > system
+- Use `aishell debug` to see effective config
+- Check `extends` key isn't creating circular references
+
+### Performance Issues
+
+**Slow startup:**
+- Multiple harnesses increase image size
+- Consider building separate images per harness
+- Use version pinning to cache layers
+
+**Network timeouts:**
+- Increase timeout via environment variables
+- Check network connectivity from container
+- Verify proxy settings if behind corporate firewall
+
+## See Also
+
+- [Environment Variables Reference](ENVIRONMENT.md) - Complete env var documentation
+- [Configuration Guide](CONFIGURATION.md) - Config file and precedence
+- [README](../README.md) - Main project documentation
