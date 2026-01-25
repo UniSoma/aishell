@@ -15,6 +15,16 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Co
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
 
+## Documentation
+
+For detailed documentation, see the [docs/](docs/) folder:
+
+- **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, and codebase structure
+- **[Configuration](docs/CONFIGURATION.md)** - Complete config.yaml reference with examples
+- **[Harnesses](docs/HARNESSES.md)** - Setup and usage guide for each AI harness
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Development](docs/DEVELOPMENT.md)** - Guide for adding new harnesses
+
 ## Why aishell?
 
 Running AI coding agents in Docker yourself means dealing with:
