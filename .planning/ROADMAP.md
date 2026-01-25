@@ -73,7 +73,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 26-01-PLAN.md — Update README with codex/gemini commands, authentication, and environment variables
+- [x] 26-01-PLAN.md — Update README with codex/gemini commands, authentication, and environment variables
 
 ### Phase 27: Comprehensive Documentation
 **Goal**: Create in-depth documentation covering architecture, configuration, all harnesses, troubleshooting, and development guide
@@ -104,11 +104,11 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 18.1-23 | v2.3.0 | 11/11 | Complete | 2026-01-24 |
 | 24. Build Infrastructure | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 25. CLI & Runtime | v2.4.0 | 2/2 | Complete | 2026-01-25 |
-| 26. Documentation | v2.4.0 | 0/1 | Planned | - |
+| 26. Documentation | v2.4.0 | 1/1 | Complete | 2026-01-25 |
 | 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
 
-**Total:** 61 plans completed across 5 milestones
+**Total:** 62 plans completed across 5 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-25 after Phase 26 planned*
+*Last updated: 2026-01-25 after Phase 26 complete*
