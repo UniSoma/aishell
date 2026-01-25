@@ -1,51 +1,75 @@
 ---
 created: 2026-01-25T16:42
-title: Binary install Claude Code with version pinning
+updated: 2026-01-25T17:15
+title: Binary install all harnesses, conditional Node.js for Gemini only
 area: docker
 files:
-  - src/aishell/docker/templates.clj:92-100
+  - src/aishell/docker/templates.clj:52-134
   - src/aishell/docker/build.clj
 ---
 
 ## Problem
 
-The base Docker image is ~579MB, with Node.js being the largest contributor (~200-250MB). Currently, Claude Code is installed via npm which requires the full Node.js runtime:
+The base Docker image is ~579MB, with Node.js being the largest contributor (~200-250MB). Currently:
 
-```dockerfile
-# Current approach (requires Node.js)
-COPY --from=node-source /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-source /usr/local/lib/node_modules /usr/local/lib/node_modules
-RUN npm install -g @anthropic-ai/claude-code@"$CLAUDE_VERSION"
-```
+- **Claude Code**: npm install (deprecated, native binary available)
+- **Codex CLI**: npm install (Rust binary available, ~20MB vs ~100MB npm)
+- **Gemini CLI**: npm install (**only option** - no native binary exists)
+- **OpenCode**: Already using native binary (correct)
 
-Claude Code now offers a native binary installer that doesn't require Node.js. The npm installation method is deprecated per official docs.
+Node.js is always included even when only Claude/OpenCode/Codex are requested.
+
+## Research Summary (2026-01-25)
+
+| Harness | Binary Install? | Version Pinning | Binary Size |
+|---------|----------------|-----------------|-------------|
+| Claude Code | Yes (native) | `bash -s VERSION` | ~50MB |
+| OpenCode | Yes (Go) | `VERSION=x.x.x` | ~32MB |
+| Codex CLI | Yes (Rust) | GitHub releases | ~20MB |
+| Gemini CLI | **No** | npm only | ~12MB (needs Node.js) |
 
 ## Solution
 
-Replace npm installation with native binary installer in `templates.clj`:
+1. **Make Node.js conditional** — only copy from `node-source` if `WITH_GEMINI=true`
 
-```dockerfile
-# Native binary (no Node.js required)
-RUN if [ "$WITH_CLAUDE" = "true" ]; then \
-        if [ -n "$CLAUDE_VERSION" ]; then \
-            curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_VERSION"; \
-        else \
-            curl -fsSL https://claude.ai/install.sh | bash; \
-        fi; \
-        # Copy to /usr/local/bin for PATH accessibility
-        cp ~/.local/bin/claude /usr/local/bin/claude; \
-    fi
-```
+2. **Claude Code** — switch to native installer:
+   ```dockerfile
+   RUN if [ "$WITH_CLAUDE" = "true" ]; then \
+           curl -fsSL https://claude.ai/install.sh | bash -s ${CLAUDE_VERSION:-}; \
+           cp ~/.local/bin/claude /usr/local/bin/claude; \
+       fi
+   ```
+
+3. **Codex CLI** — switch to binary download:
+   ```dockerfile
+   RUN if [ "$WITH_CODEX" = "true" ]; then \
+           CODEX_VER=${CODEX_VERSION:-latest}; \
+           curl -fsSL "https://github.com/openai/codex/releases/download/v${CODEX_VER}/codex-x86_64-unknown-linux-musl.tar.gz" \
+           | tar -xz -C /usr/local/bin; \
+       fi
+   ```
+
+4. **Gemini CLI** — keep npm (no alternative):
+   ```dockerfile
+   # Only install Node.js if Gemini is requested
+   RUN if [ "$WITH_GEMINI" = "true" ]; then \
+           npm install -g @google/gemini-cli${GEMINI_VERSION:+@$GEMINI_VERSION}; \
+       fi
+   ```
+
+5. **Add `DISABLE_AUTOUPDATER=1`** to entrypoint for Claude Code (auto-updates don't make sense in containers)
+
+**Expected image sizes:**
+- Claude only: ~300MB (down from ~579MB)
+- Claude + OpenCode + Codex: ~350MB
+- With Gemini: ~500MB (Node.js required)
 
 **Considerations:**
-1. Make Node.js conditional — only install if `WITH_CODEX=true` or `WITH_GEMINI=true`
-2. Add `DISABLE_AUTOUPDATER=1` to entrypoint (auto-updates don't make sense in containers)
-3. Test the native installer in container context (known bug: may hang showing "Cleaning up old npm installations...")
-4. Update cache invalidation logic if install method changes hash
-
-**Expected impact:** ~200-250MB reduction when only Claude Code is needed.
+- Test Claude native installer in container (known hang bug on "Cleaning up old npm installations...")
+- Codex binary URL needs architecture detection (amd64/arm64)
+- Update cache invalidation hash logic in build.clj
 
 **Sources:**
-- https://code.claude.com/docs/en/setup (official docs - native installer recommended)
-- https://github.com/anthropics/claude-code/issues/19985 (request to change Dockerfile to native)
-- https://github.com/anthropics/claude-code/issues/5209 (Linux hang bug to watch for)
+- https://code.claude.com/docs/en/setup (Claude native installer)
+- https://github.com/openai/codex/releases (Codex binaries)
+- https://github.com/google-gemini/gemini-cli/issues/14106 (Gemini native requested but not available)
