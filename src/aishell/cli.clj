@@ -69,6 +69,20 @@
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
 
+(defn installed-harnesses
+  "Return set of installed harness names based on state.
+   If no state file exists (no build yet), returns all harnesses
+   to aid discoverability."
+  []
+  (if-let [state (state/read-state)]
+    (cond-> #{}
+      (:with-claude state) (conj "claude")
+      (:with-opencode state) (conj "opencode")
+      (:with-codex state) (conj "codex")
+      (:with-gemini state) (conj "gemini"))
+    ;; No state = no build yet, show all for discoverability
+    #{"claude" "opencode" "codex" "gemini"}))
+
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
   (println)
@@ -77,10 +91,16 @@
   (println (str output/BOLD "Commands:" output/NC))
   (println (str "  " output/CYAN "build" output/NC "      Build the container image"))
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
-  (println (str "  " output/CYAN "claude" output/NC "     Run Claude Code"))
-  (println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode"))
-  (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI"))
-  (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI"))
+  ;; Conditionally show harness commands based on installation
+  (let [installed (installed-harnesses)]
+    (when (contains? installed "claude")
+      (println (str "  " output/CYAN "claude" output/NC "     Run Claude Code")))
+    (when (contains? installed "opencode")
+      (println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode")))
+    (when (contains? installed "codex")
+      (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI")))
+    (when (contains? installed "gemini")
+      (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI"))))
   (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
