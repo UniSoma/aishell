@@ -78,6 +78,8 @@
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
   (println (str "  " output/CYAN "claude" output/NC "     Run Claude Code"))
   (println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode"))
+  (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI"))
+  (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI"))
   (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
@@ -88,6 +90,7 @@
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build --with-claude" output/NC "     Build with Claude Code"))
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
+  (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
 
 (defn print-build-help []
@@ -243,6 +246,8 @@
     (case (first clean-args)
       "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
+      "codex" (run/run-container "codex" (vec (rest clean-args)) {:unsafe unsafe?})
+      "gemini" (run/run-container "gemini" (vec (rest clean-args)) {:unsafe unsafe?})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args)) {:unsafe unsafe? :skip-pre-start true})
       ;; Standard dispatch for other commands (build, update, help)
       (if unsafe?
