@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 27 of 27 (Comprehensive Documentation)
-Plan: 27-01 of 3 in phase
-Status: In progress
-Last activity: 2026-01-25 — Completed 27-01-PLAN.md (Foundation Documentation)
+Plan: 27-03 of 3 in phase
+Status: Phase complete
+Last activity: 2026-01-25 — Completed 27-03-PLAN.md (Complete Documentation Suite)
 
-Progress: [███████████████▓    ] 78% of v2.4.0
+Progress: [████████████████████] 100% of v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -26,9 +26,9 @@ Progress: [███████████████▓    ] 78% of v2.4.0
 ## Performance Metrics
 
 **v2.4.0 Velocity:**
-- Total plans completed: 7
-- Average duration: 2.3 min
-- Total execution time: ~17 min
+- Total plans completed: 10
+- Average duration: 2.2 min
+- Total execution time: ~22 min
 
 **By Phase:**
 
@@ -37,7 +37,7 @@ Progress: [███████████████▓    ] 78% of v2.4.0
 | 24-dockerfile-build-infrastructure | 2/2 | ~4min | 2.0min |
 | 25-cli-runtime | 2/2 | ~4min | 2.0min |
 | 26-documentation | 1/1 | ~3min | 3.0min |
-| 27-comprehensive-documentation | 2/3 | ~6min | 3.0min |
+| 27-comprehensive-documentation | 3/3 | ~11min | 3.7min |
 
 **Previous Milestones:**
 
@@ -47,8 +47,8 @@ Progress: [███████████████▓    ] 78% of v2.4.0
 - Total time: 30.0 min
 
 **Cumulative (v1.0-v2.4.0):**
-- Total plans: 64
-- Milestones: 5 (6th in progress)
+- Total plans: 67
+- Milestones: 6 (v2.4.0 complete)
 - Days: 9 (2026-01-17 -> 2026-01-25)
 
 ## Accumulated Context
@@ -68,6 +68,9 @@ Recent decisions:
 - v2.4.0 (27-01): Split architecture and configuration into separate docs
 - v2.4.0 (27-02): Comparison table at document start for quick harness selection
 - v2.4.0 (27-02): Document container-specific auth nuances in each harness section
+- v2.4.0 (27-03): Organize troubleshooting by symptom (not by component)
+- v2.4.0 (27-03): Provide concrete checklist for adding harnesses (7 steps)
+- v2.4.0 (27-03): Place Documentation section after Features in README
 
 ### Pending Todos
 
@@ -88,7 +91,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 27-01-PLAN.md (Foundation Documentation)
+Stopped at: Completed 27-03-PLAN.md (Complete Documentation Suite)
 Resume file: None
 
-Next step: Continue Phase 27 with `/gsd:execute-phase 27` for next plan
+Next step: Phase 27 complete. v2.4.0 ready for release.
