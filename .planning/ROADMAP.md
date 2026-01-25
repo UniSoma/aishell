@@ -7,7 +7,7 @@
 - v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
 - v2.0 Babashka Rewrite - Phases 13-18 (shipped 2026-01-21)
 - v2.3.0 Safe AI Context Protection - Phases 18.1-23 (shipped 2026-01-24)
-- **v2.4.0 Multi-Harness Support** - Phases 24-27 (in progress)
+- **v2.4.0 Multi-Harness Support** - Phases 24-27 (shipped 2026-01-25)
 
 ## Phases
 
@@ -23,7 +23,7 @@ See `.planning/milestones/` for completed milestone details:
 
 </details>
 
-## v2.4.0 Multi-Harness Support (In Progress)
+## v2.4.0 Multi-Harness Support (Complete)
 
 **Milestone Goal:** Add OpenAI Codex CLI and Google Gemini CLI support to aishell, enabling users to run multiple AI coding harnesses in the same isolated sandbox environment.
 
@@ -88,9 +88,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 27-01-PLAN.md — Architecture and Configuration documentation
-- [ ] 27-02-PLAN.md — Harnesses documentation (all four harnesses)
-- [ ] 27-03-PLAN.md — Troubleshooting, Development guide, and README links
+- [x] 27-01-PLAN.md — Architecture and Configuration documentation
+- [x] 27-02-PLAN.md — Harnesses documentation (all four harnesses)
+- [x] 27-03-PLAN.md — Troubleshooting, Development guide, and README links
 
 ## Progress
 
@@ -107,10 +107,10 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Build Infrastructure | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 25. CLI & Runtime | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 26. Documentation | v2.4.0 | 1/1 | Complete | 2026-01-25 |
-| 27. Comprehensive Docs | v2.4.0 | 0/3 | Planned | - |
+| 27. Comprehensive Docs | v2.4.0 | 3/3 | Complete | 2026-01-25 |
 
-**Total:** 62 plans completed across 5 milestones
+**Total:** 65 plans completed across 6 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-25 after Phase 27 planning*
+*Last updated: 2026-01-25 after Phase 27 complete — v2.4.0 shipped*

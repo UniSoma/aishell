@@ -40,11 +40,11 @@ Requirements for multi-harness support milestone. Adds OpenAI Codex CLI and Goog
 
 ### Comprehensive Documentation
 
-- [ ] **CDOCS-01**: Architecture document explains codebase structure, namespaces, and data flow
-- [ ] **CDOCS-02**: Configuration guide covers all config.yaml options with examples
-- [ ] **CDOCS-03**: Harness guide documents each supported harness (Claude, OpenCode, Codex, Gemini)
-- [ ] **CDOCS-04**: Troubleshooting guide covers common issues and solutions
-- [ ] **CDOCS-05**: Development guide explains how to add new harnesses or extend aishell
+- [x] **CDOCS-01**: Architecture document explains codebase structure, namespaces, and data flow
+- [x] **CDOCS-02**: Configuration guide covers all config.yaml options with examples
+- [x] **CDOCS-03**: Harness guide documents each supported harness (Claude, OpenCode, Codex, Gemini)
+- [x] **CDOCS-04**: Troubleshooting guide covers common issues and solutions
+- [x] **CDOCS-05**: Development guide explains how to add new harnesses or extend aishell
 
 ## Future Requirements
 
@@ -98,11 +98,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-01 | Phase 26 | Complete |
 | DOCS-02 | Phase 26 | Complete |
 | DOCS-03 | Phase 26 | Complete |
-| CDOCS-01 | Phase 27 | Pending |
-| CDOCS-02 | Phase 27 | Pending |
-| CDOCS-03 | Phase 27 | Pending |
-| CDOCS-04 | Phase 27 | Pending |
-| CDOCS-05 | Phase 27 | Pending |
+| CDOCS-01 | Phase 27 | Complete |
+| CDOCS-02 | Phase 27 | Complete |
+| CDOCS-03 | Phase 27 | Complete |
+| CDOCS-04 | Phase 27 | Complete |
+| CDOCS-05 | Phase 27 | Complete |
 
 **Coverage:**
 - v2.4.0 requirements: 24 total
@@ -111,4 +111,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 26 complete*
+*Last updated: 2026-01-25 after Phase 27 complete*

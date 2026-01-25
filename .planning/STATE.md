@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 27 - Comprehensive Documentation (v2.4.0)
+**Current focus:** v2.4.0 complete — ready for milestone archive
 
 ## Current Position
 
@@ -22,6 +22,7 @@ Progress: [████████████████████] 100% of
 - v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
 - v2.0 Babashka Rewrite - Phases 13-18 (shipped 2026-01-21)
 - v2.3.0 Safe AI Context Protection - Phases 18.1-23 (shipped 2026-01-24)
+- v2.4.0 Multi-Harness Support - Phases 24-27 (shipped 2026-01-25)
 
 ## Performance Metrics
 
@@ -94,4 +95,4 @@ Last session: 2026-01-25
 Stopped at: Completed 27-03-PLAN.md (Complete Documentation Suite)
 Resume file: None
 
-Next step: Phase 27 complete. v2.4.0 ready for release.
+Next step: Complete milestone with `/gsd:complete-milestone` or audit with `/gsd:audit-milestone`
