@@ -44,12 +44,13 @@ See PROJECT.md Key Decisions tables for full history.
 
 ### Pending Todos
 
-4 pending todos in `.planning/todos/pending/`
+5 pending todos in `.planning/todos/pending/`
 
 - [Dynamic help based on installed harnesses](./todos/pending/2026-01-25-dynamic-help-based-on-installed-harnesses.md)
 - [Support list format for pre_start](./todos/pending/2026-01-25-support-list-format-for-pre-start.md)
 - [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md)
-- [Binary install Claude Code with version pinning](./todos/pending/2026-01-25-binary-install-claude-code.md)
+- [Binary install all harnesses, conditional Node.js](./todos/pending/2026-01-25-binary-install-claude-code.md)
+- [Add shell command for one-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md)
 
 ### Blockers/Concerns
 
