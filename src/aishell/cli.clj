@@ -79,9 +79,10 @@
       (:with-claude state) (conj "claude")
       (:with-opencode state) (conj "opencode")
       (:with-codex state) (conj "codex")
-      (:with-gemini state) (conj "gemini"))
+      (:with-gemini state) (conj "gemini")
+      (:with-gitleaks state true) (conj "gitleaks"))
     ;; No state = no build yet, show all for discoverability
-    #{"claude" "opencode" "codex" "gemini"}))
+    #{"claude" "opencode" "codex" "gemini" "gitleaks"}))
 
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
@@ -100,8 +101,9 @@
     (when (contains? installed "codex")
       (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI")))
     (when (contains? installed "gemini")
-      (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI"))))
-  (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))
+      (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI")))
+    (when (contains? installed "gitleaks")
+      (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
