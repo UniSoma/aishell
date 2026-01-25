@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 ## Current Position
 
 Phase: 28 of 30 (Dynamic Help & Config Improvements)
-Plan: --
-Status: Ready for planning
-Last activity: 2026-01-25 -- Roadmap created for v2.5.0
+Plan: 01 of 02
+Status: In progress
+Last activity: 2026-01-25 - Completed 28-01-PLAN.md
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░░░░░░░░░░░] 1.5%
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,7 +27,8 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Cumulative (v1.0-v2.4.0):**
-- Total plans: 67
+- Total plans: 68
+- Completed plans: 68
 - Milestones: 6 (all shipped)
 - Days: 9 (2026-01-17 -> 2026-01-25)
 
@@ -36,6 +37,14 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 ### Decisions
 
 See PROJECT.md Key Decisions tables for full history.
+
+**Recent (Phase 28-01):**
+
+| ID | Decision | Rationale |
+|----|----------|-----------|
+| pre-start-list-normalization | Normalize at YAML load time in config.clj | Single point of normalization ensures consistent behavior |
+| gitleaks-opt-out-flag | Use --without-gitleaks (opt-out) vs --with-gitleaks (opt-in) | Maintains backwards compatibility |
+| with-gitleaks-positive-tracking | Invert flag to :with-gitleaks for positive state tracking | State reflects what is installed, not what is excluded |
 
 ### Pending Todos
 
@@ -58,7 +67,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Roadmap created for v2.5.0
+Stopped at: Completed 28-01-PLAN.md
 Resume file: None
 
-Next step: Plan Phase 28 with `/gsd:plan-phase 28`
+Next step: Execute Phase 28 Plan 02 with `/gsd:execute-plan`
