@@ -11,20 +11,20 @@ Requirements for multi-harness support milestone. Adds OpenAI Codex CLI and Goog
 
 - [x] **CODEX-01**: User can build image with OpenAI Codex CLI using `aishell build --with-codex`
 - [x] **CODEX-02**: User can pin Codex version at build time using `--with-codex=VERSION`
-- [ ] **CODEX-03**: User can run Codex CLI directly with `aishell codex [args]`
-- [ ] **CODEX-04**: Codex config directory (~/.codex/) is mounted from host to container
-- [ ] **CODEX-05**: CODEX_API_KEY environment variable is passed through to container
-- [ ] **CODEX-06**: User can configure default Codex args via config.yaml harness_args
+- [x] **CODEX-03**: User can run Codex CLI directly with `aishell codex [args]`
+- [x] **CODEX-04**: Codex config directory (~/.codex/) is mounted from host to container
+- [x] **CODEX-05**: CODEX_API_KEY environment variable is passed through to container
+- [x] **CODEX-06**: User can configure default Codex args via config.yaml harness_args
 
 ### Gemini CLI Integration
 
 - [x] **GEMINI-01**: User can build image with Google Gemini CLI using `aishell build --with-gemini`
 - [x] **GEMINI-02**: User can pin Gemini version at build time using `--with-gemini=VERSION`
-- [ ] **GEMINI-03**: User can run Gemini CLI directly with `aishell gemini [args]`
-- [ ] **GEMINI-04**: Gemini config directory (~/.gemini/) is mounted from host to container
-- [ ] **GEMINI-05**: GEMINI_API_KEY and GOOGLE_API_KEY environment variables are passed through
-- [ ] **GEMINI-06**: User can configure default Gemini args via config.yaml harness_args
-- [ ] **GEMINI-07**: Vertex AI credentials (GOOGLE_APPLICATION_CREDENTIALS) are passed through
+- [x] **GEMINI-03**: User can run Gemini CLI directly with `aishell gemini [args]`
+- [x] **GEMINI-04**: Gemini config directory (~/.gemini/) is mounted from host to container
+- [x] **GEMINI-05**: GEMINI_API_KEY and GOOGLE_API_KEY environment variables are passed through
+- [x] **GEMINI-06**: User can configure default Gemini args via config.yaml harness_args
+- [x] **GEMINI-07**: Vertex AI credentials (GOOGLE_APPLICATION_CREDENTIALS) are passed through
 
 ### Build Infrastructure
 
@@ -81,17 +81,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CODEX-01 | Phase 24 | Complete |
 | CODEX-02 | Phase 24 | Complete |
-| CODEX-03 | Phase 25 | Pending |
-| CODEX-04 | Phase 25 | Pending |
-| CODEX-05 | Phase 25 | Pending |
-| CODEX-06 | Phase 25 | Pending |
+| CODEX-03 | Phase 25 | Complete |
+| CODEX-04 | Phase 25 | Complete |
+| CODEX-05 | Phase 25 | Complete |
+| CODEX-06 | Phase 25 | Complete |
 | GEMINI-01 | Phase 24 | Complete |
 | GEMINI-02 | Phase 24 | Complete |
-| GEMINI-03 | Phase 25 | Pending |
-| GEMINI-04 | Phase 25 | Pending |
-| GEMINI-05 | Phase 25 | Pending |
-| GEMINI-06 | Phase 25 | Pending |
-| GEMINI-07 | Phase 25 | Pending |
+| GEMINI-03 | Phase 25 | Complete |
+| GEMINI-04 | Phase 25 | Complete |
+| GEMINI-05 | Phase 25 | Complete |
+| GEMINI-06 | Phase 25 | Complete |
+| GEMINI-07 | Phase 25 | Complete |
 | BUILD-01 | Phase 24 | Complete |
 | BUILD-02 | Phase 24 | Complete |
 | BUILD-03 | Phase 24 | Complete |
@@ -111,4 +111,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-25 after Phase 24 complete*
+*Last updated: 2026-01-25 after Phase 25 complete*

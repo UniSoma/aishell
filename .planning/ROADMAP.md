@@ -59,8 +59,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 25-01-PLAN.md — Docker runtime setup (config mounts, env vars, GCP credentials)
-- [ ] 25-02-PLAN.md — CLI dispatch and harness integration (routing, verification, help)
+- [x] 25-01-PLAN.md — Docker runtime setup (config mounts, env vars, GCP credentials)
+- [x] 25-02-PLAN.md — CLI dispatch and harness integration (routing, verification, help)
 
 ### Phase 26: Documentation
 **Goal**: Document new harness commands, authentication methods, and environment variables
@@ -103,12 +103,12 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 13-18 | v2.0 | 22/22 | Complete | 2026-01-21 |
 | 18.1-23 | v2.3.0 | 11/11 | Complete | 2026-01-24 |
 | 24. Build Infrastructure | v2.4.0 | 2/2 | Complete | 2026-01-25 |
-| 25. CLI & Runtime | v2.4.0 | 0/2 | Planned | - |
+| 25. CLI & Runtime | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 26. Documentation | v2.4.0 | 0/0 | Not started | - |
 | 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
 
-**Total:** 59 plans completed across 5 milestones
+**Total:** 61 plans completed across 5 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-25 after Phase 25 planning*
+*Last updated: 2026-01-25 after Phase 25 complete*
