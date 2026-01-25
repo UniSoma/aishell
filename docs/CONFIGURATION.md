@@ -316,6 +316,31 @@ mounts:
 
 **Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Use `--unsafe` to bypass.
 
+**⚠️ SSH Keys Security Note:**
+
+Mounting `~/.ssh` gives AI harnesses access to your private keys. Since these agents can execute arbitrary code, they could:
+- Read your private keys
+- Authenticate to any server your keys access (git push, SSH to servers)
+- Potentially expose key material in conversation context
+
+**Safer alternatives:**
+
+| Instead of | Consider |
+|------------|----------|
+| Mounting `~/.ssh` | Use HTTPS + tokens for git (`GH_TOKEN`, `GITLAB_TOKEN`) |
+| Mounting all keys | Mount only a specific deploy key with limited permissions |
+
+**If you must mount SSH keys:**
+
+```yaml
+# Mount read-only and only what's needed
+mounts:
+  - ~/.ssh/id_ed25519_deploy:~/.ssh/id_ed25519:ro
+  - ~/.ssh/known_hosts:~/.ssh/known_hosts:ro
+```
+
+For most workflows, AI harnesses don't need SSH access — git operations work with HTTPS and tokens.
+
 ---
 
 ### env

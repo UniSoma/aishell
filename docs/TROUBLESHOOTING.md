@@ -452,6 +452,49 @@ ls -la ~/.gemini/
    # Should be writable by your user
    ```
 
+### Symptom: "Permission denied (publickey)" when using git over SSH
+
+**Cause:** SSH keys are not mounted in the container. By default, aishell does NOT mount `~/.ssh`.
+
+**Resolution:**
+
+**Recommended: Use HTTPS instead of SSH for git operations:**
+
+```bash
+# Instead of SSH remotes
+git@github.com:user/repo.git
+
+# Use HTTPS with token
+https://github.com/user/repo.git
+```
+
+Set up token authentication:
+```yaml
+# In .aishell/config.yaml
+env:
+  GH_TOKEN:           # GitHub - passthrough from host
+  GITLAB_TOKEN:       # GitLab - passthrough from host
+```
+
+**Alternative: Mount SSH keys (with security considerations):**
+
+⚠️ **Security warning:** Mounting SSH keys gives AI harnesses access to your private keys. They can execute arbitrary code and could use your keys to authenticate anywhere.
+
+If you understand the risks and still need SSH:
+
+```yaml
+# In .aishell/config.yaml
+mounts:
+  # Safer: mount only a specific deploy key
+  - ~/.ssh/id_ed25519_deploy:~/.ssh/id_ed25519:ro
+  - ~/.ssh/known_hosts:~/.ssh/known_hosts:ro
+
+  # Less safe: mount entire .ssh directory
+  # - ~/.ssh:~/.ssh:ro
+```
+
+See [CONFIGURATION.md - SSH Keys Security Note](CONFIGURATION.md#mounts) for detailed guidance.
+
 ---
 
 ## Sensitive File Detection
