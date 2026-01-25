@@ -64,6 +64,7 @@
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
+   :without-gitleaks {:coerce :boolean :desc "Skip Gitleaks installation"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
@@ -100,7 +101,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec build-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :without-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
@@ -108,6 +109,7 @@
   (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell build --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
+  (println (str "  " output/CYAN "aishell build --without-gitleaks" output/NC "   Skip Gitleaks"))
   (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
 (defn handle-build [{:keys [opts]}]
@@ -118,6 +120,7 @@
           opencode-config (parse-with-flag (:with-opencode opts))
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
+          with-gitleaks (not (:without-gitleaks opts))  ; invert flag for positive tracking
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
@@ -135,6 +138,7 @@
                     :with-opencode (:enabled? opencode-config)
                     :with-codex (:enabled? codex-config)
                     :with-gemini (:enabled? gemini-config)
+                    :with-gitleaks with-gitleaks
                     :claude-version (:version claude-config)
                     :opencode-version (:version opencode-config)
                     :codex-version (:version codex-config)
@@ -148,6 +152,7 @@
          :with-opencode (:enabled? opencode-config)
          :with-codex (:enabled? codex-config)
          :with-gemini (:enabled? gemini-config)
+         :with-gitleaks with-gitleaks
          :claude-version (:version claude-config)
          :opencode-version (:version opencode-config)
          :codex-version (:version codex-config)
@@ -183,6 +188,7 @@
                     :with-opencode (:with-opencode state)
                     :with-codex (:with-codex state)
                     :with-gemini (:with-gemini state)
+                    :with-gitleaks (:with-gitleaks state true)  ; default true for backwards compat
                     :claude-version (:claude-version state)
                     :opencode-version (:opencode-version state)
                     :codex-version (:codex-version state)
