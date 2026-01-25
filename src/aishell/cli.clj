@@ -62,6 +62,8 @@
 (def build-spec
   {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
+   :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
+   :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
@@ -95,13 +97,14 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec build-spec
-                             :order [:with-claude :with-opencode :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
   (println (str "  " output/CYAN "aishell build --with-claude" output/NC "        Include Claude Code (latest)"))
   (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
+  (println (str "  " output/CYAN "aishell build --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
   (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
 (defn handle-build [{:keys [opts]}]
@@ -110,10 +113,14 @@
     (let [;; Parse flags
           claude-config (parse-with-flag (:with-claude opts))
           opencode-config (parse-with-flag (:with-opencode opts))
+          codex-config (parse-with-flag (:with-codex opts))
+          gemini-config (parse-with-flag (:with-gemini opts))
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
           _ (validate-version (:version opencode-config) "OpenCode")
+          _ (validate-version (:version codex-config) "Codex")
+          _ (validate-version (:version gemini-config) "Gemini")
 
           ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/base-image-tag)
@@ -123,8 +130,12 @@
           result (build/build-base-image
                    {:with-claude (:enabled? claude-config)
                     :with-opencode (:enabled? opencode-config)
+                    :with-codex (:enabled? codex-config)
+                    :with-gemini (:enabled? gemini-config)
                     :claude-version (:version claude-config)
                     :opencode-version (:version opencode-config)
+                    :codex-version (:version codex-config)
+                    :gemini-version (:version gemini-config)
                     :verbose (:verbose opts)
                     :force (:force opts)})]
 
@@ -132,8 +143,12 @@
       (state/write-state
         {:with-claude (:enabled? claude-config)
          :with-opencode (:enabled? opencode-config)
+         :with-codex (:enabled? codex-config)
+         :with-gemini (:enabled? gemini-config)
          :claude-version (:version claude-config)
          :opencode-version (:version opencode-config)
+         :codex-version (:version codex-config)
+         :gemini-version (:version gemini-config)
          :image-tag (:image result)
          :build-time (str (java.time.Instant/now))
          :dockerfile-hash (hash/compute-hash templates/base-dockerfile)}))))
@@ -154,13 +169,21 @@
       (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
     (when (:with-opencode state)
       (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
+    (when (:with-codex state)
+      (println (str "  Codex: " (or (:codex-version state) "latest"))))
+    (when (:with-gemini state)
+      (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
 
     ;; Rebuild with same config + force (always --no-cache for update)
     (let [result (build/build-base-image
                    {:with-claude (:with-claude state)
                     :with-opencode (:with-opencode state)
+                    :with-codex (:with-codex state)
+                    :with-gemini (:with-gemini state)
                     :claude-version (:claude-version state)
                     :opencode-version (:opencode-version state)
+                    :codex-version (:codex-version state)
+                    :gemini-version (:gemini-version state)
                     :verbose (:verbose opts)
                     :force true})]  ; Always force for update
 
