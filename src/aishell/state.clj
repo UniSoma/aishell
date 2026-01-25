@@ -25,8 +25,12 @@
    State schema:
    {:with-claude true            ; boolean
     :with-opencode false         ; boolean
+    :with-codex false            ; boolean
+    :with-gemini false           ; boolean
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
+    :codex-version \"0.89.0\"    ; string or nil
+    :gemini-version nil          ; string or nil
     :image-tag \"aishell:base\"  ; string
     :build-time \"2026-01-20...\" ; ISO-8601 string
     :dockerfile-hash \"abc123def456\"} ; 12-char SHA-256 hash"
