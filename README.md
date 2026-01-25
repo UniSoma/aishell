@@ -1,6 +1,6 @@
 # aishell
 
-Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode) in isolated, ephemeral containers.
+Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Codex CLI, Gemini CLI) in isolated, ephemeral containers.
 
 ## Features
 
@@ -86,11 +86,21 @@ aishell build --with-claude
 # Build with OpenCode
 aishell build --with-opencode
 
-# Build with both
+# Build with Codex CLI
+aishell build --with-codex
+
+# Build with Gemini CLI
+aishell build --with-gemini
+
+# Build with multiple harnesses
 aishell build --with-claude --with-opencode
+
+# Build with all harnesses
+aishell build --with-claude --with-opencode --with-codex --with-gemini
 
 # Build with specific versions (single-flag syntax)
 aishell build --with-claude=2.0.22
+aishell build --with-codex=0.1.2025062501
 ```
 
 ### Run harnesses
@@ -105,8 +115,16 @@ aishell claude
 # Run OpenCode
 aishell opencode
 
+# Run Codex CLI
+aishell codex
+
+# Run Gemini CLI
+aishell gemini
+
 # Pass arguments to harness
 aishell claude --help
+aishell codex --help
+aishell gemini --help
 
 # Run Gitleaks secret scanner
 aishell gitleaks detect
