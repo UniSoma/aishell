@@ -46,9 +46,17 @@
     ;; OpenCode version changed
     (and (:with-opencode opts)
          (not= (:opencode-version opts) (:opencode-version state)))
+    ;; Codex version changed
+    (and (:with-codex opts)
+         (not= (:codex-version opts) (:codex-version state)))
+    ;; Gemini version changed
+    (and (:with-gemini opts)
+         (not= (:gemini-version opts) (:gemini-version state)))
     ;; Harness added that wasn't in previous build
     (and (:with-claude opts) (not (:with-claude state)))
-    (and (:with-opencode opts) (not (:with-opencode state)))))
+    (and (:with-opencode opts) (not (:with-opencode state)))
+    (and (:with-codex opts) (not (:with-codex state)))
+    (and (:with-gemini opts) (not (:with-gemini state)))))
 
 (defn write-build-files
   "Write embedded template files to build directory."
@@ -59,12 +67,17 @@
 
 (defn- build-docker-args
   "Construct docker build argument vector."
-  [{:keys [with-claude with-opencode claude-version opencode-version]} dockerfile-hash]
+  [{:keys [with-claude with-opencode with-codex with-gemini
+           claude-version opencode-version codex-version gemini-version]} dockerfile-hash]
   (cond-> []
     with-claude (conj "--build-arg" "WITH_CLAUDE=true")
     with-opencode (conj "--build-arg" "WITH_OPENCODE=true")
+    with-codex (conj "--build-arg" "WITH_CODEX=true")
+    with-gemini (conj "--build-arg" "WITH_GEMINI=true")
     claude-version (conj "--build-arg" (str "CLAUDE_VERSION=" claude-version))
     opencode-version (conj "--build-arg" (str "OPENCODE_VERSION=" opencode-version))
+    codex-version (conj "--build-arg" (str "CODEX_VERSION=" codex-version))
+    gemini-version (conj "--build-arg" (str "GEMINI_VERSION=" gemini-version))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))))
 
 (defn- format-duration
@@ -114,8 +127,12 @@
    Options:
    - :with-claude - Include Claude Code
    - :with-opencode - Include OpenCode
+   - :with-codex - Include Codex CLI
+   - :with-gemini - Include Gemini CLI
    - :claude-version - Specific Claude version
    - :opencode-version - Specific OpenCode version
+   - :codex-version - Specific Codex version
+   - :gemini-version - Specific Gemini version
    - :force - Bypass cache check
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors
@@ -165,15 +182,23 @@
                 (when (:with-claude opts)
                   (println (format-harness-line "Claude Code" (:claude-version opts))))
                 (when (:with-opencode opts)
-                  (println (format-harness-line "OpenCode" (:opencode-version opts)))))
+                  (println (format-harness-line "OpenCode" (:opencode-version opts))))
+                (when (:with-codex opts)
+                  (println (format-harness-line "Codex" (:codex-version opts))))
+                (when (:with-gemini opts)
+                  (println (format-harness-line "Gemini" (:gemini-version opts)))))
               {:success true
                :image base-image-tag
                :duration duration
                :size size
                :with-claude (:with-claude opts)
                :with-opencode (:with-opencode opts)
+               :with-codex (:with-codex opts)
+               :with-gemini (:with-gemini opts)
                :claude-version (:claude-version opts)
-               :opencode-version (:opencode-version opts)})
+               :opencode-version (:opencode-version opts)
+               :codex-version (:codex-version opts)
+               :gemini-version (:gemini-version opts)})
             (output/error "Build failed")))
         (finally
           ;; Cleanup temp directory
