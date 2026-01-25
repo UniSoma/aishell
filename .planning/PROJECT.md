@@ -69,7 +69,13 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements - next milestone to be defined)
+**v2.5.0 (In Progress) - Optimization & Polish:**
+- [ ] Dynamic help: Show only installed harness commands in help output
+- [ ] Gitleaks opt-out: Add --without-gitleaks build flag
+- [ ] Pre-start list format: Accept YAML list for pre_start (joined with &&)
+- [ ] Binary install: Use native installers for Claude Code and Codex CLI
+- [ ] Conditional Node.js: Only include Node.js when Gemini is requested
+- [ ] One-off execution: Add `aishell exec` command for running commands in container
 
 ### Out of Scope
 
@@ -82,7 +88,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.4.0 on 2026-01-25
-**In Progress:** Next milestone to be defined
+**In Progress:** v2.5.0 Optimization & Polish
 
 **Codebase:** ~2,674 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
@@ -164,4 +170,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
 ---
-*Last updated: 2026-01-25 after v2.4.0 milestone complete*
+*Last updated: 2026-01-25 after v2.5.0 milestone started*
