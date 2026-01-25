@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 28-dynamic-help-config-improvements
 source: 28-01-SUMMARY.md, 28-02-SUMMARY.md
 started: 2026-01-25T17:30:00Z
@@ -53,7 +53,10 @@ skipped: 0
   reason: "User reported: gitleaks command shown in help even when not installed in container, but there's no host mounting mechanism - command will fail. Should be consistent with harnesses: omit from help when absent from container"
   severity: major
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "installed-harnesses function (cli.clj:72-84) doesn't track gitleaks, and gitleaks print (line 104) is outside conditional block"
+  artifacts:
+    - path: "src/aishell/cli.clj"
+      issue: "installed-harnesses missing gitleaks tracking; print-help gitleaks line unconditional"
+  missing:
+    - "Add gitleaks to installed-harnesses based on :with-gitleaks state"
+    - "Wrap gitleaks print in (when (contains? installed \"gitleaks\"))"
