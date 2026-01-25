@@ -37,10 +37,11 @@ See `.planning/milestones/` for completed milestone details:
   3. User can pin versions with `--with-codex=1.2.3` and `--with-gemini=0.5.0`
   4. Build state tracks which harnesses are installed and their versions
   5. Build summary shows Codex and Gemini versions when installed
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 24-01-PLAN.md — Dockerfile template + CLI build flags for Codex/Gemini
+- [ ] 24-02-PLAN.md — Build integration, version detection, and state tracking
 
 ### Phase 25: CLI & Runtime
 **Goal**: Enable running Codex and Gemini from aishell with proper config mounting and environment setup
@@ -100,7 +101,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27
 | 11-12 | v1.2 | 4/4 | Complete | 2026-01-19 |
 | 13-18 | v2.0 | 22/22 | Complete | 2026-01-21 |
 | 18.1-23 | v2.3.0 | 11/11 | Complete | 2026-01-24 |
-| 24. Build Infrastructure | v2.4.0 | 0/0 | Not started | - |
+| 24. Build Infrastructure | v2.4.0 | 0/2 | Planned | - |
 | 25. CLI & Runtime | v2.4.0 | 0/0 | Not started | - |
 | 26. Documentation | v2.4.0 | 0/0 | Not started | - |
 | 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
@@ -109,4 +110,4 @@ Phases execute in numeric order: 24 → 25 → 26 → 27
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-24 after v2.4.0 roadmap creation*
+*Last updated: 2026-01-25 after Phase 24 planning*
