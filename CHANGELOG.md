@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-01-25
+
+### Added
+
+- **OpenAI Codex CLI support**: Run OpenAI Codex CLI in the sandbox
+  - `aishell build --with-codex` to include Codex CLI in image
+  - `aishell codex [args]` to run Codex directly
+  - Version pinning with `--with-codex=VERSION`
+  - `~/.codex/` config directory mounted automatically
+  - `CODEX_API_KEY` environment variable passed through
+  - `harness_args.codex` for default arguments
+
+- **Google Gemini CLI support**: Run Google Gemini CLI in the sandbox
+  - `aishell build --with-gemini` to include Gemini CLI in image
+  - `aishell gemini [args]` to run Gemini directly
+  - Version pinning with `--with-gemini=VERSION`
+  - `~/.gemini/` config directory mounted automatically
+  - `GEMINI_API_KEY`, `GOOGLE_API_KEY` environment variables passed through
+  - `GOOGLE_APPLICATION_CREDENTIALS` mounted for Vertex AI authentication
+  - `harness_args.gemini` for default arguments
+
+- **Comprehensive documentation suite** (5 new docs, 3,660+ lines):
+  - `docs/ARCHITECTURE.md`: System design, data flow, namespace responsibilities
+  - `docs/CONFIGURATION.md`: Complete config.yaml reference with merge strategies
+  - `docs/HARNESSES.md`: Setup guide for all 4 harnesses with auth patterns
+  - `docs/TROUBLESHOOTING.md`: Common issues organized by symptom
+  - `docs/DEVELOPMENT.md`: Guide for adding new harnesses (7-step checklist)
+
+### Changed
+
+- Build state now tracks Codex and Gemini installation status and versions
+- README updated with multi-harness documentation, authentication guide, and environment variables table
+- Help text includes `codex` and `gemini` commands
+
 ## [2.3.0] - 2026-01-24
 
 ### Added

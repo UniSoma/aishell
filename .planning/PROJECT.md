@@ -60,13 +60,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Context awareness: Extra warning when high-severity files NOT in .gitignore ("risk: may be committed")
 - ✓ Configuration: Additive custom filename patterns, allowlist for false positives
 
+**v2.4.0 (2026-01-25) - Multi-Harness Support:**
+- ✓ OpenAI Codex CLI: User can run OpenAI Codex CLI with `aishell codex`
+- ✓ Google Gemini CLI: User can run Google Gemini CLI with `aishell gemini`
+- ✓ Harness-specific config mounting: Each harness's config directory mounted appropriately
+- ✓ Version pinning: Support --with-codex=VERSION and --with-gemini=VERSION flags at build time
+- ✓ Comprehensive documentation: Architecture, configuration, harnesses, troubleshooting, development guides
+
 ### Active
 
-**v2.4.0 (in progress) - Multi-Harness Support:**
-- OpenAI Codex CLI: User can run OpenAI Codex CLI with `aishell codex`
-- Google Gemini CLI: User can run Google Gemini CLI with `aishell gemini`
-- Harness-specific config mounting: Each harness's config directory mounted appropriately
-- Version pinning: Support --codex-version and --gemini-version flags at build time
+(No active requirements - next milestone to be defined)
 
 ### Out of Scope
 
@@ -78,20 +81,21 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.3.0 on 2026-01-24
-**In Progress:** v2.4.0 Multi-Harness Support
+**Shipped:** v2.4.0 on 2026-01-25
+**In Progress:** Next milestone to be defined
 
-**Codebase:** ~2,565 LOC Clojure (Babashka)
+**Codebase:** ~2,674 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
+**Documentation:** 3,735 lines across docs/ and README
 
-**v2.3.0 accomplishments:**
-- Core detection framework with severity tiers (high/medium/low) and advisory-only warnings
-- 13 filename-based pattern detectors for 20+ sensitive file types
-- Gitleaks integration with `aishell gitleaks` command for deep content scanning
-- Scan freshness tracking with 7-day staleness warnings
-- Gitignore awareness for high-severity findings
-- Configurable custom patterns and allowlist for false positives
-- 23 of 27 requirements satisfied (4 intentionally deferred/delegated)
+**v2.4.0 accomplishments:**
+- OpenAI Codex CLI support with build flags, version pinning, config mounting, and runtime dispatch
+- Google Gemini CLI support with Vertex AI authentication and GCP credentials file mounting
+- All four harnesses supported: Claude Code, OpenCode, Codex CLI, Gemini CLI
+- Comprehensive documentation suite (5 docs, 3,660+ lines)
+- Full harness comparison guide with authentication patterns
+- Development guide with 7-step checklist for adding new harnesses
+- 24 of 24 v2.4.0 requirements satisfied
 
 ## Constraints
 
@@ -147,5 +151,17 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Allowlist requires path+reason | Forces documentation of why false positive was suppressed | Good |
 | XDG state directory for scan timestamps | Follows spec, separates state from config | Good |
 
+**v2.4.0 (Multi-Harness Support):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Codex/Gemini follow npm global install pattern | Consistent with Claude Code install approach | Good |
+| ARG naming: WITH_{HARNESS} and {HARNESS}_VERSION | Consistent with existing pattern | Good |
+| Simple pass-through for Codex/Gemini | No special flags needed (unlike Claude's --dangerously-skip-permissions) | Good |
+| OAuth and API key presented equally | Both methods valid; user chooses based on context | Good |
+| Mermaid.js for architecture diagrams | GitHub renders natively, no external tools | Good |
+| Troubleshooting organized by symptom | Users search for symptoms, not components | Good |
+| 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
+
 ---
-*Last updated: 2026-01-24 after starting v2.4.0 milestone*
+*Last updated: 2026-01-25 after v2.4.0 milestone complete*

@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.4.0 Multi-Harness Support (Shipped: 2026-01-25)
+
+**Delivered:** OpenAI Codex CLI and Google Gemini CLI support with build flags, version pinning, config mounting, API key passthrough, and comprehensive documentation suite covering architecture, configuration, harnesses, troubleshooting, and development.
+
+**Phases completed:** 24-27 (8 plans total)
+
+**Key accomplishments:**
+
+- Added OpenAI Codex CLI support with build flags (--with-codex), version pinning, and runtime integration
+- Added Google Gemini CLI support with Vertex AI authentication and GCP credentials file mounting
+- Implemented CLI dispatch for all four harnesses (Claude Code, OpenCode, Codex CLI, Gemini CLI)
+- Created comprehensive documentation suite (5 docs, 3,660+ lines) covering architecture, configuration, harnesses, troubleshooting, and development
+- Full harness comparison guide with authentication patterns for each provider
+- Development guide with 7-step checklist for adding new harnesses
+
+**Stats:**
+
+- 53 files created/modified
+- ~2,674 lines of Clojure (total codebase)
+- 4 phases, 8 plans, ~17 tasks
+- 1 day (2026-01-25)
+
+**Git range:** `docs(24)` → `docs(27)` (40+ commits)
+
+**What's next:** Future harnesses (Aider, Cursor), session persistence, or shell completions
+
+---
+
 ## v2.3.0 Safe AI Context Protection (Shipped: 2026-01-24)
 
 **Delivered:** Proactive sensitive file detection with severity tiers, Gitleaks integration for deep content scanning, and configurable pattern allowlists to protect users' secrets before AI agents access them.
