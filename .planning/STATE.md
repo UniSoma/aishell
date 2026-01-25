@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 24 - Dockerfile & Build Infrastructure (v2.4.0)
+**Current focus:** Phase 25 - CLI & Runtime (v2.4.0)
 
 ## Current Position
 
-Phase: 24 of 26 (Dockerfile & Build Infrastructure)
-Plan: 2 of 3
-Status: In progress
-Last activity: 2026-01-25 — Completed 24-02-PLAN.md
+Phase: 25 of 27 (CLI & Runtime)
+Plan: Ready to plan
+Status: Phase 24 complete, ready to plan Phase 25
+Last activity: 2026-01-25 — Phase 24 complete
 
-Progress: [██████████          ] 67% of v2.4.0 (2/3 plans)
+Progress: [█████               ] 25% of v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,14 +27,14 @@ Progress: [██████████          ] 67% of v2.4.0 (2/3 plans)
 
 **v2.4.0 Velocity:**
 - Total plans completed: 2
-- Average duration: 1.5 min
-- Total execution time: 4.0 min
+- Average duration: 2.0 min
+- Total execution time: ~4 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 24-dockerfile---build-infrastructure | 2/3 | 4min | 2.0min |
+| 24-dockerfile---build-infrastructure | 2/2 | ~4min | 2.0min |
 
 **Previous Milestones:**
 
@@ -45,8 +45,8 @@ Progress: [██████████          ] 67% of v2.4.0 (2/3 plans)
 
 **Cumulative (v1.0-v2.4.0):**
 - Total plans: 59
-- Milestones: 5 (shipping 6th)
-- Days: 8 (2026-01-17 → 2026-01-25)
+- Milestones: 5 (6th in progress)
+- Days: 9 (2026-01-17 → 2026-01-25)
 
 ## Accumulated Context
 
@@ -58,10 +58,6 @@ Recent decisions:
 - v2.4.0: State schema documentation updated to reflect all four harness options
 - v2.4.0: Codex and Gemini follow npm global install pattern
 - v2.4.0: ARG naming convention: WITH_{HARNESS} and {HARNESS}_VERSION
-- v2.3.0: Advisory-only warnings, never block user
-- v2.3.0: Content detection delegated to Gitleaks
-- v2.3.0: Filename detection pre-container for speed
-- v2.3.0: 7-day staleness threshold for scan freshness
 
 ### Pending Todos
 
@@ -80,7 +76,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 24-02-PLAN.md
+Stopped at: Phase 24 complete
 Resume file: None
 
-Next step: Continue with final Phase 24 plan (24-03)
+Next step: Plan Phase 25 (CLI & Runtime) with `/gsd:discuss-phase 25` or `/gsd:plan-phase 25`

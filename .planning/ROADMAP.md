@@ -40,8 +40,8 @@ See `.planning/milestones/` for completed milestone details:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 24-01-PLAN.md — Dockerfile template + CLI build flags for Codex/Gemini
-- [ ] 24-02-PLAN.md — Build integration, version detection, and state tracking
+- [x] 24-01-PLAN.md — Dockerfile template + CLI build flags for Codex/Gemini
+- [x] 24-02-PLAN.md — Build integration, version detection, and state tracking
 
 ### Phase 25: CLI & Runtime
 **Goal**: Enable running Codex and Gemini from aishell with proper config mounting and environment setup
@@ -101,13 +101,13 @@ Phases execute in numeric order: 24 → 25 → 26 → 27
 | 11-12 | v1.2 | 4/4 | Complete | 2026-01-19 |
 | 13-18 | v2.0 | 22/22 | Complete | 2026-01-21 |
 | 18.1-23 | v2.3.0 | 11/11 | Complete | 2026-01-24 |
-| 24. Build Infrastructure | v2.4.0 | 0/2 | Planned | - |
+| 24. Build Infrastructure | v2.4.0 | 2/2 | Complete | 2026-01-25 |
 | 25. CLI & Runtime | v2.4.0 | 0/0 | Not started | - |
 | 26. Documentation | v2.4.0 | 0/0 | Not started | - |
 | 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
 
-**Total:** 57 plans completed across 5 milestones
+**Total:** 59 plans completed across 5 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-01-25 after Phase 24 planning*
+*Last updated: 2026-01-25 after Phase 24 complete*
