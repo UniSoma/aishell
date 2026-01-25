@@ -13,8 +13,8 @@
 **Plans:** 2 plans
 
 Plans:
-- [ ] 28-01-PLAN.md — Pre-start list format + Gitleaks build flag infrastructure
-- [ ] 28-02-PLAN.md — Dynamic help output + Documentation updates
+- [x] 28-01-PLAN.md — Pre-start list format + Gitleaks build flag infrastructure
+- [x] 28-02-PLAN.md — Dynamic help output + Documentation updates
 
 **Requirements:**
 - CLI-01: Help output shows only installed harness commands (reads build state)
@@ -89,7 +89,7 @@ Plans:
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 28 | Dynamic Help & Config | 8 | Planned |
+| 28 | Dynamic Help & Config | 8 | ✓ Complete |
 | 29 | Binary Install & Conditional Node.js | 10 | Pending |
 | 30 | Exec Command | 6 | Pending |
 

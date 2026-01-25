@@ -9,9 +9,9 @@ Requirements for v2.5.0 Optimization & Polish milestone. Each maps to roadmap ph
 
 ### CLI
 
-- [ ] **CLI-01**: Help output shows only installed harness commands (reads build state)
-- [ ] **CLI-02**: Build command accepts `--without-gitleaks` flag to skip Gitleaks installation
-- [ ] **CLI-03**: Gitleaks installation state tracked in ~/.aishell/state.edn
+- [x] **CLI-01**: Help output shows only installed harness commands (reads build state)
+- [x] **CLI-02**: Build command accepts `--without-gitleaks` flag to skip Gitleaks installation
+- [x] **CLI-03**: Gitleaks installation state tracked in ~/.aishell/state.edn
 - [ ] **CLI-04**: New `aishell exec <command>` subcommand runs command in container
 - [ ] **CLI-05**: Exec command uses all standard mounts/env from config
 - [ ] **CLI-06**: Exec command auto-detects TTY (allocate when stdin is terminal)
@@ -19,9 +19,9 @@ Requirements for v2.5.0 Optimization & Polish milestone. Each maps to roadmap ph
 
 ### Config
 
-- [ ] **CFG-01**: Pre-start config accepts YAML list format
-- [ ] **CFG-02**: List items joined with ` && ` to form single command
-- [ ] **CFG-03**: String format remains supported (backwards compatible)
+- [x] **CFG-01**: Pre-start config accepts YAML list format
+- [x] **CFG-02**: List items joined with ` && ` to form single command
+- [x] **CFG-03**: String format remains supported (backwards compatible)
 
 ### Docker
 
@@ -35,8 +35,8 @@ Requirements for v2.5.0 Optimization & Polish milestone. Each maps to roadmap ph
 
 ### Documentation
 
-- [ ] **DOC-01**: CONFIGURATION.md updated for pre_start list format with examples
-- [ ] **DOC-02**: CONFIGURATION.md updated for --without-gitleaks build flag
+- [x] **DOC-01**: CONFIGURATION.md updated for pre_start list format with examples
+- [x] **DOC-02**: CONFIGURATION.md updated for --without-gitleaks build flag
 - [ ] **DOC-03**: HARNESSES.md updated for native installer methods (Claude, Codex)
 - [ ] **DOC-04**: ARCHITECTURE.md updated for conditional Node.js build flow
 - [ ] **DOC-05**: README.md updated for `aishell exec` command usage
@@ -56,14 +56,14 @@ Requirements for v2.5.0 Optimization & Polish milestone. Each maps to roadmap ph
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | Phase 28 | Pending |
-| CLI-02 | Phase 28 | Pending |
-| CLI-03 | Phase 28 | Pending |
-| CFG-01 | Phase 28 | Pending |
-| CFG-02 | Phase 28 | Pending |
-| CFG-03 | Phase 28 | Pending |
-| DOC-01 | Phase 28 | Pending |
-| DOC-02 | Phase 28 | Pending |
+| CLI-01 | Phase 28 | Complete |
+| CLI-02 | Phase 28 | Complete |
+| CLI-03 | Phase 28 | Complete |
+| CFG-01 | Phase 28 | Complete |
+| CFG-02 | Phase 28 | Complete |
+| CFG-03 | Phase 28 | Complete |
+| DOC-01 | Phase 28 | Complete |
+| DOC-02 | Phase 28 | Complete |
 | DKR-01 | Phase 29 | Pending |
 | DKR-02 | Phase 29 | Pending |
 | DKR-03 | Phase 29 | Pending |
