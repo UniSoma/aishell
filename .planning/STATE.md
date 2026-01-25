@@ -39,15 +39,17 @@ See PROJECT.md Key Decisions tables for full history.
 
 ### Pending Todos
 
-4 pending todos in `.planning/todos/pending/` (in scope for v2.5.0):
+4 pending todos mapped to phases (archive when phase completes):
 
-- [Dynamic help based on installed harnesses](./todos/pending/2026-01-25-dynamic-help-based-on-installed-harnesses.md)
-- [Support list format for pre_start](./todos/pending/2026-01-25-support-list-format-for-pre-start.md)
-- [Binary install all harnesses, conditional Node.js](./todos/pending/2026-01-25-binary-install-claude-code.md)
-- [Add shell command for one-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md)
+| Todo | Phase | Status |
+|------|-------|--------|
+| [Dynamic help](./todos/pending/2026-01-25-dynamic-help-based-on-installed-harnesses.md) | 28 | Pending |
+| [Pre-start list format](./todos/pending/2026-01-25-support-list-format-for-pre-start.md) | 28 | Pending |
+| [Binary install, conditional Node.js](./todos/pending/2026-01-25-binary-install-claude-code.md) | 29 | Pending |
+| [One-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md) | 30 | Pending |
 
 1 deferred todo:
-- [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) -- deferred to future milestone
+- [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) — deferred to future milestone
 
 ### Blockers/Concerns
 
