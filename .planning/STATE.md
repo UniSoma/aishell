@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-25 — Milestone v2.5.0 started
+Phase: 28 of 30 (Dynamic Help & Config Improvements)
+Plan: --
+Status: Ready for planning
+Last activity: 2026-01-25 -- Roadmap created for v2.5.0
 
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -47,7 +47,7 @@ See PROJECT.md Key Decisions tables for full history.
 - [Add shell command for one-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md)
 
 1 deferred todo:
-- [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) — deferred to future milestone
+- [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) -- deferred to future milestone
 
 ### Blockers/Concerns
 
@@ -56,7 +56,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Milestone v2.5.0 started, defining requirements
+Stopped at: Roadmap created for v2.5.0
 Resume file: None
 
-Next step: Complete requirements → roadmap
+Next step: Plan Phase 28 with `/gsd:plan-phase 28`
