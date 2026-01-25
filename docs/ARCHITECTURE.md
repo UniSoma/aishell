@@ -141,7 +141,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 │ Docker Run                               │
 │ docker run --rm -it \                    │
 │   -v /path/to/project:/path/to/project \ │
-│   -v ~/.ssh:/home/user/.ssh:ro \         │
+│   -v ~/.claude:/home/user/.claude \      │
 │   -e GIT_AUTHOR_NAME=... \               │
 │   aishell:base \                         │
 │   claude --model sonnet                  │
@@ -162,9 +162,8 @@ The run phase executes a harness (or shell) in a container with project files mo
 **Data mounts:**
 
 - Project directory → Mounted at same path as host (read-write)
-- `~/.ssh` → SSH keys (read-only)
-- `~/.gitconfig` → Git config (optional, read-only)
-- Additional mounts from `config.yaml`
+- Harness config directories → Per-harness (e.g., `~/.claude`, `~/.codex`)
+- Additional mounts from `config.yaml` (e.g., `~/.ssh`, `~/.gitconfig`)
 
 ### Config Merge Strategy
 

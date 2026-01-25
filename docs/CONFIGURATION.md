@@ -78,7 +78,7 @@ Use `extends: none` when:
 - **Conflicting requirements:** Global config interferes with project needs
 - **Explicit configuration:** You prefer to specify everything in project config
 
-**Note:** Even with `extends: none`, aishell always mounts the project directory (at the same path as on the host) and `~/.ssh` (read-only). These are core mounts required for operation.
+**Note:** Even with `extends: none`, aishell always mounts the project directory (at the same path as on the host). This is the only core mount required for operation. Add `~/.ssh` to your mounts config if you need SSH access inside the container.
 
 ---
 
@@ -310,7 +310,7 @@ mounts:
 - Home directory expansion (`~`) works in source paths
 - Container paths are absolute (must start with `/`)
 - Read-only (`:ro`) prevents container from modifying host files
-- Project directory (at same path as host) and `~/.ssh` are always mounted (built-in)
+- Project directory (at same path as host) is always mounted (built-in)
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 
