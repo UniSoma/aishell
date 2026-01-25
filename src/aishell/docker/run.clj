@@ -137,7 +137,11 @@
         config-paths [[(str home "/.claude") (str home "/.claude")]
                       [(str home "/.claude.json") (str home "/.claude.json")]
                       [(str home "/.config/opencode") (str home "/.config/opencode")]
-                      [(str home "/.local/share/opencode") (str home "/.local/share/opencode")]]]
+                      [(str home "/.local/share/opencode") (str home "/.local/share/opencode")]
+                      ;; Codex CLI - uses ~/.codex/ for auth.json and config.toml
+                      [(str home "/.codex") (str home "/.codex")]
+                      ;; Gemini CLI - uses ~/.gemini/ for settings.json
+                      [(str home "/.gemini") (str home "/.gemini")]]]
     (->> config-paths
          (filter (fn [[src _]] (fs/exists? src)))
          (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
