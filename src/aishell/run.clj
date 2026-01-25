@@ -22,7 +22,9 @@
     (output/error
       (str (case harness-name
              "claude" "Claude Code"
-             "opencode" "OpenCode")
+             "opencode" "OpenCode"
+             "codex" "Codex CLI"
+             "gemini" "Gemini CLI")
            " not installed. Run: aishell build --with-"
            harness-name))))
 
@@ -83,6 +85,8 @@
       (case cmd
         "claude" (verify-harness-available "claude" :with-claude state)
         "opencode" (verify-harness-available "opencode" :with-opencode state)
+        "codex" (verify-harness-available "codex" :with-codex state)
+        "gemini" (verify-harness-available "gemini" :with-gemini state)
         nil)
 
       ;; Resolve final image (may auto-build extension)
@@ -155,6 +159,12 @@
 
                             "opencode"
                             (into ["opencode"] merged-args)
+
+                            "codex"
+                            (into ["codex"] merged-args)
+
+                            "gemini"
+                            (into ["gemini"] merged-args)
 
                             "gitleaks"
                             (into ["gitleaks"] harness-args)
