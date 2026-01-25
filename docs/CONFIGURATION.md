@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options. This document covers both global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) configuration files.
 
-**Last updated:** v2.4.0
+**Last updated:** v2.5.0
 
 ---
 
@@ -67,7 +67,7 @@ When `extends: global` (default), configs merge according to data type:
 | **Lists** | `mounts`, `ports`, `docker_args` | Concatenate (global + project) | Global: `["~/.gitconfig"]`<br/>Project: `["~/data:/data"]`<br/>Result: Both mounts |
 | **Maps** | `env` | Shallow merge (project overrides global keys) | Global: `{DEBUG: "false"}`<br/>Project: `{DEBUG: "true"}`<br/>Result: `{DEBUG: "true"}` |
 | **Map-of-lists** | `harness_args` | Merge keys, concatenate per-harness lists | Global: `{claude: ["--verbose"]}`<br/>Project: `{claude: ["--model", "sonnet"]}`<br/>Result: `{claude: ["--verbose", "--model", "sonnet"]}` |
-| **Scalars** | `pre_start`, `gitleaks_freshness_check` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: "echo bye"`<br/>Result: `"echo bye"` |
+| **Scalars** | `pre_start`, `gitleaks_freshness_check` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
 | **Custom** | `detection` | Custom merge (see [detection](#detection)) | Enabled: project wins<br/>Patterns: map merge<br/>Allowlist: concatenate |
 
 ### When to use `extends: none`
@@ -489,27 +489,46 @@ docker_args:
 
 **Purpose:** Run a background command before the shell/harness starts.
 
-**Type:** String (shell command)
+**Type:** String or List (v2.5+)
 
-**Example:**
+**Formats:**
 
+**String format (original):**
 ```yaml
-# Start Redis in background
 pre_start: "redis-server --daemonize yes"
+```
 
-# Start multiple services
-# pre_start: "redis-server --daemonize yes && nginx -g 'daemon off;' &"
+**List format (v2.5+):**
+```yaml
+pre_start:
+  - "echo 'Starting services...'"
+  - "redis-server --daemonize yes"
+  - "sleep 2"
+  - "echo 'Services ready'"
+```
 
-# Start docker-compose services
-# pre_start: "docker-compose -f ./docker-compose.yml up -d"
+**Behavior:**
+- **String:** Executed as-is via `sh -c`
+- **List:** Items joined with ` && ` separator, then executed via `sh -c`
+- **Empty list:** No pre-start command runs
+- **Empty items:** Filtered out automatically
+
+**Example transformation:**
+```yaml
+# List input
+pre_start:
+  - "echo 'Step 1'"
+  - "echo 'Step 2'"
+
+# Becomes equivalent to
+pre_start: "echo 'Step 1' && echo 'Step 2'"
 ```
 
 **Notes:**
 - Command runs in background (via `nohup ... &`)
 - Output redirected to `/tmp/pre-start.log` (check if command fails)
 - Runs as container user (not root)
-- Command should daemonize or run in background
-- Use `&&` to chain multiple commands
+- Use `&&` separator means if any command fails, execution stops
 - Container doesn't wait for command completion (non-blocking)
 
 **Merge behavior:** Project replaces global (only one pre_start runs).
@@ -518,10 +537,10 @@ pre_start: "redis-server --daemonize yes"
 
 | Use Case | Example |
 |----------|---------|
-| Database | `postgres -D /data/postgres -c log_destination=stderr &` |
-| Redis | `redis-server --daemonize yes` |
-| Docker Compose | `docker-compose -f ./compose.yml up -d` |
-| Web server | `nginx -g 'daemon off;' &` |
+| Database | `["postgres -D /data/postgres &"]` |
+| Redis | `["redis-server --daemonize yes"]` |
+| Multiple services | `["redis-server --daemonize yes", "nginx -g 'daemon off;' &"]` |
+| Wait for deps | `["redis-server --daemonize yes", "sleep 2", "echo 'Ready'"]` |
 
 ---
 
@@ -921,7 +940,9 @@ docker_args:
   - "--cpus=4"
   - "--memory=8g"
 
-pre_start: "redis-server --daemonize yes && postgres -D /data/postgres &"
+pre_start:
+  - "redis-server --daemonize yes"
+  - "postgres -D /data/postgres &"
 
 harness_args:
   claude:
@@ -930,3 +951,41 @@ harness_args:
     - "--plugin"
     - "context7"
 ```
+
+---
+
+## Build Options
+
+### --without-gitleaks
+
+**Purpose:** Skip Gitleaks installation during build to reduce image size.
+
+**Usage:**
+```bash
+aishell build --with-claude --without-gitleaks
+```
+
+**Behavior:**
+- By default, Gitleaks is installed in the container (~15MB)
+- `--without-gitleaks` skips installation
+- Build state records installation status in `~/.aishell/state.edn`
+- `aishell --help` still shows `gitleaks` command (may work via host installation)
+
+**State tracking:**
+```bash
+# Check what was installed
+cat ~/.aishell/state.edn
+# Shows :with-gitleaks true or false
+```
+
+**When to use:**
+- **Minimal images:** Reduce container size when Gitleaks not needed
+- **External Gitleaks:** Using Gitleaks installed on host instead
+- **CI/CD:** Build environments where secret scanning handled elsewhere
+
+**Image size impact:**
+- With Gitleaks: ~280MB
+- Without Gitleaks: ~265MB
+- Savings: ~15MB
+
+**Note:** The `aishell gitleaks` command may still work if Gitleaks is installed on your host system or mounted into the container.
