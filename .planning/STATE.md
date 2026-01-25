@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 27 of 27 (Comprehensive Documentation)
-Plan: Ready to plan
-Status: Phase 26 complete, ready to plan Phase 27
-Last activity: 2026-01-25 — Phase 26 complete
+Plan: 27-02 of 3 in phase
+Status: In progress
+Last activity: 2026-01-25 — Completed 27-02-PLAN.md (Harness Documentation)
 
-Progress: [███████████████     ] 75% of v2.4.0
+Progress: [███████████████▓    ] 78% of v2.4.0
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -26,9 +26,9 @@ Progress: [███████████████     ] 75% of v2.4.0
 ## Performance Metrics
 
 **v2.4.0 Velocity:**
-- Total plans completed: 5
-- Average duration: 2.2 min
-- Total execution time: ~11 min
+- Total plans completed: 6
+- Average duration: 2.1 min
+- Total execution time: ~13 min
 
 **By Phase:**
 
@@ -37,6 +37,7 @@ Progress: [███████████████     ] 75% of v2.4.0
 | 24-dockerfile-build-infrastructure | 2/2 | ~4min | 2.0min |
 | 25-cli-runtime | 2/2 | ~4min | 2.0min |
 | 26-documentation | 1/1 | ~3min | 3.0min |
+| 27-comprehensive-documentation | 2/3 | ~4min | 2.0min |
 
 **Previous Milestones:**
 
@@ -46,7 +47,7 @@ Progress: [███████████████     ] 75% of v2.4.0
 - Total time: 30.0 min
 
 **Cumulative (v1.0-v2.4.0):**
-- Total plans: 62
+- Total plans: 63
 - Milestones: 5 (6th in progress)
 - Days: 9 (2026-01-17 -> 2026-01-25)
 
@@ -63,6 +64,8 @@ Recent decisions:
 - v2.4.0: Codex and Gemini use simple pass-through like opencode (no special flags)
 - v2.4.0: Present OAuth and API key authentication options equally (don't favor one over other)
 - v2.4.0: Organize environment variables by category (harness-specific, cloud provider, other)
+- v2.4.0 (27-02): Comparison table at document start for quick harness selection
+- v2.4.0 (27-02): Document container-specific auth nuances in each harness section
 
 ### Pending Todos
 
@@ -83,7 +86,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Phase 26 complete
+Stopped at: Completed 27-02-PLAN.md (Harness Documentation)
 Resume file: None
 
-Next step: Plan Phase 27 (Comprehensive Documentation) with `/gsd:discuss-phase 27` or `/gsd:plan-phase 27`
+Next step: Continue Phase 27 with `/gsd:execute-phase 27` for next plan (Configuration Documentation)
