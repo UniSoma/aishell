@@ -38,6 +38,14 @@ Requirements for multi-harness support milestone. Adds OpenAI Codex CLI and Goog
 - [ ] **DOCS-02**: README documents authentication methods (API key vs OAuth)
 - [ ] **DOCS-03**: README documents environment variables for each harness
 
+### Comprehensive Documentation
+
+- [ ] **CDOCS-01**: Architecture document explains codebase structure, namespaces, and data flow
+- [ ] **CDOCS-02**: Configuration guide covers all config.yaml options with examples
+- [ ] **CDOCS-03**: Harness guide documents each supported harness (Claude, OpenCode, Codex, Gemini)
+- [ ] **CDOCS-04**: Troubleshooting guide covers common issues and solutions
+- [ ] **CDOCS-05**: Development guide explains how to add new harnesses or extend aishell
+
 ## Future Requirements
 
 Deferred to future milestones.
@@ -90,10 +98,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-01 | Phase 26 | Pending |
 | DOCS-02 | Phase 26 | Pending |
 | DOCS-03 | Phase 26 | Pending |
+| CDOCS-01 | Phase 27 | Pending |
+| CDOCS-02 | Phase 27 | Pending |
+| CDOCS-03 | Phase 27 | Pending |
+| CDOCS-04 | Phase 27 | Pending |
+| CDOCS-05 | Phase 27 | Pending |
 
 **Coverage:**
-- v2.4.0 requirements: 19 total
-- Mapped to phases: 19
+- v2.4.0 requirements: 24 total
+- Mapped to phases: 24
 - Unmapped: 0 ✓
 
 ---

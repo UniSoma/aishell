@@ -7,7 +7,7 @@
 - ✅ **v1.2 Hardening** - Phases 11-12 (shipped 2026-01-19)
 - ✅ **v2.0 Babashka Rewrite** - Phases 13-18 (shipped 2026-01-21)
 - ✅ **v2.3.0 Safe AI Context Protection** - Phases 18.1-23 (shipped 2026-01-24)
-- 🚧 **v2.4.0 Multi-Harness Support** - Phases 24-26 (in progress)
+- 🚧 **v2.4.0 Multi-Harness Support** - Phases 24-27 (in progress)
 
 ## Phases
 
@@ -73,10 +73,25 @@ Plans:
 Plans:
 - [ ] TBD
 
+### Phase 27: Comprehensive Documentation
+**Goal**: Create in-depth documentation covering architecture, configuration, all harnesses, troubleshooting, and development guide
+**Depends on**: Phase 26
+**Requirements**: CDOCS-01, CDOCS-02, CDOCS-03, CDOCS-04, CDOCS-05
+**Success Criteria** (what must be TRUE):
+  1. docs/ARCHITECTURE.md explains codebase structure, namespace responsibilities, and data flow
+  2. docs/CONFIGURATION.md covers all config.yaml options with annotated examples
+  3. docs/HARNESSES.md documents each harness (Claude, OpenCode, Codex, Gemini) with setup, usage, and tips
+  4. docs/TROUBLESHOOTING.md covers common issues, error messages, and solutions
+  5. docs/DEVELOPMENT.md explains how to add new harnesses or extend aishell functionality
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 24 → 25 → 26
+Phases execute in numeric order: 24 → 25 → 26 → 27
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -88,6 +103,7 @@ Phases execute in numeric order: 24 → 25 → 26
 | 24. Build Infrastructure | v2.4.0 | 0/0 | Not started | - |
 | 25. CLI & Runtime | v2.4.0 | 0/0 | Not started | - |
 | 26. Documentation | v2.4.0 | 0/0 | Not started | - |
+| 27. Comprehensive Docs | v2.4.0 | 0/0 | Not started | - |
 
 **Total:** 57 plans completed across 5 milestones
 
