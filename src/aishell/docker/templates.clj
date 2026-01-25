@@ -18,8 +18,12 @@ FROM debian:bookworm-slim
 # Build arguments for optional harness installation
 ARG WITH_CLAUDE=false
 ARG WITH_OPENCODE=false
+ARG WITH_CODEX=false
+ARG WITH_GEMINI=false
 ARG CLAUDE_VERSION=\"\"
 ARG OPENCODE_VERSION=\"\"
+ARG CODEX_VERSION=\"\"
+ARG GEMINI_VERSION=\"\"
 
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.214
@@ -107,6 +111,26 @@ RUN if [ \"$WITH_OPENCODE\" = \"true\" ]; then \\
         fi && \\
         cp /root/.opencode/bin/opencode /usr/local/bin/opencode && \\
         chmod +x /usr/local/bin/opencode; \\
+    fi
+
+# Install Codex CLI if requested (npm global)
+# npm global installs to /usr/local/bin/codex
+RUN if [ \"$WITH_CODEX\" = \"true\" ]; then \\
+        if [ -n \"$CODEX_VERSION\" ]; then \\
+            npm install -g @openai/codex@\"$CODEX_VERSION\"; \\
+        else \\
+            npm install -g @openai/codex; \\
+        fi \\
+    fi
+
+# Install Gemini CLI if requested (npm global)
+# npm global installs to /usr/local/bin/gemini
+RUN if [ \"$WITH_GEMINI\" = \"true\" ]; then \\
+        if [ -n \"$GEMINI_VERSION\" ]; then \\
+            npm install -g @google/gemini-cli@\"$GEMINI_VERSION\"; \\
+        else \\
+            npm install -g @google/gemini-cli; \\
+        fi \\
     fi
 
 # Copy entrypoint script
