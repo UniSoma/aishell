@@ -175,6 +175,16 @@ aishell update
 aishell update --with-opencode
 ```
 
+### Validate setup
+
+Run pre-flight checks without launching any container:
+
+```bash
+aishell check
+```
+
+Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, and gitleaks scan freshness.
+
 ### Project customization
 
 Create `.aishell/Dockerfile` to extend the base image:

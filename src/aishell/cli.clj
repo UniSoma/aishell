@@ -7,6 +7,7 @@
             [aishell.docker.templates :as templates]
             [aishell.output :as output]
             [aishell.run :as run]
+            [aishell.check :as check]
             [aishell.state :as state]
             [aishell.util :as util]))
 
@@ -92,6 +93,7 @@
   (println (str output/BOLD "Commands:" output/NC))
   (println (str "  " output/CYAN "build" output/NC "      Build the container image"))
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
+  (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
@@ -113,6 +115,7 @@
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build --with-claude" output/NC "     Build with Claude Code"))
+  (println (str "  " output/CYAN "aishell check" output/NC "                    Validate setup"))
   (println (str "  " output/CYAN "aishell exec ls -la" output/NC "             Run command in container"))
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
   (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
@@ -274,6 +277,7 @@
     ;; Handle pass-through commands before standard dispatch
     ;; This ensures all args (including --help, --version) go to the harness
     (case (first clean-args)
+      "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
       "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
