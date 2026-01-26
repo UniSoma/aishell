@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-25)
 
 ## Current Position
 
-Phase: 28 of 29 (Dynamic Help & Config Improvements) — VERIFIED
-Plan: --
-Status: Phase complete and verified
-Last activity: 2026-01-25 - Phase 28 verified (9/9 must-haves)
+Phase: 29 of 29 (Exec Command)
+Plan: 1 of 1
+Status: Phase complete
+Last activity: 2026-01-26 - Completed 29-01-PLAN.md (exec command implementation)
 
-Progress: [██████████░░░░░░░░░░] 50%
+Progress: [███████████░░░░░░░░░] 55%
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,10 +27,10 @@ Progress: [██████████░░░░░░░░░░] 50%
 ## Performance Metrics
 
 **Cumulative (v1.0-v2.4.0):**
-- Total plans: 70
-- Completed plans: 70
+- Total plans: 71
+- Completed plans: 71
 - Milestones: 6 (all shipped)
-- Days: 9 (2026-01-17 -> 2026-01-25)
+- Days: 10 (2026-01-17 -> 2026-01-26)
 
 ## Accumulated Context
 
@@ -38,7 +38,17 @@ Progress: [██████████░░░░░░░░░░] 50%
 
 See PROJECT.md Key Decisions tables for full history.
 
-**Recent (Phase 28):**
+**Recent (Phase 29):**
+
+| ID | Decision | Rationale |
+|----|----------|-----------|
+| tty-detection-method | Use System/console for TTY auto-detection | Already used in existing codebase (detection/core.clj, output.clj), portable, simple |
+| exec-skip-detection | Skip detection warnings for exec command | Fast path for quick commands. Users can run aishell gitleaks separately if needed |
+| exec-skip-pre-start | Always skip pre_start hooks for exec | One-off commands shouldn't start sidecars. Only interactive sessions need pre_start |
+| exec-always-stdin | Always include -i flag even without TTY | Without -i, piped input fails silently. Required for echo test \| aishell exec cat |
+| exec-use-shell-not-exec | Use p/shell with :inherit for exit code propagation | Need to capture exit code. p/exec replaces process |
+
+**Phase 28:**
 
 | ID | Decision | Rationale |
 |----|----------|-----------|
@@ -51,11 +61,10 @@ See PROJECT.md Key Decisions tables for full history.
 
 ### Pending Todos
 
-1 pending todo mapped to phases (archive when phase completes):
+0 pending todos (Phase 29 complete):
 
-| Todo | Phase | Status |
-|------|-------|--------|
-| [One-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md) | 29 | Pending |
+1 completed todo (archived with Phase 29):
+- [One-off container execution](./todos/pending/2026-01-25-add-shell-command-for-one-off-execution.md) → Completed in 29-01
 
 2 completed todos (archived with Phase 28):
 - [Dynamic help](./todos/pending/2026-01-25-dynamic-help-based-on-installed-harnesses.md) → Completed in 28-02
@@ -71,8 +80,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-25
-Stopped at: Rolled back Phase 29 (Binary Install) - native installers resulted in larger image
+Last session: 2026-01-26
+Stopped at: Completed Phase 29 (Exec Command) - one-off command execution with TTY auto-detection
 Resume file: None
 
-Next step: Phase 29 (Exec Command) - `/gsd:discuss-phase 29` or `/gsd:plan-phase 29`
+Next step: v2.5.0 complete - all phases shipped
