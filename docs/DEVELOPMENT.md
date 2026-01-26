@@ -4,7 +4,7 @@ This guide is for developers who want to extend aishell with new features or har
 
 **Target audience:** Developers adding new AI harness integrations or core aishell features.
 
-**Last updated:** v2.4.0
+**Last updated:** v2.5.0
 
 ---
 

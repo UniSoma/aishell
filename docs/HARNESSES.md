@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
 
-**Last updated:** v2.4.0
+**Last updated:** v2.5.0
 
 ## What are Harnesses?
 

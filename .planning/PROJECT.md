@@ -67,15 +67,17 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Version pinning: Support --with-codex=VERSION and --with-gemini=VERSION flags at build time
 - ✓ Comprehensive documentation: Architecture, configuration, harnesses, troubleshooting, development guides
 
+**v2.5.0 (2026-01-26) - Optimization & Polish:**
+- ✓ Dynamic help: Show only installed harness commands in help output — v2.5.0
+- ✓ Gitleaks opt-out: --without-gitleaks build flag (~15MB savings) — v2.5.0
+- ✓ Pre-start list format: YAML list for pre_start joined with && — v2.5.0
+- ✓ One-off execution: `aishell exec` command with TTY auto-detection — v2.5.0
+- ✓ Gitleaks state tracking: :with-gitleaks in state.edn — v2.5.0
+- ✓ Documentation: README, CONFIGURATION, TROUBLESHOOTING updated for v2.5.0 — v2.5.0
+
 ### Active
 
-**v2.5.0 (In Progress) - Optimization & Polish:**
-- [ ] Dynamic help: Show only installed harness commands in help output
-- [ ] Gitleaks opt-out: Add --without-gitleaks build flag
-- [ ] Pre-start list format: Accept YAML list for pre_start (joined with &&)
-- [ ] Binary install: Use native installers for Claude Code and Codex CLI
-- [ ] Conditional Node.js: Only include Node.js when Gemini is requested
-- [ ] One-off execution: Add `aishell exec` command for running commands in container
+(No active requirements — planning next milestone)
 
 ### Out of Scope
 
@@ -84,24 +86,24 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
 - GPG signing passthrough — deferred to future version
+- Binary install for Claude/Codex — native binaries larger than npm packages (investigated v2.5.0)
+- Conditional Node.js — abandoned with binary install (Node.js still needed for npm harnesses)
 
 ## Current State
 
-**Shipped:** v2.4.0 on 2026-01-25
-**In Progress:** v2.5.0 Optimization & Polish
+**Shipped:** v2.5.0 on 2026-01-26
+**Next:** Planning next milestone
 
-**Codebase:** ~2,674 LOC Clojure (Babashka)
+**Codebase:** ~2,818 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
-**Documentation:** 3,735 lines across docs/ and README
+**Documentation:** 4,000+ lines across docs/ and README
 
-**v2.4.0 accomplishments:**
-- OpenAI Codex CLI support with build flags, version pinning, config mounting, and runtime dispatch
-- Google Gemini CLI support with Vertex AI authentication and GCP credentials file mounting
-- All four harnesses supported: Claude Code, OpenCode, Codex CLI, Gemini CLI
-- Comprehensive documentation suite (5 docs, 3,660+ lines)
-- Full harness comparison guide with authentication patterns
-- Development guide with 7-step checklist for adding new harnesses
-- 24 of 24 v2.4.0 requirements satisfied
+**v2.5.0 accomplishments:**
+- Dynamic help output showing only installed harness commands
+- Conditional Gitleaks installation with `--without-gitleaks` flag
+- Pre-start YAML list format support (backwards compatible)
+- One-off command execution via `aishell exec` with TTY auto-detection
+- 14 of 14 active v2.5.0 requirements satisfied (10 abandoned — binary install approach)
 
 ## Constraints
 
@@ -157,6 +159,21 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Allowlist requires path+reason | Forces documentation of why false positive was suppressed | Good |
 | XDG state directory for scan timestamps | Follows spec, separates state from config | Good |
 
+**v2.5.0 (Optimization & Polish):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Pre-start list normalization at YAML load time | Single point of normalization ensures consistent behavior | Good |
+| --without-gitleaks (opt-out) flag naming | Maintains backwards compatibility — default includes Gitleaks | Good |
+| Positive state tracking (:with-gitleaks) | State reflects what is installed, not what is excluded | Good |
+| Show all harnesses when no state file | Aids discoverability for new users who haven't built yet | Good |
+| Always show gitleaks in help | May be installed on host, command works via host mounting | Good |
+| Abandon binary install approach | Native Claude binary (213MB) larger than npm package; no net savings | Good |
+| System/console for TTY detection | Already used in existing codebase, portable, simple | Good |
+| Skip detection/pre_start for exec | Fast path for one-off commands; users can run gitleaks separately | Good |
+| Always include -i flag for exec | Without -i, piped input fails silently | Good |
+| p/shell with :inherit for exec | Need to capture exit code; p/exec replaces process | Good |
+
 **v2.4.0 (Multi-Harness Support):**
 
 | Decision | Rationale | Outcome |
@@ -170,4 +187,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
 ---
-*Last updated: 2026-01-25 after v2.5.0 milestone started*
+*Last updated: 2026-01-26 after v2.5.0 milestone*

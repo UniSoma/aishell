@@ -4,7 +4,7 @@ This guide helps diagnose and resolve common issues with aishell.
 
 **How to use this guide:** Find the symptom you're experiencing, then follow the resolution steps.
 
-**Last updated:** v2.4.0
+**Last updated:** v2.5.0
 
 ---
 

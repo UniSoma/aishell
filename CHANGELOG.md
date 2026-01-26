@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-01-26
+
+### Added
+
+- **One-off command execution**: Run commands in container without interactive shell
+  - `aishell exec <command>` runs command and exits
+  - Automatic TTY detection (works in terminals and pipes/scripts)
+  - Exit code propagation from container to host
+  - Skips detection warnings and pre_start hooks for fast execution
+  - Piping support: `echo "test" | aishell exec cat`
+
+- **Dynamic help output**: Help shows only installed harness commands
+  - Reads build state to determine which harnesses are available
+  - Shows all harnesses when no build exists (aids discoverability)
+  - Gitleaks always shown (may work via host installation)
+
+- **Conditional Gitleaks installation**: `--without-gitleaks` build flag
+  - Skip Gitleaks installation to reduce image size (~15MB savings)
+  - State tracked as `:with-gitleaks` in `~/.aishell/state.edn`
+  - `aishell gitleaks` may still work via host PATH
+
+- **Pre-start list format**: YAML list syntax for `pre_start` config
+  - List items joined with ` && ` to form single command
+  - String format remains supported (backwards compatible)
+  - Empty list items automatically filtered
+
+### Changed
+
+- CONFIGURATION.md updated with pre_start list format and build options documentation
+- TROUBLESHOOTING.md updated with exec command issues section
+- README.md updated with exec command section and examples
+
 ## [2.4.0] - 2026-01-25
 
 ### Added

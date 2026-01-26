@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.5.0 Optimization & Polish (Shipped: 2026-01-26)
+
+**Delivered:** Dynamic help output, conditional Gitleaks installation, pre-start list format, and `aishell exec` command for one-off container execution with TTY auto-detection.
+
+**Phases completed:** 28-29 (4 plans total)
+
+**Key accomplishments:**
+
+- Dynamic help output showing only installed harness commands based on build state
+- Conditional Gitleaks installation with `--without-gitleaks` build flag (~15MB savings)
+- Pre-start YAML list format support (joined with `&&`, backwards compatible)
+- One-off command execution via `aishell exec` with automatic TTY detection and piping support
+- Comprehensive documentation updates across README, CONFIGURATION, and TROUBLESHOOTING
+- Scope discipline: binary install approach investigated and abandoned (larger than npm)
+
+**Stats:**
+
+- 11 source files modified (27 total including planning)
+- ~2,818 lines of Clojure (total codebase)
+- 2 phases, 4 plans, ~10 tasks
+- 2 days (2026-01-25 → 2026-01-26)
+
+**Git range:** `feat(28-01)` → `docs(29)` (25 commits)
+
+**What's next:** Future harnesses (Aider, Cursor), session persistence, security pattern audit, or shell completions
+
+---
+
 ## v2.4.0 Multi-Harness Support (Shipped: 2026-01-25)
 
 **Delivered:** OpenAI Codex CLI and Google Gemini CLI support with build flags, version pinning, config mounting, API key passthrough, and comprehensive documentation suite covering architecture, configuration, harnesses, troubleshooting, and development.
