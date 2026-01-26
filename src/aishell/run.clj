@@ -187,3 +187,56 @@
             (System/exit (:exit result)))
           ;; All other commands - execute (replaces current process)
           (apply p/exec (concat docker-args container-cmd)))))))
+
+(defn run-exec
+  "Run one-off command in container.
+
+   Arguments:
+   - cmd-args: Vector of command + arguments (e.g., [\"ls\" \"-la\"])
+
+   Auto-detects TTY. Uses all standard mounts/env from config.
+   Skips detection warnings and pre_start hooks for fast execution."
+  [cmd-args]
+  ;; Check Docker available
+  (docker/check-docker!)
+
+  ;; Read state (contains build info)
+  (let [state (state/read-state)]
+    ;; Verify build exists
+    (when-not state
+      (output/error-no-build))
+
+    ;; Get project-dir FIRST (needed for extension resolution)
+    (let [project-dir (System/getProperty "user.dir")
+          base-tag (or (:image-tag state) "aishell:base")]
+
+      ;; Verify BASE image exists (required before extension can build)
+      (when-not (docker/image-exists? base-tag)
+        (output/error (str "Image not found: " base-tag
+                          "\nRun: aishell build")))
+
+      ;; Resolve final image (may auto-build extension)
+      (let [image-tag (resolve-image-tag base-tag project-dir false)
+            cfg (config/load-config project-dir)
+            git-id (docker-run/read-git-identity project-dir)
+
+            ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
+            tty? (some? (System/console))
+
+            ;; Build docker args for exec (conditional TTY, skip pre_start)
+            docker-args (docker-run/build-docker-args-for-exec
+                          {:project-dir project-dir
+                           :image-tag image-tag
+                           :config cfg
+                           :git-identity git-id
+                           :tty? tty?})
+
+            ;; Command to run in container (user's command)
+            container-cmd cmd-args]
+
+        ;; Execute command with inherited stdin/stdout/stderr
+        ;; :continue true prevents exception on non-zero exit
+        (let [result (apply p/shell {:inherit true :continue true}
+                            (concat docker-args container-cmd))]
+          ;; Propagate exit code to caller
+          (System/exit (:exit result)))))))
