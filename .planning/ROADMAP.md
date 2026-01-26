@@ -44,8 +44,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 29-01-PLAN.md — Core exec infrastructure (TTY detection, run-exec, CLI dispatch)
-- [ ] 29-02-PLAN.md — Documentation (README, TROUBLESHOOTING)
+- [x] 29-01-PLAN.md — Core exec infrastructure (TTY detection, run-exec, CLI dispatch)
+- [x] 29-02-PLAN.md — Documentation (README, TROUBLESHOOTING)
 
 **Requirements:**
 - CLI-04: New `aishell exec <command>` subcommand runs command in container
@@ -69,7 +69,7 @@ Plans:
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 28 | Dynamic Help & Config | 8 | ✓ Complete |
-| 29 | Exec Command | 6 | Pending |
+| 29 | Exec Command | 6 | ✓ Complete |
 
 ---
 *Roadmap created: 2026-01-25*
