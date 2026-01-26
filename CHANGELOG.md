@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-01-26
+
+### Added
+
+- **Pre-flight check command**: `aishell check` validates configuration, Docker availability, and image state before running
+  - Reports config file validity, Docker daemon status, and image build state
+  - Exits with non-zero status on errors for CI integration
+
+### Fixed
+
+- **Glob pattern matching in allowlist**: Replaced broken `fs/match` (directory walker) with Java NIO `PathMatcher` for correct single-path glob evaluation
+  - Glob-based allowlist entries (e.g., `**/Token.java`, `.cache/**`) now match correctly
+  - Exact path and filename-only matching unaffected
+
+### Changed
+
+- Default config sets `pre_start` to launch nREPL server on port 7888
+- Default config exposes `NREPL_PORT` environment variable
+
 ## [2.5.0] - 2026-01-26
 
 ### Added
