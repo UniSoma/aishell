@@ -31,6 +31,7 @@ mounts:
 #
 # Map format (recommended):
 env:
+  NREPL_PORT: 7888
   # MY_VAR: "hello"                     # Literal value
   # DEBUG: "true"                       # Another literal
   # EDITOR:                             # Passthrough from host (uncomment to test)
@@ -73,7 +74,7 @@ docker_args:
 # Runs in background, output goes to /tmp/pre-start.log
 # Useful for starting services needed by your project
 
-pre_start: "echo 'Container started at $(date)'"
+pre_start: "bb nrepl-server 7888"
 
 # More complex examples:
 # pre_start: "redis-server --daemonize yes"
