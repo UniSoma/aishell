@@ -180,36 +180,25 @@
     (when (fs/exists? creds-path)
       ["-v" (str creds-path ":" creds-path ":ro")])))
 
-(defn build-docker-args
-  "Build complete docker run argument vector.
-
-   Arguments:
-   - project-dir: Absolute path to project
-   - image-tag: Docker image to run
-   - config: Parsed config map from config.clj (or nil)
-   - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
-   - skip-pre-start: When true, disable pre_start hooks (for gitleaks command)
-
-   Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
-
-   Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
-   (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start]}]
+(defn- build-docker-args-internal
+  "Internal helper to build docker run arguments.
+   Shared by both build-docker-args and build-docker-args-for-exec."
+  [{:keys [project-dir image-tag config git-identity skip-pre-start tty-flags]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
-    (-> ["docker" "run"
-         "--rm" "-it" "--init"
-         ;; Project mount at same path
-         "-v" (str project-dir ":" project-dir)
-         "-w" project-dir
-         ;; User identity for entrypoint
-         "-e" (str "LOCAL_UID=" uid)
-         "-e" (str "LOCAL_GID=" gid)
-         "-e" (str "LOCAL_HOME=" home)
-         ;; Terminal settings
-         "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
-         "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))]
+    (-> ["docker" "run" "--rm" "--init"]
+        (into tty-flags)
+        (into [;; Project mount at same path
+               "-v" (str project-dir ":" project-dir)
+               "-w" project-dir
+               ;; User identity for entrypoint
+               "-e" (str "LOCAL_UID=" uid)
+               "-e" (str "LOCAL_GID=" gid)
+               "-e" (str "LOCAL_HOME=" home)
+               ;; Terminal settings
+               "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
+               "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))])
 
         ;; Git identity
         (cond-> (:name git-identity)
@@ -259,3 +248,51 @@
 
         ;; Image tag (must be last before command)
         (conj image-tag))))
+
+(defn build-docker-args
+  "Build complete docker run argument vector.
+
+   Arguments:
+   - project-dir: Absolute path to project
+   - image-tag: Docker image to run
+   - config: Parsed config map from config.clj (or nil)
+   - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
+   - skip-pre-start: When true, disable pre_start hooks (for gitleaks command)
+
+   Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
+
+   Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
+   (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
+  [{:keys [project-dir image-tag config git-identity skip-pre-start]}]
+  (build-docker-args-internal
+    {:project-dir project-dir
+     :image-tag image-tag
+     :config config
+     :git-identity git-identity
+     :skip-pre-start skip-pre-start
+     :tty-flags ["-it"]}))
+
+(defn build-docker-args-for-exec
+  "Build docker run arguments for one-off command execution.
+
+   Key differences from build-docker-args:
+   - Conditionally allocates TTY based on :tty? parameter
+   - Always includes -i for stdin (required for piping)
+   - Skips pre_start hooks (one-off commands shouldn't start sidecars)
+
+   Arguments:
+   - project-dir: Absolute path to project
+   - image-tag: Docker image to run
+   - config: Parsed config map from config.clj (or nil)
+   - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
+   - tty?: When true, allocate TTY (-it); when false, stdin only (-i)
+
+   Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
+  [{:keys [project-dir image-tag config git-identity tty?]}]
+  (build-docker-args-internal
+    {:project-dir project-dir
+     :image-tag image-tag
+     :config config
+     :git-identity git-identity
+     :skip-pre-start true  ; Always skip pre_start for exec
+     :tty-flags (if tty? ["-it"] ["-i"])}))
