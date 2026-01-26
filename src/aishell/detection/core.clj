@@ -8,7 +8,8 @@
             [aishell.detection.formatters :as formatters]
             [aishell.detection.patterns :as patterns]
             [aishell.detection.gitignore :as gitignore]
-            [aishell.config :as config]))
+            [aishell.config :as config])
+  (:import [java.nio.file FileSystems]))
 
 ;; Directories to skip during scanning (performance optimization)
 (def excluded-dirs
@@ -27,6 +28,13 @@
   (let [path-str (str path)]
     (some #(str/includes? path-str (str "/" % "/")) excluded-dirs)))
 
+(defn- path-matches-glob?
+  "Check if a path string matches a glob pattern using Java NIO PathMatcher."
+  [path-str pattern]
+  (let [matcher (.getPathMatcher (FileSystems/getDefault)
+                                 (str "glob:" pattern))]
+    (.matches matcher (fs/path path-str))))
+
 (defn- file-allowlisted?
   "Check if file path matches any allowlist entry.
    Supports exact paths and glob patterns.
@@ -40,7 +48,7 @@
                 (when pattern  ;; Guard against entries without :path
                   (or (= pattern rel-path)
                       (= pattern (fs/file-name file-path))  ;; Allow filename-only matching
-                      (seq (fs/match rel-path (str "glob:" pattern)))))))  ;; fs/match returns collection, use seq
+                      (path-matches-glob? rel-path pattern)))))
             allowlist))))
 
 (defn filter-allowlisted
