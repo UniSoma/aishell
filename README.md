@@ -14,6 +14,7 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Co
 - **Pre-start commands** - Run sidecar services before shell/harness
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
+- **One-off commands** - Run single commands in container with `aishell exec`
 
 ## Documentation
 
@@ -138,7 +139,31 @@ aishell gemini --help
 
 # Run Gitleaks secret scanner
 aishell gitleaks detect
+
+# Run one-off command
+aishell exec ls -la
 ```
+
+### One-off Commands
+
+Run commands in the container without entering interactive shell:
+
+```bash
+# List files in container
+aishell exec ls -la
+
+# Run a build command
+aishell exec npm install
+
+# Check node version
+aishell exec node --version
+
+# Use with pipes
+echo "hello" | aishell exec cat
+cat package.json | aishell exec jq '.scripts'
+```
+
+**Note:** The exec command uses the same mounts and environment from your config.yaml, but skips pre-start hooks and sensitive file detection for fast execution.
 
 ### Update to latest versions
 
