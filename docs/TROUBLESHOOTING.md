@@ -15,6 +15,7 @@ This guide helps diagnose and resolve common issues with aishell.
 - [Container Issues](#container-issues)
 - [Authentication Issues](#authentication-issues)
 - [Sensitive File Detection](#sensitive-file-detection)
+- [Exec Command Issues](#exec-command-issues)
 - [Network Issues](#network-issues)
 - [Getting Help](#getting-help)
 
@@ -596,6 +597,51 @@ aishell claude  # No warning for allowlisted files
    detection:
      gitleaks_freshness_check: false
    ```
+
+---
+
+## Exec Command Issues
+
+### "the input device is not a TTY"
+
+**Symptom:** Running `aishell exec` in a script or CI produces this Docker error.
+
+**Cause:** This should not happen - aishell auto-detects TTY and omits the `-t` flag when stdin is not a terminal.
+
+**Resolution:**
+1. Ensure you're using the latest version of aishell
+2. If issue persists, report it as a bug
+
+### Piped input not working
+
+**Symptom:** `echo "test" | aishell exec cat` produces no output.
+
+**Cause:** TTY detection may be incorrectly identifying stdin as a terminal.
+
+**Solution:**
+1. Verify the pipe is correctly formed
+2. Try: `echo "test" | aishell exec sh -c 'cat'`
+
+### Exit code not propagated
+
+**Symptom:** `aishell exec false; echo $?` returns 0 instead of 1.
+
+**Cause:** Exit code propagation issue.
+
+**Solution:**
+1. Check that you're using the command correctly: `aishell exec <command>`
+2. Verify with: `aishell exec sh -c 'exit 42'; echo $?` (should show 42)
+
+### Command not found in container
+
+**Symptom:** `aishell exec mycommand` fails with "command not found".
+
+**Cause:** The command is not installed in the base image or your project extension.
+
+**Solution:**
+1. Use full path: `aishell exec /usr/bin/mycommand`
+2. Add the tool to your `.aishell/Dockerfile` extension
+3. Run interactive shell to debug: `aishell` then check `which mycommand`
 
 ---
 
