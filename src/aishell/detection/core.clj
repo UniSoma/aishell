@@ -16,7 +16,7 @@
   "Directories excluded from scanning for performance.
    These typically contain build artifacts, dependencies, or version control."
   #{".git" "node_modules" "vendor" "target" "build" "dist"
-    "__pycache__" ".venv" "venv" ".bundle"})
+    "__pycache__" ".venv" "venv" ".bundle" ".cache" ".cpcache"})
 
 (def severity-order
   "Sort order for severities (lower number = higher priority)."
