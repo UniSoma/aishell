@@ -86,10 +86,11 @@ Plans:
   4. Container uses --rm flag and remains detached after harness starts (user can attach/detach without destroying container)
   5. `docker stop` completes gracefully in <3 seconds with exit code 0 or 143 (not 137 SIGKILL)
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- (To be created during plan-phase)
+- [ ] 32-01-PLAN.md — Entrypoint tmux auto-start for all container modes
+- [ ] 32-02-PLAN.md — CLI --detach flag, conflict detection, named container args
 
 ### Phase 33: Attach Command
 **Goal**: Provide simple CLI for reconnecting to running containers' tmux sessions.
