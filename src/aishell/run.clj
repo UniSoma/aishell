@@ -218,7 +218,7 @@
                     (print (:err result)))
                   (System/exit (:exit result)))))
             ;; Foreground mode: exec (replaces process) - existing behavior
-            (apply p/exec (concat docker-args container-cmd)))))))
+            (apply p/exec (concat docker-args container-cmd))))))))
 
 (defn run-exec
   "Run one-off command in container.
