@@ -5,24 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.6.0] - 2026-01-26
+## [2.6.0] - 2026-01-31
 
 ### Added
 
+- **tmux integration**: All container modes auto-start inside tmux session `main`
+  - Enables detach/reattach workflow for long-running AI agents
+  - TERM validation with automatic fallback to xterm-256color for unsupported terminals (e.g., Ghostty)
+  - gosu runs before tmux to ensure user-owned socket (no permission errors)
+
+- **Named containers**: Deterministic container naming with `aishell-{project-hash}-{name}` format
+  - Project hash is first 8 chars of SHA-256 of project directory path
+  - Default name equals harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`)
+  - Override with `--name <name>` flag (e.g., `aishell claude --name reviewer`)
+
+- **Detached mode**: `--detach` / `-d` flag for background container execution
+  - `aishell claude --detach` starts container in background and prints attach/stop commands
+  - `--rm` flag preserved (containers auto-cleanup when stopped)
+
+- **Conflict detection**: Pre-flight checks before container launch
+  - Running container with same name produces clear error with attach guidance
+  - Stopped container with same name auto-removed before new launch
+
+- **Attach command**: `aishell attach --name <name>` reconnects to running containers
+  - `--session <session>` flag for specific tmux sessions
+  - Three-layer validation: TTY check, container state, session existence
+  - User-friendly error messages with actionable guidance
+
+- **PS command**: `aishell ps` lists running containers for current project
+  - Table output with NAME (short form), STATUS, and CREATED columns
+  - Project-scoped filtering by project hash
+  - Helpful empty state message with examples
+
 - **Pre-flight check command**: `aishell check` validates configuration, Docker availability, and image state before running
-  - Reports config file validity, Docker daemon status, and image build state
-  - Exits with non-zero status on errors for CI integration
 
 ### Fixed
 
-- **Glob pattern matching in allowlist**: Replaced broken `fs/match` (directory walker) with Java NIO `PathMatcher` for correct single-path glob evaluation
-  - Glob-based allowlist entries (e.g., `**/Token.java`, `.cache/**`) now match correctly
-  - Exact path and filename-only matching unaffected
-
-### Changed
-
-- Default config sets `pre_start` to launch nREPL server on port 7888
-- Default config exposes `NREPL_PORT` environment variable
+- **Glob pattern matching in allowlist**: Replaced broken `fs/match` with Java NIO `PathMatcher` for correct single-path glob evaluation
 
 ## [2.5.0] - 2026-01-26
 

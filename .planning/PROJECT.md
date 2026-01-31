@@ -75,22 +75,27 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Gitleaks state tracking: :with-gitleaks in state.edn — v2.5.0
 - ✓ Documentation: README, CONFIGURATION, TROUBLESHOOTING updated for v2.5.0 — v2.5.0
 
+**v2.6.0 (2026-01-31) — tmux Integration & Named Containers:**
+- ✓ tmux in base Docker image — v2.6.0
+- ✓ Harness commands auto-start inside named tmux session (`main`) — v2.6.0 (all modes, including shell)
+- ✓ Container naming: default = harness name, override with `--name` — v2.6.0
+- ✓ Docker container name = `aishell-{project-hash}-{name}` for cross-project isolation — v2.6.0
+- ✓ `aishell attach --name <name>` to connect to container's tmux session via docker exec — v2.6.0
+- ✓ `aishell attach --name <name> --session <session>` for specific tmux sessions — v2.6.0
+- ✓ `aishell ps` to list running containers for current project — v2.6.0
+- ✓ Conflict detection when starting container with name already in use — v2.6.0
+- ✓ TERM validation with xterm-256color fallback for unsupported terminals — v2.6.0
+- ✓ Detached mode (`--detach`/`-d`) for background container execution — v2.6.0
+
 ### Active
 
-**v2.6.0 — tmux Integration & Named Containers:**
-- [ ] tmux in base Docker image
-- [ ] Harness commands auto-start inside named tmux session (`main`)
-- [ ] Container naming: default = harness name, override with `--name`
-- [ ] Docker container name = `aishell-{project-hash}-{name}` for cross-project isolation
-- [ ] `aishell attach <name>` to connect to container's tmux session via docker exec
-- [ ] `aishell attach <name> --session <session>` for specific tmux sessions
-- [ ] `aishell ps` to list running containers for current project
-- [ ] Conflict detection when starting container with name already in use
-- [ ] Shell mode (`aishell`) — tmux available but no auto-start
+(No active requirements — start next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
-- Persistent containers — ephemeral is the design choice (named containers added in v2.6.0 but still ephemeral)
+- Persistent containers — ephemeral is the design choice (named containers in v2.6.0 are still ephemeral with --rm)
+- Persistent tmux sessions across container restarts — violates ephemeral design principle
+- tmux plugin installation in base image — version drift, slow builds
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -100,19 +105,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.5.0 on 2026-01-26
-**Next:** v2.6.0 — tmux Integration & Named Containers
+**Shipped:** v2.6.0 on 2026-01-31
+**Next:** Planning next milestone
 
-**Codebase:** ~2,818 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
+**Codebase:** ~3,457 LOC Clojure (Babashka)
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux
 **Documentation:** 4,000+ lines across docs/ and README
 
-**v2.5.0 accomplishments:**
-- Dynamic help output showing only installed harness commands
-- Conditional Gitleaks installation with `--without-gitleaks` flag
-- Pre-start YAML list format support (backwards compatible)
-- One-off command execution via `aishell exec` with TTY auto-detection
-- 14 of 14 active v2.5.0 requirements satisfied (10 abandoned — binary install approach)
+**v2.6.0 accomplishments:**
+- Deterministic container naming with 8-char SHA-256 project hashing
+- tmux auto-start in all container modes with TERM validation
+- Detached mode for background execution with conflict detection
+- Attach command for reconnecting to running containers
+- PS command for project-scoped container discovery
+- 19 of 19 v2.6.0 requirements satisfied (2 overridden by user decision)
 
 ## Constraints
 
@@ -183,6 +189,21 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Always include -i flag for exec | Without -i, piped input fails silently | Good |
 | p/shell with :inherit for exec | Need to capture exit code; p/exec replaces process | Good |
 
+**v2.6.0 (tmux Integration & Named Containers):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| 8-char SHA-256 hash for container names | 2^32 space, <0.02% collision at 100 projects | Good |
+| All modes auto-start inside tmux | Consistency across shell/harness/detached modes (user override) | Good |
+| gosu before tmux in exec chain | User-owned socket, avoids permission errors | Good |
+| infocmp for TERM validation | Defensive check without extra terminfo packages | Good |
+| xterm-256color fallback | Universally available in Debian, preserves color support | Good |
+| -d short form for --detach | No conflicts with any harness flags | Good |
+| --rm + --detach | Modern Docker auto-cleanup on stop | Good |
+| p/exec for attach terminal takeover | Full TTY control without shell wrapper | Good |
+| clojure.pprint/print-table for ps | Standard library, no dependencies | Good |
+| Three-layer attach validation | TTY → container → session prevents confusing Docker errors | Good |
+
 **v2.4.0 (Multi-Harness Support):**
 
 | Decision | Rationale | Outcome |
@@ -196,4 +217,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
 ---
-*Last updated: 2026-01-31 after v2.6.0 milestone start*
+*Last updated: 2026-01-31 after v2.6.0 milestone*

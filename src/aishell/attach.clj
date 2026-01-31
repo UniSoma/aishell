@@ -6,6 +6,19 @@
             [aishell.docker.naming :as naming]
             [aishell.output :as output]))
 
+(defn- resolve-term
+  "Resolve a TERM value valid inside the container.
+   Checks if the host TERM has a terminfo entry in the container via infocmp.
+   Falls back to xterm-256color if unsupported (e.g., xterm-ghostty)."
+  [container-name]
+  (let [host-term (or (System/getenv "TERM") "xterm-256color")
+        {:keys [exit]} (p/shell {:out :string :err :string :continue true}
+                                "docker" "exec" "-u" "developer" container-name
+                                "infocmp" host-term)]
+    (if (zero? exit)
+      host-term
+      "xterm-256color")))
+
 (defn- validate-tty!
   "Ensure command is running in an interactive terminal.
    Exits with error if not (e.g., running in a script, pipe, or CI)."
@@ -74,6 +87,12 @@
      (validate-container-state! container-name name)
      (validate-session-exists! container-name session name)
 
-     ;; All checks passed - exec into tmux (replaces current process)
-     (p/exec "docker" "exec" "-it" "-u" "developer" container-name
-             "tmux" "attach-session" "-t" session))))
+     ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
+     (let [term (resolve-term container-name)]
+       ;; All checks passed - exec into tmux (replaces current process)
+       (p/exec "docker" "exec" "-it" "-u" "developer"
+               "-e" (str "TERM=" term)
+               "-e" "LANG=C.UTF-8"
+               "-e" "LC_ALL=C.UTF-8"
+               container-name
+               "tmux" "attach-session" "-t" session)))))

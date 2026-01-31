@@ -15,6 +15,11 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Co
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
 - **One-off commands** - Run single commands in container with `aishell exec`
+- **Detached mode** - Run harnesses in background with `--detach` flag
+- **Named containers** - Deterministic naming with `--name` override
+- **Attach/detach** - Reconnect to running containers via `aishell attach`
+- **Container discovery** - List project containers with `aishell ps`
+- **tmux integration** - All containers run inside tmux for session persistence
 
 ## Documentation
 
@@ -137,6 +142,16 @@ aishell claude --help
 aishell codex --help
 aishell gemini --help
 
+# Run in detached mode (background)
+aishell claude --detach
+aishell claude -d --name myproject
+
+# Reconnect to detached container
+aishell attach --name claude
+
+# List project containers
+aishell ps
+
 # Run Gitleaks secret scanner
 aishell gitleaks detect
 
@@ -164,6 +179,36 @@ cat package.json | aishell exec jq '.scripts'
 ```
 
 **Note:** The exec command uses the same mounts and environment from your config.yaml, but skips pre-start hooks and sensitive file detection for fast execution.
+
+### Detached mode & multi-container workflow
+
+Run harnesses in the background and reconnect later:
+
+```bash
+# Start Claude in detached mode
+aishell claude --detach
+
+# Start with a custom name
+aishell claude --detach --name reviewer
+
+# List running containers for this project
+aishell ps
+
+# Reconnect to a running container
+aishell attach --name claude
+
+# Reconnect to a specific tmux session
+aishell attach --name claude --session main
+
+# Detach from tmux without stopping: Ctrl+B D
+
+# Stop a container
+docker stop aishell-<hash>-claude
+```
+
+All containers are named `aishell-{project-hash}-{name}` where the project hash is derived from your project directory path. This allows multiple instances per project and isolation across projects.
+
+**Conflict detection:** Starting a container with a name already in use by a running container shows an error with guidance. Stopped containers with the same name are auto-removed.
 
 ### Update to latest versions
 
@@ -424,7 +469,7 @@ Built on `debian:bookworm-slim` with:
 **CLI tools:**
 - git, curl, jq, ripgrep, vim
 - tree, less, file, unzip, watch
-- htop, sqlite3, sudo
+- htop, sqlite3, sudo, tmux
 
 ## License
 

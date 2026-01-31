@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.6.0 tmux Integration & Named Containers (Shipped: 2026-01-31)
+
+**Delivered:** tmux session management for all container modes, deterministic named containers with project-hash isolation, detached mode for background execution, attach/detach workflow, and project-scoped container discovery.
+
+**Phases completed:** 30-34 (7 plans total)
+
+**Key accomplishments:**
+
+- Deterministic container naming (`aishell-{hash}-{name}`) with 8-char SHA-256 project hashing and `--name` override
+- tmux auto-start in all container modes with TERM validation and xterm-256color fallback
+- Detached mode (`--detach`/`-d`) for background container execution with user-friendly feedback
+- Attach command (`aishell attach --name <name>`) with three-layer validation (TTY, container, session)
+- PS command (`aishell ps`) for project-scoped container discovery with table output
+- Pre-flight conflict detection (error for running duplicates, auto-remove stopped containers)
+
+**Stats:**
+
+- 40 files changed (6,565 insertions, 91 deletions)
+- ~3,457 lines of Clojure (total codebase)
+- 5 phases, 7 plans, ~10 tasks
+- 1 day (2026-01-31)
+
+**Git range:** `feat(30-01)` → `docs(34)` (42 commits)
+
+**What's next:** Future harnesses (Aider, Cursor), session persistence, security pattern audit, or shell completions
+
+---
+
 ## v2.5.0 Optimization & Polish (Shipped: 2026-01-26)
 
 **Delivered:** Dynamic help output, conditional Gitleaks installation, pre-start list format, and `aishell exec` command for one-off container execution with TTY auto-detection.
