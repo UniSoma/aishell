@@ -5,16 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** v2.8.0 — Decouple Harness Tools
+
+**Current focus:** Phase 35 - Foundation Image Split
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-31 — Milestone v2.8.0 started
+Phase: 35 of 38 (Foundation Image Split)
+Plan: Ready to plan first plan in phase
+Status: Ready to plan
+Last activity: 2026-01-31 - Roadmap created for v2.8.0 milestone
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (0/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,6 +28,24 @@ Progress: [░░░░░░░░░░] 0%
 - v2.7.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
 
 ## Performance Metrics
+
+**Velocity (v2.8.0):**
+- Total plans completed: 0
+- Average duration: N/A (no plans completed yet)
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 35 | 0/2 | 0 min | - |
+| 36 | 0/3 | 0 min | - |
+| 37 | 0/4 | 0 min | - |
+| 38 | 0/2 | 0 min | - |
+
+**Recent Trend:**
+- No plans completed yet
+- Trend: N/A
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -42,6 +61,23 @@ Progress: [░░░░░░░░░░] 0%
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
+Recent decisions affecting v2.8.0 work:
+
+**Architecture (from investigation):**
+- 2-tier architecture: Foundation image + harness volume (not 3 images)
+- Volume-based injection over layer inversion (simpler for local dev workflow)
+- Clean break from `aishell:base` to `aishell:foundation` (no alias)
+- Per-project volumes keyed by harness combination hash
+- Lazy volume population on first container run
+
+**Key files for implementation:**
+- src/aishell/docker/templates.clj - Dockerfile templates
+- src/aishell/docker/build.clj - Build orchestration
+- src/aishell/docker/extension.clj - Extension cache invalidation
+- src/aishell/docker/run.clj - Docker run arguments, volume mounts
+- src/aishell/run.clj - Run command orchestration
+- src/aishell/state.clj - State persistence (EDN)
+
 ### Pending Todos
 
 3 deferred todos:
@@ -51,18 +87,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-None.
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 005 | Add --shell flag to aishell attach command | 2026-01-31 | 7be50e5 | [005-add-shell-flag-to-aishell-attach-command](./quick/005-add-shell-flag-to-aishell-attach-command/) |
+None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31
-Stopped at: v2.8.0 milestone started — defining requirements
+Last session: 2026-01-31 (roadmap creation)
+Stopped at: Roadmap and state initialization complete
 Resume file: None
 
-Next step: Complete requirements definition, then `/gsd:plan-phase`
+**Next step:** `/gsd:plan-phase 35` to create execution plans for foundation image split

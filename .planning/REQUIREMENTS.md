@@ -73,31 +73,31 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDN-01 | — | Pending |
-| FNDN-02 | — | Pending |
-| FNDN-03 | — | Pending |
-| HVOL-01 | — | Pending |
-| HVOL-02 | — | Pending |
-| HVOL-03 | — | Pending |
-| HVOL-04 | — | Pending |
-| HVOL-05 | — | Pending |
-| HVOL-06 | — | Pending |
-| BUILD-01 | — | Pending |
-| BUILD-02 | — | Pending |
-| BUILD-03 | — | Pending |
-| CACHE-01 | — | Pending |
-| CACHE-02 | — | Pending |
-| MIGR-01 | — | Pending |
-| MIGR-02 | — | Pending |
-| CLEAN-01 | — | Pending |
-| CLEAN-02 | — | Pending |
-| DOCS-01 | — | Pending |
+| FNDN-01 | Phase 35 | Pending |
+| FNDN-02 | Phase 35 | Pending |
+| FNDN-03 | Phase 35 | Pending |
+| BUILD-02 | Phase 35 | Pending |
+| HVOL-01 | Phase 36 | Pending |
+| HVOL-02 | Phase 36 | Pending |
+| HVOL-03 | Phase 36 | Pending |
+| HVOL-06 | Phase 36 | Pending |
+| BUILD-03 | Phase 36 | Pending |
+| BUILD-01 | Phase 37 | Pending |
+| HVOL-04 | Phase 37 | Pending |
+| HVOL-05 | Phase 37 | Pending |
+| CACHE-01 | Phase 37 | Pending |
+| CACHE-02 | Phase 37 | Pending |
+| MIGR-01 | Phase 37 | Pending |
+| MIGR-02 | Phase 37 | Pending |
+| CLEAN-01 | Phase 38 | Pending |
+| CLEAN-02 | Phase 38 | Pending |
+| DOCS-01 | Phase 38 | Pending |
 
 **Coverage:**
 - v2.8.0 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-31*
-*Last updated: 2026-01-31 after initial definition*
+*Last updated: 2026-01-31 after roadmap creation*
