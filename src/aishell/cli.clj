@@ -10,7 +10,8 @@
             [aishell.run :as run]
             [aishell.check :as check]
             [aishell.state :as state]
-            [aishell.util :as util]))
+            [aishell.util :as util]
+            [aishell.attach :as attach]))
 
 (def version "2.6.0")
 
@@ -96,6 +97,7 @@
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
+  (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
     (when (contains? installed "claude")
@@ -280,11 +282,14 @@
         detach? (boolean (some #{"-d" "--detach"} clean-args))
         clean-args (vec (remove #{"-d" "--detach"} clean-args))
 
-        ;; Extract --name flag (--name VALUE format)
-        ;; Must be extracted before pass-through to harness
-        container-name-override (let [idx (.indexOf (vec clean-args) "--name")]
-                                  (when (and (>= idx 0) (< (inc idx) (count clean-args)))
-                                    (nth clean-args (inc idx))))
+        ;; Extract --name flag (--name VALUE format) for harness commands only
+        ;; attach and other commands parse their own --name flag
+        harness-commands #{"claude" "opencode" "codex" "gemini" "gitleaks"}
+        should-extract-name? (contains? harness-commands (first clean-args))
+        container-name-override (when should-extract-name?
+                                  (let [idx (.indexOf (vec clean-args) "--name")]
+                                    (when (and (>= idx 0) (< (inc idx) (count clean-args)))
+                                      (nth clean-args (inc idx)))))
         clean-args (if container-name-override
                      (let [idx (.indexOf (vec clean-args) "--name")]
                        (into (subvec (vec clean-args) 0 idx)
@@ -295,6 +300,38 @@
     (case (first clean-args)
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
+      "attach" (let [rest-args (vec (rest clean-args))]
+                 (cond
+                   (some #{"-h" "--help"} rest-args)
+                   (do
+                     (println (str output/BOLD "Usage:" output/NC " aishell attach --name <name> [OPTIONS]"))
+                     (println)
+                     (println "Attach to a running container's tmux session.")
+                     (println)
+                     (println (str output/BOLD "Options:" output/NC))
+                     (println "  --name <name>       Container name to attach to")
+                     (println "  --session <session>  Tmux session name (default: main)")
+                     (println "  -h, --help           Show this help")
+                     (println)
+                     (println (str output/BOLD "Examples:" output/NC))
+                     (println (str "  " output/CYAN "aishell attach --name claude" output/NC))
+                     (println (str "      Attach to the 'claude' container's main session"))
+                     (println)
+                     (println (str "  " output/CYAN "aishell attach --name experiment --session debug" output/NC))
+                     (println (str "      Attach to specific session in 'experiment' container"))
+                     (println)
+                     (println (str output/BOLD "Notes:" output/NC))
+                     (println "  Press Ctrl+B then D to detach without stopping the container.")
+                     (println "  Multiple users can attach to the same container simultaneously."))
+
+                   (empty? rest-args)
+                   (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
+
+                   :else
+                   (let [opts (cli/parse-opts rest-args {:spec {:name {} :session {}}})]
+                     (if-not (:name opts)
+                       (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
+                       (attach/attach-to-session (:name opts) (or (:session opts) "main"))))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
