@@ -52,8 +52,8 @@ See MILESTONES.md for full historical context.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 35-01: Update Dockerfile template to remove harness installations, change tag to foundation
-- [ ] 35-02: Add base-tag validation with clear error messages for legacy extensions
+- [x] 35-01: Update Dockerfile template to remove harness installations, change tag to foundation
+- [x] 35-02: Add base-tag validation with clear error messages for legacy extensions
 
 #### Phase 36: Harness Volume Core
 
@@ -132,12 +132,12 @@ Phases execute numerically: 35 → 36 → 37 → 38
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 35. Foundation Image Split | 0/2 | Not started | - |
+| 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
 | 36. Harness Volume Core | 0/3 | Not started | - |
 | 37. Build Integration & Migration | 0/4 | Not started | - |
 | 38. Volume Cleanup & Documentation | 0/2 | Not started | - |
 
-**Total:** 0/11 plans complete (0%)
+**Total:** 2/11 plans complete (18%)
 
 ---
 *Roadmap created: 2026-01-31*

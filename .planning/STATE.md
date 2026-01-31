@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 35 - Foundation Image Split
+**Current focus:** Phase 36 - Harness Volume Core
 
 ## Current Position
 
@@ -102,4 +102,4 @@ Last session: 2026-01-31T22:38:03Z
 Stopped at: Completed 35-02-PLAN.md (Legacy Base Tag Validation)
 Resume file: None
 
-**Next step:** Phase 36 to implement volume-based harness injection
+**Next step:** `/gsd:plan-phase 36` to create execution plans for harness volume core
