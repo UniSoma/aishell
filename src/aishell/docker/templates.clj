@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     ripgrep \\
     sqlite3 \\
     sudo \\
+    tmux \\
     tree \\
     unzip \\
     vim \\
