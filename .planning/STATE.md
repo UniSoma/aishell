@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 32 of 34 (Detached Mode & Conflict Detection — In Progress)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-31 — Completed 32-01-PLAN.md (tmux auto-start)
+Last activity: 2026-01-31 — Completed 32-02-PLAN.md (detach flag & conflict detection)
 
-Progress: [█████████░] 92% (31 phases complete, 1 of 3 plans in phase 32)
+Progress: [█████████░] 92% (31 phases complete, 2 of 3 plans in phase 32)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -34,8 +34,8 @@ Progress: [█████████░] 92% (31 phases complete, 1 of 3 plans
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
 **v2.6.0 (In Progress):**
-- Plans completed: 3
-- Average duration: 1min
+- Plans completed: 4
+- Average duration: 2min
 - Trend: On track
 
 *Updated after each plan completion*
@@ -47,6 +47,9 @@ Progress: [█████████░] 92% (31 phases complete, 1 of 3 plans
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (32-02): -d short form safe for --detach (no conflicts with harness flags)
+- v2.6.0 (32-02): All containers get --name flag (unified naming across foreground/detached modes)
+- v2.6.0 (32-02): --rm + --detach valid in modern Docker (auto-cleanup when stopped)
 - v2.6.0 (32-01): All container modes auto-start inside tmux session 'main' (override of ROADMAP shell mode criterion for consistency)
 - v2.6.0 (32-01): gosu runs before tmux in exec chain (ensures user-owned socket, avoids permission errors)
 - v2.6.0 (31-01): tmux added to base image package list (single-line change in templates.clj)
@@ -67,13 +70,13 @@ Recent decisions affecting current work:
 
 **Phase 32 (Detached Mode):**
 - ✅ Socket permissions - RESOLVED: gosu now runs before tmux in exec chain (32-01)
+- ✅ --rm + --name conflict - RESOLVED: pre-flight conflict detection via ensure-name-available! (32-02)
 - Signal handling validation needed - verify existing --init flag (tini as PID 1) handles SIGTERM correctly with tmux. If `docker stop` takes >3s and exits with code 137, trap handlers may be needed.
-- --rm + --name conflict - pre-flight collision check required to handle stopped containers with duplicate names.
 
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 32-01-PLAN.md (tmux auto-start)
+Stopped at: Completed 32-02-PLAN.md (detach flag & conflict detection wiring)
 Resume file: None
 
-Next step: Continue with 32-02 (attach command) or 32-03 (conflict detection)
+Next step: Continue with 32-03 (attach/ps commands) or move to Phase 33
