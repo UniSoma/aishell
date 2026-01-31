@@ -1,5 +1,5 @@
 (ns aishell.docker.extension
-  "Per-project Dockerfile extension support.
+  "Per-project Dockerfile extension support with legacy tag validation.
 
    Projects can extend the base image with .aishell/Dockerfile.
    The extension is auto-rebuilt when base image or extension Dockerfile changes."
@@ -26,6 +26,31 @@
   (let [path (fs/path project-dir ".aishell" "Dockerfile")]
     (when (fs/exists? path)
       (str path))))
+
+(defn validate-base-tag
+  "Validate that project Dockerfile doesn't use legacy 'aishell:base' tag.
+
+   Arguments:
+   - project-dir: Path to project directory
+
+   Returns: nil if validation passes or no Dockerfile exists.
+            Exits with error if legacy FROM aishell:base is found."
+  [project-dir]
+  (when-let [dockerfile-path (project-dockerfile project-dir)]
+    (let [content (slurp dockerfile-path)
+          legacy-pattern #"(?i)FROM\s+aishell:base\b"]
+      (when (re-find legacy-pattern content)
+        (output/error
+          "Legacy base image tag in .aishell/Dockerfile
+
+Found:    FROM aishell:base
+Expected: FROM aishell:foundation
+
+Why: v2.8.0 splits the base image into a stable foundation layer and
+     volume-mounted harness tools to prevent cascade rebuilds.
+
+Fix: Edit .aishell/Dockerfile and change:
+     FROM aishell:base  ->  FROM aishell:foundation")))))
 
 (defn get-base-image-id
   "Get Docker image ID for a given image tag.
