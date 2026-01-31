@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 33 - Attach Command
+**Current focus:** Phase 34 - PS Command & Polish
 
 ## Current Position
 
-Phase: 33 of 34 (Attach Command — Complete)
+Phase: 34 of 34 (PS Command & Polish — In Progress)
 Plan: 1 of 1 in current phase
-Status: Phase complete, verified (6/6 must-haves passed)
-Last activity: 2026-01-31 — Phase 33 complete, verified
+Status: Plan 34-01 complete
+Last activity: 2026-01-31 — Completed 34-01-PLAN.md
 
-Progress: [█████████░] 97% (33 phases complete out of 34 total)
+Progress: [██████████] 100% (34 phases complete out of 34 total)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -33,10 +33,10 @@ Progress: [█████████░] 97% (33 phases complete out of 34 tot
 - Milestones: 7 (all shipped)
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
-**v2.6.0 (In Progress):**
-- Plans completed: 6 (32-01, 32-02, 32-UAT, 32-03-gap-closure, 33-01, [phase 34 pending])
-- Average duration: 3min
-- Trend: On track
+**v2.6.0 (Complete):**
+- Plans completed: 7 (30-01, 31-01, 32-01, 32-02, 32-UAT, 32-03, 33-01, 34-01)
+- Average duration: 2min
+- Trend: Complete - all phases shipped
 
 *Updated after each plan completion*
 
@@ -47,6 +47,9 @@ Progress: [█████████░] 97% (33 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (34-01): Use clojure.pprint/print-table for readable table output (standard library, no dependencies)
+- v2.6.0 (34-01): Extract short names by splitting on hyphen with limit 3 (handles user names with hyphens)
+- v2.6.0 (34-01): Use Docker timestamps as-is (no relative time formatting for simplicity)
 - v2.6.0 (33-01): Only extract --name flag for harness commands (attach parses its own --name flag)
 - v2.6.0 (33-01): Use p/exec for terminal takeover in attach (not p/shell, provides full TTY control)
 - v2.6.0 (33-01): Show attach help only on --help flag (not on empty args, consistent with error-first pattern)
@@ -81,8 +84,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-01-31T17:44:39Z
-Stopped at: Phase 33 complete — verified (passed), roadmap updated
+Last session: 2026-01-31T18:36:20Z
+Stopped at: Phase 34 Plan 01 complete (ps command implemented)
 Resume file: None
 
-Next step: `/gsd:plan-phase 34` to create execution plans for Phase 34 (PS Command & Polish)
+Next step: v2.6.0 complete - ready for release/documentation
