@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.1] - 2026-01-31
+
+### Added
+
+- **Shell access flag**: `aishell attach --name <name> --shell` opens a bash shell in a running container
+  - Creates or reattaches to a tmux session named `shell` using `tmux new-session -A`
+  - Mutually exclusive with `--session` flag
+
+### Fixed
+
+- **Attach color support**: Pass `COLORTERM` env var in attach commands, matching `docker run` behavior
+- **Attach bashrc setup**: Ensure `/etc/bash.aishell` is sourced when attaching to containers started with harness commands (e.g., `claude`), restoring custom prompt and color aliases
+
 ## [2.7.0] - 2026-01-31
 
 ### Added
