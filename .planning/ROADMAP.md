@@ -125,10 +125,10 @@ Plans:
   3. When no containers running for project, shows helpful message (not empty output)
   4. Output distinguishes between containers from different projects when run from different directories
 
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- (To be created during plan-phase)
+- [ ] 34-01-PLAN.md — PS command implementation and CLI integration
 
 ## Progress
 
