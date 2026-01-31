@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 33-attach-command
 source: 33-01-SUMMARY.md
 started: 2026-01-31T18:00:00Z
-updated: 2026-01-31T18:10:00Z
+updated: 2026-01-31T18:15:00Z
 ---
 
 ## Current Test
@@ -51,11 +51,14 @@ skipped: 2
 ## Gaps
 
 - truth: "Attach connects to running container's tmux main session with full interactivity"
-  status: failed
+  status: fixed
   reason: "User reported: Container is running but attach returns 'No tmux sessions found in container claude'. Container started with --detach, visible in docker ps, but tmux session not detected."
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "docker exec runs as root by default, but tmux sessions are created by the developer user via gosu. tmux sessions are user-specific, so root cannot see developer's sessions."
+  artifacts:
+    - path: "src/aishell/attach.clj"
+      issue: "All three docker exec calls (has-session, list-sessions, attach-session) missing -u developer flag"
+  missing:
+    - "Add -u developer to docker exec commands in validate-session-exists! and attach-to-session"
+  debug_session: ".planning/debug/resolved/attach-no-tmux-sessions.md"
