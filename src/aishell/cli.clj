@@ -1,6 +1,7 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
             [clojure.string :as str]
+            [clojure.pprint :as pp]
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
@@ -97,6 +98,7 @@
   (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
+  (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
   (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
@@ -120,6 +122,7 @@
   (println (str "  " output/CYAN "aishell build --with-claude" output/NC "     Build with Claude Code"))
   (println (str "  " output/CYAN "aishell check" output/NC "                    Validate setup"))
   (println (str "  " output/CYAN "aishell exec ls -la" output/NC "             Run command in container"))
+  (println (str "  " output/CYAN "aishell ps" output/NC "                       List containers"))
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
   (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
@@ -254,6 +257,31 @@
 (def update-spec
   {:verbose {:alias :v :coerce :boolean :desc "Show full Docker build output"}})
 
+(defn- extract-short-name
+  "Extract user-friendly name from full container name.
+   Example: 'aishell-a1b2c3d4-claude' -> 'claude'"
+  [container-name]
+  (last (str/split container-name #"-" 3)))
+
+(defn- format-container
+  "Format container map for display with uppercase column headers."
+  [c]
+  {:NAME (extract-short-name (:name c))
+   :STATUS (:status c)
+   :CREATED (:created c)})
+
+(defn handle-ps
+  "List all containers for the current project."
+  [_]
+  (let [project-dir (System/getProperty "user.dir")
+        containers (naming/list-project-containers project-dir)]
+    (if (empty? containers)
+      (println "No containers found for this project.\n\nTo start a container:\n  aishell claude --detach\n  aishell opencode --detach --name my-session\n\nContainers are project-specific (based on current directory).")
+      (do
+        (println "Containers for this project:\n")
+        (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
+        (println "\nTo attach: aishell attach --name <name>")))))
+
 (def dispatch-table
   [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
    {:cmds ["update"] :fn handle-update :spec update-spec :restrict true}
@@ -300,6 +328,7 @@
     (case (first clean-args)
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
+      "ps" (handle-ps nil)
       "attach" (let [rest-args (vec (rest clean-args))]
                  (cond
                    (some #{"-h" "--help"} rest-args)
