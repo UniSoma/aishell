@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: 32 of 34 (Detached Mode & Conflict Detection — Complete)
-Plan: 3 of 3 in current phase (gap closure)
-Status: Phase complete, all gaps closed
-Last activity: 2026-01-31 — Phase 32 gap closure complete (32-03), re-verified (passed)
+Phase: 33 of 34 (Attach Command — In Progress)
+Plan: 1 of 1 in current phase
+Status: Phase complete
+Last activity: 2026-01-31 — Completed 33-01-PLAN.md (attach command implementation)
 
-Progress: [█████████░] 94% (32 phases complete out of 34 total)
+Progress: [█████████░] 97% (33 phases complete out of 34 total)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -34,8 +34,8 @@ Progress: [█████████░] 94% (32 phases complete out of 34 tot
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
 **v2.6.0 (In Progress):**
-- Plans completed: 5 (32-01, 32-02, 32-UAT, 32-03-gap-closure, [phase 33 pending])
-- Average duration: 2min
+- Plans completed: 6 (32-01, 32-02, 32-UAT, 32-03-gap-closure, 33-01, [phase 34 pending])
+- Average duration: 3min
 - Trend: On track
 
 *Updated after each plan completion*
@@ -47,6 +47,9 @@ Progress: [█████████░] 94% (32 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (33-01): Only extract --name flag for harness commands (attach parses its own --name flag)
+- v2.6.0 (33-01): Use p/exec for terminal takeover in attach (not p/shell, provides full TTY control)
+- v2.6.0 (33-01): Show attach help only on --help flag (not on empty args, consistent with error-first pattern)
 - v2.6.0 (32-03): Use infocmp for TERM validation rather than installing additional terminfo packages (defensive check, avoids image bloat)
 - v2.6.0 (32-03): Fallback to xterm-256color for unsupported TERM values (universally available in Debian, preserves color support)
 - v2.6.0 (32-03): Position TERM validation after gosu setup, before tmux exec in entrypoint lifecycle
@@ -58,7 +61,6 @@ Recent decisions affecting current work:
 - v2.6.0 (31-01): tmux added to base image package list (single-line change in templates.clj)
 - v2.6.0 (30-01): Use 8-char SHA-256 hash for container names (2^32 space, <0.02% collision at 100 projects)
 - v2.6.0 (30-01): Default container name equals harness name (claude/opencode/codex/gemini) or 'shell'
-- v2.6.0 (30-01): Extract --name flag before dispatch (consistent with --unsafe pattern)
 - v2.5.0: Binary install approach abandoned (native Claude binary 213MB larger than npm)
 - v2.3.0: Content detection delegated to Gitleaks (better coverage than custom patterns)
 - v2.0: Babashka over Bash (cross-platform, better data structures, YAML native)
@@ -79,8 +81,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-01-31T16:53:05Z
-Stopped at: Phase 32 gap closure complete — re-verified (passed), roadmap updated
+Last session: 2026-01-31T17:44:39Z
+Stopped at: Completed 33-01-PLAN.md (attach command implementation)
 Resume file: None
 
-Next step: `/gsd:plan-phase 33` to create execution plans for Phase 33 (Attach Command)
+Next step: `/gsd:plan-phase 34` to create execution plans for Phase 34 (Container Lifecycle Commands)
