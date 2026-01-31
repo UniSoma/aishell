@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 36 of 38 (Harness Volume Core)
-Plan: 1 of 3 complete in phase
+Plan: 2 of 3 complete in phase
 Status: In progress
-Last activity: 2026-01-31 - Completed 36-01-PLAN.md
+Last activity: 2026-01-31 - Completed 36-02-PLAN.md
 
-Progress: [███░░░░░░░] 27% (3/11 plans complete)
+Progress: [███░░░░░░░] 36% (4/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,22 +30,22 @@ Progress: [███░░░░░░░] 27% (3/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 2 min
-- Total execution time: 0.12 hours
+- Total execution time: 0.13 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
-| 36 | 1/3 | 1 min | 1 min |
+| 36 | 2/3 | 3 min | 2 min |
 | 37 | 0/4 | 0 min | - |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 1 min (36-01)
-- Trend: Very fast execution for focused namespace creation
+- Last plan: 2 min (36-02)
+- Trend: Consistent 2-min execution for focused implementation tasks
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -83,6 +83,13 @@ Recent decisions affecting v2.8.0 work:
 - Use alphabetical sorting for order-independent hashing
 - 12-character hex hash matches existing hash.clj pattern
 
+**Volume population (from 36-02):**
+- NPM package names: @anthropic-ai/claude-code, @codex-ai/codex, @google/generative-ai-cli
+- OpenCode excluded from npm installation (Go binary, not npm package)
+- Use NPM_CONFIG_PREFIX=/tools/npm for installation directory
+- Set world-readable permissions (chmod -R a+rX) for non-root execution
+- Populate via temporary Docker containers with --rm flag
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -104,8 +111,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31T23:47:10Z
-Stopped at: Completed 36-01-PLAN.md (Harness Hash Computation)
+Last session: 2026-01-31T23:52:41Z
+Stopped at: Completed 36-02-PLAN.md (Volume Lifecycle Management)
 Resume file: None
 
-**Next step:** Continue with 36-02-PLAN.md (Volume Lifecycle Management)
+**Next step:** Continue with 36-03-PLAN.md (Volume Staleness Detection)
