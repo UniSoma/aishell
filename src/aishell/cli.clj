@@ -162,20 +162,12 @@
           _ (validate-version (:version gemini-config) "Gemini")
 
           ;; Show replacement message if image exists
-          _ (when (docker/image-exists? build/base-image-tag)
+          _ (when (docker/image-exists? build/foundation-image-tag)
               (println "Replacing existing image..."))
 
-          ;; Build with force if specified (--force bypasses Docker cache)
-          result (build/build-base-image
-                   {:with-claude (:enabled? claude-config)
-                    :with-opencode (:enabled? opencode-config)
-                    :with-codex (:enabled? codex-config)
-                    :with-gemini (:enabled? gemini-config)
-                    :with-gitleaks with-gitleaks
-                    :claude-version (:version claude-config)
-                    :opencode-version (:version opencode-config)
-                    :codex-version (:version codex-config)
-                    :gemini-version (:version gemini-config)
+          ;; Build foundation image (harness tools will be volume-mounted in Phase 36)
+          result (build/build-foundation-image
+                   {:with-gitleaks with-gitleaks
                     :verbose (:verbose opts)
                     :force (:force opts)})]
 
@@ -215,17 +207,9 @@
     (when (:with-gemini state)
       (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
 
-    ;; Rebuild with same config + force (always --no-cache for update)
-    (let [result (build/build-base-image
-                   {:with-claude (:with-claude state)
-                    :with-opencode (:with-opencode state)
-                    :with-codex (:with-codex state)
-                    :with-gemini (:with-gemini state)
-                    :with-gitleaks (:with-gitleaks state true)  ; default true for backwards compat
-                    :claude-version (:claude-version state)
-                    :opencode-version (:opencode-version state)
-                    :codex-version (:codex-version state)
-                    :gemini-version (:gemini-version state)
+    ;; Rebuild foundation image with same config + force (always --no-cache for update)
+    (let [result (build/build-foundation-image
+                   {:with-gitleaks (:with-gitleaks state true)  ; default true for backwards compat
                     :verbose (:verbose opts)
                     :force true})]  ; Always force for update
 

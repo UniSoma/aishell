@@ -15,7 +15,8 @@
 ;; Label keys for cache tracking
 (def dockerfile-hash-label "aishell.dockerfile.hash")
 (def base-image-id-label "aishell.base.id")
-(def base-image-tag "aishell:base")
+(def foundation-image-tag "aishell:foundation")
+(def base-image-tag foundation-image-tag)
 
 (defn get-dockerfile-hash
   "Compute hash of embedded Dockerfile content for cache comparison."
@@ -35,30 +36,6 @@
       (not= (get-dockerfile-hash)
             (docker/get-image-label image-tag dockerfile-hash-label))))
 
-(defn version-changed?
-  "Check if requested harness versions differ from stored state.
-   Returns true if rebuild needed due to version change."
-  [opts state]
-  (or
-    ;; Claude version changed
-    (and (:with-claude opts)
-         (not= (:claude-version opts) (:claude-version state)))
-    ;; OpenCode version changed
-    (and (:with-opencode opts)
-         (not= (:opencode-version opts) (:opencode-version state)))
-    ;; Codex version changed
-    (and (:with-codex opts)
-         (not= (:codex-version opts) (:codex-version state)))
-    ;; Gemini version changed
-    (and (:with-gemini opts)
-         (not= (:gemini-version opts) (:gemini-version state)))
-    ;; Harness added that wasn't in previous build
-    (and (:with-claude opts) (not (:with-claude state)))
-    (and (:with-opencode opts) (not (:with-opencode state)))
-    (and (:with-codex opts) (not (:with-codex state)))
-    (and (:with-gemini opts) (not (:with-gemini state)))
-    ;; Gitleaks flag changed (default true for backwards compat with old state)
-    (not= (:with-gitleaks opts) (:with-gitleaks state true))))
 
 (defn write-build-files
   "Write embedded template files to build directory."
@@ -69,17 +46,8 @@
 
 (defn- build-docker-args
   "Construct docker build argument vector."
-  [{:keys [with-claude with-opencode with-codex with-gemini with-gitleaks
-           claude-version opencode-version codex-version gemini-version]} dockerfile-hash]
+  [{:keys [with-gitleaks]} dockerfile-hash]
   (cond-> []
-    with-claude (conj "--build-arg" "WITH_CLAUDE=true")
-    with-opencode (conj "--build-arg" "WITH_OPENCODE=true")
-    with-codex (conj "--build-arg" "WITH_CODEX=true")
-    with-gemini (conj "--build-arg" "WITH_GEMINI=true")
-    claude-version (conj "--build-arg" (str "CLAUDE_VERSION=" claude-version))
-    opencode-version (conj "--build-arg" (str "OPENCODE_VERSION=" opencode-version))
-    codex-version (conj "--build-arg" (str "CODEX_VERSION=" codex-version))
-    gemini-version (conj "--build-arg" (str "GEMINI_VERSION=" gemini-version))
     ;; Gitleaks is opt-out, so we always pass the arg (true or false)
     true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))))
@@ -94,10 +62,6 @@
             remaining-secs (mod secs 60)]
         (format "%dm %.0fs" mins remaining-secs)))))
 
-(defn- format-harness-line
-  "Format harness version line for build summary output."
-  [name version]
-  (str "  " name ": " (or version "latest")))
 
 (defn- run-build
   "Execute docker build command. Returns true on success."
@@ -125,37 +89,29 @@
             (println err)))
         (zero? exit)))))
 
-(defn build-base-image
-  "Build the base Docker image with embedded templates.
+(defn build-foundation-image
+  "Build the foundation Docker image with embedded templates.
+
+   Foundation image contains only system dependencies (Debian, Node.js, babashka, gosu, gitleaks, tmux).
+   Harness tools are installed separately via volume injection (Phase 36).
 
    Options:
-   - :with-claude - Include Claude Code
-   - :with-opencode - Include OpenCode
-   - :with-codex - Include Codex CLI
-   - :with-gemini - Include Gemini CLI
    - :with-gitleaks - Include Gitleaks (default true)
-   - :claude-version - Specific Claude version
-   - :opencode-version - Specific OpenCode version
-   - :codex-version - Specific Codex version
-   - :gemini-version - Specific Gemini version
    - :force - Bypass cache check
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors
 
    Returns {:success true :image tag} on success, exits on failure."
-  [{:keys [force verbose quiet] :as opts}]
+  [{:keys [force verbose quiet with-gitleaks] :as opts}]
   ;; Verify Docker is available
   (docker/check-docker!)
 
   ;; Check cache - early return if no rebuild needed
-  ;; Read state to check for version changes (dynamic require to avoid circular deps)
-  (let [state ((requiring-resolve 'aishell.state/read-state))]
-    (if-not (or (needs-rebuild? base-image-tag force)
-                (version-changed? opts state))
-      (do
-        (when-not quiet
-          (println (str "Image " base-image-tag " is up to date (use --force to rebuild)")))
-        {:success true :image base-image-tag :cached true})
+  (if-not (needs-rebuild? foundation-image-tag force)
+    (do
+      (when-not quiet
+        (println (str "Image " foundation-image-tag " is up to date (use --force to rebuild)")))
+      {:success true :image foundation-image-tag :cached true})
 
     ;; Create temp build directory and build
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
@@ -169,42 +125,29 @@
         ;; Build with appropriate output mode
         (let [success? (cond
                          verbose
-                         (run-build build-dir base-image-tag docker-args true force)
+                         (run-build build-dir foundation-image-tag docker-args true force)
 
                          quiet
-                         (run-build build-dir base-image-tag docker-args false force)
+                         (run-build build-dir foundation-image-tag docker-args false force)
 
                          :else
                          (spinner/with-spinner "Building image"
-                                               #(run-build build-dir base-image-tag docker-args false force)))]
+                                               #(run-build build-dir foundation-image-tag docker-args false force)))]
           (if success?
             (let [duration (- (System/currentTimeMillis) start-time)
-                  size (docker/get-image-size base-image-tag)]
+                  size (docker/get-image-size foundation-image-tag)]
               (when-not quiet
-                (println (str "Built " base-image-tag
+                (println (str "Built " foundation-image-tag
                               " (" (format-duration duration)
-                              (when size (str ", " size)) ")"))
-                (when (:with-claude opts)
-                  (println (format-harness-line "Claude Code" (:claude-version opts))))
-                (when (:with-opencode opts)
-                  (println (format-harness-line "OpenCode" (:opencode-version opts))))
-                (when (:with-codex opts)
-                  (println (format-harness-line "Codex" (:codex-version opts))))
-                (when (:with-gemini opts)
-                  (println (format-harness-line "Gemini" (:gemini-version opts)))))
+                              (when size (str ", " size)) ")")))
               {:success true
-               :image base-image-tag
+               :image foundation-image-tag
                :duration duration
-               :size size
-               :with-claude (:with-claude opts)
-               :with-opencode (:with-opencode opts)
-               :with-codex (:with-codex opts)
-               :with-gemini (:with-gemini opts)
-               :claude-version (:claude-version opts)
-               :opencode-version (:opencode-version opts)
-               :codex-version (:codex-version opts)
-               :gemini-version (:gemini-version opts)})
+               :size size})
             (output/error "Build failed")))
         (finally
           ;; Cleanup temp directory
-          (fs/delete-tree build-dir)))))))
+          (fs/delete-tree build-dir))))))
+
+;; Backward compatibility alias
+(def build-base-image build-foundation-image)
