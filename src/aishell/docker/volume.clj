@@ -4,7 +4,9 @@
    Harness volumes are keyed by hash of enabled harnesses + versions.
    This ensures projects with identical harness combinations share the
    same volume, reducing disk usage and improving performance."
-  (:require [aishell.docker.hash :as hash]))
+  (:require [aishell.docker.hash :as hash]
+            [babashka.process :as p]
+            [clojure.string :as str]))
 
 (def ^:private harness-keys
   "Ordered list of harness names for deterministic sorting."
@@ -73,3 +75,76 @@
    Example: \"aishell-harness-abc123def456\""
   [hash]
   (str "aishell-harness-" hash))
+
+(defn volume-exists?
+  "Check if Docker volume exists by name.
+
+   Arguments:
+   - name: Volume name string
+
+   Returns: true if volume exists, false otherwise
+
+   Implementation:
+   - Runs `docker volume inspect {name}`
+   - Returns true if exit code is 0 (volume exists)
+   - Returns false if exit code is non-zero or exception occurs"
+  [name]
+  (try
+    (let [{:keys [exit]} (p/shell {:continue true
+                                   :out :string
+                                   :err :string}
+                                  "docker" "volume" "inspect" name)]
+      (zero? exit))
+    (catch Exception _
+      false)))
+
+(defn get-volume-label
+  "Get a specific label value from a Docker volume.
+
+   Arguments:
+   - volume-name: Volume name string
+   - label-key: Label key string (e.g., \"aishell.harness.hash\")
+
+   Returns: Trimmed label value string if volume exists and has label, nil otherwise
+
+   Implementation:
+   - Runs `docker volume inspect --format '{{index .Labels \"label-key\"}}' volume-name`
+   - Returns trimmed string value if exit code is 0
+   - Returns nil if volume doesn't exist or label is missing
+   - Returns nil if exception occurs"
+  [volume-name label-key]
+  (try
+    (let [format-str (str "{{index .Labels \"" label-key "\"}}")
+          {:keys [exit out]} (p/shell {:continue true
+                                       :out :string
+                                       :err :string}
+                                      "docker" "volume" "inspect"
+                                      "--format" format-str
+                                      volume-name)]
+      (when (zero? exit)
+        (str/trim out)))
+    (catch Exception _
+      nil)))
+
+(defn create-volume
+  "Create Docker volume with metadata labels.
+
+   Arguments:
+   - volume-name: Volume name string
+   - labels: Map of label keys to values (e.g., {\"aishell.harness.hash\" \"abc123\"})
+
+   Returns: volume-name on success
+
+   Throws: Exception on failure
+
+   Implementation:
+   - Builds command: `docker volume create --label key=value ... volume-name`
+   - Expands labels map into --label flags
+   - Throws if docker command fails"
+  [volume-name labels]
+  (let [label-args (mapcat (fn [[k v]]
+                             ["--label" (str k "=" v)])
+                           labels)
+        cmd (concat ["docker" "volume" "create"] label-args [volume-name])]
+    (apply p/shell cmd)
+    volume-name))
