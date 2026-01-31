@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 35 of 38 (Foundation Image Split)
-Plan: Ready to plan first plan in phase
-Status: Ready to plan
-Last activity: 2026-01-31 - Roadmap created for v2.8.0 milestone
+Plan: 1 of 2 complete in phase
+Status: In progress
+Last activity: 2026-01-31 - Completed 35-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (0/11 plans complete)
+Progress: [█░░░░░░░░░] 9% (1/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,22 +30,22 @@ Progress: [░░░░░░░░░░] 0% (0/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 0
-- Average duration: N/A (no plans completed yet)
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 4 min
+- Total execution time: 0.07 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 35 | 0/2 | 0 min | - |
+| 35 | 1/2 | 4 min | 4 min |
 | 36 | 0/3 | 0 min | - |
 | 37 | 0/4 | 0 min | - |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- No plans completed yet
-- Trend: N/A
+- Last plan: 4 min (35-01)
+- Trend: Fast execution for focused refactoring
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -63,12 +63,14 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v2.8.0 work:
 
-**Architecture (from investigation):**
+**Architecture (from investigation and 35-01):**
 - 2-tier architecture: Foundation image + harness volume (not 3 images)
 - Volume-based injection over layer inversion (simpler for local dev workflow)
-- Clean break from `aishell:base` to `aishell:foundation` (no alias)
+- Clean break from `aishell:base` to `aishell:foundation` (backward compat alias maintained)
 - Per-project volumes keyed by harness combination hash
 - Lazy volume population on first container run
+- Gitleaks stays in foundation (security infrastructure, not harness)
+- Foundation rebuilds only on Dockerfile template changes, not harness version changes
 
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
@@ -91,8 +93,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31 (roadmap creation)
-Stopped at: Roadmap and state initialization complete
+Last session: 2026-01-31T22:33:37Z
+Stopped at: Completed 35-01-PLAN.md (Strip Harness from Foundation)
 Resume file: None
 
-**Next step:** `/gsd:plan-phase 35` to create execution plans for foundation image split
+**Next step:** Phase 35-02 to implement volume-based harness injection
