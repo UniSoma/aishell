@@ -67,10 +67,10 @@ Plans:
   3. Image size increase is minimal (1-2MB expected, not >5MB)
   4. Build succeeds without dependency conflicts or warnings
 
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- (To be created during plan-phase)
+- [ ] 31-01-PLAN.md — Add tmux to base image package list
 
 ### Phase 32: Detached Mode & Conflict Detection
 **Goal**: Enable harness commands to run in named, detached containers with tmux auto-start while preserving existing shell mode behavior.
@@ -137,7 +137,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 |-------|-----------|----------------|--------|-----------|
 | 1-29. Previous milestones | v1.0-v2.5.0 | All complete | Complete | 2026-01-26 |
 | 30. Container Utilities & Naming | v2.6.0 | 1/1 | Complete | 2026-01-31 |
-| 31. Dockerfile & Image Build | v2.6.0 | 0/TBD | Not started | - |
+| 31. Dockerfile & Image Build | v2.6.0 | 0/1 | Not started | - |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 0/TBD | Not started | - |
 | 33. Attach Command | v2.6.0 | 0/TBD | Not started | - |
 | 34. PS Command & Polish | v2.6.0 | 0/TBD | Not started | - |
