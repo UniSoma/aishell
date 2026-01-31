@@ -338,18 +338,23 @@
                      (println "Attach to a running container's tmux session.")
                      (println)
                      (println (str output/BOLD "Options:" output/NC))
-                     (println "  --name <name>       Container name to attach to")
+                     (println "  --name <name>        Container name to attach to")
                      (println "  --session <session>  Tmux session name (default: main)")
+                     (println "  --shell              Open a bash shell (creates tmux session 'shell')")
                      (println "  -h, --help           Show this help")
                      (println)
                      (println (str output/BOLD "Examples:" output/NC))
                      (println (str "  " output/CYAN "aishell attach --name claude" output/NC))
                      (println (str "      Attach to the 'claude' container's main session"))
                      (println)
+                     (println (str "  " output/CYAN "aishell attach --name claude --shell" output/NC))
+                     (println (str "      Open a bash shell in the 'claude' container"))
+                     (println)
                      (println (str "  " output/CYAN "aishell attach --name experiment --session debug" output/NC))
                      (println (str "      Attach to specific session in 'experiment' container"))
                      (println)
                      (println (str output/BOLD "Notes:" output/NC))
+                     (println "  --shell and --session are mutually exclusive.")
                      (println "  Press Ctrl+B then D to detach without stopping the container.")
                      (println "  Multiple users can attach to the same container simultaneously."))
 
@@ -357,9 +362,18 @@
                    (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
 
                    :else
-                   (let [opts (cli/parse-opts rest-args {:spec {:name {} :session {}}})]
-                     (if-not (:name opts)
+                   (let [opts (cli/parse-opts rest-args {:spec {:name {} :session {} :shell {:coerce :boolean}}})]
+                     (cond
+                       (not (:name opts))
                        (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
+
+                       (and (:shell opts) (:session opts))
+                       (output/error "--shell and --session are mutually exclusive.\n\n--shell creates a bash session named 'shell'.\n--session attaches to a specific existing tmux session.")
+
+                       (:shell opts)
+                       (attach/attach-shell (:name opts))
+
+                       :else
                        (attach/attach-to-session (:name opts) (or (:session opts) "main"))))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override :detach detach?})

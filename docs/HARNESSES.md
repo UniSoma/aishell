@@ -494,6 +494,18 @@ aishell attach --name claude
 aishell attach --name claude --session main
 ```
 
+### Shell Access
+
+Open a plain bash shell inside a running container:
+
+```bash
+aishell attach --name claude --shell
+```
+
+This creates (or reattaches to) a tmux session named `shell` running `/bin/bash`.
+Unlike `--session`, which attaches to an existing tmux session, `--shell` always
+ensures a bash session exists.
+
 ### Listing Containers
 
 ```bash
