@@ -81,6 +81,9 @@
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
                                (naming/container-name project-dir name-part))
 
+          ;; Pre-flight conflict check: error if running, auto-remove if stopped
+          _ (naming/ensure-name-available! container-name-str (or (:container-name opts) cmd "shell"))
+
           ;; Log container name for verification
           _ (output/verbose (str "Container name: " container-name-str))]
 
@@ -157,7 +160,9 @@
                            :image-tag image-tag
                            :config cfg
                            :git-identity git-id
-                           :skip-pre-start (:skip-pre-start opts)})
+                           :skip-pre-start (:skip-pre-start opts)
+                           :detach (:detach opts)
+                           :container-name container-name-str})
 
             ;; Determine command to run in container
             container-cmd (case cmd
@@ -193,8 +198,27 @@
             (when (and scan-completed? is-scan?)
               (scan-state/write-scan-timestamp project-dir))
             (System/exit (:exit result)))
-          ;; All other commands - execute (replaces current process)
-          (apply p/exec (concat docker-args container-cmd)))))))
+          ;; For detached mode, use p/shell to capture container ID and print feedback
+          ;; For foreground mode, use p/exec (replaces process)
+          (if (:detach opts)
+            ;; Detached mode: use p/shell so we can print feedback
+            (let [result (apply p/shell {:out :string :err :string :continue true}
+                                (concat docker-args container-cmd))]
+              (if (zero? (:exit result))
+                (let [container-id (clojure.string/trim (:out result))
+                      name-part (or (:container-name opts) cmd "shell")]
+                  (println (str "Container started: " container-name-str))
+                  (println)
+                  (println (str "  Attach:  aishell attach --name " name-part))
+                  (println (str "  Shell:   docker exec -it " container-name-str " /bin/bash"))
+                  (println (str "  Stop:    docker stop " container-name-str))
+                  (println (str "  List:    aishell ps")))
+                (do
+                  (binding [*out* *err*]
+                    (print (:err result)))
+                  (System/exit (:exit result)))))
+            ;; Foreground mode: exec (replaces process) - existing behavior
+            (apply p/exec (concat docker-args container-cmd)))))))
 
 (defn run-exec
   "Run one-off command in container.

@@ -183,12 +183,14 @@
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start tty-flags]}]
+  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name tty-flags]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
     (-> ["docker" "run" "--rm" "--init"]
         (into tty-flags)
+        (cond-> container-name (into ["--name" container-name]))
+        (cond-> detach (conj "--detach"))
         (into [;; Project mount at same path
                "-v" (str project-dir ":" project-dir)
                "-w" project-dir
@@ -263,13 +265,15 @@
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start]}]
+  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
      :git-identity git-identity
      :skip-pre-start skip-pre-start
+     :detach detach
+     :container-name container-name
      :tty-flags ["-it"]}))
 
 (defn build-docker-args-for-exec
