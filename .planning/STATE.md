@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-26)
+See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v2.6.0 — tmux Integration & Named Containers
 
 ## Current Position
 
-Phase: 29 of 29 (all phases complete)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone v2.5.0 shipped
-Last activity: 2026-01-26 — v2.5.0 milestone complete
+Status: Defining requirements
+Last activity: 2026-01-31 — Milestone v2.6.0 started
 
-Progress: [████████████████████] 100%
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -51,8 +51,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: v2.5.0 milestone complete
+Last session: 2026-01-31
+Stopped at: Defining v2.6.0 requirements
 Resume file: None
 
-Next step: `/gsd:new-milestone` to start next milestone (questioning → research → requirements → roadmap)
+Next step: Complete requirements → roadmap for v2.6.0

@@ -77,11 +77,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements — planning next milestone)
+**v2.6.0 — tmux Integration & Named Containers:**
+- [ ] tmux in base Docker image
+- [ ] Harness commands auto-start inside named tmux session (`main`)
+- [ ] Container naming: default = harness name, override with `--name`
+- [ ] Docker container name = `aishell-{project-hash}-{name}` for cross-project isolation
+- [ ] `aishell attach <name>` to connect to container's tmux session via docker exec
+- [ ] `aishell attach <name> --session <session>` for specific tmux sessions
+- [ ] `aishell ps` to list running containers for current project
+- [ ] Conflict detection when starting container with name already in use
+- [ ] Shell mode (`aishell`) — tmux available but no auto-start
 
 ### Out of Scope
 
-- Persistent containers / named sessions — ephemeral is the design choice
+- Persistent containers — ephemeral is the design choice (named containers added in v2.6.0 but still ephemeral)
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -92,7 +101,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.5.0 on 2026-01-26
-**Next:** Planning next milestone
+**Next:** v2.6.0 — tmux Integration & Named Containers
 
 **Codebase:** ~2,818 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0
@@ -187,4 +196,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
 ---
-*Last updated: 2026-01-26 after v2.5.0 milestone*
+*Last updated: 2026-01-31 after v2.6.0 milestone start*
