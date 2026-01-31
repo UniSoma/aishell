@@ -89,7 +89,14 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements — start next milestone with `/gsd:new-milestone`)
+**v2.8.0 — Decouple Harness Tools from Docker Extensions:**
+- [ ] Foundation image split: Stable base (Debian + Node.js + system tools) without harness packages
+- [ ] Volume-mounted harness tools: npm packages installed into Docker named volume, mounted at runtime
+- [ ] Lazy volume population: Harness volume auto-populated on first run if empty/stale
+- [ ] Per-project harness volumes: Content-hash named volumes (aishell-harness-{hash}) for different harness combos
+- [ ] Transparent build UX: `aishell build` handles both foundation + volume, harness volume auto-rebuilds when stale
+- [ ] Clean migration: `aishell:foundation` tag replaces `aishell:base`, clear error for old FROM references
+- [ ] Cache invalidation update: Extension tracking references foundation image ID, not base image ID
 
 ### Out of Scope
 
@@ -103,10 +110,22 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - Binary install for Claude/Codex — native binaries larger than npm packages (investigated v2.5.0)
 - Conditional Node.js — abandoned with binary install (Node.js still needed for npm harnesses)
 
+## Current Milestone: v2.8.0 Decouple Harness Tools
+
+**Goal:** Eliminate cascade invalidation by splitting the monolithic base image into a stable foundation layer and volume-mounted harness tools, so harness version updates no longer force multi-gigabyte extension rebuilds.
+
+**Target features:**
+- Foundation image without harness tools (stable, rarely rebuilt)
+- Harness tools in Docker named volumes (rebuilt in ~90s, not minutes)
+- Lazy volume population on first container run
+- Per-project volumes keyed by harness combination hash
+- Transparent UX — `aishell build` and `aishell <harness>` work the same
+- Clean break from `aishell:base` to `aishell:foundation`
+
 ## Current State
 
 **Shipped:** v2.7.0 on 2026-01-31
-**Next:** Planning next milestone
+**Next:** v2.8.0 — Decouple Harness Tools
 
 **Codebase:** ~3,457 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux
@@ -221,4 +240,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
 ---
-*Last updated: 2026-01-31 after v2.7.0 milestone*
+*Last updated: 2026-01-31 after v2.8.0 milestone start*

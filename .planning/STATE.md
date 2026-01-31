@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v2.8.0 — Decouple Harness Tools
 
 ## Current Position
 
-Phase: Ready for next milestone
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-31 - Completed quick task 005: Add --shell flag to aishell attach command
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-31 — Milestone v2.8.0 started
 
-Progress: [██████████] 100% (34 phases complete out of 34 total)
+Progress: [░░░░░░░░░░] 0%
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -50,7 +50,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-None — milestone complete, ready for next.
+None.
 
 ### Quick Tasks Completed
 
@@ -61,7 +61,7 @@ None — milestone complete, ready for next.
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: v2.7.0 milestone complete and archived
+Stopped at: v2.8.0 milestone started — defining requirements
 Resume file: None
 
-Next step: `/gsd:new-milestone` to start next milestone
+Next step: Complete requirements definition, then `/gsd:plan-phase`
