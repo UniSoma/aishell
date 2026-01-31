@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 Phase: Ready for next milestone
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-01-31 — v2.7.0 milestone complete
+Last activity: 2026-01-31 - Completed quick task 005: Add --shell flag to aishell attach command
 
 Progress: [██████████] 100% (34 phases complete out of 34 total)
 
@@ -51,6 +51,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Blockers/Concerns
 
 None — milestone complete, ready for next.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 005 | Add --shell flag to aishell attach command | 2026-01-31 | 7be50e5 | [005-add-shell-flag-to-aishell-attach-command](./quick/005-add-shell-flag-to-aishell-attach-command/) |
 
 ## Session Continuity
 
