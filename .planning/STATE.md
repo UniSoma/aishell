@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 30 of 34 (Container Utilities & Naming)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-01-31 — v2.6.0 roadmap created (Phases 30-34)
+Plan: 1 of TBD in current phase
+Status: In progress
+Last activity: 2026-01-31 — Completed 30-01-PLAN.md (Container naming utilities)
 
-Progress: [███████░░░] 85% (29 phases complete out of 34 total)
+Progress: [███████░░░] 86% (30 plans complete out of 34 total)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -34,8 +34,9 @@ Progress: [███████░░░] 85% (29 phases complete out of 34 tot
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
 **v2.6.0 (In Progress):**
-- Plans completed: 0
-- Trend: (pending execution)
+- Plans completed: 1
+- Average duration: 3min
+- Trend: On track
 
 *Updated after each plan completion*
 
@@ -46,6 +47,9 @@ Progress: [███████░░░] 85% (29 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (30-01): Use 8-char SHA-256 hash for container names (2^32 space, <0.02% collision at 100 projects)
+- v2.6.0 (30-01): Default container name equals harness name (claude/opencode/codex/gemini) or 'shell'
+- v2.6.0 (30-01): Extract --name flag before dispatch (consistent with --unsafe pattern)
 - v2.5.0: Binary install approach abandoned (native Claude binary 213MB larger than npm)
 - v2.3.0: Content detection delegated to Gitleaks (better coverage than custom patterns)
 - v2.0: Babashka over Bash (cross-platform, better data structures, YAML native)
@@ -66,7 +70,7 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: v2.6.0 roadmap created with 5 phases (30-34), 19 requirements fully mapped
+Stopped at: Completed 30-01-PLAN.md (Container naming utilities - 2 tasks, 3min)
 Resume file: None
 
-Next step: `/gsd:plan-phase 30` to create execution plans for Phase 30
+Next step: Continue Phase 30 execution (TBD additional plans) or move to Phase 31 (Detached Mode)
