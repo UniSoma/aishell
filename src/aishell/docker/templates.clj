@@ -5,25 +5,15 @@
    as multiline strings. These match the bash version heredocs exactly.")
 
 (def base-dockerfile
-  "# Aishell Base Image
+  "# Aishell Foundation Image
 # Debian-based container with dynamic user creation, gosu for user switching,
-# and basic development tools for agentic AI harnesses.
+# and stable foundation layer with system dependencies.
 
 # Stage 1: Node.js source (for multi-stage copy)
 FROM node:24-bookworm-slim AS node-source
 
 # Stage 2: Main image
 FROM debian:bookworm-slim
-
-# Build arguments for optional harness installation
-ARG WITH_CLAUDE=false
-ARG WITH_OPENCODE=false
-ARG WITH_CODEX=false
-ARG WITH_GEMINI=false
-ARG CLAUDE_VERSION=\"\"
-ARG OPENCODE_VERSION=\"\"
-ARG CODEX_VERSION=\"\"
-ARG GEMINI_VERSION=\"\"
 
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.214
@@ -96,50 +86,6 @@ RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
 # Enable tmux mouse mode for scroll support inside containers
 # Without this, scroll events are interpreted as arrow keys by the inner application
 RUN echo 'set -g mouse on' > /etc/tmux.conf
-
-# Install Claude Code if requested (npm global)
-# npm global installs to /usr/local/bin/claude which matches doctor's expectations
-RUN if [ \"$WITH_CLAUDE\" = \"true\" ]; then \\
-        if [ -n \"$CLAUDE_VERSION\" ]; then \\
-            npm install -g @anthropic-ai/claude-code@\"$CLAUDE_VERSION\"; \\
-        else \\
-            npm install -g @anthropic-ai/claude-code; \\
-        fi \\
-    fi
-
-# Install OpenCode if requested (native binary)
-# Installs to /root/.opencode/bin/opencode, copy to /usr/local/bin for PATH
-# Copy instead of symlink because /root/ is not accessible after privilege drop
-# Version syntax: VERSION=<version> env var (no v prefix, e.g., 1.1.25)
-RUN if [ \"$WITH_OPENCODE\" = \"true\" ]; then \\
-        if [ -n \"$OPENCODE_VERSION\" ]; then \\
-            VERSION=\"$OPENCODE_VERSION\" curl -fsSL https://opencode.ai/install | bash; \\
-        else \\
-            curl -fsSL https://opencode.ai/install | bash; \\
-        fi && \\
-        cp /root/.opencode/bin/opencode /usr/local/bin/opencode && \\
-        chmod +x /usr/local/bin/opencode; \\
-    fi
-
-# Install Codex CLI if requested (npm global)
-# npm global installs to /usr/local/bin/codex
-RUN if [ \"$WITH_CODEX\" = \"true\" ]; then \\
-        if [ -n \"$CODEX_VERSION\" ]; then \\
-            npm install -g @openai/codex@\"$CODEX_VERSION\"; \\
-        else \\
-            npm install -g @openai/codex; \\
-        fi \\
-    fi
-
-# Install Gemini CLI if requested (npm global)
-# npm global installs to /usr/local/bin/gemini
-RUN if [ \"$WITH_GEMINI\" = \"true\" ]; then \\
-        if [ -n \"$GEMINI_VERSION\" ]; then \\
-            npm install -g @google/gemini-cli@\"$GEMINI_VERSION\"; \\
-        else \\
-            npm install -g @google/gemini-cli; \\
-        fi \\
-    fi
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
