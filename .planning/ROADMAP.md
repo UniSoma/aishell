@@ -91,7 +91,7 @@ Plans:
 Plans:
 - [x] 32-01-PLAN.md — Entrypoint tmux auto-start for all container modes
 - [x] 32-02-PLAN.md — CLI --detach flag, conflict detection, named container args
-- [ ] 32-03-PLAN.md — TERM validation before tmux (gap closure)
+- [x] 32-03-PLAN.md — TERM validation before tmux (gap closure)
 
 ### Phase 33: Attach Command
 **Goal**: Provide simple CLI for reconnecting to running containers' tmux sessions.
@@ -140,6 +140,6 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | 1-29. Previous milestones | v1.0-v2.5.0 | All complete | Complete | 2026-01-26 |
 | 30. Container Utilities & Naming | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 31. Dockerfile & Image Build | v2.6.0 | 1/1 | Complete | 2026-01-31 |
-| 32. Detached Mode & Conflict Detection | v2.6.0 | 2/3 | In progress | - |
+| 32. Detached Mode & Conflict Detection | v2.6.0 | 3/3 | Complete | 2026-01-31 |
 | 33. Attach Command | v2.6.0 | 0/TBD | Not started | - |
 | 34. PS Command & Polish | v2.6.0 | 0/TBD | Not started | - |
