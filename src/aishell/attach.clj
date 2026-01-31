@@ -88,14 +88,27 @@
      (validate-session-exists! container-name session name)
 
      ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
-     (let [term (resolve-term container-name)]
+     (let [term (resolve-term container-name)
+           colorterm (or (System/getenv "COLORTERM") "truecolor")]
        ;; All checks passed - exec into tmux (replaces current process)
        (p/exec "docker" "exec" "-it" "-u" "developer"
                "-e" (str "TERM=" term)
+               "-e" (str "COLORTERM=" colorterm)
                "-e" "LANG=C.UTF-8"
                "-e" "LC_ALL=C.UTF-8"
                container-name
                "tmux" "attach-session" "-t" session)))))
+
+(defn- ensure-bashrc!
+  "Ensure /etc/bash.aishell is sourced from ~/.bashrc inside the container.
+   The entrypoint only injects this when the container starts with /bin/bash,
+   so containers started with a harness command (claude, opencode, etc.) won't
+   have it. This mirrors the entrypoint's bashrc injection logic."
+  [container-name]
+  (p/shell {:out :string :err :string :continue true}
+           "docker" "exec" "-u" "developer" container-name
+           "bash" "-c"
+           "grep -q 'source /etc/bash.aishell' \"$HOME/.bashrc\" 2>/dev/null || echo 'source /etc/bash.aishell' >> \"$HOME/.bashrc\""))
 
 (defn attach-shell
   "Attach to or create a bash shell session in a running container.
@@ -116,11 +129,16 @@
     (validate-tty!)
     (validate-container-state! container-name name)
 
+    ;; Ensure bashrc sources /etc/bash.aishell (entrypoint skips this for non-bash commands)
+    (ensure-bashrc! container-name)
+
     ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
-    (let [term (resolve-term container-name)]
+    (let [term (resolve-term container-name)
+          colorterm (or (System/getenv "COLORTERM") "truecolor")]
       ;; All checks passed - exec into tmux with new-session -A (creates or attaches)
       (p/exec "docker" "exec" "-it" "-u" "developer"
               "-e" (str "TERM=" term)
+              "-e" (str "COLORTERM=" colorterm)
               "-e" "LANG=C.UTF-8"
               "-e" "LC_ALL=C.UTF-8"
               container-name
