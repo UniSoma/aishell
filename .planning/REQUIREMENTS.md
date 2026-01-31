@@ -27,10 +27,10 @@ Requirements for tmux Integration & Named Containers milestone.
 
 ### Attach
 
-- [ ] **ATTCH-01**: `aishell attach <name>` connects to a running container's tmux session via `docker exec -it`
-- [ ] **ATTCH-02**: `aishell attach <name> --session <session>` connects to a specific tmux session inside the container
-- [ ] **ATTCH-03**: Attaching to a non-existent or stopped container produces a clear error message
-- [ ] **ATTCH-04**: User can detach from tmux (Ctrl+B D) without stopping the container
+- [x] **ATTCH-01**: `aishell attach <name>` connects to a running container's tmux session via `docker exec -it`
+- [x] **ATTCH-02**: `aishell attach <name> --session <session>` connects to a specific tmux session inside the container
+- [x] **ATTCH-03**: Attaching to a non-existent or stopped container produces a clear error message
+- [x] **ATTCH-04**: User can detach from tmux (Ctrl+B D) without stopping the container
 
 ### Discovery
 
@@ -80,10 +80,10 @@ Tracked but not in v2.6.0 roadmap.
 | TMUX-01 | Phase 32 | Complete |
 | TMUX-02 | Phase 32 | Complete (overridden) |
 | TMUX-03 | Phase 32 | Complete |
-| ATTCH-01 | Phase 33 | Pending |
-| ATTCH-02 | Phase 33 | Pending |
-| ATTCH-03 | Phase 33 | Pending |
-| ATTCH-04 | Phase 33 | Pending |
+| ATTCH-01 | Phase 33 | Complete |
+| ATTCH-02 | Phase 33 | Complete |
+| ATTCH-03 | Phase 33 | Complete |
+| ATTCH-04 | Phase 33 | Complete |
 | DISC-01 | Phase 34 | Pending |
 | DISC-02 | Phase 34 | Pending |
 | CONF-01 | Phase 32 | Complete |

@@ -31,7 +31,7 @@ Completed milestones collapsed for brevity. See git history for details.
 - [x] **Phase 30: Container Utilities & Naming** - Foundation layer: hash generation and Docker query functions
 - [x] **Phase 31: Dockerfile & Image Build** - Add tmux package to base image
 - [x] **Phase 32: Detached Mode & Conflict Detection** - Core functionality: named containers, tmux wrapping, mode detection
-- [ ] **Phase 33: Attach Command** - User convenience: reconnect to running containers
+- [x] **Phase 33: Attach Command** - User convenience: reconnect to running containers
 - [ ] **Phase 34: PS Command & Polish** - Discovery: list running containers by project
 
 ## Phase Details
@@ -110,7 +110,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 33-01-PLAN.md — Attach command implementation and CLI integration
+- [x] 33-01-PLAN.md — Attach command implementation and CLI integration
 
 ### Phase 34: PS Command & Polish
 **Goal**: Provide project-scoped container discovery and listing.
@@ -141,5 +141,5 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | 30. Container Utilities & Naming | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 31. Dockerfile & Image Build | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 3/3 | Complete | 2026-01-31 |
-| 33. Attach Command | v2.6.0 | 0/1 | Planned | - |
+| 33. Attach Command | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 34. PS Command & Polish | v2.6.0 | 0/TBD | Not started | - |
