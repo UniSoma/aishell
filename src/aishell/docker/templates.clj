@@ -93,6 +93,10 @@ RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
         gitleaks version; \\
     fi
 
+# Enable tmux mouse mode for scroll support inside containers
+# Without this, scroll events are interpreted as arrow keys by the inner application
+RUN echo 'set -g mouse on' > /etc/tmux.conf
+
 # Install Claude Code if requested (npm global)
 # npm global installs to /usr/local/bin/claude which matches doctor's expectations
 RUN if [ \"$WITH_CLAUDE\" = \"true\" ]; then \\
