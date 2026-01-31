@@ -17,13 +17,13 @@ Requirements for tmux Integration & Named Containers milestone.
 - [x] **NAME-01**: Harness commands produce a Docker container named `aishell-{project-hash}-{name}` where project-hash is first 8 chars of SHA-256 of project directory path
 - [x] **NAME-02**: Default container name equals the harness name (e.g., `claude`, `opencode`, `codex`, `gemini`)
 - [x] **NAME-03**: User can override container name with `--name <name>` flag (e.g., `aishell claude --name reviewer`)
-- [ ] **NAME-04**: Shell mode (`aishell`) does not use named containers (preserves current ephemeral anonymous behavior)
+- [x] **NAME-04**: ~~Shell mode does not use named containers~~ OVERRIDDEN: All modes get named containers (user decision in CONTEXT.md)
 
 ### tmux Integration
 
-- [ ] **TMUX-01**: Harness commands auto-start inside a tmux session named `main`
-- [ ] **TMUX-02**: Shell mode (`aishell`) has tmux available but does NOT auto-start a tmux session
-- [ ] **TMUX-03**: Container remains running in detached mode after harness starts (user can attach/detach)
+- [x] **TMUX-01**: Harness commands auto-start inside a tmux session named `main`
+- [x] **TMUX-02**: ~~Shell mode does NOT auto-start tmux~~ OVERRIDDEN: All modes auto-start in tmux (user decision in CONTEXT.md)
+- [x] **TMUX-03**: Container remains running in detached mode after harness starts (user can attach/detach)
 
 ### Attach
 
@@ -39,13 +39,13 @@ Requirements for tmux Integration & Named Containers milestone.
 
 ### Conflict Detection
 
-- [ ] **CONF-01**: Starting a container with a name already in use by a running container produces a clear error with guidance
-- [ ] **CONF-02**: Starting a container with a name used by a stopped container auto-removes the stopped container and proceeds
+- [x] **CONF-01**: Starting a container with a name already in use by a running container produces a clear error with guidance
+- [x] **CONF-02**: Starting a container with a name used by a stopped container auto-removes the stopped container and proceeds
 
 ### Lifecycle
 
-- [ ] **LIFE-01**: Containers use `--rm` flag (ephemeral, destroyed on exit)
-- [ ] **LIFE-02**: Existing shell mode and exec mode behavior is unchanged
+- [x] **LIFE-01**: Containers use `--rm` flag (ephemeral, destroyed on exit)
+- [x] **LIFE-02**: Existing shell mode and exec mode behavior is unchanged
 
 ## Deferred
 
@@ -76,20 +76,20 @@ Tracked but not in v2.6.0 roadmap.
 | NAME-01 | Phase 30 | Complete |
 | NAME-02 | Phase 30 | Complete |
 | NAME-03 | Phase 30 | Complete |
-| NAME-04 | Phase 32 | Pending |
-| TMUX-01 | Phase 32 | Pending |
-| TMUX-02 | Phase 32 | Pending |
-| TMUX-03 | Phase 32 | Pending |
+| NAME-04 | Phase 32 | Complete (overridden) |
+| TMUX-01 | Phase 32 | Complete |
+| TMUX-02 | Phase 32 | Complete (overridden) |
+| TMUX-03 | Phase 32 | Complete |
 | ATTCH-01 | Phase 33 | Pending |
 | ATTCH-02 | Phase 33 | Pending |
 | ATTCH-03 | Phase 33 | Pending |
 | ATTCH-04 | Phase 33 | Pending |
 | DISC-01 | Phase 34 | Pending |
 | DISC-02 | Phase 34 | Pending |
-| CONF-01 | Phase 32 | Pending |
-| CONF-02 | Phase 32 | Pending |
-| LIFE-01 | Phase 32 | Pending |
-| LIFE-02 | Phase 32 | Pending |
+| CONF-01 | Phase 32 | Complete |
+| CONF-02 | Phase 32 | Complete |
+| LIFE-01 | Phase 32 | Complete |
+| LIFE-02 | Phase 32 | Complete |
 
 **Coverage:**
 - v2.6.0 requirements: 19 total

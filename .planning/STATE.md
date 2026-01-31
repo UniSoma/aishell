@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 32 - Detached Mode & Conflict Detection
+**Current focus:** Phase 33 - Attach Command
 
 ## Current Position
 
-Phase: 32 of 34 (Detached Mode & Conflict Detection — In Progress)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-31 — Completed 32-02-PLAN.md (detach flag & conflict detection)
+Phase: 32 of 34 (Detached Mode & Conflict Detection — Complete)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-31 — Phase 32 complete, verified (passed)
 
-Progress: [█████████░] 92% (31 phases complete, 2 of 3 plans in phase 32)
+Progress: [█████████░] 94% (32 phases complete out of 34 total)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -76,7 +76,7 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 32-02-PLAN.md (detach flag & conflict detection wiring)
+Stopped at: Phase 32 complete — verified (passed), roadmap updated
 Resume file: None
 
-Next step: Continue with 32-03 (attach/ps commands) or move to Phase 33
+Next step: `/gsd:plan-phase 33` to create execution plans for Phase 33 (Attach Command)
