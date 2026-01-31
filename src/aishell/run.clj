@@ -45,6 +45,8 @@
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     ;; Project has extension
     (let [extended-tag (ext/compute-extended-tag project-dir)]
+      ;; Validate base tag before attempting build
+      (ext/validate-base-tag project-dir)
       (when (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (ext/build-extended-image
           {:project-dir project-dir

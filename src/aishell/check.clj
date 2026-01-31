@@ -97,6 +97,8 @@
   [project-dir base-tag]
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     (let [extended-tag (ext/compute-extended-tag project-dir)]
+      ;; Validate base tag before checking rebuild status
+      (ext/validate-base-tag project-dir)
       (if (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (print-status :warn "Project extension needs rebuild")
         (print-status :ok (str "Project extension is up to date: " extended-tag))))
