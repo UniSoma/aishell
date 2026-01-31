@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** v2.6.0 — tmux Integration & Named Containers
+**Current focus:** Phase 30 - Container Utilities & Naming
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-31 — Milestone v2.6.0 started
+Phase: 30 of 34 (Container Utilities & Naming)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-01-31 — v2.6.0 roadmap created (Phases 30-34)
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [███████░░░] 85% (29 phases complete out of 34 total)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -33,11 +33,22 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 - Milestones: 7 (all shipped)
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
+**v2.6.0 (In Progress):**
+- Plans completed: 0
+- Trend: (pending execution)
+
+*Updated after each plan completion*
+
 ## Accumulated Context
 
 ### Decisions
 
-See PROJECT.md Key Decisions tables for full history.
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- v2.5.0: Binary install approach abandoned (native Claude binary 213MB larger than npm)
+- v2.3.0: Content detection delegated to Gitleaks (better coverage than custom patterns)
+- v2.0: Babashka over Bash (cross-platform, better data structures, YAML native)
 
 ### Pending Todos
 
@@ -47,12 +58,15 @@ See PROJECT.md Key Decisions tables for full history.
 
 ### Blockers/Concerns
 
-None.
+**Phase 32 (Detached Mode):**
+- Signal handling validation needed - verify existing --init flag (tini as PID 1) handles SIGTERM correctly with tmux. If `docker stop` takes >3s and exits with code 137, trap handlers may be needed.
+- Socket permissions - tmux must start AFTER gosu in entrypoint to avoid root-owned socket issues. Verify with `ls -la /tmp/tmux-*` during testing.
+- --rm + --name conflict - pre-flight collision check required to handle stopped containers with duplicate names.
 
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Defining v2.6.0 requirements
+Stopped at: v2.6.0 roadmap created with 5 phases (30-34), 19 requirements fully mapped
 Resume file: None
 
-Next step: Complete requirements → roadmap for v2.6.0
+Next step: `/gsd:plan-phase 30` to create execution plans for Phase 30
