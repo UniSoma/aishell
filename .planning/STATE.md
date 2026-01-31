@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 34 - PS Command & Polish
+**Current focus:** v2.6.0 milestone complete
 
 ## Current Position
 
-Phase: 34 of 34 (PS Command & Polish — In Progress)
+Phase: 34 of 34 (PS Command & Polish — Complete)
 Plan: 1 of 1 in current phase
-Status: Plan 34-01 complete
-Last activity: 2026-01-31 — Completed 34-01-PLAN.md
+Status: Phase complete, verified (4/4 must-haves passed)
+Last activity: 2026-01-31 — Phase 34 complete, verified. v2.6.0 milestone complete.
 
 Progress: [██████████] 100% (34 phases complete out of 34 total)
 
@@ -24,6 +24,7 @@ Progress: [██████████] 100% (34 phases complete out of 34 to
 - v2.3.0 Safe AI Context Protection - Phases 18.1-23 (shipped 2026-01-24)
 - v2.4.0 Multi-Harness Support - Phases 24-27 (shipped 2026-01-25)
 - v2.5.0 Optimization & Polish - Phases 28-29 (shipped 2026-01-26)
+- v2.6.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
 
 ## Performance Metrics
 
@@ -76,16 +77,12 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-**Phase 32 (Detached Mode):**
-- ✅ Socket permissions - RESOLVED: gosu now runs before tmux in exec chain (32-01)
-- ✅ --rm + --name conflict - RESOLVED: pre-flight conflict detection via ensure-name-available! (32-02)
-- ✅ TERM validation - RESOLVED: entrypoint validates TERM before tmux, fallbacks to xterm-256color (32-03)
-- Signal handling validation needed - verify existing --init flag (tini as PID 1) handles SIGTERM correctly with tmux. If `docker stop` takes >3s and exits with code 137, trap handlers may be needed.
+None — all v2.6.0 phases complete.
 
 ## Session Continuity
 
-Last session: 2026-01-31T18:36:20Z
-Stopped at: Phase 34 Plan 01 complete (ps command implemented)
+Last session: 2026-01-31
+Stopped at: Phase 34 complete — verified (passed), v2.6.0 milestone complete
 Resume file: None
 
-Next step: v2.6.0 complete - ready for release/documentation
+Next step: `/gsd:audit-milestone` to verify v2.6.0 requirements and cross-phase integration

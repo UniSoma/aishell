@@ -34,8 +34,8 @@ Requirements for tmux Integration & Named Containers milestone.
 
 ### Discovery
 
-- [ ] **DISC-01**: `aishell ps` lists running containers for the current project
-- [ ] **DISC-02**: Output includes container name, status, and creation time
+- [x] **DISC-01**: `aishell ps` lists running containers for the current project
+- [x] **DISC-02**: Output includes container name, status, and creation time
 
 ### Conflict Detection
 
@@ -84,8 +84,8 @@ Tracked but not in v2.6.0 roadmap.
 | ATTCH-02 | Phase 33 | Complete |
 | ATTCH-03 | Phase 33 | Complete |
 | ATTCH-04 | Phase 33 | Complete |
-| DISC-01 | Phase 34 | Pending |
-| DISC-02 | Phase 34 | Pending |
+| DISC-01 | Phase 34 | Complete |
+| DISC-02 | Phase 34 | Complete |
 | CONF-01 | Phase 32 | Complete |
 | CONF-02 | Phase 32 | Complete |
 | LIFE-01 | Phase 32 | Complete |

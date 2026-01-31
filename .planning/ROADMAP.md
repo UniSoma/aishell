@@ -13,7 +13,7 @@ The aishell project delivers isolated, reproducible Docker environments for AI c
 - ✅ **v2.3.0 Safe AI Context Protection** - Phases 20-24 (shipped 2026-01-24)
 - ✅ **v2.4.0 Multi-Harness Support** - Phases 25-27 (shipped 2026-01-25)
 - ✅ **v2.5.0 Optimization & Polish** - Phases 28-29 (shipped 2026-01-26)
-- 🚧 **v2.6.0 tmux Integration & Named Containers** - Phases 30-34 (in progress)
+- ✅ **v2.6.0 tmux Integration & Named Containers** - Phases 30-34 (shipped 2026-01-31)
 
 ## Phases
 
@@ -24,7 +24,7 @@ Completed milestones collapsed for brevity. See git history for details.
 
 </details>
 
-### 🚧 v2.6.0 tmux Integration & Named Containers (In Progress)
+### ✅ v2.6.0 tmux Integration & Named Containers (Shipped 2026-01-31)
 
 **Milestone Goal:** Enable observability for long-running AI agents through tmux session management and support multiple harness instances per project via deterministic container naming.
 
@@ -32,7 +32,7 @@ Completed milestones collapsed for brevity. See git history for details.
 - [x] **Phase 31: Dockerfile & Image Build** - Add tmux package to base image
 - [x] **Phase 32: Detached Mode & Conflict Detection** - Core functionality: named containers, tmux wrapping, mode detection
 - [x] **Phase 33: Attach Command** - User convenience: reconnect to running containers
-- [ ] **Phase 34: PS Command & Polish** - Discovery: list running containers by project
+- [x] **Phase 34: PS Command & Polish** - Discovery: list running containers by project
 
 ## Phase Details
 
@@ -128,7 +128,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 34-01-PLAN.md — PS command implementation and CLI integration
+- [x] 34-01-PLAN.md — PS command implementation and CLI integration
 
 ## Progress
 
@@ -142,4 +142,4 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | 31. Dockerfile & Image Build | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 3/3 | Complete | 2026-01-31 |
 | 33. Attach Command | v2.6.0 | 1/1 | Complete | 2026-01-31 |
-| 34. PS Command & Polish | v2.6.0 | 0/TBD | Not started | - |
+| 34. PS Command & Polish | v2.6.0 | 1/1 | Complete | 2026-01-31 |
