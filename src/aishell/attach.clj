@@ -96,3 +96,32 @@
                "-e" "LC_ALL=C.UTF-8"
                container-name
                "tmux" "attach-session" "-t" session)))))
+
+(defn attach-shell
+  "Attach to or create a bash shell session in a running container.
+
+   Creates a tmux session named 'shell' running /bin/bash if it doesn't exist,
+   or attaches to it if it does (using tmux new-session -A).
+
+   Performs pre-flight validations:
+   1. Interactive terminal check
+   2. Container exists and is running
+
+   On success, uses p/exec to replace current process with docker exec,
+   giving tmux full terminal control."
+  [name]
+  (let [project-dir (System/getProperty "user.dir")
+        container-name (naming/container-name project-dir name)]
+    ;; Run validations (no session check - tmux new-session -A handles both create and attach)
+    (validate-tty!)
+    (validate-container-state! container-name name)
+
+    ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
+    (let [term (resolve-term container-name)]
+      ;; All checks passed - exec into tmux with new-session -A (creates or attaches)
+      (p/exec "docker" "exec" "-it" "-u" "developer"
+              "-e" (str "TERM=" term)
+              "-e" "LANG=C.UTF-8"
+              "-e" "LC_ALL=C.UTF-8"
+              container-name
+              "tmux" "new-session" "-A" "-s" "shell" "/bin/bash"))))
