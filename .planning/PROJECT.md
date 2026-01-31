@@ -120,6 +120,10 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - PS command for project-scoped container discovery
 - 19 of 19 v2.7.0 requirements satisfied (2 overridden by user decision)
 
+## Milestone Conventions
+
+- **DOCS-01 requirement**: Every milestone MUST include a cross-cutting requirement `DOCS-01: All user-facing CLI changes reflected in docs/` covering README.md, docs/ARCHITECTURE.md, docs/CONFIGURATION.md, docs/HARNESSES.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md. This ensures documentation is auditable and never forgotten. (Established after v2.7.0 where docs were missed until milestone completion.)
+
 ## Constraints
 
 - **Docker dependency**: Requires Docker installed on host
