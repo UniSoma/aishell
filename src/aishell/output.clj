@@ -16,7 +16,8 @@
 (def NC (if (colors-enabled?) "\u001b[0m" ""))
 
 ;; Known commands for suggestion matching
-(def known-commands #{"build" "update" "check" "exec" "claude" "opencode" "codex" "gemini" "gitleaks"})
+(def known-commands #{"build" "update" "check" "exec" "attach" "ps"
+                      "claude" "opencode" "codex" "gemini" "gitleaks"})
 
 (defn- levenshtein-distance
   "Calculate edit distance between two strings."

@@ -4,6 +4,7 @@
             [aishell.docker :as docker]
             [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
+            [aishell.docker.naming :as naming]
             [aishell.docker.templates :as templates]
             [aishell.output :as output]
             [aishell.run :as run]
@@ -273,21 +274,37 @@
 (defn dispatch [args]
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
-        clean-args (vec (remove #{"--unsafe"} args))]
+        clean-args (vec (remove #{"--unsafe"} args))
+
+        ;; Extract --name flag (--name VALUE format)
+        ;; Must be extracted before pass-through to harness
+        container-name-override (let [idx (.indexOf (vec clean-args) "--name")]
+                                  (when (and (>= idx 0) (< (inc idx) (count clean-args)))
+                                    (nth clean-args (inc idx))))
+        clean-args (if container-name-override
+                     (let [idx (.indexOf (vec clean-args) "--name")]
+                       (into (subvec (vec clean-args) 0 idx)
+                             (subvec (vec clean-args) (+ idx 2))))
+                     clean-args)]
     ;; Handle pass-through commands before standard dispatch
     ;; This ensures all args (including --help, --version) go to the harness
     (case (first clean-args)
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
-      "claude" (run/run-container "claude" (vec (rest clean-args)) {:unsafe unsafe?})
-      "opencode" (run/run-container "opencode" (vec (rest clean-args)) {:unsafe unsafe?})
-      "codex" (run/run-container "codex" (vec (rest clean-args)) {:unsafe unsafe?})
-      "gemini" (run/run-container "gemini" (vec (rest clean-args)) {:unsafe unsafe?})
-      "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args)) {:unsafe unsafe? :skip-pre-start true})
+      "claude" (run/run-container "claude" (vec (rest clean-args))
+                 {:unsafe unsafe? :container-name container-name-override})
+      "opencode" (run/run-container "opencode" (vec (rest clean-args))
+                   {:unsafe unsafe? :container-name container-name-override})
+      "codex" (run/run-container "codex" (vec (rest clean-args))
+               {:unsafe unsafe? :container-name container-name-override})
+      "gemini" (run/run-container "gemini" (vec (rest clean-args))
+                {:unsafe unsafe? :container-name container-name-override})
+      "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
+                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
       ;; Standard dispatch for other commands (build, update, help)
       (if unsafe?
         ;; --unsafe with no harness command -> shell mode with unsafe
-        (run/run-container nil [] {:unsafe true})
+        (run/run-container nil [] {:unsafe true :container-name container-name-override})
         ;; Normal dispatch
         (cli/dispatch dispatch-table args {:error-fn handle-error
                                            :restrict true})))))

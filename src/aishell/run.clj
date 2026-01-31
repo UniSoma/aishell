@@ -3,6 +3,7 @@
    Handles shell, claude, and opencode execution in containers."
   (:require [babashka.process :as p]
             [aishell.docker :as docker]
+            [aishell.docker.naming :as naming]
             [aishell.docker.run :as docker-run]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
@@ -74,7 +75,14 @@
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
-          base-tag (or (:image-tag state) "aishell:base")]
+          base-tag (or (:image-tag state) "aishell:base")
+
+          ;; Resolve container name: --name override or harness name (or "shell" for shell mode)
+          container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
+                               (naming/container-name project-dir name-part))
+
+          ;; Log container name for verification
+          _ (output/verbose (str "Container name: " container-name-str))]
 
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)
