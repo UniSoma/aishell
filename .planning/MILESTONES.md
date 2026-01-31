@@ -1,6 +1,6 @@
 # Project Milestones: Agentic Harness Sandbox
 
-## v2.6.0 tmux Integration & Named Containers (Shipped: 2026-01-31)
+## v2.7.0 tmux Integration & Named Containers (Shipped: 2026-01-31)
 
 **Delivered:** tmux session management for all container modes, deterministic named containers with project-hash isolation, detached mode for background execution, attach/detach workflow, and project-scoped container discovery.
 

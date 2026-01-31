@@ -14,7 +14,7 @@
             [aishell.util :as util]
             [aishell.attach :as attach]))
 
-(def version "2.6.0")
+(def version "2.7.0")
 
 (defn print-version []
   (println (str "aishell " version)))

@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 Phase: Ready for next milestone
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-01-31 — v2.6.0 milestone complete
+Last activity: 2026-01-31 — v2.7.0 milestone complete
 
 Progress: [██████████] 100% (34 phases complete out of 34 total)
 
@@ -24,11 +24,11 @@ Progress: [██████████] 100% (34 phases complete out of 34 to
 - v2.3.0 Safe AI Context Protection - Phases 18.1-23 (shipped 2026-01-24)
 - v2.4.0 Multi-Harness Support - Phases 24-27 (shipped 2026-01-25)
 - v2.5.0 Optimization & Polish - Phases 28-29 (shipped 2026-01-26)
-- v2.6.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
+- v2.7.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
 
 ## Performance Metrics
 
-**Cumulative (v1.0-v2.6.0):**
+**Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
 - Completed plans: 80
 - Milestones: 8 (all shipped)
@@ -55,7 +55,7 @@ None — milestone complete, ready for next.
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: v2.6.0 milestone complete and archived
+Stopped at: v2.7.0 milestone complete and archived
 Resume file: None
 
 Next step: `/gsd:new-milestone` to start next milestone
