@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 32 of 34 (Detached Mode & Conflict Detection — Complete)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-31 — Phase 32 complete, verified (passed)
+Plan: 3 of 3 in current phase (gap closure)
+Status: Phase complete, all gaps closed
+Last activity: 2026-01-31 — Completed 32-03-PLAN.md (TERM validation gap closure)
 
 Progress: [█████████░] 94% (32 phases complete out of 34 total)
 
@@ -34,7 +34,7 @@ Progress: [█████████░] 94% (32 phases complete out of 34 tot
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
 **v2.6.0 (In Progress):**
-- Plans completed: 4
+- Plans completed: 5 (32-01, 32-02, 32-UAT, 32-03-gap-closure, [phase 33 pending])
 - Average duration: 2min
 - Trend: On track
 
@@ -47,6 +47,9 @@ Progress: [█████████░] 94% (32 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (32-03): Use infocmp for TERM validation rather than installing additional terminfo packages (defensive check, avoids image bloat)
+- v2.6.0 (32-03): Fallback to xterm-256color for unsupported TERM values (universally available in Debian, preserves color support)
+- v2.6.0 (32-03): Position TERM validation after gosu setup, before tmux exec in entrypoint lifecycle
 - v2.6.0 (32-02): -d short form safe for --detach (no conflicts with harness flags)
 - v2.6.0 (32-02): All containers get --name flag (unified naming across foreground/detached modes)
 - v2.6.0 (32-02): --rm + --detach valid in modern Docker (auto-cleanup when stopped)
@@ -71,12 +74,13 @@ Recent decisions affecting current work:
 **Phase 32 (Detached Mode):**
 - ✅ Socket permissions - RESOLVED: gosu now runs before tmux in exec chain (32-01)
 - ✅ --rm + --name conflict - RESOLVED: pre-flight conflict detection via ensure-name-available! (32-02)
+- ✅ TERM validation - RESOLVED: entrypoint validates TERM before tmux, fallbacks to xterm-256color (32-03)
 - Signal handling validation needed - verify existing --init flag (tini as PID 1) handles SIGTERM correctly with tmux. If `docker stop` takes >3s and exits with code 137, trap handlers may be needed.
 
 ## Session Continuity
 
-Last session: 2026-01-31
-Stopped at: Phase 32 complete — verified (passed), roadmap updated
+Last session: 2026-01-31T16:53:05Z
+Stopped at: Completed 32-03-PLAN.md (TERM validation gap closure)
 Resume file: None
 
 Next step: `/gsd:plan-phase 33` to create execution plans for Phase 33 (Attach Command)
