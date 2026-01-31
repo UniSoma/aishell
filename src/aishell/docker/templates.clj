@@ -164,6 +164,12 @@ fi
 # Add harness bin directories to PATH if they exist
 export PATH=\"$HOME/.local/bin:/usr/local/bin:$PATH\"
 
+# Volume-mounted harness tools PATH configuration
+if [ -d \"/tools/npm/bin\" ]; then
+  export PATH=\"/tools/npm/bin:$PATH\"
+  export NODE_PATH=\"/tools/npm/lib/node_modules\"
+fi
+
 # Suppress Claude Code npm vs native installer warning (npm install still works)
 export DISABLE_INSTALLATION_CHECKS=1
 
