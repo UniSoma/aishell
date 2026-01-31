@@ -226,6 +226,12 @@ if [[ -n \"${PRE_START:-}\" ]]; then
     gosu \"$USER_ID:$GROUP_ID\" sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1 &
 fi
 
+# Validate TERM has terminfo entry; fallback to xterm-256color if missing
+# Prevents tmux failure with custom terminals (e.g., xterm-ghostty from Ghostty)
+if command -v infocmp >/dev/null 2>&1 && ! infocmp \"$TERM\" >/dev/null 2>&1; then
+    export TERM=xterm-256color
+fi
+
 # Execute command as the user via gosu, auto-start in tmux session
 # -A: attach if session exists, create if not (idempotent)
 # -s main: session named \\\"main\\\" (consistent naming for attach command)
