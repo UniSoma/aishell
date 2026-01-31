@@ -2,7 +2,7 @@
 
 This document describes the internal architecture of aishell, including the data flow from host machine through container execution, and the responsibilities of each code namespace.
 
-**Last updated:** v2.5.0
+**Last updated:** v2.7.0
 
 ---
 
@@ -154,8 +154,10 @@ The run phase executes a harness (or shell) in a container with project files mo
 │ 1. Create user matching host UID/GID    │
 │ 2. Setup home directory                 │
 │ 3. Run pre_start command (if configured)│
-│ 4. Switch to user (via gosu)            │
-│ 5. Execute harness command              │
+│ 4. Validate TERM (fallback xterm-256color)│
+│ 5. Switch to user (via gosu)            │
+│ 6. Start tmux session 'main'            │
+│ 7. Execute harness command in tmux      │
 └──────────────────────────────────────────┘
 ```
 
@@ -212,6 +214,8 @@ aishell is organized into focused namespaces, each handling a specific concern.
 | `aishell.state` | Build state persistence | Read/write `~/.aishell/state.edn` |
 | `aishell.output` | Terminal formatting | Colored output, error handling |
 | `aishell.util` | Shared utilities | Path helpers, home directory resolution |
+| `aishell.attach` | Attach command | Reconnect to running containers' tmux sessions |
+| `aishell.check` | Pre-flight checks | Validate Docker, config, image state |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |
 
 ### Docker Namespaces
@@ -224,6 +228,7 @@ aishell is organized into focused namespaces, each handling a specific concern.
 | `aishell.docker.run` | Container execution | Construct `docker run` arguments |
 | `aishell.docker.hash` | Cache invalidation | Compute Dockerfile content hash |
 | `aishell.docker.spinner` | Build UI | Animated spinner during quiet builds |
+| `aishell.docker.naming` | Container naming | Deterministic naming, Docker state queries, conflict detection |
 | `aishell.docker.extension` | Project extensions | Build per-project extended images |
 
 ### Security Namespaces

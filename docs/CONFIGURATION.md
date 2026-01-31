@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options. This document covers both global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) configuration files.
 
-**Last updated:** v2.5.0
+**Last updated:** v2.7.0
 
 ---
 

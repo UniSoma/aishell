@@ -4,7 +4,7 @@ This guide helps diagnose and resolve common issues with aishell.
 
 **How to use this guide:** Find the symptom you're experiencing, then follow the resolution steps.
 
-**Last updated:** v2.5.0
+**Last updated:** v2.7.0
 
 ---
 
@@ -15,6 +15,7 @@ This guide helps diagnose and resolve common issues with aishell.
 - [Container Issues](#container-issues)
 - [Authentication Issues](#authentication-issues)
 - [Sensitive File Detection](#sensitive-file-detection)
+- [Detached Mode & Attach Issues](#detached-mode--attach-issues)
 - [Exec Command Issues](#exec-command-issues)
 - [Network Issues](#network-issues)
 - [Getting Help](#getting-help)
@@ -596,6 +597,101 @@ aishell claude  # No warning for allowlisted files
    ```yaml
    detection:
      gitleaks_freshness_check: false
+   ```
+
+---
+
+## Detached Mode & Attach Issues
+
+### Symptom: "Container name already in use" when starting detached
+
+**Cause:** A container with the same name is already running.
+
+**Resolution:**
+
+1. **Check running containers:**
+   ```bash
+   aishell ps
+   ```
+
+2. **Attach to existing container:**
+   ```bash
+   aishell attach --name claude
+   ```
+
+3. **Stop and restart:**
+   ```bash
+   docker stop aishell-<hash>-claude
+   aishell claude --detach
+   ```
+
+**Note:** If the container is stopped (not running), aishell auto-removes it and starts a new one.
+
+### Symptom: "attach: container not found" or "container is not running"
+
+**Cause:** The container has exited or the name is wrong.
+
+**Resolution:**
+
+1. **List project containers:**
+   ```bash
+   aishell ps
+   ```
+
+2. **Check Docker directly:**
+   ```bash
+   docker ps -a | grep aishell
+   ```
+
+3. **Common issues:**
+   - Container stopped (exited): Restart with `aishell claude --detach`
+   - Wrong name: Use `aishell ps` to see actual container names
+   - Wrong project directory: Container names are project-scoped
+
+### Symptom: "tmux: open terminal failed: not a terminal"
+
+**Cause:** Running `aishell attach` from a non-interactive terminal (e.g., script, pipe, CI).
+
+**Resolution:**
+
+The attach command requires an interactive terminal. Run from a terminal emulator, not from scripts or pipes.
+
+### Symptom: tmux fails with "open terminal failed: missing or unsuitable terminal"
+
+**Cause:** Your terminal's `TERM` value (e.g., `xterm-ghostty`) doesn't have a terminfo entry in the container.
+
+**Resolution:**
+
+aishell automatically validates TERM and falls back to `xterm-256color` for unsupported values. If you still see this:
+
+1. **Rebuild the image** to get the TERM validation fix:
+   ```bash
+   aishell update
+   ```
+
+2. **Manual override:**
+   ```bash
+   TERM=xterm-256color aishell claude
+   ```
+
+### Symptom: "aishell ps" shows no containers
+
+**Cause:** No containers running for the current project, or you're in a different directory.
+
+**Resolution:**
+
+1. **Verify you're in the right project directory:**
+   Container names are scoped by project path hash. Running `aishell ps` from a different directory shows different containers.
+
+2. **Check Docker directly:**
+   ```bash
+   docker ps | grep aishell
+   ```
+
+3. **Start a container:**
+   ```bash
+   aishell claude --detach
+   aishell ps
    ```
 
 ---

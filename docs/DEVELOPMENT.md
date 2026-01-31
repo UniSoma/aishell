@@ -4,7 +4,7 @@ This guide is for developers who want to extend aishell with new features or har
 
 **Target audience:** Developers adding new AI harness integrations or core aishell features.
 
-**Last updated:** v2.5.0
+**Last updated:** v2.7.0
 
 ---
 
@@ -74,6 +74,7 @@ aishell/
 │   │   ├── templates.clj     # Dockerfile generation
 │   │   ├── extension.clj     # Project-level Dockerfile handling
 │   │   ├── hash.clj          # Dockerfile content hashing
+│   │   ├── naming.clj        # Container naming and Docker state queries
 │   │   └── spinner.clj       # Build progress UI
 │   ├── detection/            # Sensitive file detection
 │   │   ├── core.clj          # Detection orchestration
@@ -83,6 +84,8 @@ aishell/
 │   ├── gitleaks/
 │   │   ├── scan_state.clj    # Scan freshness tracking
 │   │   └── warnings.clj      # Gitleaks reminder warnings
+│   ├── attach.clj            # Attach command (reconnect to containers)
+│   ├── check.clj             # Pre-flight validation command
 │   ├── validation.clj        # Argument validation
 │   ├── output.clj            # Terminal output utilities
 │   └── util.clj              # Shared utilities

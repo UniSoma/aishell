@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
 
-**Last updated:** v2.5.0
+**Last updated:** v2.7.0
 
 ## What are Harnesses?
 
@@ -466,6 +466,58 @@ harnesses:
 2. **API key simplicity:** Use `GEMINI_API_KEY` for straightforward setup
 3. **Vertex AI:** Provides enterprise features (audit logs, VPC, quotas)
 4. **Model selection:** Gemini 2.0 Flash recommended for speed and quality balance
+
+## Detached Mode & tmux
+
+All containers run inside a tmux session named `main`. This enables detaching from and reattaching to running harnesses.
+
+### Running in Background
+
+```bash
+# Start Claude Code detached
+aishell claude --detach
+
+# Start with a custom name
+aishell claude --detach --name reviewer
+
+# Short form
+aishell claude -d --name reviewer
+```
+
+### Reconnecting
+
+```bash
+# Attach to a running container
+aishell attach --name claude
+
+# Attach to a specific tmux session
+aishell attach --name claude --session main
+```
+
+### Listing Containers
+
+```bash
+# List running containers for current project
+aishell ps
+```
+
+### Detaching
+
+Inside a container, press `Ctrl+B D` to detach from the tmux session without stopping the container.
+
+### Stopping
+
+```bash
+docker stop aishell-<hash>-claude
+```
+
+### Container Naming
+
+Containers are named `aishell-{project-hash}-{name}`:
+- **project-hash**: First 8 chars of SHA-256 of your project directory path
+- **name**: Defaults to harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`), overridable with `--name`
+
+This allows multiple instances per project and isolation across projects.
 
 ## Running Multiple Harnesses
 
