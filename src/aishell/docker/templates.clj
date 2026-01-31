@@ -226,8 +226,12 @@ if [[ -n \"${PRE_START:-}\" ]]; then
     gosu \"$USER_ID:$GROUP_ID\" sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1 &
 fi
 
-# Execute command as the user via gosu
-exec gosu \"$USER_ID:$GROUP_ID\" \"$@\"
+# Execute command as the user via gosu, auto-start in tmux session
+# -A: attach if session exists, create if not (idempotent)
+# -s main: session named \\\"main\\\" (consistent naming for attach command)
+# -c \\\"$PWD\\\": start in working directory (set by docker run -w)
+# \\\"$@\\\": the actual command (bash, claude, opencode, codex, gemini)
+exec gosu \"$USER_ID:$GROUP_ID\" tmux new-session -A -s main -c \"$PWD\" \"$@\"
 ")
 
 (def bashrc-content
