@@ -49,10 +49,10 @@ Completed milestones collapsed for brevity. See git history for details.
   3. Same project directory always produces same container name for given harness
   4. Hash collision probability documented and validated (expect <0.02% at 100 projects)
 
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- (To be created during plan-phase)
+- [ ] 30-01-PLAN.md — Container naming utilities and --name CLI flag
 
 ### Phase 31: Dockerfile & Image Build
 **Goal**: Add tmux to base Docker image without increasing build time or introducing dependency conflicts.
@@ -136,7 +136,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-29. Previous milestones | v1.0-v2.5.0 | All complete | Complete | 2026-01-26 |
-| 30. Container Utilities & Naming | v2.6.0 | 0/TBD | Not started | - |
+| 30. Container Utilities & Naming | v2.6.0 | 0/1 | Planning complete | - |
 | 31. Dockerfile & Image Build | v2.6.0 | 0/TBD | Not started | - |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 0/TBD | Not started | - |
 | 33. Attach Command | v2.6.0 | 0/TBD | Not started | - |
