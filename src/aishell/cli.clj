@@ -276,6 +276,10 @@
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
 
+        ;; Extract --detach/-d flag before pass-through
+        detach? (boolean (some #{"-d" "--detach"} clean-args))
+        clean-args (vec (remove #{"-d" "--detach"} clean-args))
+
         ;; Extract --name flag (--name VALUE format)
         ;; Must be extracted before pass-through to harness
         container-name-override (let [idx (.indexOf (vec clean-args) "--name")]
@@ -292,19 +296,19 @@
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
       "claude" (run/run-container "claude" (vec (rest clean-args))
-                 {:unsafe unsafe? :container-name container-name-override})
+                 {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override})
+                   {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "codex" (run/run-container "codex" (vec (rest clean-args))
-               {:unsafe unsafe? :container-name container-name-override})
+               {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "gemini" (run/run-container "gemini" (vec (rest clean-args))
-                {:unsafe unsafe? :container-name container-name-override})
+                {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
+                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true :detach detach?})
       ;; Standard dispatch for other commands (build, update, help)
       (if unsafe?
         ;; --unsafe with no harness command -> shell mode with unsafe
-        (run/run-container nil [] {:unsafe true :container-name container-name-override})
+        (run/run-container nil [] {:unsafe true :container-name container-name-override :detach detach?})
         ;; Normal dispatch
         (cli/dispatch dispatch-table args {:error-fn handle-error
                                            :restrict true})))))
