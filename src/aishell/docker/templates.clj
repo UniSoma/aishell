@@ -232,6 +232,11 @@ if command -v infocmp >/dev/null 2>&1 && ! infocmp \"$TERM\" >/dev/null 2>&1; th
     export TERM=xterm-256color
 fi
 
+# Set UTF-8 locale before tmux starts so tmux enables Unicode mode
+# Without this, tmux defaults to ASCII and Unicode characters render as dashes
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
 # Execute command as the user via gosu, auto-start in tmux session
 # -A: attach if session exists, create if not (idempotent)
 # -s main: session named \\\"main\\\" (consistent naming for attach command)
