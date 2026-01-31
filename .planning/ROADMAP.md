@@ -107,10 +107,10 @@ Plans:
   4. User can detach from tmux session (Ctrl+B D) and container continues running
   5. Multiple users can attach to same container simultaneously (tmux multi-client support)
 
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- (To be created during plan-phase)
+- [ ] 33-01-PLAN.md — Attach command implementation and CLI integration
 
 ### Phase 34: PS Command & Polish
 **Goal**: Provide project-scoped container discovery and listing.
@@ -141,5 +141,5 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | 30. Container Utilities & Naming | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 31. Dockerfile & Image Build | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 3/3 | Complete | 2026-01-31 |
-| 33. Attach Command | v2.6.0 | 0/TBD | Not started | - |
+| 33. Attach Command | v2.6.0 | 0/1 | Planned | - |
 | 34. PS Command & Polish | v2.6.0 | 0/TBD | Not started | - |
