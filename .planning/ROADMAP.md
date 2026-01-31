@@ -28,7 +28,7 @@ Completed milestones collapsed for brevity. See git history for details.
 
 **Milestone Goal:** Enable observability for long-running AI agents through tmux session management and support multiple harness instances per project via deterministic container naming.
 
-- [ ] **Phase 30: Container Utilities & Naming** - Foundation layer: hash generation and Docker query functions
+- [x] **Phase 30: Container Utilities & Naming** - Foundation layer: hash generation and Docker query functions
 - [ ] **Phase 31: Dockerfile & Image Build** - Add tmux package to base image
 - [ ] **Phase 32: Detached Mode & Conflict Detection** - Core functionality: named containers, tmux wrapping, mode detection
 - [ ] **Phase 33: Attach Command** - User convenience: reconnect to running containers
@@ -52,7 +52,7 @@ Completed milestones collapsed for brevity. See git history for details.
 **Plans:** 1 plan
 
 Plans:
-- [ ] 30-01-PLAN.md — Container naming utilities and --name CLI flag
+- [x] 30-01-PLAN.md — Container naming utilities and --name CLI flag
 
 ### Phase 31: Dockerfile & Image Build
 **Goal**: Add tmux to base Docker image without increasing build time or introducing dependency conflicts.
@@ -136,7 +136,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-29. Previous milestones | v1.0-v2.5.0 | All complete | Complete | 2026-01-26 |
-| 30. Container Utilities & Naming | v2.6.0 | 0/1 | Planning complete | - |
+| 30. Container Utilities & Naming | v2.6.0 | 1/1 | Complete | 2026-01-31 |
 | 31. Dockerfile & Image Build | v2.6.0 | 0/TBD | Not started | - |
 | 32. Detached Mode & Conflict Detection | v2.6.0 | 0/TBD | Not started | - |
 | 33. Attach Command | v2.6.0 | 0/TBD | Not started | - |

@@ -14,9 +14,9 @@ Requirements for tmux Integration & Named Containers milestone.
 
 ### Container Naming
 
-- [ ] **NAME-01**: Harness commands produce a Docker container named `aishell-{project-hash}-{name}` where project-hash is first 8 chars of SHA-256 of project directory path
-- [ ] **NAME-02**: Default container name equals the harness name (e.g., `claude`, `opencode`, `codex`, `gemini`)
-- [ ] **NAME-03**: User can override container name with `--name <name>` flag (e.g., `aishell claude --name reviewer`)
+- [x] **NAME-01**: Harness commands produce a Docker container named `aishell-{project-hash}-{name}` where project-hash is first 8 chars of SHA-256 of project directory path
+- [x] **NAME-02**: Default container name equals the harness name (e.g., `claude`, `opencode`, `codex`, `gemini`)
+- [x] **NAME-03**: User can override container name with `--name <name>` flag (e.g., `aishell claude --name reviewer`)
 - [ ] **NAME-04**: Shell mode (`aishell`) does not use named containers (preserves current ephemeral anonymous behavior)
 
 ### tmux Integration
@@ -73,9 +73,9 @@ Tracked but not in v2.6.0 roadmap.
 |-------------|-------|--------|
 | IMG-01 | Phase 31 | Pending |
 | IMG-02 | Phase 31 | Pending |
-| NAME-01 | Phase 30 | Pending |
-| NAME-02 | Phase 30 | Pending |
-| NAME-03 | Phase 30 | Pending |
+| NAME-01 | Phase 30 | Complete |
+| NAME-02 | Phase 30 | Complete |
+| NAME-03 | Phase 30 | Complete |
 | NAME-04 | Phase 32 | Pending |
 | TMUX-01 | Phase 32 | Pending |
 | TMUX-02 | Phase 32 | Pending |
