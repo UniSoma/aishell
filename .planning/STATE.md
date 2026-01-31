@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: 35 of 38 (Foundation Image Split)
-Plan: 2 of 2 complete in phase
-Status: Phase complete
-Last activity: 2026-01-31 - Completed 35-02-PLAN.md
+Phase: 36 of 38 (Harness Volume Core)
+Plan: 1 of 3 complete in phase
+Status: In progress
+Last activity: 2026-01-31 - Completed 36-01-PLAN.md
 
-Progress: [██░░░░░░░░] 18% (2/11 plans complete)
+Progress: [███░░░░░░░] 27% (3/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,22 +30,22 @@ Progress: [██░░░░░░░░] 18% (2/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 2
-- Average duration: 3 min
-- Total execution time: 0.10 hours
+- Total plans completed: 3
+- Average duration: 2 min
+- Total execution time: 0.12 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
-| 36 | 0/3 | 0 min | - |
+| 36 | 1/3 | 1 min | 1 min |
 | 37 | 0/4 | 0 min | - |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 2 min (35-02)
-- Trend: Fast execution for focused refactoring and validation
+- Last plan: 1 min (36-01)
+- Trend: Very fast execution for focused namespace creation
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -77,6 +77,12 @@ Recent decisions affecting v2.8.0 work:
 - Exit with error (not warning) to prevent silent breakage on upgrade
 - Validate before build attempt for clearer user experience
 
+**Volume naming (from 36-01):**
+- Hash only enabled harnesses with versions (exclude disabled harnesses)
+- Normalize nil versions to 'latest' for consistency
+- Use alphabetical sorting for order-independent hashing
+- 12-character hex hash matches existing hash.clj pattern
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -98,8 +104,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31T22:38:03Z
-Stopped at: Completed 35-02-PLAN.md (Legacy Base Tag Validation)
+Last session: 2026-01-31T23:47:10Z
+Stopped at: Completed 36-01-PLAN.md (Harness Hash Computation)
 Resume file: None
 
-**Next step:** `/gsd:plan-phase 36` to create execution plans for harness volume core
+**Next step:** Continue with 36-02-PLAN.md (Volume Lifecycle Management)
