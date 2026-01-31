@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 36 of 38 (Harness Volume Core)
-Plan: 2 of 3 complete in phase
-Status: In progress
-Last activity: 2026-01-31 - Completed 36-02-PLAN.md
+Plan: 3 of 3 complete in phase
+Status: Phase complete
+Last activity: 2026-01-31 - Completed 36-03-PLAN.md
 
-Progress: [███░░░░░░░] 36% (4/11 plans complete)
+Progress: [████░░░░░░] 45% (5/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,21 +30,21 @@ Progress: [███░░░░░░░] 36% (4/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 2 min
-- Total execution time: 0.13 hours
+- Total execution time: 0.15 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
-| 36 | 2/3 | 3 min | 2 min |
+| 36 | 3/3 | 5 min | 2 min |
 | 37 | 0/4 | 0 min | - |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 2 min (36-02)
+- Last plan: 2 min (36-03)
 - Trend: Consistent 2-min execution for focused implementation tasks
 
 **Cumulative (v1.0-v2.7.0):**
@@ -90,6 +90,13 @@ Recent decisions affecting v2.8.0 work:
 - Set world-readable permissions (chmod -R a+rX) for non-root execution
 - Populate via temporary Docker containers with --rm flag
 
+**Volume runtime wiring (from 36-03):**
+- Mount harness volume read-only at /tools for security
+- Use HARNESS_VOLUME env var as signal (not PATH in -e flag)
+- Directory existence check (-d /tools/npm/bin) for safe PATH activation
+- PATH order: harness tools -> user local -> system (prepend /tools/npm/bin)
+- NODE_PATH set to /tools/npm/lib/node_modules for module resolution
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -111,8 +118,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31T23:52:41Z
-Stopped at: Completed 36-02-PLAN.md (Volume Lifecycle Management)
+Last session: 2026-01-31T23:54:02Z
+Stopped at: Completed 36-03-PLAN.md (Volume Runtime Wiring)
 Resume file: None
 
-**Next step:** Continue with 36-03-PLAN.md (Volume Staleness Detection)
+**Next step:** Phase 36 complete. Continue with Phase 37 (Harness Lazy Population)
