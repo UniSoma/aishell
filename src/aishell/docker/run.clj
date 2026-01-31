@@ -129,6 +129,25 @@
     (str/split (str/trim docker-args) #"\s+")
     :else nil))
 
+(defn- build-harness-volume-args
+  "Build -v flag for harness volume mount.
+   Mounts volume read-only at /tools.
+   Returns empty vector if volume-name is nil."
+  [volume-name]
+  (if volume-name
+    ["-v" (str volume-name ":/tools:ro")]
+    []))
+
+(defn- build-harness-env-args
+  "Build -e flags for harness tool PATH/NODE_PATH configuration.
+   These are always added when a harness volume is mounted.
+   The entrypoint also handles PATH setup, but these ensure
+   the environment is correct even for non-bash entry points."
+  [volume-name]
+  (if volume-name
+    ["-e" "HARNESS_VOLUME=true"]
+    []))
+
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
    Only mounts directories that exist on host."
@@ -183,7 +202,7 @@
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name tty-flags]}]
+  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
@@ -221,6 +240,10 @@
 
         ;; Disable autoupdater in container
         (into ["-e" "DISABLE_AUTOUPDATER=1"])
+
+        ;; Harness volume mount (volume-mounted harness tools)
+        (into (build-harness-volume-args harness-volume-name))
+        (into (build-harness-env-args harness-volume-name))
 
         ;; Config: mounts
         (cond-> (:mounts config)
@@ -265,7 +288,7 @@
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name]}]
+  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
@@ -274,6 +297,7 @@
      :skip-pre-start skip-pre-start
      :detach detach
      :container-name container-name
+     :harness-volume-name harness-volume-name
      :tty-flags ["-it"]}))
 
 (defn build-docker-args-for-exec
@@ -292,11 +316,12 @@
    - tty?: When true, allocate TTY (-it); when false, stdin only (-i)
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
-  [{:keys [project-dir image-tag config git-identity tty?]}]
+  [{:keys [project-dir image-tag config git-identity tty? harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
      :git-identity git-identity
      :skip-pre-start true  ; Always skip pre_start for exec
+     :harness-volume-name harness-volume-name
      :tty-flags (if tty? ["-it"] ["-i"])}))
