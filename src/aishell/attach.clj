@@ -33,12 +33,12 @@
    Exits with error and lists available sessions if not found."
   [container-name session-name short-name]
   (let [{:keys [exit]} (p/shell {:out :string :err :string :continue true}
-                                 "docker" "exec" container-name
+                                 "docker" "exec" "-u" "developer" container-name
                                  "tmux" "has-session" "-t" session-name)]
     (when-not (zero? exit)
       ;; Session not found - try to list available sessions
       (let [{:keys [exit out]} (p/shell {:out :string :err :string :continue true}
-                                         "docker" "exec" container-name
+                                         "docker" "exec" "-u" "developer" container-name
                                          "tmux" "list-sessions")]
         (if (and (zero? exit) (not (str/blank? out)))
           ;; Sessions exist, show them
@@ -75,5 +75,5 @@
      (validate-session-exists! container-name session name)
 
      ;; All checks passed - exec into tmux (replaces current process)
-     (p/exec "docker" "exec" "-it" container-name
+     (p/exec "docker" "exec" "-it" "-u" "developer" container-name
              "tmux" "attach-session" "-t" session))))
