@@ -9,8 +9,8 @@ Requirements for tmux Integration & Named Containers milestone.
 
 ### Base Image
 
-- [ ] **IMG-01**: tmux is installed in the base Docker image (Debian bookworm tmux package)
-- [ ] **IMG-02**: Image build succeeds with tmux and `tmux -V` reports version inside container
+- [x] **IMG-01**: tmux is installed in the base Docker image (Debian bookworm tmux package)
+- [x] **IMG-02**: Image build succeeds with tmux and `tmux -V` reports version inside container
 
 ### Container Naming
 
@@ -71,8 +71,8 @@ Tracked but not in v2.6.0 roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IMG-01 | Phase 31 | Pending |
-| IMG-02 | Phase 31 | Pending |
+| IMG-01 | Phase 31 | Complete |
+| IMG-02 | Phase 31 | Complete |
 | NAME-01 | Phase 30 | Complete |
 | NAME-02 | Phase 30 | Complete |
 | NAME-03 | Phase 30 | Complete |

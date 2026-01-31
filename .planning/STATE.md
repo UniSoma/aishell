@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Phase 31 - Dockerfile & Image Build
+**Current focus:** Phase 32 - Detached Mode & Conflict Detection
 
 ## Current Position
 
-Phase: 31 of 34 (Dockerfile & Image Build — In Progress)
+Phase: 31 of 34 (Dockerfile & Image Build — Complete)
 Plan: 1 of 1 in current phase
-Status: Plan complete
-Last activity: 2026-01-31 — Completed 31-01-PLAN.md
+Status: Phase complete
+Last activity: 2026-01-31 — Phase 31 complete, verified (human-approved)
 
 Progress: [█████████░] 91% (31 phases complete out of 34 total)
 
@@ -47,6 +47,7 @@ Progress: [█████████░] 91% (31 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (31-01): tmux added to base image package list (single-line change in templates.clj)
 - v2.6.0 (30-01): Use 8-char SHA-256 hash for container names (2^32 space, <0.02% collision at 100 projects)
 - v2.6.0 (30-01): Default container name equals harness name (claude/opencode/codex/gemini) or 'shell'
 - v2.6.0 (30-01): Extract --name flag before dispatch (consistent with --unsafe pattern)
@@ -70,7 +71,7 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 31-01-PLAN.md
+Stopped at: Phase 31 complete — verified (human-approved), roadmap updated
 Resume file: None
 
-Next step: `/gsd:plan-phase 31` to continue Phase 31 (Dockerfile & Image Build) planning, or `/gsd:plan-phase 32` if phase complete
+Next step: `/gsd:plan-phase 32` to create execution plans for Phase 32 (Detached Mode & Conflict Detection)
