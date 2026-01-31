@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 35 of 38 (Foundation Image Split)
-Plan: 1 of 2 complete in phase
-Status: In progress
-Last activity: 2026-01-31 - Completed 35-01-PLAN.md
+Plan: 2 of 2 complete in phase
+Status: Phase complete
+Last activity: 2026-01-31 - Completed 35-02-PLAN.md
 
-Progress: [█░░░░░░░░░] 9% (1/11 plans complete)
+Progress: [██░░░░░░░░] 18% (2/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,22 +30,22 @@ Progress: [█░░░░░░░░░] 9% (1/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 1
-- Average duration: 4 min
-- Total execution time: 0.07 hours
+- Total plans completed: 2
+- Average duration: 3 min
+- Total execution time: 0.10 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 35 | 1/2 | 4 min | 4 min |
+| 35 | 2/2 | 6 min | 3 min |
 | 36 | 0/3 | 0 min | - |
 | 37 | 0/4 | 0 min | - |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 4 min (35-01)
-- Trend: Fast execution for focused refactoring
+- Last plan: 2 min (35-02)
+- Trend: Fast execution for focused refactoring and validation
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -72,6 +72,11 @@ Recent decisions affecting v2.8.0 work:
 - Gitleaks stays in foundation (security infrastructure, not harness)
 - Foundation rebuilds only on Dockerfile template changes, not harness version changes
 
+**Migration handling (from 35-02):**
+- Case-insensitive regex with word boundary to detect legacy FROM aishell:base
+- Exit with error (not warning) to prevent silent breakage on upgrade
+- Validate before build attempt for clearer user experience
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -93,8 +98,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31T22:33:37Z
-Stopped at: Completed 35-01-PLAN.md (Strip Harness from Foundation)
+Last session: 2026-01-31T22:38:03Z
+Stopped at: Completed 35-02-PLAN.md (Legacy Base Tag Validation)
 Resume file: None
 
-**Next step:** Phase 35-02 to implement volume-based harness injection
+**Next step:** Phase 36 to implement volume-based harness injection
