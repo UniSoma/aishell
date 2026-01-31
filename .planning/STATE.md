@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: 31 of 34 (Dockerfile & Image Build — Complete)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-01-31 — Phase 31 complete, verified (human-approved)
+Phase: 32 of 34 (Detached Mode & Conflict Detection — In Progress)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-31 — Completed 32-01-PLAN.md (tmux auto-start)
 
-Progress: [█████████░] 91% (31 phases complete out of 34 total)
+Progress: [█████████░] 92% (31 phases complete, 1 of 3 plans in phase 32)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -34,8 +34,8 @@ Progress: [█████████░] 91% (31 phases complete out of 34 tot
 - Days: 10 (2026-01-17 -> 2026-01-26)
 
 **v2.6.0 (In Progress):**
-- Plans completed: 2
-- Average duration: 2min
+- Plans completed: 3
+- Average duration: 1min
 - Trend: On track
 
 *Updated after each plan completion*
@@ -47,6 +47,8 @@ Progress: [█████████░] 91% (31 phases complete out of 34 tot
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.6.0 (32-01): All container modes auto-start inside tmux session 'main' (override of ROADMAP shell mode criterion for consistency)
+- v2.6.0 (32-01): gosu runs before tmux in exec chain (ensures user-owned socket, avoids permission errors)
 - v2.6.0 (31-01): tmux added to base image package list (single-line change in templates.clj)
 - v2.6.0 (30-01): Use 8-char SHA-256 hash for container names (2^32 space, <0.02% collision at 100 projects)
 - v2.6.0 (30-01): Default container name equals harness name (claude/opencode/codex/gemini) or 'shell'
@@ -64,14 +66,14 @@ Recent decisions affecting current work:
 ### Blockers/Concerns
 
 **Phase 32 (Detached Mode):**
+- ✅ Socket permissions - RESOLVED: gosu now runs before tmux in exec chain (32-01)
 - Signal handling validation needed - verify existing --init flag (tini as PID 1) handles SIGTERM correctly with tmux. If `docker stop` takes >3s and exits with code 137, trap handlers may be needed.
-- Socket permissions - tmux must start AFTER gosu in entrypoint to avoid root-owned socket issues. Verify with `ls -la /tmp/tmux-*` during testing.
 - --rm + --name conflict - pre-flight collision check required to handle stopped containers with duplicate names.
 
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Phase 31 complete — verified (human-approved), roadmap updated
+Stopped at: Completed 32-01-PLAN.md (tmux auto-start)
 Resume file: None
 
-Next step: `/gsd:plan-phase 32` to create execution plans for Phase 32 (Detached Mode & Conflict Detection)
+Next step: Continue with 32-02 (attach command) or 32-03 (conflict detection)
