@@ -224,6 +224,7 @@
         verbose? (:verbose opts)
         cmd ["docker" "run" "--rm"
              "-v" (str volume-name ":/tools")
+             "--entrypoint" ""
              build/foundation-image-tag
              "sh" "-c" install-commands]]
     (try
