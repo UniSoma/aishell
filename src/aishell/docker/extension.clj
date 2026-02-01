@@ -38,7 +38,7 @@
   [project-dir]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
     (let [content (slurp dockerfile-path)
-          legacy-pattern #"(?i)FROM\s+aishell:base\b"]
+          legacy-pattern #"(?im)^\s*FROM\s+aishell:base\b"]
       (when (re-find legacy-pattern content)
         (output/error
           "Legacy base image tag in .aishell/Dockerfile
