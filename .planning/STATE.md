@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: 37 of 38 (Build Integration & Migration)
-Plan: 6 of 6 complete in phase (4 main + 2 gap closure)
-Status: Phase complete
-Last activity: 2026-02-01 - Completed 37-05-PLAN.md (OpenCode Binary Installation)
+Phase: 38 of 38 (Volume Cleanup & Documentation)
+Plan: 1 of 3 complete in phase
+Status: In progress
+Last activity: 2026-02-01 - Completed 38-01-PLAN.md (Redesign Update Command)
 
-Progress: [█████████░] 91% (10/11 plans complete)
+Progress: [█████████░] 93% (11/12 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,9 +30,9 @@ Progress: [█████████░] 91% (10/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 10
-- Average duration: 1 min
-- Total execution time: 0.23 hours
+- Total plans completed: 11
+- Average duration: 2 min
+- Total execution time: 0.30 hours
 
 **By Phase:**
 
@@ -41,11 +41,11 @@ Progress: [█████████░] 91% (10/11 plans complete)
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
 | 37 | 6/6 | 7 min | 1 min |
-| 38 | 0/2 | 0 min | - |
+| 38 | 1/3 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last plan: 1 min (37-06)
-- Trend: Gap closure tasks ~1 min with atomic commits
+- Last plan: 4 min (38-01)
+- Trend: CLI redesign tasks ~4 min with single atomic commit
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -134,6 +134,14 @@ Recent decisions affecting v2.8.0 work:
 - Uses dot-source (. /etc/bash.aishell) instead of source for POSIX compatibility
 - Sets PATH (/tools/npm/bin, /tools/bin) and NODE_PATH for harness tools in login shells
 
+**Update command redesign (from 38-01):**
+- Update command default behavior: volume refresh only (no foundation rebuild)
+- Foundation rebuild is opt-in via --force flag
+- Volume repopulation uses unconditional delete + recreate (not check-if-stale)
+- No harnesses enabled results in informational message, not error
+- Update workflow: delete volume → create volume → populate volume
+- State updates preserve harness config, only update build-time (unless --force adds foundation-hash)
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -155,8 +163,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T20:00:00Z
-Stopped at: Phase 37 complete (all 6 plans + verification passed)
+Last session: 2026-02-01T20:07:47Z
+Stopped at: Completed 38-01-PLAN.md (Redesign Update Command)
 Resume file: None
 
-**Next step:** `/gsd:plan-phase 38` to plan volume cleanup and documentation
+**Next step:** Execute 38-02 (volumes subcommand) or 38-03 (documentation update)
