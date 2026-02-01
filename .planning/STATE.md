@@ -121,6 +121,13 @@ Recent decisions affecting v2.8.0 work:
 - Both :dockerfile-hash (deprecated) and :foundation-hash (new) are written for backward compatibility
 - :harness-volume-name is stored so run.clj can use it without recomputing
 
+**OpenCode binary installation (from 37-05):**
+- OpenCode binary downloaded from anomalyco/opencode GitHub releases (not opencodeco)
+- Binary installs to /tools/bin separate from npm packages in /tools/npm
+- /tools/bin added to PATH via directory existence check (same pattern as npm)
+- Tarball contains single binary named "opencode" (opencode-linux-x64.tar.gz)
+- Pattern established: curl | tar -xz -C /tools/bin for Go-based harnesses
+
 **Profile.d login shell environment (from 37-06):**
 - Created /etc/profile.d/aishell.sh to fix tmux new-window environment loss (GAP-02)
 - Login shells source /etc/profile → /etc/profile.d/*.sh → bash.aishell (for prompt/aliases)
@@ -148,8 +155,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T19:53:04Z
-Stopped at: Completed 37-06-PLAN.md (Profile.d Login Shell Environment)
+Last session: 2026-02-01T19:54:47Z
+Stopped at: Completed 37-05-PLAN.md (OpenCode Binary Installation)
 Resume file: None
 
-**Next step:** Execute remaining gap closure plan 37-05, then move to phase 38
+**Next step:** Phase 37 complete. Move to phase 38 (Volume Cleanup & Documentation)
