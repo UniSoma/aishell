@@ -54,12 +54,18 @@
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
                                           "aishell.harness.version" "2.8.0"})
-          (vol/populate-volume volume-name state))
+          (let [result (vol/populate-volume volume-name state)]
+            (when-not (:success result)
+              ;; Remove empty volume so next run retries population
+              (vol/remove-volume volume-name)
+              (output/error "Failed to populate harness volume"))))
 
         ;; Volume exists but stale (hash mismatch or missing label)
         (not= (vol/get-volume-label volume-name "aishell.harness.hash")
               expected-hash)
-        (vol/populate-volume volume-name state))
+        (let [result (vol/populate-volume volume-name state)]
+          (when-not (:success result)
+            (output/error "Failed to populate harness volume"))))
       ;; Return volume name regardless
       volume-name)))
 

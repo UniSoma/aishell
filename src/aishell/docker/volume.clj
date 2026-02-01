@@ -159,6 +159,14 @@
     (apply p/shell cmd)
     volume-name))
 
+(defn remove-volume
+  "Remove Docker volume by name. Silently ignores errors (volume may not exist)."
+  [volume-name]
+  (try
+    (p/shell {:out :string :err :string :continue true}
+             "docker" "volume" "rm" volume-name)
+    (catch Exception _ nil)))
+
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
 
@@ -233,8 +241,6 @@
         (let [{:keys [exit]} (apply p/process {:out :inherit
                                                :err :inherit}
                                     cmd)]
-          (when-not (zero? @exit)
-            (output/error "Failed to populate harness volume"))
           {:success (zero? @exit) :volume volume-name})
         ;; Silent: wrap in spinner
         (let [result (spinner/with-spinner "Populating harness volume"
@@ -246,9 +252,8 @@
                                                 (binding [*out* *err*]
                                                   (println err)))
                                               (zero? exit)))]
-          (when-not result
-            (output/error "Failed to populate harness volume"))
           {:success result :volume volume-name}))
       (catch Exception e
-        (output/error (str "Exception during volume population: " (.getMessage e)))
+        (binding [*out* *err*]
+          (println (str "Exception during volume population: " (.getMessage e))))
         {:success false :volume volume-name}))))

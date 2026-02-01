@@ -188,13 +188,18 @@
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
           _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
-              (when (or (not (vol/volume-exists? volume-name))
-                        (not= (vol/get-volume-label volume-name "aishell.harness.hash")
-                              harness-hash))
-                (when-not (vol/volume-exists? volume-name)
-                  (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "2.8.0"}))
-                (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})))]
+              (let [vol-missing? (not (vol/volume-exists? volume-name))
+                    vol-stale? (and (not vol-missing?)
+                                   (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+                                         harness-hash))]
+                (when (or vol-missing? vol-stale?)
+                  (when vol-missing?
+                    (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
+                                                    "aishell.harness.version" "2.8.0"}))
+                  (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})]
+                    (when-not (:success pop-result)
+                      (when vol-missing? (vol/remove-volume volume-name))
+                      (output/error "Failed to populate harness volume"))))))]
 
       ;; Persist state (always, even on failure this won't run due to error exit)
       (state/write-state
@@ -239,13 +244,18 @@
 
           ;; Populate volume if needed (only if missing or stale)
           _ (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
-              (when (or (not (vol/volume-exists? volume-name))
-                        (not= (vol/get-volume-label volume-name "aishell.harness.hash")
-                              harness-hash))
-                (when-not (vol/volume-exists? volume-name)
-                  (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "2.8.0"}))
-                (vol/populate-volume volume-name state {:verbose (:verbose opts)})))]
+              (let [vol-missing? (not (vol/volume-exists? volume-name))
+                    vol-stale? (and (not vol-missing?)
+                                   (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+                                         harness-hash))]
+                (when (or vol-missing? vol-stale?)
+                  (when vol-missing?
+                    (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
+                                                    "aishell.harness.version" "2.8.0"}))
+                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
+                    (when-not (:success pop-result)
+                      (when vol-missing? (vol/remove-volume volume-name))
+                      (output/error "Failed to populate harness volume"))))))]
 
       ;; Update state with new build-time and hash
       (state/write-state
