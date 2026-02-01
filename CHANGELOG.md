@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-02-01
+
+Split monolithic base image into stable foundation layer and volume-mounted harness tools.
+Harness version updates no longer force multi-gigabyte extension rebuilds.
+
+### Changed
+- **Architecture:** 2-tier system — foundation image (Debian, Node.js, system tools) + harness volume (npm packages, binaries)
+- **`aishell update`:** Now refreshes harness volume only (delete + recreate for clean slate). Use `--force` to also rebuild foundation image.
+- **Image tag:** `aishell:base` renamed to `aishell:foundation` (backward-compat error message guides migration)
+- **Extension cache:** Invalidation now uses foundation image ID, not base image ID
+
+### Added
+- **`aishell volumes`** command to list harness volumes with active/orphaned status
+- **`aishell volumes prune`** to remove orphaned harness volumes
+- **`aishell update --force`** flag to rebuild foundation image alongside volume refresh
+- **OpenCode binary installation** via GitHub releases (separate from npm harnesses)
+- **Volume-based harness tools** mounted read-only at `/tools` in containers
+- **`/etc/profile.d/aishell.sh`** for tmux new-window environment consistency
+- Harness volume labels for metadata (hash, version, harness list)
+
+### Fixed
+- Harness version updates no longer invalidate Docker extension cache
+- tmux new-window sessions now inherit harness tool PATH correctly
+
+### Internal
+- State schema: added `foundation-hash`, `harness-volume-hash`, `harness-volume-name` fields
+- `dockerfile-hash` deprecated in favor of `foundation-hash` (still written for backward compat)
+- Foundation image builds only on Dockerfile template changes
+- Per-project volumes keyed by harness combination hash (shared across identical configs)
+
 ## [2.7.1] - 2026-01-31
 
 ### Added

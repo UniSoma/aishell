@@ -20,6 +20,7 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Co
 - **Attach/detach** - Reconnect to running containers via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
 - **tmux integration** - All containers run inside tmux for session persistence
+- **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
 
 ## Documentation
 
@@ -157,6 +158,12 @@ aishell gitleaks detect
 
 # Run one-off command
 aishell exec ls -la
+
+# List harness volumes
+aishell volumes
+
+# Remove orphaned harness volumes
+aishell volumes prune
 ```
 
 ### One-off Commands
@@ -213,11 +220,11 @@ All containers are named `aishell-{project-hash}-{name}` where the project hash 
 ### Update to latest versions
 
 ```bash
-# Rebuild with latest versions (uses saved configuration)
+# Refresh harness tools (volume refresh, fast)
 aishell update
 
-# Add a harness to existing build
-aishell update --with-opencode
+# Refresh harness tools AND rebuild foundation image
+aishell update --force
 ```
 
 ### Validate setup
@@ -232,10 +239,10 @@ Checks Docker availability, build state, image existence, configuration validity
 
 ### Project customization
 
-Create `.aishell/Dockerfile` to extend the base image:
+Create `.aishell/Dockerfile` to extend the foundation image:
 
 ```dockerfile
-FROM aishell:base
+FROM aishell:foundation
 
 RUN apt-get update && apt-get install -y postgresql-client
 ```
@@ -455,7 +462,7 @@ aishell automatically passes these environment variables to containers when set 
 | `GITHUB_TOKEN` | GitHub API access | For GitHub operations |
 | `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts |
 
-## Base Image Contents
+## Foundation Image Contents
 
 Built on `debian:bookworm-slim` with:
 
@@ -470,6 +477,9 @@ Built on `debian:bookworm-slim` with:
 - git, curl, jq, ripgrep, vim
 - tree, less, file, unzip, watch
 - htop, sqlite3, sudo, tmux
+
+**Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image.
+This allows harness updates without rebuilding the foundation image.
 
 ## License
 
