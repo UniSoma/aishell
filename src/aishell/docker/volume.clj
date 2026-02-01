@@ -19,7 +19,7 @@
   "Map of harness key to npm package name.
    OpenCode is excluded as it's a Go binary, not an npm package."
   {:claude "@anthropic-ai/claude-code"
-   :codex "@codex-ai/codex"
+   :codex "@openai/codex"
    :gemini "@google/gemini-cli"})
 
 (defn normalize-harness-config

@@ -140,7 +140,7 @@ sudo aishell build --with-claude
    npm view @anthropic-ai/claude-code versions
 
    # For Codex CLI
-   npm view @codex-ai/codex versions
+   npm view @openai/codex versions
 
    # For Gemini CLI
    npm view @google/gemini-cli versions

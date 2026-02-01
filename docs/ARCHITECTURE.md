@@ -89,7 +89,7 @@ The foundation image contains stable system components that rarely change:
 Harness tools are stored in Docker volumes and mounted into containers:
 
 **Contents:**
-- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @codex-ai/codex, @google/gemini-cli)
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli)
 - `/tools/bin` - Go binaries (opencode)
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
