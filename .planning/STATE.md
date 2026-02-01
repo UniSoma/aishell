@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: 36 of 38 (Harness Volume Core)
-Plan: 3 of 3 complete in phase
-Status: Phase complete
-Last activity: 2026-01-31 - Completed 36-03-PLAN.md
+Phase: 37 of 38 (Build Integration & Migration)
+Plan: 1 of 4 complete in phase
+Status: In progress
+Last activity: 2026-02-01 - Completed 37-01-PLAN.md
 
-Progress: [████░░░░░░] 45% (5/11 plans complete)
+Progress: [█████░░░░░] 55% (6/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,7 +30,7 @@ Progress: [████░░░░░░] 45% (5/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 2 min
 - Total execution time: 0.15 hours
 
@@ -40,12 +40,12 @@ Progress: [████░░░░░░] 45% (5/11 plans complete)
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
-| 37 | 0/4 | 0 min | - |
+| 37 | 1/4 | <1 min | <1 min |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 2 min (36-03)
-- Trend: Consistent 2-min execution for focused implementation tasks
+- Last plan: <1 min (37-01)
+- Trend: Documentation-only tasks complete in under 1 minute
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -97,6 +97,12 @@ Recent decisions affecting v2.8.0 work:
 - PATH order: harness tools -> user local -> system (prepend /tools/npm/bin)
 - NODE_PATH set to /tools/npm/lib/node_modules for module resolution
 
+**State schema migration (from 37-01):**
+- Additive schema migration: new fields default to nil, no migration code needed
+- Mark :dockerfile-hash as deprecated in favor of :foundation-hash for clarity
+- v2.8.0 schema adds :foundation-hash, :harness-volume-hash, :harness-volume-name
+- EDN's flexible schema provides natural backward compatibility
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -118,8 +124,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-31T23:54:02Z
-Stopped at: Completed 36-03-PLAN.md (Volume Runtime Wiring)
+Last session: 2026-02-01T01:29:43Z
+Stopped at: Completed 37-01-PLAN.md (State Schema Documentation v2.8.0)
 Resume file: None
 
-**Next step:** `/gsd:plan-phase 37` to create execution plans for build integration and migration
+**Next step:** `/gsd:execute-phase 37-02` to integrate foundation hash computation
