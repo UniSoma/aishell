@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 37 of 38 (Build Integration & Migration)
-Plan: 2 of 4 complete in phase
+Plan: 3 of 4 complete in phase
 Status: In progress
-Last activity: 2026-02-01 - Completed 37-02-PLAN.md
+Last activity: 2026-02-01 - Completed 37-03-PLAN.md
 
-Progress: [██████░░░░] 64% (7/11 plans complete)
+Progress: [███████░░░] 73% (8/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,9 +30,9 @@ Progress: [██████░░░░] 64% (7/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 2 min
-- Total execution time: 0.17 hours
+- Total execution time: 0.20 hours
 
 **By Phase:**
 
@@ -40,12 +40,12 @@ Progress: [██████░░░░] 64% (7/11 plans complete)
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
-| 37 | 2/4 | 2 min | 1 min |
+| 37 | 3/4 | 4 min | 1 min |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 1 min (37-02)
-- Trend: Implementation tasks ~1 min with atomic commits
+- Last plan: 2 min (37-03)
+- Trend: Refactoring tasks ~2 min with atomic commits
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -109,6 +109,12 @@ Recent decisions affecting v2.8.0 work:
 - Build command will handle state persistence (run.clj is read-only for state)
 - v2.7.0 compatibility maintained via on-the-fly volume name computation
 
+**Extension cache migration (from 37-03):**
+- Extension cache invalidation now uses foundation-image-id-label (aishell.foundation.id)
+- Migration via nil label detection: old extensions have no aishell.foundation.id, trigger rebuild
+- Backward-compat alias base-image-id-label maintained in build.clj
+- Function renamed: get-base-image-id → get-foundation-image-id
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -130,8 +136,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T01:30:44Z
-Stopped at: Completed 37-02-PLAN.md (Lazy Volume Population)
+Last session: 2026-02-01T01:31:55Z
+Stopped at: Completed 37-03-PLAN.md (Extension Cache Migration)
 Resume file: None
 
-**Next step:** `/gsd:execute-phase 37-03` to add volume creation during build
+**Next step:** `/gsd:execute-phase 37-04` to integrate volume creation during build
