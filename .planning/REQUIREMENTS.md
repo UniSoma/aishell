@@ -40,12 +40,12 @@ Requirements for harness tool decoupling. Each maps to roadmap phases.
 
 ### Volume Cleanup
 
-- [ ] **CLEAN-01**: Command to list orphaned harness volumes (not referenced by current state)
-- [ ] **CLEAN-02**: Command to prune orphaned harness volumes with confirmation
+- [x] **CLEAN-01**: Command to list orphaned harness volumes (not referenced by current state)
+- [x] **CLEAN-02**: Command to prune orphaned harness volumes with confirmation
 
 ### Documentation
 
-- [ ] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, ARCHITECTURE.md, CONFIGURATION.md, HARNESSES.md, TROUBLESHOOTING.md, DEVELOPMENT.md)
+- [x] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, ARCHITECTURE.md, CONFIGURATION.md, HARNESSES.md, TROUBLESHOOTING.md, DEVELOPMENT.md)
 
 ## Future Requirements
 
@@ -89,9 +89,9 @@ Deferred to later milestones.
 | CACHE-02 | Phase 37 | Complete |
 | MIGR-01 | Phase 37 | Complete |
 | MIGR-02 | Phase 37 | Complete |
-| CLEAN-01 | Phase 38 | Pending |
-| CLEAN-02 | Phase 38 | Pending |
-| DOCS-01 | Phase 38 | Pending |
+| CLEAN-01 | Phase 38 | Complete |
+| CLEAN-02 | Phase 38 | Complete |
+| DOCS-01 | Phase 38 | Complete |
 
 **Coverage:**
 - v2.8.0 requirements: 19 total
@@ -100,4 +100,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-01-31*
-*Last updated: 2026-02-01 after Phase 37 completion*
+*Last updated: 2026-02-01 after Phase 38 completion*

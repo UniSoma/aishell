@@ -10,7 +10,7 @@
 - ✅ **v2.4.0 Multi-Harness Support** - Phases 24-27 (shipped 2026-01-25)
 - ✅ **v2.5.0 Optimization & Polish** - Phases 28-29 (shipped 2026-01-26)
 - ✅ **v2.7.0 tmux Integration & Named Containers** - Phases 30-34 (shipped 2026-01-31)
-- 🚧 **v2.8.0 Decouple Harness Tools** - Phases 35-38 (in progress)
+- ✅ **v2.8.0 Decouple Harness Tools** - Phases 35-38 (shipped 2026-02-01)
 
 ## Phases
 
@@ -31,7 +31,7 @@ See MILESTONES.md for full historical context.
 
 </details>
 
-### 🚧 v2.8.0 Decouple Harness Tools (In Progress)
+### ✅ v2.8.0 Decouple Harness Tools (Shipped 2026-02-01)
 
 **Milestone Goal:** Eliminate cascade invalidation by splitting the monolithic base image into a stable foundation layer and volume-mounted harness tools, so harness version updates no longer force multi-gigabyte extension rebuilds.
 
@@ -125,9 +125,9 @@ Plans:
 **Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 38-01-PLAN.md — Redesign `aishell update` for volume refresh (--force for foundation rebuild)
-- [ ] 38-02-PLAN.md — Implement `aishell volumes` list and prune commands with orphan detection
-- [ ] 38-03-PLAN.md — Update all documentation files and create v2.8.0 changelog
+- [x] 38-01: Redesign `aishell update` for volume refresh (--force for foundation rebuild)
+- [x] 38-02: Implement `aishell volumes` list and prune commands with orphan detection
+- [x] 38-03: Update all documentation files and create v2.8.0 changelog
 
 ## Progress
 
@@ -139,9 +139,9 @@ Phases execute numerically: 35 → 36 → 37 → 38
 | 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
 | 36. Harness Volume Core | 3/3 | ✅ Complete | 2026-02-01 |
 | 37. Build Integration & Migration | 6/6 | ✅ Complete | 2026-02-01 |
-| 38. Volume Cleanup & Documentation | 0/3 | Not started | - |
+| 38. Volume Cleanup & Documentation | 3/3 | ✅ Complete | 2026-02-01 |
 
-**Total:** 11/14 plans complete (79%)
+**Total:** 14/14 plans complete (100%)
 
 ---
 *Roadmap created: 2026-01-31*
