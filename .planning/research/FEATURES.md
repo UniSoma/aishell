@@ -1,241 +1,447 @@
-# Features Research: Babashka CLI Patterns
+# Feature Landscape: tmux Opt-In and Plugin Support
 
-**Domain:** CLI tool patterns for Babashka (Clojure) rewrite of aishell
-**Researched:** 2026-01-20
-**Mode:** Ecosystem research for Babashka CLI best practices
-**Confidence:** HIGH (verified against official babashka.cli documentation, Babashka book, reference implementations)
+**Domain:** Docker-based AI coding agent sandbox with optional tmux integration
+**Milestone:** v2.9.0 - tmux opt-in and plugin support
+**Researched:** 2026-02-01
+**Confidence:** HIGH (ecosystem patterns mature, Docker integration well-documented)
 
-## Summary
+## Executive Summary
 
-Babashka provides a mature CLI development ecosystem with `babashka.cli` as the primary argument parsing library (built-in since v0.9.160). The library follows an "open world assumption" where extra arguments don't break parsing, and validation is deferred to the application layer. Key patterns include: spec-based option definitions with coercion, subcommand dispatch, metadata-driven CLI generation, and integration with `babashka.process` for shell operations. The ecosystem emphasizes minimal boilerplate, leveraging Clojure's data-oriented design for configuration (EDN files instead of shell config formats).
+The v2.9.0 milestone shifts tmux from always-on to opt-in, with plugin management and configuration mounting. This represents a maturity phase: the foundation (tmux-in-Docker, attach workflows, named containers) exists in v2.7-2.8, and now we're adding power-user features (plugins, persistence, configuration).
 
-For the aishell rewrite, Babashka enables significant improvements over Bash: type-safe configuration parsing, proper error handling with exceptions, structured data throughout (maps instead of arrays/variables), cross-platform path handling via `babashka.fs`, and superior testability.
+The feature set divides into four categories:
 
-## Table Stakes (Must Have)
+1. **Opt-in mechanism** (build-time flag, default behavior)
+2. **Configuration mounting** (user's ~/.tmux.conf into container)
+3. **Plugin management** (declarative plugin list in config.yaml)
+4. **Session persistence** (tmux-resurrect state saved to host)
 
-Features users expect from a well-designed Babashka CLI tool.
+Key insight from research: **tmux plugin ecosystem uses .tmux.conf for configuration, NOT YAML**. The config.yaml approach for aishell must bridge this gap - declare plugins in YAML, generate .tmux.conf snippets, install via TPM.
 
-| Feature | Description | Complexity | Notes |
-|---------|-------------|------------|-------|
-| Subcommand dispatch | `aishell build`, `aishell claude`, `aishell update` routing | LOW | Use `babashka.cli/dispatch` - handles shared options between subcommands |
-| Spec-based options | Declarative option definitions with `:desc`, `:alias`, `:coerce`, `:default` | LOW | Standard pattern in babashka.cli |
-| Auto-coercion | Automatic boolean/number/keyword conversion from strings | LOW | Built-in since v0.3.35, reduces boilerplate |
-| Help generation | `--help` and `-h` produce formatted usage text | LOW | Use `babashka.cli/format-opts` with spec |
-| Error messages | Clear errors for invalid options, missing requirements | LOW | Use `:error-fn` in parse-opts for custom handling |
-| Version flag | `--version` displays tool version | LOW | Simple check before dispatch |
-| Main entry pattern | Safe to load at REPL and invoke from CLI | LOW | Check `(= *file* (System/getProperty "babashka.file"))` |
-| bb.edn configuration | Project-level deps, paths, min-version | LOW | Standard for distributable Babashka tools |
-| Exit code handling | Non-zero exit on errors | LOW | `(System/exit 1)` or let exception propagate |
+## Table Stakes
 
-## Differentiators (Babashka Advantages)
+Features users expect from opt-in tmux with plugin support. Missing these means the feature feels incomplete.
 
-Features where Babashka significantly improves over Bash implementation.
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| `--with-tmux` build flag | Opt-in is the commitment; flag is how users signal it | Low | Build command parsing |
+| Default = no tmux | Opt-in means OFF by default; reverses v2.7-2.8 behavior | Low | Build templates, entrypoint logic |
+| Mount user's ~/.tmux.conf | Users have existing configs, expect them to work | Medium | Volume mount, user switching (gosu) |
+| tmux installed in base image | Can't use plugins without tmux itself | Low | Already exists in foundation |
+| TPM (Tmux Plugin Manager) installed | De facto standard for plugin management | Low | Clone TPM during build |
+| Declarative plugin list | Users shouldn't manually edit container .tmux.conf | Medium | Config YAML schema, validation |
+| Plugin installation during build | Pre-installed plugins, not runtime downloads | Medium | Dockerfile template, TPM bin/install_plugins |
+| tmux-resurrect plugin support | Core persistence plugin users expect | Low | Included in plugin list options |
+| Session state volume mount | Resurrect state must survive container lifecycle | Medium | Harness volume architecture |
+| Graceful no-tmux mode | When --with-tmux not passed, no tmux references | Low | Conditional entrypoint logic |
+| Config validation | Catch YAML typos before build | Low | Schema validation |
+| Plugin name validation | Verify plugin syntax before TPM install | Low | Regex check for GitHub shorthand |
 
-| Feature | Bash Limitation | Babashka Advantage | Complexity |
-|---------|-----------------|-------------------|------------|
-| EDN configuration files | Bash: Custom parsing for `.conf` files, fragile quoting, no nested structures | Clojure: Native EDN support via `clojure.edn/read-string`, validated with spec/malli, nested maps natural | LOW |
-| Structured data throughout | Bash: Arrays with index math, associative arrays awkward, no nested structures | Clojure: Maps and vectors, destructuring, threading macros | LOW |
-| Type coercion | Bash: Manual string-to-number, boolean as string comparison | babashka.cli: Declarative `:coerce :long`, `:boolean`, `:keyword`, auto-coercion | LOW |
-| Error handling | Bash: `set -e` fragile, trap complexity, error messages ad-hoc | Clojure: try/catch, ex-info with structured data, stack traces | LOW |
-| Cross-platform paths | Bash: Hardcoded `/`, `$HOME` assumptions, no Windows | babashka.fs: `fs/path`, `fs/home`, works on Windows/macOS/Linux | MED |
-| Temporary files | Bash: `mktemp`, manual cleanup with traps | `fs/with-temp-dir` auto-cleanup, `fs/create-temp-file` | LOW |
-| Process output capture | Bash: Subshells `$()`, exit code in `$?`, stderr handling awkward | babashka.process: `:out :string`, `:err :string`, structured return | LOW |
-| Testing | Bash: No standard test framework, integration tests only | Clojure: REPL-driven development, unit tests with clojure.test | MED |
-| Heredocs/templates | Bash: Heredocs with quoting complexity, variable expansion tricky | Clojure: Multiline strings, `str`, Selmer templates if needed | LOW |
-| Config validation | Bash: Manual checks with if/case | Spec/malli schemas, validate at parse time | MED |
-| Subcommand parsing | Bash: `case` statements, manual shift, no shared options | `babashka.cli/dispatch` with `:global-opts`, automatic routing | LOW |
-| Verbose mode | Bash: Global variable, manual echo conditionals | Binding/dynamic vars, structured logging | LOW |
+## Differentiators
 
-## Anti-Features (Don't Do This)
+Features that set aishell apart from manual tmux+Docker+plugin workflows. Not expected, but highly valued.
 
-Patterns to deliberately avoid in Babashka CLI development.
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| YAML-based plugin config | Declarative > imperative; fits aishell config pattern | Medium | Transform YAML → .tmux.conf |
+| Plugin installation at build time | Faster container start (no runtime cloning) | Medium | Dockerfile RUN step with TPM |
+| Automatic TPM initialization | Users don't need to know TPM exists | Low | .tmux.conf generation includes TPM init |
+| Resurrect state in harness volume | Reuses existing volume architecture, not new mount | Medium | Harness volume at /tools, resurrect subdir |
+| Plugin defaults for AI workflows | Pre-vetted plugins (sensible, yank, resurrect) | Low | Documentation, examples |
+| Plugin version pinning | Reproducibility across builds | Medium | TPM branch/tag syntax support |
+| Hybrid config: user + aishell | User's .tmux.conf + aishell-generated plugin config | High | Two-stage config merge, source order |
+| Config.yaml plugin options | Plugin-specific settings (resurrect save-dir) | Medium | YAML schema extension, variable substitution |
+| Incremental plugin updates | `aishell update` refreshes plugins, not just tools | Medium | Volume update command, TPM update script |
+| Plugin troubleshooting command | `aishell tmux-debug` shows plugin status | Low | New subcommand, TPM diagnostic queries |
 
-| Pattern | Why to Avoid | What to Do Instead |
-|---------|--------------|-------------------|
-| tools.cli instead of babashka.cli | More verbose, not integrated with bb tasks, different idioms | Use babashka.cli - it's built-in and designed for bb |
-| Shelling out for everything | Loses Babashka's advantages, slower, platform-dependent | Use babashka.fs, babashka.process structured APIs |
-| Global mutable state | Hard to test, REPL-unfriendly | Use function parameters, return values, or dynamic bindings |
-| Manual argument parsing | Reinventing the wheel, error-prone | Use babashka.cli spec-based parsing |
-| Complex pods for simple tasks | Pods add startup overhead, distribution complexity | Use built-in libraries first (fs, process, http-client) |
-| JVM-only libraries | Won't work in Babashka, GraalVM constraints | Check babashka toolbox for compatible libs |
-| Long-running CPU tasks | Babashka uses SCI interpreter, slower than JVM | Shell out to Java for intensive work, or accept bb is for scripts |
-| #() reader macros in bb.edn | Not valid EDN syntax | Use `(fn [x] ...)` form instead |
-| `:require` in bb.edn tasks | Syntax errors, confusing | Use `:requires` key at task level |
-| Relative paths without resolution | Breaks when invoked from different directories | Use `(fs/absolutize path)` or `*file*` for script-relative |
+## Anti-Features
 
-## Feature Mapping: Bash to Babashka
+Features to explicitly NOT build. Common mistakes or unnecessary complexity.
 
-Existing aishell features and their Babashka equivalents.
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Runtime plugin installation | Slow, network-dependent, violates reproducibility | Install at build time via TPM bin/install_plugins |
+| GUI plugin manager | CLI tool, not IDE; users comfortable with YAML | Declarative config.yaml list |
+| Plugin marketplace/discovery | Scope creep; users know what plugins they want | Document popular plugins, link to TPM ecosystem |
+| Automatic plugin updates | Version drift breaks reproducibility | Explicit version pinning, manual update via `aishell build` |
+| Session resurrection across container restarts | Violates ephemeral design; users expect fresh state | Resurrect state for detach/attach within container lifetime |
+| Plugin conflict resolution | Complex dependency management; trust TPM | Validate plugin names, let TPM handle install order |
+| Tmux theme/status bar customization | Subjective; users have strong preferences | Mount user's .tmux.conf with full control |
+| Session template management (tmuxp) | Separate tool with different goals | Focus on plugin management, not session layout |
+| Nested tmux support | Confusing; containers already isolated | One tmux server per container, document SSH forwarding if needed |
+| Plugin metrics/telemetry | Privacy concern; no value for sandbox use case | No tracking, no phone-home |
+| Automatic .tmux.conf generation | Overwrites user configs; dangerous | Merge strategy: user config + plugin append |
+| Global plugin cache | Complexity; containers should be independent | Each build installs plugins to image |
 
-| Bash Feature | Babashka Equivalent | Notes |
-|--------------|---------------------|-------|
-| `case "$1" in build)` | `(cli/dispatch {:cmds {...}})` | Declarative subcommand routing |
-| `shift; parse args` | `(cli/parse-args args {:spec ...})` | Returns `{:args [...] :opts {...}}` |
-| `$HOME/.local/state` | `(fs/path (fs/home) ".local" "state")` | Cross-platform |
-| `mktemp -d` | `(fs/create-temp-dir)` or `(fs/with-temp-dir ...)` | Auto-cleanup with `with-temp-dir` |
-| `docker build ...` | `(shell "docker" "build" ...)` or `(process ...)` | Use shell for inherited stdout |
-| Heredoc Dockerfile | Multiline string in code | `(def dockerfile "FROM...` |
-| `source "$config_file"` | `(edn/read-string (slurp config))` | Structured config, validated |
-| `echo "$var"` | `(println var)` | Or use `prn` for data |
-| `set -e` | Try/catch at top level | Or let exceptions propagate |
-| `trap cleanup EXIT` | `try/finally` or shutdown hooks | More explicit control |
-| `${var:-default}` | `(get opts :var "default")` | Or use `:default` in spec |
-| `readonly VAR=...` | `(def ^:const VAR ...)` | Immutable by default anyway |
+## Feature Dependencies
 
-## Reference Projects
+```
+Foundation (already exists in v2.7-2.8):
+├─ tmux installed in foundation image
+├─ Named containers with project isolation
+├─ Attach command and workflow
+└─ Harness volume architecture at /tools
 
-Notable Babashka CLI tools demonstrating best practices.
+Opt-in mechanism (v2.9.0 Phase 1):
+├─ --with-tmux build flag
+├─ Build config stores tmux enabled/disabled
+├─ Conditional entrypoint (tmux session OR direct exec)
+└─ attach subcommand registration conditional on flag
 
-| Project | What to Learn | Link |
-|---------|---------------|------|
-| **neil** | Complex CLI with subcommands, deps.edn manipulation, well-structured | [babashka/neil](https://github.com/babashka/neil) |
-| **bbin** | Package manager CLI, installation/distribution patterns | [babashka/bbin](https://github.com/babashka/bbin) |
-| **http-server** | Simple CLI with options, process handling | [babashka/http-server](https://github.com/babashka/http-server) |
-| **quickblog** | File processing, configuration, templating | [borkdude/quickblog](https://github.com/borkdude/quickblog) |
-| **babashka/cli examples** | Official examples of dispatch, parsing | [babashka/cli](https://github.com/babashka/cli) |
+Configuration mounting (v2.9.0 Phase 2):
+├─ Volume mount ~/.tmux.conf → /home/dev/.tmux.conf
+├─ Ownership fix (gosu user, not root)
+└─ Conflict handling: user config + aishell plugins
 
-## Recommended Patterns for aishell Rewrite
+Plugin management (v2.9.0 Phase 3):
+├─ TPM installed to /home/dev/.tmux/plugins/tpm
+├─ config.yaml schema: tmux.plugins list
+├─ Dockerfile RUN: install plugins via TPM
+├─ .tmux.conf generation: plugin declarations + TPM init
+└─ Plugin validation: GitHub shorthand syntax check
 
-### 1. Configuration File Format
+Session persistence (v2.9.0 Phase 4):
+├─ tmux-resurrect in default plugin list
+├─ Resurrect save-dir: /tools/tmux-resurrect (harness volume)
+├─ .tmux.conf: set @resurrect-dir
+└─ Volume mount persists across container detach/reattach
+```
 
-**Current (Bash):** `.aishell/run.conf` - custom shell-style parsing
+## Detailed Feature Specifications
+
+### Feature 1: --with-tmux Build Flag (Opt-In Mechanism)
+
+**What:** `aishell build --with-tmux` enables tmux session management. Without flag, no tmux is started.
+
+**Why:** Opt-in respects user preferences. Some users don't want tmux overhead or prefer their own workflow.
+
+**User experience:**
 ```bash
-MOUNTS="$HOME/.ssh $HOME/.config/git"
-ENV="EDITOR DEBUG_MODE=1"
+# No tmux (default)
+aishell build --with-claude
+aishell claude  # → runs claude directly, no tmux session
+
+# With tmux
+aishell build --with-claude --with-tmux
+aishell claude  # → starts tmux session "main", claude runs inside
+aishell attach claude  # → attach to tmux session
 ```
 
-**Recommended (Babashka):** `.aishell/config.edn` - native EDN
-```clojure
-{:mounts [{:source "~/.ssh" :target "~/.ssh"}
-          {:source "~/.config/git" :target "~/.config/git"}]
- :env {:EDITOR "vim" :DEBUG_MODE "1"}
- :ports [[3000 3000] [8080 80]]}
+**Edge cases:**
+- `--with-tmux` without harnesses: Allowed (user may want tmux for shell mode)
+- Changing tmux preference requires rebuild (not update): Document clearly
+- attach subcommand unavailable without --with-tmux: Help text guidance
+
+**Complexity:** Low (flag parsing, conditional logic)
+
+---
+
+### Feature 2: Mount User's ~/.tmux.conf
+
+**What:** When --with-tmux enabled, mount host's ~/.tmux.conf to container at /home/dev/.tmux.conf.
+
+**Why:** Users have existing tmux configurations (key bindings, colors, settings) and expect them to work.
+
+**Conflict handling with plugin config:**
+
+**Two-stage config (RECOMMENDED)**
+1. User's ~/.tmux.conf mounted → /home/dev/.tmux.conf
+2. aishell generates /home/dev/.tmux/aishell-plugins.conf (plugin declarations)
+3. User's config sources aishell plugins at end:
+   ```bash
+   # Appended to mounted .tmux.conf via entrypoint
+   source-file ~/.tmux/aishell-plugins.conf
+   ```
+
+**Edge cases:**
+- User has no ~/.tmux.conf: Skip mount, use defaults
+- User's config has errors: tmux fails to start (document troubleshooting)
+- User declares TPM in their config: aishell still installs TPM, may conflict (document that aishell manages plugins)
+
+**Complexity:** Medium (mount logic, conflict handling)
+
+---
+
+### Feature 3: Declarative Plugin List in config.yaml
+
+**What:** Users declare tmux plugins in .aishell/config.yaml, aishell installs them at build time.
+
+**Why:** Declarative > imperative. Fits aishell's config pattern. Easier than editing .tmux.conf in container.
+
+**YAML schema:**
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+    - tmux-plugins/tmux-resurrect
+    - tmux-plugins/tmux-continuum
+    # Version pinning via branch/tag
+    - tmux-plugins/tmux-pain-control#v2.0.1
+    # Full git URLs supported
+    - git@github.com:user/custom-plugin
 ```
 
-**Advantages:**
-- Native parsing with `(edn/read-string (slurp path))`
-- Validation with spec/malli
-- Nested structures natural
-- Comments with `;`
-- No quoting complexity
+**Transformation to .tmux.conf:**
 
-### 2. Subcommand Structure
+aishell generates /home/dev/.tmux/aishell-plugins.conf:
+```bash
+# Generated by aishell from config.yaml
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-yank'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
 
-```clojure
-(def dispatch-table
-  [{:cmds ["build"]   :fn build-cmd  :spec build-spec}
-   {:cmds ["update"]  :fn update-cmd :spec update-spec}
-   {:cmds ["claude"]  :fn claude-cmd :spec harness-spec}
-   {:cmds ["opencode"] :fn opencode-cmd :spec harness-spec}
-   {:cmds []          :fn shell-cmd  :spec shell-spec}])
-
-(defn -main [& args]
-  (cli/dispatch dispatch-table args {:error-fn handle-error}))
+# Initialize TPM (must be at end)
+run '~/.tmux/plugins/tpm/tpm'
 ```
 
-### 3. State Management
+**Build-time installation:**
 
-```clojure
-;; State file as EDN
-(defn read-state [project-dir]
-  (let [state-file (state-file-path project-dir)]
-    (when (fs/exists? state-file)
-      (edn/read-string (slurp state-file)))))
+Dockerfile template (when --with-tmux enabled):
+```dockerfile
+FROM aishell:foundation
 
-(defn write-state [project-dir state]
-  (let [state-file (state-file-path project-dir)]
-    (fs/create-dirs (fs/parent state-file))
-    (spit state-file (pr-str state))))
+# Install TPM
+RUN git clone https://github.com/tmux-plugins/tpm /home/dev/.tmux/plugins/tpm
+
+# Copy generated plugin config
+COPY .aishell/aishell-plugins.conf /home/dev/.tmux/aishell-plugins.conf
+
+# Install plugins non-interactively
+ENV TMUX_PLUGIN_MANAGER_PATH=/home/dev/.tmux/plugins
+RUN /home/dev/.tmux/plugins/tpm/bin/install_plugins
+
+# Ensure ownership
+RUN chown -R dev:dev /home/dev/.tmux
 ```
 
-### 4. Docker Integration
+**Complexity:** Medium (YAML schema, config generation, build integration)
 
-```clojure
-(require '[babashka.process :refer [shell process check]])
+---
 
-;; For operations where user sees output
-(defn docker-build [opts]
-  (shell {:dir build-dir}
-         "docker" "build"
-         (when (:no-cache opts) "--no-cache")
-         "-t" (:tag opts)
-         "."))
+### Feature 4: Plugin-Specific Configuration
 
-;; For operations where we need to capture output
-(defn docker-inspect [image]
-  (-> (process ["docker" "inspect" image] {:out :string})
-      check
-      :out
-      (json/parse-string true)))
+**What:** Allow users to configure plugin settings in config.yaml, not just list plugins.
+
+**YAML schema extension:**
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-resurrect
+    - tmux-plugins/tmux-continuum
+
+  # Plugin options
+  plugin_options:
+    resurrect:
+      save_dir: /tools/tmux-resurrect  # Save to harness volume
+      capture_pane_contents: true
+    continuum:
+      auto_save_interval: 15  # Minutes
+      auto_restore: true
 ```
 
-### 5. Cross-Platform Paths
+**Transformation:**
 
-```clojure
-(require '[babashka.fs :as fs])
+Generated .tmux.conf includes options:
+```bash
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
 
-(defn state-dir []
-  (or (System/getenv "XDG_STATE_HOME")
-      (fs/path (fs/home) ".local" "state")))
+# Plugin options from config.yaml
+set -g @resurrect-dir '/tools/tmux-resurrect'
+set -g @resurrect-capture-pane-contents 'on'
+set -g @continuum-save-interval '15'
+set -g @continuum-restore 'on'
 
-(defn config-path [project-dir]
-  (fs/path project-dir ".aishell" "config.edn"))
+run '~/.tmux/plugins/tpm/tpm'
 ```
 
-## CLI Option Spec Example
+**Complexity:** Medium (schema extension, option mapping, validation)
 
-```clojure
-(def build-spec
-  {:with-claude    {:coerce :boolean
-                    :alias :c
-                    :desc "Include Claude Code in image"}
-   :with-opencode  {:coerce :boolean
-                    :alias :o
-                    :desc "Include OpenCode in image"}
-   :claude-version {:coerce :string
-                    :desc "Specific Claude Code version (e.g., 2.0.22)"}
-   :opencode-version {:coerce :string
-                      :desc "Specific OpenCode version (e.g., 1.1.25)"}
-   :no-cache       {:coerce :boolean
-                    :desc "Force rebuild without Docker cache"}
-   :verbose        {:coerce :boolean
-                    :alias :v
-                    :desc "Show detailed build output"}
-   :help           {:coerce :boolean
-                    :alias :h
-                    :desc "Show this help"}})
+---
+
+### Feature 5: tmux-resurrect Session Persistence
+
+**What:** tmux-resurrect plugin saves session state (windows, panes, programs) to harness volume, persisting across detach/reattach.
+
+**Important distinction:**
+
+Persistence scope is **within container lifetime**, not across container restarts. tmux-resurrect saves state so users can:
+1. Detach from tmux session (Ctrl-B D)
+2. Reattach later with `aishell attach`
+3. Session restored with windows/panes intact
+
+But when container stops (docker stop), session state is lost. This is consistent with ephemeral design.
+
+**Configuration:**
+
+Save directory set to harness volume:
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-resurrect
+  plugin_options:
+    resurrect:
+      save_dir: /tools/tmux-resurrect
 ```
 
-## Complexity Assessment for Rewrite
+**Harness volume integration:**
 
-| Component | Complexity | Notes |
-|-----------|------------|-------|
-| CLI dispatch/parsing | LOW | babashka.cli handles well |
-| Config file migration (shell -> EDN) | LOW | Cleaner in EDN |
-| State file format | LOW | Already structured, easy in EDN |
-| Docker process invocation | LOW | babashka.process direct replacement |
-| Heredoc embedding (Dockerfile, entrypoint) | LOW | Multiline strings work |
-| Hash computation | LOW | `(-> (slurp file) .getBytes java.security.MessageDigest ...)` |
-| Path handling | MED | Need careful fs/path usage for cross-platform |
-| Cleanup/resource management | LOW | try/finally simpler than bash traps |
-| Color output | LOW | ANSI escapes same, or use library |
-| Spinner/progress | MED | Need async or threading |
+The harness volume (/tools) already persists across container launches for same project:
+```
+/tools/
+  claude/       # Claude Code binary
+  opencode/     # OpenCode installation
+  tmux-resurrect/  # Session state files
+    last          # Symlink to most recent save
+    tmux_resurrect_20260201T120000.txt
+```
+
+**User workflow:**
+```bash
+# Start container with work
+aishell claude
+# ... work in tmux, create windows/panes ...
+# Save session: prefix + Ctrl-S (resurrect default)
+# Detach from tmux: Ctrl-B D
+
+# Later, reattach
+aishell attach claude
+# Restore session: prefix + Ctrl-R (resurrect default)
+# → Windows and panes restored
+```
+
+**Complexity:** Medium (volume integration, plugin config, documentation)
+
+---
+
+## MVP Recommendation
+
+### Phase 1: Opt-In Mechanism (Must Have)
+1. `--with-tmux` build flag (default OFF)
+2. Build config stores tmux enabled/disabled
+3. Conditional entrypoint (tmux OR direct exec)
+4. attach subcommand registration conditional
+
+**Rationale:** Foundation for all tmux features. Reverses v2.7-2.8 always-on behavior to opt-in.
+
+### Phase 2: Configuration Mounting (Should Have)
+5. Mount user's ~/.tmux.conf (read-only)
+6. Two-stage config (user + aishell plugins)
+7. Config validation (exists, readable, ownership)
+
+**Rationale:** Users expect their tmux configs to work. Critical for adoption.
+
+### Phase 3: Plugin Management (Should Have)
+8. config.yaml schema: tmux.plugins list
+9. TPM installation during build
+10. Plugin config generation (.tmux/aishell-plugins.conf)
+11. Build-time plugin installation (bin/install_plugins)
+12. Plugin validation (GitHub shorthand syntax)
+
+**Rationale:** Core value of v2.9.0. Declarative plugins fit aishell pattern.
+
+### Phase 4: Session Persistence (Could Have)
+13. tmux-resurrect in default plugin list
+14. Resurrect save-dir: /tools/tmux-resurrect
+15. Plugin options in config.yaml (resurrect save_dir)
+16. Documentation: detach/reattach workflow
+
+**Rationale:** Power user feature. Adds persistence without violating ephemeral design.
+
+### Defer to Post-MVP
+- Plugin version pinning (nice-to-have, TPM supports it easily)
+- Incremental plugin updates (optimization, rebuild is acceptable)
+- tmux-continuum auto-save/restore (advanced, resurrect sufficient)
+- Plugin troubleshooting command (debugging tool, manual inspection works)
+
+## Integration with Existing Features
+
+| Existing Feature | Integration Point | Changes Required |
+|------------------|-------------------|------------------|
+| Build command | Add --with-tmux flag | Flag parsing, build config storage |
+| Build config (.build-state.edn) | Store tmux-enabled boolean | Schema extension |
+| Dockerfile template | Conditional TPM install, plugin config | Template branching |
+| Entrypoint | Conditional tmux session OR direct exec | Logic fork based on TMUX_ENABLED |
+| Volume mounts | Add ~/.tmux.conf mount | Run.clj volume list |
+| Harness volume | Add tmux-resurrect subdir | No changes (volume auto-expands) |
+| config.yaml schema | Add tmux section (plugins, plugin_options) | Schema validation extension |
+| attach subcommand | Conditional registration | CLI router checks build config |
+
+**Critical consideration:** --with-tmux is a build-time decision, not runtime. Changing requires rebuild (not update). Document clearly.
+
+## Complexity Assessment
+
+| Feature Category | Implementation Risk | Testing Complexity | Documentation Need |
+|------------------|--------------------|--------------------|-------------------|
+| Opt-in flag | Low | Low | Medium (migration guide) |
+| Config mounting | Medium (gosu permissions) | Medium (user config variations) | Low |
+| Plugin list YAML | Low (schema extension) | Medium (validation cases) | High (examples) |
+| Plugin config generation | Medium (templating) | Medium (escaping, quoting) | Medium |
+| TPM installation | Low (well-documented) | Low (TPM handles it) | Low |
+| Plugin options | Medium (mapping YAML→tmux) | High (plugin-specific) | High (plugin docs) |
+| Resurrect persistence | Medium (volume path config) | Medium (state file handling) | High (workflow explanation) |
+
+**Overall complexity:** MEDIUM-HIGH. Individual features are low-medium, but the combination (opt-in, config merge, plugin management, persistence) requires careful coordination.
+
+## Migration Path
+
+**For existing users (v2.7-2.8 with always-on tmux):**
+
+v2.9.0 is a BREAKING CHANGE. tmux becomes opt-in, default OFF.
+
+Migration steps:
+1. Add `--with-tmux` flag to build commands
+   ```bash
+   # OLD: aishell build --with-claude
+   # NEW: aishell build --with-claude --with-tmux
+   ```
+2. Update scripts/automation (CI/CD)
+3. Document in changelog and migration guide
+
+**Why breaking change is justified:**
+- Opt-in better aligns with Unix philosophy (do one thing)
+- Users who don't need tmux shouldn't pay the cost
+- Foundation (v2.7-2.8) validated tmux-in-Docker works; now making it optional
 
 ## Sources
 
-### HIGH Confidence (Official Documentation)
-- [Babashka CLI GitHub](https://github.com/babashka/cli) - Official argument parsing library
-- [Babashka Book](https://book.babashka.org/) - Comprehensive Babashka documentation
-- [babashka.cli API](https://github.com/babashka/cli/blob/main/API.md) - Complete API reference
-- [babashka/process](https://github.com/babashka/process) - Process execution library
-- [babashka/fs](https://github.com/babashka/fs) - File system utilities
+### Tmux Plugin Manager (TPM)
+- [GitHub - tmux-plugins/tpm: Tmux Plugin Manager](https://github.com/tmux-plugins/tpm)
+- [TIL - Two Tmux Plugin Manager features](https://qmacro.org/blog/posts/2023/11/10/til-two-tmux-plugin-manager-features/)
+- [Tmux/plugins/tpm - Gentoo wiki](https://wiki.gentoo.org/wiki/Tmux/plugins/tpm)
+- [How to use tmux package manager (TPM)?](https://tmuxai.dev/tmux-package-manager/)
+- [Managing Tmux Plugins with Tmux Plugin Manager | FOSS Linux](https://www.fosslinux.com/106799/managing-tmux-plugins-with-tmux-plugin-manager.htm)
 
-### MEDIUM Confidence (Verified Blog/Tutorial Sources)
-- [Babashka CLI Blog Post](https://blog.michielborkent.nl/babashka-cli.html) - Author's introduction
-- [Babashka Tasks + CLI](https://blog.michielborkent.nl/babashka-tasks-meets-babashka-cli.html) - Integration patterns
-- [Martin Klepsch CLI Scripts](https://martinklepsch.org/posts/one-shot-babashka-cli-scripts/) - One-shot script patterns
-- [How to Do Things with Babashka](https://presumably.de/how-to-do-things-with-babashka.html) - Practical patterns
+### TPM Docker Integration
+- [Automatic installation issue and workaround · Issue #105 · tmux-plugins/tpm](https://github.com/tmux-plugins/tpm/issues/105)
+- [tpm/docs/automatic_tpm_installation.md at master · tmux-plugins/tpm](https://github.com/tmux-plugins/tpm/blob/master/docs/automatic_tpm_installation.md)
+- [How To Install Plugins on TMUX — TPM (TMUX Plugin Manager) | by pachoyan | Medium](https://medium.com/@pachoyan/how-to-install-plugins-on-tmux-tpm-tmux-plugin-manager-5d5b8bd33817)
 
-### LOW Confidence (Community Examples)
-- [bbin Scripts and Projects](https://github.com/babashka/bbin/wiki/Scripts-and-Projects) - Ecosystem examples
-- [Brave Clojure Babooka](https://www.braveclojure.com/quests/babooka/) - Tutorial content
+### tmux-resurrect Session Persistence
+- [GitHub - tmux-plugins/tmux-resurrect: Persists tmux environment across system restarts](https://github.com/tmux-plugins/tmux-resurrect)
+- [Save and Restore Tmux Sessions across Reboots with Tmux Resurrect — Nick Janetakis](https://nickjanetakis.com/blog/save-and-restore-tmux-sessions-across-reboots-with-tmux-resurrect)
+- [Save And Restore Tmux Environments Across Reboots In Linux - OSTechNix](https://ostechnix.com/save-and-restore-tmux-environment/)
+- [tmux-resurrect/docs/save_dir.md at master · tmux-plugins/tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/save_dir.md)
+
+### Configuration Mounting
+- [Put All of Your Tmux Configs and Plugins in a .config/tmux Directory — Nick Janetakis](https://nickjanetakis.com/blog/put-all-of-your-tmux-configs-and-plugins-in-a-config-tmux-directory)
+- [tmux-config/Dockerfile at master · samoshkin/tmux-config](https://github.com/samoshkin/tmux-config/blob/master/Dockerfile)
+- [tmux in demonized docker container · GitHub](https://gist.github.com/ptrj/b54b8cdd34f632028e669a1e71bc03b8)
+- [Tmux and Screen | Intuitive documentation for using Docker containerization](https://dockerdocs.org/multiplexers/)
+
+### Opt-In Best Practices
+- [Feature Flags Best Practices](https://www.cloudbees.com/blog/feature-flag-best-practices)
+- [Everything You Need to Know About Feature Flags: The Essential Guide 2026](https://www.apwide.com/what-are-feature-flags-guide/)
+- [The 12 Commandments Of Feature Flags In 2025](https://octopus.com/devops/feature-flags/feature-flag-best-practices/)
+- [Features - The Cargo Book](https://doc.rust-lang.org/cargo/reference/features.html)
+
+### Session Persistence Best Practices
+- [Using tmux for persistent shell sessions — DKRZ Documentation](https://docs.dkrz.de/blog/2022/tmux.html)
+- [Using tmux to create persistent server sessions — The Princeton Handbook for Reproducible Neuroimaging](https://brainhack-princeton.github.io/handbook/content_pages/hack_pages/tmux.html)
+- [Using TMUX for persistent sessions - Runpod Documentation](https://docs.runpod.io/tips-and-tricks/tmux)
+- [How to use tmux in 2026](https://www.hostinger.com/tutorials/how-to-use-tmux)
+
+All research conducted 2026-02-01, sources verified for currency and relevance.

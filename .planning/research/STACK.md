@@ -1,425 +1,368 @@
-# Stack Research: Multi-Harness Support
+# Technology Stack: tmux Plugin Support
 
-**Project:** aishell - Multi-Harness Support (v2.4.0)
-**Researched:** 2026-01-24
-**Focus:** OpenAI Codex CLI and Google Gemini CLI integration
+**Project:** aishell v2.9.0 - tmux Opt-in & Plugin Support
+**Researched:** 2026-02-01
+**Overall confidence:** HIGH
 
 ## Executive Summary
 
-Both OpenAI Codex CLI and Google Gemini CLI are distributed via npm and follow similar patterns to the existing Claude Code installation. **Critical finding:** OpenAI Codex CLI requires Node.js 22+ (higher than current base image Node.js 24), while Google Gemini CLI requires Node.js 20+. The existing Node.js 24 base satisfies both requirements.
+This stack addition enables opt-in tmux plugin management in Docker containers using TPM (tmux plugin manager) with non-interactive installation. All plugins and session state install into the existing harness volume architecture (`aishell-harness-{hash}`) at `/tools/tmux/`, preserving the foundation/volume separation introduced in v2.8.0.
 
-**Integration complexity:** LOW - Both harnesses follow npm global install patterns similar to Claude Code, with straightforward config directory mounting and environment variable passthrough.
+**No new runtime dependencies required.** tmux 3.3a-3 already installed in foundation image, git available, bash available. TPM and plugins are installed via git clone at volume population time.
 
-## OpenAI Codex CLI
+## Current Stack (v2.8.0 Baseline)
 
-### Installation
+Already validated and available:
 
-**Package:** `@openai/codex`
-**Method:** npm global install
-**Current version:** 0.89.0 (released 2026-01-22)
+| Component | Version | Location | Notes |
+|-----------|---------|----------|-------|
+| tmux | 3.3a-3 | Foundation image (apt) | Debian bookworm-slim package, already installed |
+| git | 2.39+ | Foundation image (apt) | Required for TPM plugin cloning |
+| bash | 5.2+ | Foundation image (apt) | Required for TPM scripts |
+| Harness volume | - | `/tools` mount | Read-only mount, volume name `aishell-harness-{hash}` |
+| Foundation image | - | `aishell:foundation` | Stable base, no harness tools |
 
-```dockerfile
-# In Dockerfile with build arg pattern (matches existing Claude Code pattern)
-ARG WITH_CODEX=false
-ARG CODEX_VERSION=""
+## New Stack Additions (v2.9.0)
 
-RUN if [ "$WITH_CODEX" = "true" ]; then \
-        if [ -n "$CODEX_VERSION" ]; then \
-            npm install -g @openai/codex@"$CODEX_VERSION"; \
-        else \
-            npm install -g @openai/codex; \
-        fi \
-    fi
-```
+### Core: TPM (Tmux Plugin Manager)
 
-**Alternative installation methods:**
-- Homebrew: `brew install --cask codex` (macOS only, not relevant for container)
-- Standalone binaries available for macOS (ARM64), Windows (ARM64, x86-64), Linux (ARM64)
+| Technology | Version | Purpose | Installation Method |
+|------------|---------|---------|---------------------|
+| **TPM** | `master` (no releases) | tmux plugin manager | `git clone https://github.com/tmux-plugins/tpm` |
 
-### Config Location
+**Why master branch:** TPM has no versioned releases. The project is stable and maintained through commits on master. This is the standard installation method per official documentation.
 
-**Primary config directory:** `~/.codex/`
-**Config file:** `~/.codex/config.toml`
-**Auth storage:** `~/.codex/auth.json` (default) or OS keyring
+**Installation location:** `/tools/tmux/plugins/tpm` (inside harness volume)
 
-**Environment variable override:**
-- `CODEX_HOME` - overrides default `~/.codex/` location
+**Installation method:** Git clone during volume population, followed by non-interactive plugin installation via `~/.tmux/plugins/tpm/bin/install_plugins`
 
-**Mount pattern for aishell:**
+**Repository size:** ~200KB (lightweight, minimal overhead)
+
+### Plugins: Recommended Defaults
+
+| Plugin | Version | Purpose | Why Include |
+|--------|---------|---------|-------------|
+| **tmux-resurrect** | `master` (no releases) | Session save/restore | Core persistence feature, table stakes for tmux workflows |
+| **tmux-continuum** | `master` (no releases) | Auto-save companion for resurrect | Removes manual save burden, auto-saves every 15 minutes |
+
+**Note:** Both plugins follow the same master-branch model as TPM. No versioned releases exist.
+
+**Installation location:** Each plugin clones to `/tools/tmux/plugins/{plugin-name}`
+
+**Configuration:** User provides plugin list in `.aishell/config.yaml`:
+
 ```yaml
-# In config.yaml volumes section
-- ~/.codex:/home/developer/.codex
+tmux:
+  plugins:
+    - tmux-plugins/tmux-resurrect
+    - tmux-plugins/tmux-continuum
 ```
 
-### Environment Variables
+## Integration with Existing Architecture
 
-**Authentication (multiple methods):**
+### Harness Volume Structure
 
-1. **ChatGPT Login** (primary method):
-   - No environment variable needed
-   - Browser-based OAuth flow
-   - Credentials cached in `~/.codex/auth.json` or system keyring
-
-2. **API Key Authentication:**
-   - `CODEX_API_KEY` - for non-interactive use (CI/CD)
-   - Can also configure via `config.toml` with `env_key` pointing to custom env var name
-   - Example: `env_key = "OPENAI_API_KEY"` (then set OPENAI_API_KEY in environment)
-
-**Configuration:**
-- `CODEX_HOME` - config directory location (optional, defaults to `~/.codex`)
-
-**Passthrough for aishell:**
-```yaml
-# In config.yaml environment section
-environment:
-  passthrough:
-    - CODEX_API_KEY
-    - OPENAI_API_KEY  # if using custom env_key config
+Current volume structure (v2.8.0):
+```
+/tools/
+├── npm/           # npm-installed harnesses (claude, codex, gemini)
+│   ├── bin/
+│   └── lib/node_modules/
+└── bin/           # curl-installed harnesses (opencode)
 ```
 
-### Dependencies
-
-**Node.js:** Version 22 or higher (REQUIRED)
-**Platform:** Linux (amd64, arm64), macOS, Windows
-**System libraries:** Standard glibc (Debian bookworm-slim compatible)
-
-**Current aishell base:** Node.js 24 ✓ (satisfies requirement)
-
-### Runtime Notes
-
-**Binary location:** `/usr/local/bin/codex` (npm global install)
-**Command invocation:** `codex` (interactive) or `codex <args>` (with commands)
-**Launch command for aishell:** `aishell codex` → execs `codex` in container
-
-**Authentication flow:**
-- First run prompts for ChatGPT login or API key
-- Opens browser for OAuth (may need device code flow in headless environments)
-- Credentials cached in mounted `~/.codex/` directory
-
-**Model Context Protocol (MCP):** Supported via `config.toml` configuration
-
-## Google Gemini CLI
-
-### Installation
-
-**Package:** `@google/gemini-cli`
-**Method:** npm global install
-**Current version:** 0.25.2 (released 2026-01-23)
-
-```dockerfile
-# In Dockerfile with build arg pattern
-ARG WITH_GEMINI=false
-ARG GEMINI_VERSION=""
-
-RUN if [ "$WITH_GEMINI" = "true" ]; then \
-        if [ -n "$GEMINI_VERSION" ]; then \
-            npm install -g @google/gemini-cli@"$GEMINI_VERSION"; \
-        else \
-            npm install -g @google/gemini-cli; \
-        fi \
-    fi
+New structure (v2.9.0):
+```
+/tools/
+├── npm/           # npm-installed harnesses (claude, codex, gemini)
+│   ├── bin/
+│   └── lib/node_modules/
+├── bin/           # curl-installed harnesses (opencode)
+└── tmux/          # NEW: tmux plugins and state
+    ├── plugins/   # TPM and plugin repositories
+    │   ├── tpm/
+    │   ├── tmux-resurrect/
+    │   └── tmux-continuum/
+    └── resurrect/ # Session save files from tmux-resurrect
 ```
 
-**Alternative installation methods:**
-- Homebrew: `brew install gemini-cli`
-- Anaconda/Conda (for restricted environments)
-- Google Cloud Shell (pre-installed, not relevant for aishell)
-- npx: `npx @google/gemini-cli` (one-off execution)
+**Why `/tools/tmux/`:** Follows established pattern. Volume-mounted tools stay in `/tools`, foundation image stays clean, identical configs share volumes across projects.
 
-### Config Location
+**Volume mount strategy:**
+- `/tools` mount changes from read-only to **read-write** (plugins need to save state)
+- Alternative: Mount `/tools/tmux/resurrect` separately as writable, keep `/tools` read-only
+- Recommendation: **Read-write `/tools` mount** (simpler, plugins may write to plugin dirs for caching)
 
-**Primary config directory:** `~/.gemini/`
-**User settings:** `~/.gemini/settings.json`
-**Project settings:** `.gemini/settings.json` (in project root, optional)
+### Config Mounting: Host tmux.conf
 
-**Hierarchy:** Project settings → User settings → System defaults
+User's `~/.tmux.conf` must be mounted into container for TPM to discover plugin configuration.
 
-**System defaults (informational only, not user-editable):**
-- Linux: `/etc/gemini-cli/system-defaults.json`
-- macOS: `/Library/Application Support/GeminiCli/system-defaults.json`
-- Windows: `C:\ProgramData\gemini-cli\system-defaults.json`
-
-**Mount pattern for aishell:**
-```yaml
-# In config.yaml volumes section
-- ~/.gemini:/home/developer/.gemini
-```
-
-**Note on .env files:**
-Gemini CLI automatically loads `.env` files from current directory upward. This interacts with aishell's project mount - `.env` files in project root will be detected.
-
-### Environment Variables
-
-**Authentication (multiple methods):**
-
-1. **Gemini API Key** (simplest):
-   - `GEMINI_API_KEY` - authentication credential
-   - Obtain from Google AI Studio
-
-2. **Google Cloud API Key** (alternative):
-   - `GOOGLE_API_KEY` - for Vertex AI access
-   - Takes precedence over GEMINI_API_KEY if both set
-
-3. **Application Default Credentials (ADC)**:
-   - `GOOGLE_APPLICATION_CREDENTIALS` - path to credentials JSON file
-   - `GOOGLE_CLOUD_PROJECT` - GCP project identifier
-   - Note: Must unset GEMINI_API_KEY and GOOGLE_API_KEY to use ADC
-
-4. **Gemini Code Assist License** (OAuth):
-   - Login with personal Google account
-   - No environment variable needed
-   - Grants access to Gemini 2.5 Pro (1M token context)
-   - Free tier: 60 req/min, 1000 req/day
-
-**Configuration:**
-- `GEMINI_MODEL` - default model to use (optional)
-- `GOOGLE_GENAI_USE_VERTEXAI` - set to "true" for Vertex AI mode
-
-**Passthrough for aishell:**
-```yaml
-# In config.yaml environment section
-environment:
-  passthrough:
-    - GEMINI_API_KEY
-    - GOOGLE_API_KEY
-    - GOOGLE_APPLICATION_CREDENTIALS
-    - GOOGLE_CLOUD_PROJECT
-    - GOOGLE_CLOUD_LOCATION  # for Vertex AI
-    - GEMINI_MODEL
-```
-
-### Dependencies
-
-**Node.js:** Version 20 or higher (REQUIRED)
-**Platform:** Linux, macOS, Windows
-**System libraries:** Standard glibc (Debian bookworm-slim compatible)
-
-**Current aishell base:** Node.js 24 ✓ (satisfies requirement)
-
-### Runtime Notes
-
-**Binary location:** `/usr/local/bin/gemini` (npm global install)
-**Command invocation:** `gemini` (interactive) or `gemini <args>`
-**Launch command for aishell:** `aishell gemini` → execs `gemini` in container
-
-**Authentication flow:**
-- Multiple methods supported (API key is simplest for container use)
-- API key can be set via environment variable or settings.json
-- OAuth login available for Code Assist license (browser-based)
-
-**Model Context Protocol (MCP):** Supported with custom integrations
-
-**Special features:**
-- Built-in Google Search grounding
-- File operations tools
-- Shell command execution
-- Web fetching capabilities
-
-## Integration with Aishell Patterns
-
-### Dockerfile Changes
-
-Both harnesses integrate cleanly with the existing Dockerfile pattern:
-
-```dockerfile
-# Add to existing build args section
-ARG WITH_CODEX=false
-ARG WITH_GEMINI=false
-ARG CODEX_VERSION=""
-ARG GEMINI_VERSION=""
-
-# Add after existing Claude Code / OpenCode installation blocks
-# Install OpenAI Codex CLI if requested (npm global)
-RUN if [ "$WITH_CODEX" = "true" ]; then \
-        if [ -n "$CODEX_VERSION" ]; then \
-            npm install -g @openai/codex@"$CODEX_VERSION"; \
-        else \
-            npm install -g @openai/codex; \
-        fi \
-    fi
-
-# Install Google Gemini CLI if requested (npm global)
-RUN if [ "$WITH_GEMINI" = "true" ]; then \
-        if [ -n "$GEMINI_VERSION" ]; then \
-            npm install -g @google/gemini-cli@"$GEMINI_VERSION"; \
-        else \
-            npm install -g @google/gemini-cli; \
-        fi \
-    fi
-```
-
-**No additional system packages required** - both use existing Node.js 24.
-
-### Config Mounting
-
-Extend the existing config mount pattern in `docker/run.clj`:
-
-```clojure
-;; Existing: Claude Code ~/.claude, OpenCode ~/.config/opencode
-;; Add: Codex ~/.codex, Gemini ~/.gemini
-
-(defn config-mounts []
-  (let [home (System/getenv "HOME")]
-    ["-v" (str home "/.claude:/home/developer/.claude")
-     "-v" (str home "/.config/opencode:/home/developer/.config/opencode")
-     "-v" (str home "/.codex:/home/developer/.codex")
-     "-v" (str home "/.gemini:/home/developer/.gemini")]))
-```
-
-**Directory creation:** No pre-creation needed - harnesses create config dirs on first run.
-
-### Build Command Flags
-
-Add new version flags to `build` command:
-
+**Mount strategy:**
 ```bash
-aishell build --codex-version 0.89.0 --gemini-version 0.25.2
+docker run \
+  -v ~/.tmux.conf:/home/developer/.tmux.conf:ro \
+  ...
 ```
 
-**State persistence:** Extend `state.edn` to track codex/gemini versions:
+**When to mount:** Only when `--with-tmux` flag present in build state OR when tmux plugins configured in config.yaml
+
+**Fallback behavior:** If `~/.tmux.conf` doesn't exist on host, skip mount (no error). TPM won't run, default tmux behavior.
+
+**Why read-only:** Config file should not be modified by container. User edits on host.
+
+## Non-Interactive Installation Workflow
+
+TPM provides `bin/install_plugins` script for automated plugin installation. This is the official method for Docker/CI environments.
+
+### Installation Steps (during volume population)
+
+1. **Clone TPM** to `/tools/tmux/plugins/tpm`:
+   ```bash
+   git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm
+   ```
+
+2. **Create tmux.conf with plugin declarations** (temporary file for installation):
+   ```bash
+   cat > /tmp/tmux-install.conf <<'EOF'
+   set -g @plugin 'tmux-plugins/tpm'
+   set -g @plugin 'tmux-plugins/tmux-resurrect'
+   set -g @plugin 'tmux-plugins/tmux-continuum'
+
+   # TPM initialization (must be last line)
+   run '/tools/tmux/plugins/tpm/tpm'
+   EOF
+   ```
+
+3. **Run non-interactive installer**:
+   ```bash
+   TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins \
+   /tools/tmux/plugins/tpm/bin/install_plugins
+   ```
+
+**Key environment variables:**
+- `TMUX_PLUGIN_MANAGER_PATH`: Overrides default `~/.tmux/plugins/` location
+- Must point to `/tools/tmux/plugins` to install into volume
+
+**Installation dependencies:**
+- tmux binary must be in `$PATH` (checked by installer script)
+- git must be available (for cloning plugin repos)
+- bash must be available (TPM scripts are bash)
+
+**Installation validation:**
+- Check for existence of `/tools/tmux/plugins/tmux-resurrect/resurrect.tmux`
+- Check for existence of `/tools/tmux/plugins/tmux-continuum/continuum.tmux`
+
+### Volume Population Logic
+
+Add to existing harness volume population (in `src/aishell/docker/volume.clj`):
 
 ```clojure
-{:claude-version "1.2.3"
- :opencode-version "1.1.25"
- :codex-version "0.89.0"     ;; NEW
- :gemini-version "0.25.2"    ;; NEW
- :dockerfile-hash "abc123..."}
+;; After npm/bin population, if tmux plugins configured:
+(when (seq (:plugins (:tmux config)))
+  ;; Clone TPM
+  (shell "git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm")
+
+  ;; Generate temporary tmux.conf with plugin list
+  (spit "/tmp/tmux-install.conf" (generate-plugin-config (:plugins (:tmux config))))
+
+  ;; Run non-interactive installer
+  (shell {:env {"TMUX_PLUGIN_MANAGER_PATH" "/tools/tmux/plugins"}}
+         "/tools/tmux/plugins/tpm/bin/install_plugins"))
 ```
 
-### Launch Commands
+## Session Persistence: tmux-resurrect
 
-Add new harness launch commands:
+### Save File Location
 
-```bash
-aishell codex      # Launches codex in container
-aishell gemini     # Launches gemini in container
+**Default:** `~/.tmux/resurrect/` (or `~/.local/share/tmux/resurrect` if XDG_DATA_HOME set)
+
+**Override location:** Mount to volume for persistence across container restarts:
+```
+set -g @resurrect-dir '/tools/tmux/resurrect'
 ```
 
-**Command routing:** Extend `core.clj` pre-dispatch logic:
+**Volume integration:** Map `/tools/tmux/resurrect` on volume to this location. Resurrect files persist across container recreation.
 
-```clojure
-(case (first args)
-  "claude" (run-harness "claude" (rest args))
-  "opencode" (run-harness "opencode" (rest args))
-  "codex" (run-harness "codex" (rest args))      ;; NEW
-  "gemini" (run-harness "gemini" (rest args))    ;; NEW
-  ;; ... fall through to CLI parsing
-  )
+**File format:**
+- `tmux_resurrect_YYYYMMDDTHHMMSS.txt` - timestamped save files
+- `last` - symlink to most recent save
+
+**Configuration in user's ~/.tmux.conf:**
+```tmux
+set -g @resurrect-dir '/tools/tmux/resurrect'
 ```
 
-### Environment Variable Passthrough
+**Why volume-based persistence:** Session state survives container destruction. When user recreates container with same project hash, session restores automatically.
 
-Both harnesses need API key passthrough. Current aishell pattern:
+### Auto-save: tmux-continuum
+
+**Default interval:** 15 minutes
+
+**Configuration:** Auto-save enabled by default once plugin installed. No explicit config needed.
+
+**Auto-restore:** Requires explicit opt-in in user's `~/.tmux.conf`:
+```tmux
+set -g @continuum-restore 'on'
+```
+
+**Integration:** Works seamlessly with resurrect. Continuum triggers resurrect's save mechanism periodically, then resurrect restores from saved state on tmux server start.
+
+**Why recommended:** Eliminates manual save workflow (prefix + Ctrl+s). Users get automatic session persistence without thinking about it.
+
+## PATH and Environment
+
+### Plugin Discovery
+
+TPM discovers plugins via `~/.tmux.conf` configuration. Standard format:
+
+```tmux
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+
+# Initialize TPM (keep at bottom of tmux.conf)
+run '/tools/tmux/plugins/tpm/tpm'
+```
+
+**Critical:** Final `run` line must point to `/tools/tmux/plugins/tpm/tpm` when using volume-based installation (not default `~/.tmux/plugins/tpm/tpm`).
+
+**User guidance:** Documentation must instruct users to either:
+1. Use volume-based path in their global `~/.tmux.conf` (works everywhere, not just aishell)
+2. Create aishell-specific override (complex, not recommended)
+
+**Recommendation:** Document volume-based path as standard. Works in aishell containers, and non-aishell environments ignore missing path gracefully.
+
+### Runtime Environment Variables
+
+No additional environment variables needed at runtime. TPM uses standard tmux configuration mechanism.
+
+**At volume population time only:**
+- `TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins` (for non-interactive install)
+
+## What NOT to Add
+
+| Rejected Approach | Why Not |
+|-------------------|---------|
+| Install TPM in foundation image | Version drift, slower builds, violates foundation/volume separation |
+| Per-project tmux.conf | Complexity, user's global config is sufficient, override mechanism unclear |
+| Versioned plugin installations | Plugins don't publish versions, master branch is standard |
+| Package manager (apt) for TPM | Not available in Debian repos, git clone is official method |
+| Custom plugin installation scripts | TPM's `bin/install_plugins` is the official non-interactive method |
+| Read-only volume for tmux plugins | Plugins need write access for state (resurrect saves, potential caching) |
+| XDG_DATA_HOME override | Unnecessary complexity, explicit `@resurrect-dir` is clearer |
+
+## Build Flag Integration
+
+### --with-tmux Flag
+
+**Current behavior (v2.7.0):** tmux always enabled, auto-start in all modes
+
+**New behavior (v2.9.0):** tmux opt-in via `--with-tmux` build flag
+
+**Impact on stack:**
+- Flag adds `:with-tmux true` to state.edn
+- Volume population skips tmux plugin installation if flag absent
+- Config mounting skips `~/.tmux.conf` if flag absent
+- Entrypoint skips `tmux new-session -A` wrapper if flag absent
+
+**Default:** tmux DISABLED (breaking change from v2.7.0, but v2.9.0 is explicit about opt-in)
+
+**Validation:** `aishell build --with-tmux` required before tmux features work
+
+## Configuration Schema Addition
+
+New top-level key in `.aishell/config.yaml`:
 
 ```yaml
-# .aishell/config.yaml
-environment:
-  passthrough:
-    - ANTHROPIC_API_KEY
-    - OPENAI_API_KEY  # OpenCode uses this
-    - CODEX_API_KEY   # NEW - for Codex
-    - GEMINI_API_KEY  # NEW - for Gemini
-    - GOOGLE_API_KEY  # NEW - alternative for Gemini
+tmux:
+  plugins:
+    - tmux-plugins/tmux-resurrect
+    - tmux-plugins/tmux-continuum
+    # Add more plugins as needed
 ```
 
-**Validation consideration:** Don't fail if API keys are missing (user may use OAuth login instead).
+**Format:** List of GitHub repository paths in `owner/repo` format
 
-## Comparison Matrix
+**Processing:** During volume population, iterate list and add to generated tmux.conf, then run installer
 
-| Aspect | Claude Code | OpenCode | OpenAI Codex CLI | Google Gemini CLI |
-|--------|-------------|----------|------------------|-------------------|
-| **Install method** | npm global | curl binary | npm global | npm global |
-| **Package name** | @anthropic-ai/claude-code | n/a (binary) | @openai/codex | @google/gemini-cli |
-| **Config dir** | ~/.claude | ~/.config/opencode | ~/.codex | ~/.gemini |
-| **Config format** | JSON | TOML | TOML | JSON |
-| **Node.js version** | 18+ | n/a | 22+ | 20+ |
-| **Auth env var** | ANTHROPIC_API_KEY | OPENAI_API_KEY | CODEX_API_KEY | GEMINI_API_KEY |
-| **OAuth support** | Yes | No | Yes (ChatGPT) | Yes (Google) |
-| **MCP support** | Yes | Unknown | Yes | Yes |
-| **Current version** | (varies) | 1.1.25 | 0.89.0 | 0.25.2 |
+**Validation:**
+- Each entry must match pattern `[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+`
+- Cloning uses `https://github.com/{entry}` (no auth, public repos only)
 
-## Dependencies Summary
+## Version Pinning Strategy
 
-### No New System Packages Required
+**TPM and plugins: No versioning**
 
-Both harnesses install via npm and run on Node.js, which is already present in the base image.
+All tmux plugins (TPM, resurrect, continuum) follow master-branch development model with no versioned releases. This is by design and standard in the tmux plugin ecosystem.
 
-**Current base image:**
-- Node.js 24.x (satisfies Codex's Node 22+ and Gemini's Node 20+ requirements)
-- npm (bundled with Node.js)
-- Debian bookworm-slim with glibc (compatible with both harnesses)
+**Installation approach:**
+- `git clone --depth 1` to get latest master
+- No git tag or SHA pinning
+- Updates via `aishell update` (recreates volume, re-clones master)
 
-**No changes needed to:**
-- Babashka installation
-- System packages (curl, git, vim, etc.)
-- gosu or entrypoint.sh
-- bashrc configuration
+**Risk mitigation:**
+- Shallow clone (`--depth 1`) minimizes data transfer
+- Volume content-hash means identical configs share volumes (no duplicate installs)
+- Breaking changes rare (plugins are stable, minimal API surface)
 
-### Version Compatibility Matrix
+**Future consideration:** If version pinning becomes necessary, support `owner/repo@tag` format in config.yaml
 
-| Component | Required By | Current | Status |
-|-----------|-------------|---------|--------|
-| Node.js 20+ | Gemini CLI | 24.x | ✓ Pass |
-| Node.js 22+ | Codex CLI | 24.x | ✓ Pass |
-| npm | Both | Bundled | ✓ Pass |
-| glibc | Both | Debian bookworm | ✓ Pass |
+## Installation Size Impact
 
-## Implementation Checklist
+| Component | Size | Impact |
+|-----------|------|--------|
+| TPM | ~200KB | Negligible |
+| tmux-resurrect | ~100KB | Negligible |
+| tmux-continuum | ~50KB | Negligible |
+| **Total overhead** | **~350KB** | Minimal (0.35MB added to harness volume) |
 
-- [ ] Add WITH_CODEX, WITH_GEMINI, CODEX_VERSION, GEMINI_VERSION build args to Dockerfile
-- [ ] Add npm install blocks for @openai/codex and @google/gemini-cli
-- [ ] Add config directory mounts for ~/.codex and ~/.gemini
-- [ ] Add --codex-version and --gemini-version flags to build command
-- [ ] Extend state.edn schema with :codex-version and :gemini-version
-- [ ] Add "codex" and "gemini" commands to CLI dispatcher
-- [ ] Document environment variables (CODEX_API_KEY, GEMINI_API_KEY, etc.) in README
-- [ ] Add passthrough examples to config.yaml template
-- [ ] Update security detection if needed (API key patterns already covered)
+Compared to harness tools (Claude Code ~50MB npm package), plugin overhead is negligible.
 
-## Risk Assessment
+## Compatibility Matrix
 
-**Integration risk:** LOW
+| Component | Minimum Version | Validated Version | Notes |
+|-----------|----------------|-------------------|-------|
+| tmux | 1.9 | 3.3a-3 (Debian bookworm) | TPM requires 1.9+, resurrect works with 1.9+ |
+| git | 1.7+ | 2.39+ (Debian bookworm) | Required for git clone operations |
+| bash | 3.0+ | 5.2+ (Debian bookworm) | TPM scripts require bash |
 
-Both harnesses follow patterns nearly identical to existing Claude Code integration:
-- npm global install (same as Claude Code)
-- Config directory in user home (same pattern as ~/.claude)
-- Environment variable passthrough (same pattern as ANTHROPIC_API_KEY)
-- No special system dependencies beyond Node.js
+**All requirements satisfied by existing foundation image.** No new apt packages needed.
 
-**Differences from existing harnesses:**
-1. Codex uses TOML config (like OpenCode) instead of JSON (like Claude)
-2. Gemini supports multiple auth methods (API key, OAuth, ADC)
-3. Both support MCP (like Claude Code)
+## Testing Validation Points
 
-**No breaking changes** - existing harnesses continue to work unchanged.
+Before milestone completion, validate:
+
+1. **Non-interactive install works:** `bin/install_plugins` succeeds without tmux running
+2. **Plugins load:** After container start, `tmux list-keys` shows resurrect/continuum bindings
+3. **Save/restore works:** Create windows, save (manual or auto), destroy container, recreate, verify restore
+4. **Volume persistence:** Resurrect files persist in `/tools/tmux/resurrect` across container restarts
+5. **Config mounting:** User's `~/.tmux.conf` visible inside container, changes reflected on reload
+6. **No TPM when tmux disabled:** Without `--with-tmux` flag, no plugin installation attempted
+7. **Plugin-less operation:** `--with-tmux` without plugins in config.yaml works (bare tmux, no TPM)
+
+## Documentation Requirements
+
+Users need to know:
+
+1. **How to enable tmux:** `aishell build --with-tmux`
+2. **How to configure plugins:** Add `tmux.plugins` list to `.aishell/config.yaml`
+3. **How to configure resurrect save location:** Set `@resurrect-dir '/tools/tmux/resurrect'` in `~/.tmux.conf`
+4. **How to enable auto-restore:** Set `@continuum-restore 'on'` in `~/.tmux.conf`
+5. **TPM initialization path:** Use `run '/tools/tmux/plugins/tpm/tpm'` in `~/.tmux.conf` (not default path)
+6. **Update workflow:** `aishell update` refreshes plugins to latest master
+7. **Manual plugin management:** How to add/remove plugins (edit config.yaml, run update)
 
 ## Sources
 
-### OpenAI Codex CLI
+**HIGH Confidence (Official Documentation):**
+- [TPM Official Repository](https://github.com/tmux-plugins/tpm) - Installation paths, non-interactive methods
+- [tmux-resurrect Official Repository](https://github.com/tmux-plugins/tmux-resurrect) - Save directory configuration
+- [tmux-resurrect Save Directory Docs](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/save_dir.md) - Default `~/.tmux/resurrect/` location
+- [TPM Command-Line Management](https://github.com/tmux-plugins/tpm/blob/master/docs/managing_plugins_via_cmd_line.md) - `bin/install_plugins` usage
+- [tmux-continuum Official Repository](https://github.com/tmux-plugins/tmux-continuum) - 15-minute auto-save interval, resurrect integration
+- [Debian Packages: tmux in bookworm](https://packages.debian.org/bookworm/tmux) - Version 3.3a-3 confirmed
 
-- [OpenAI Codex CLI Documentation](https://developers.openai.com/codex/cli/)
-- [OpenAI Codex GitHub Repository](https://github.com/openai/codex)
-- [OpenAI Codex CLI Releases](https://github.com/openai/codex/releases)
-- [OpenAI Codex Authentication](https://developers.openai.com/codex/auth/)
-- [OpenAI Codex Configuration Reference](https://developers.openai.com/codex/config-reference/)
-- [@openai/codex npm package](https://www.npmjs.com/package/@openai/codex)
-- [Node.js 22+ requirement discussion](https://github.com/openai/codex/issues/164)
+**MEDIUM Confidence (Community Documentation):**
+- [ArcoLinux tmux Plugin Manager Guide](https://arcolinux.com/everything-you-need-to-know-about-tmux-plugins-manager/) - Installation patterns, plugin directory structure
+- [Lorenzo Bettini: Installing TPM with Chezmoi](https://www.lorenzobettini.it/2025/04/installing-the-tmux-plugin-manager-tpm-with-chezmoi/) - Non-interactive installation in automated environments
 
-### Google Gemini CLI
-
-- [Google Gemini CLI GitHub Repository](https://github.com/google-gemini/gemini-cli)
-- [Gemini CLI Official Documentation](https://geminicli.com/docs/)
-- [Gemini CLI Installation Guide](https://geminicli.com/docs/get-started/installation/)
-- [Gemini CLI Configuration](https://geminicli.com/docs/get-started/configuration/)
-- [Gemini CLI Authentication Setup](https://geminicli.com/docs/get-started/authentication/)
-- [Gemini CLI Releases](https://github.com/google-gemini/gemini-cli/releases)
-- [Google Developers - Gemini Code Assist CLI](https://developers.google.com/gemini-code-assist/docs/gemini-cli)
-- [Google Codelabs - Hands-on with Gemini CLI](https://codelabs.developers.google.com/gemini-cli-hands-on)
-
-### Cross-Reference
-
-- [SmartScope OpenAI Codex CLI Guide](https://smartscope.blog/en/generative-ai/chatgpt/openai-codex-cli-comprehensive-guide/) (2025-12 update)
-- [DeployHQ - Getting Started with OpenAI Codex CLI](https://www.deployhq.com/blog/getting-started-with-openai-codex-cli-ai-powered-code-generation-from-your-terminal)
-- [Google Blog - Introducing Gemini CLI](https://blog.google/technology/developers/introducing-gemini-cli-open-source-ai-agent/)
-
-**Confidence Level:** HIGH - All critical details verified from official documentation and GitHub repositories (Context7 not available for these tools, but official sources are authoritative and current as of January 2026).
+**Verified:** All critical claims cross-referenced with official repositories. Version numbers confirmed via Debian package tracker. Non-interactive installation method confirmed via official TPM documentation.
