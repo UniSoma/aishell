@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 37 of 38 (Build Integration & Migration)
-Plan: 4 of 4 complete in phase
+Plan: 6 of 6 complete in phase (4 main + 2 gap closure)
 Status: Phase complete
-Last activity: 2026-02-01 - Completed 37-04-PLAN.md
+Last activity: 2026-02-01 - Completed 37-05-PLAN.md (OpenCode Binary Installation)
 
-Progress: [████████░░] 82% (9/11 plans complete)
+Progress: [█████████░] 91% (10/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,9 +30,9 @@ Progress: [████████░░] 82% (9/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 9
-- Average duration: 2 min
-- Total execution time: 0.22 hours
+- Total plans completed: 10
+- Average duration: 1 min
+- Total execution time: 0.23 hours
 
 **By Phase:**
 
@@ -40,12 +40,12 @@ Progress: [████████░░] 82% (9/11 plans complete)
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
-| 37 | 4/4 | 5 min | 1 min |
+| 37 | 6/6 | 7 min | 1 min |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 1 min (37-04)
-- Trend: Integration tasks ~1 min with atomic commits
+- Last plan: 1 min (37-06)
+- Trend: Gap closure tasks ~1 min with atomic commits
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -121,6 +121,12 @@ Recent decisions affecting v2.8.0 work:
 - Both :dockerfile-hash (deprecated) and :foundation-hash (new) are written for backward compatibility
 - :harness-volume-name is stored so run.clj can use it without recomputing
 
+**Profile.d login shell environment (from 37-06):**
+- Created /etc/profile.d/aishell.sh to fix tmux new-window environment loss (GAP-02)
+- Login shells source /etc/profile → /etc/profile.d/*.sh → bash.aishell (for prompt/aliases)
+- Uses dot-source (. /etc/bash.aishell) instead of source for POSIX compatibility
+- Sets PATH (/tools/npm/bin, /tools/bin) and NODE_PATH for harness tools in login shells
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -142,8 +148,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T01:35:44Z
-Stopped at: Completed 37-04-PLAN.md (Build Integration Wiring)
+Last session: 2026-02-01T19:53:04Z
+Stopped at: Completed 37-06-PLAN.md (Profile.d Login Shell Environment)
 Resume file: None
 
-**Next step:** `/gsd:plan-phase 38` to plan volume cleanup and documentation
+**Next step:** Execute remaining gap closure plan 37-05, then move to phase 38
