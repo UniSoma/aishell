@@ -122,12 +122,12 @@ Plans:
 7. All six documentation files updated (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
 8. Single v2.8.0 changelog entry covering phases 35-38
 
-**Plans:** 3 plans
+**Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 38-01: Repurpose `aishell update` command for harness volume refresh with version diff output
-- [ ] 38-02: Implement volume list and prune commands with orphan detection
-- [ ] 38-03: Update all documentation files and create v2.8.0 changelog
+- [ ] 38-01-PLAN.md — Redesign `aishell update` for volume refresh (--force for foundation rebuild)
+- [ ] 38-02-PLAN.md — Implement `aishell volumes` list and prune commands with orphan detection
+- [ ] 38-03-PLAN.md — Update all documentation files and create v2.8.0 changelog
 
 ## Progress
 
