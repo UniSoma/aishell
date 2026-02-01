@@ -1,5 +1,8 @@
 {
   "mode": "yolo",
   "depth": "standard",
-  "parallelization": true
+  "parallelization": true,
+  "git": {
+    "branching_strategy": "milestone"
+  }
 }
