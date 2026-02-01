@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 37 of 38 (Build Integration & Migration)
-Plan: 1 of 4 complete in phase
+Plan: 2 of 4 complete in phase
 Status: In progress
-Last activity: 2026-02-01 - Completed 37-01-PLAN.md
+Last activity: 2026-02-01 - Completed 37-02-PLAN.md
 
-Progress: [█████░░░░░] 55% (6/11 plans complete)
+Progress: [██████░░░░] 64% (7/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,9 +30,9 @@ Progress: [█████░░░░░] 55% (6/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 2 min
-- Total execution time: 0.15 hours
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
@@ -40,12 +40,12 @@ Progress: [█████░░░░░] 55% (6/11 plans complete)
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
-| 37 | 1/4 | <1 min | <1 min |
+| 37 | 2/4 | 2 min | 1 min |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: <1 min (37-01)
-- Trend: Documentation-only tasks complete in under 1 minute
+- Last plan: 1 min (37-02)
+- Trend: Implementation tasks ~1 min with atomic commits
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -103,6 +103,12 @@ Recent decisions affecting v2.8.0 work:
 - v2.8.0 schema adds :foundation-hash, :harness-volume-hash, :harness-volume-name
 - EDN's flexible schema provides natural backward compatibility
 
+**Lazy volume population (from 37-02):**
+- ensure-harness-volume returns nil if no harnesses enabled (avoids unnecessary volumes)
+- Treat missing volume label as stale (triggers repopulation for safety)
+- Build command will handle state persistence (run.clj is read-only for state)
+- v2.7.0 compatibility maintained via on-the-fly volume name computation
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -124,8 +130,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T01:29:43Z
-Stopped at: Completed 37-01-PLAN.md (State Schema Documentation v2.8.0)
+Last session: 2026-02-01T01:30:44Z
+Stopped at: Completed 37-02-PLAN.md (Lazy Volume Population)
 Resume file: None
 
-**Next step:** `/gsd:execute-phase 37-02` to integrate foundation hash computation
+**Next step:** `/gsd:execute-phase 37-03` to add volume creation during build
