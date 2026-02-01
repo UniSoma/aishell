@@ -8,6 +8,7 @@
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
+            [aishell.docker.volume :as vol]
             [aishell.config :as config]
             [aishell.state :as state]
             [aishell.output :as output]
@@ -37,6 +38,30 @@
     (let [current-hash (hash/compute-hash templates/base-dockerfile)]
       (when (not= stored-hash current-hash)
         (output/warn "Image may be stale. Run 'aishell update' to rebuild.")))))
+
+(defn- ensure-harness-volume
+  "Ensure harness volume exists and is up-to-date.
+   Populates lazily if missing or stale (hash mismatch).
+   Returns volume name for docker run mounting, or nil if no harnesses enabled."
+  [state]
+  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+    (let [expected-hash (vol/compute-harness-hash state)
+          volume-name (or (:harness-volume-name state)
+                          (vol/volume-name expected-hash))]
+      (cond
+        ;; Volume missing - create and populate
+        (not (vol/volume-exists? volume-name))
+        (do
+          (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
+                                          "aishell.harness.version" "2.8.0"})
+          (vol/populate-volume volume-name state))
+
+        ;; Volume exists but stale (hash mismatch or missing label)
+        (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+              expected-hash)
+        (vol/populate-volume volume-name state))
+      ;; Return volume name regardless
+      volume-name)))
 
 (defn- resolve-image-tag
   "Determine which image to use: extended if project has .aishell/Dockerfile, else base.
@@ -87,7 +112,10 @@
           _ (naming/ensure-name-available! container-name-str (or (:container-name opts) cmd "shell"))
 
           ;; Log container name for verification
-          _ (output/verbose (str "Container name: " container-name-str))]
+          _ (output/verbose (str "Container name: " container-name-str))
+
+          ;; Ensure harness volume ready (lazy population)
+          harness-volume-name (ensure-harness-volume state)]
 
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)
@@ -164,7 +192,8 @@
                            :git-identity git-id
                            :skip-pre-start (:skip-pre-start opts)
                            :detach (:detach opts)
-                           :container-name container-name-str})
+                           :container-name container-name-str
+                           :harness-volume-name harness-volume-name})
 
             ;; Determine command to run in container
             container-cmd (case cmd
@@ -254,6 +283,9 @@
             cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
 
+            ;; Ensure harness volume ready (lazy population)
+            harness-volume-name (ensure-harness-volume state)
+
             ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
             tty? (some? (System/console))
 
@@ -263,7 +295,8 @@
                            :image-tag image-tag
                            :config cfg
                            :git-identity git-id
-                           :tty? tty?})
+                           :tty? tty?
+                           :harness-volume-name harness-volume-name})
 
             ;; Command to run in container (user's command)
             container-cmd cmd-args]
