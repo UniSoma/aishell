@@ -94,13 +94,15 @@ Plans:
 6. Existing state files from v2.7.0 migrate automatically on first run without user intervention
 7. Existing extensions auto-rebuild on first build after upgrade because foundation ID has changed
 
-**Plans:** 4 plans
+**Plans:** 6 plans
 
 Plans:
 - [x] 37-01: Update state schema with foundation-hash and harness-volume-hash fields, implement backward-compatible migration
 - [x] 37-02: Implement lazy volume population with staleness detection on container run
 - [x] 37-03: Update extension cache invalidation to use foundation image ID
 - [x] 37-04: Wire foundation build and volume population into unified build command flow
+- [ ] 37-05: Add OpenCode binary installation to volume population (GAP-01 fix)
+- [ ] 37-06: Fix tmux new-window environment loss via /etc/profile.d script (GAP-02 fix)
 
 #### Phase 38: Volume Cleanup & Documentation
 
