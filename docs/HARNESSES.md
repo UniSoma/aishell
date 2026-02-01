@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
 
-**Last updated:** v2.7.0
+**Last updated:** v2.8.0
 
 ## What are Harnesses?
 
@@ -12,6 +12,30 @@ Harnesses are agentic AI CLI tools that aishell runs in isolated containers. Eac
 - **OpenCode** - Multi-provider AI coding agent (Anthropic, OpenAI, Google, etc.)
 - **Codex CLI** - OpenAI's ChatGPT integration for coding
 - **Gemini CLI** - Google's Gemini models for development
+
+### How Harnesses are Installed (v2.8.0+)
+
+Harnesses are installed in **Docker volumes**, not baked into the foundation image. This enables fast updates:
+
+**Volume-based installation:**
+- npm packages installed to `/tools/npm` in volume
+- Go binaries downloaded to `/tools/bin` in volume
+- Volume mounted read-only at `/tools` in containers
+- PATH includes `/tools/npm/bin` and `/tools/bin`
+
+**Benefits:**
+- **Fast updates:** `aishell update` refreshes tools without rebuilding foundation image
+- **Shared volumes:** Projects with identical harness configs share volumes
+- **No cache invalidation:** Harness updates don't invalidate Docker extension cache
+
+**Volume management:**
+```bash
+# List harness volumes
+aishell volumes
+
+# Remove orphaned volumes
+aishell volumes prune
+```
 
 ## Harness Comparison
 
@@ -46,6 +70,20 @@ aishell build --with-claude=2.0.22
 ```
 
 **Version pinning recommended** for reproducible environments.
+
+**What happens during build:**
+1. Foundation image builds (Debian, Node.js, system tools) - if not cached
+2. Harness volume created: `aishell-harness-{hash}`
+3. Claude Code npm package installed to volume: `npm install -g @anthropic-ai/claude-code`
+4. Volume mounted read-only at `/tools` in containers
+
+**Updating Claude Code:**
+```bash
+# Refresh to latest version
+aishell update
+
+# Deletes volume, recreates, reinstalls harness tools
+```
 
 ### Authentication
 
@@ -143,6 +181,13 @@ aishell build --with-opencode
 
 # Specific version
 aishell build --with-opencode=0.2.3
+```
+
+**Note:** OpenCode is installed as a Go binary (not npm package), downloaded from GitHub releases to `/tools/bin`.
+
+**Updating OpenCode:**
+```bash
+aishell update  # Deletes volume, reinstalls OpenCode binary
 ```
 
 ### Authentication

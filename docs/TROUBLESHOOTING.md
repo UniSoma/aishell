@@ -4,7 +4,7 @@ This guide helps diagnose and resolve common issues with aishell.
 
 **How to use this guide:** Find the symptom you're experiencing, then follow the resolution steps.
 
-**Last updated:** v2.7.0
+**Last updated:** v2.8.0
 
 ---
 
@@ -13,6 +13,7 @@ This guide helps diagnose and resolve common issues with aishell.
 - [Quick Diagnostics](#quick-diagnostics)
 - [Build Issues](#build-issues)
 - [Container Issues](#container-issues)
+- [Volume Issues](#volume-issues)
 - [Authentication Issues](#authentication-issues)
 - [Sensitive File Detection](#sensitive-file-detection)
 - [Detached Mode & Attach Issues](#detached-mode--attach-issues)
@@ -311,6 +312,182 @@ If you still see warnings:
    ```
 
 **Note:** This is a security feature, not a bug. The warning is expected and handled by aishell's entrypoint.
+
+---
+
+## Volume Issues
+
+### Symptom: "Harness command not found" inside container
+
+**Cause:** Harness volume is missing or not populated.
+
+**Resolution:**
+
+1. **Check if volume exists:**
+   ```bash
+   aishell volumes
+   ```
+
+2. **If no volumes or volume missing:**
+   ```bash
+   # Rebuild to create and populate volume
+   aishell build --with-claude
+   ```
+
+3. **If volume exists but harness not working:**
+   ```bash
+   # Delete and repopulate volume
+   aishell update
+   ```
+
+4. **Verify PATH inside container:**
+   ```bash
+   aishell
+   echo $PATH
+   # Should include /tools/npm/bin and /tools/bin
+
+   ls -la /tools/npm/bin
+   # Should show harness binaries (claude, codex, gemini)
+   ```
+
+5. **Check volume mount:**
+   ```bash
+   # From inside container
+   mount | grep /tools
+   # Should show: aishell-harness-{hash} on /tools type ext4 (ro,...)
+   ```
+
+**If harness still not found after rebuild:**
+Check build output for npm installation errors.
+
+### Symptom: "Volume disk usage growing" - many orphaned volumes
+
+**Cause:** Changing harness configuration creates new volumes, old ones remain.
+
+**Resolution:**
+
+1. **List volumes:**
+   ```bash
+   aishell volumes
+   # Shows active vs orphaned volumes
+   ```
+
+2. **Prune orphaned volumes:**
+   ```bash
+   aishell volumes prune
+   # Confirms before deletion
+
+   # Or auto-confirm:
+   aishell volumes prune --yes
+   ```
+
+3. **Verify disk space recovered:**
+   ```bash
+   docker system df
+   ```
+
+**When volumes become orphaned:**
+- Changed harness selection (`--with-claude` → `--with-opencode`)
+- Changed harness versions (version pin updated)
+- Rebuilt with different harness combination
+
+**Safe to prune:**
+Only removes volumes not referenced by current state. Active volume is never deleted.
+
+### Symptom: "Update seems to hang" during volume population
+
+**Cause:** Volume population downloads npm packages, may be slow on first run or slow network.
+
+**Resolution:**
+
+1. **Check if actually hung or just slow:**
+   ```bash
+   # In another terminal, check Docker container activity
+   docker ps
+   # Should show a temporary container running
+   ```
+
+2. **Use --verbose to see progress:**
+   ```bash
+   aishell update --verbose
+   # Shows npm install output in real-time
+   ```
+
+3. **Network issues:**
+   - Check internet connection
+   - npm registry may be slow/unavailable
+   - Try again later
+
+4. **Abort and retry:**
+   ```bash
+   # Ctrl+C to abort
+   # Try again with verbose output
+   aishell update --verbose
+   ```
+
+**Expected duration:**
+- First population: 30-60 seconds (downloads npm packages)
+- Subsequent updates: 20-40 seconds (npm cache helps)
+- Slow on: slow network, large harness packages
+
+### Symptom: "tmux new-window missing tools" (harness commands not in PATH)
+
+**Cause:** Fixed in v2.8.0 via `/etc/profile.d/aishell.sh`. If still occurring, foundation image needs rebuild.
+
+**Resolution:**
+
+1. **Rebuild foundation image:**
+   ```bash
+   aishell update --force
+   ```
+
+2. **Verify profile.d script exists:**
+   ```bash
+   aishell
+   cat /etc/profile.d/aishell.sh
+   # Should exist and set PATH
+   ```
+
+3. **Test in tmux new-window:**
+   ```bash
+   aishell
+   # Inside container in main tmux session:
+   tmux new-window
+   # In new window:
+   echo $PATH
+   # Should include /tools/npm/bin
+   which claude
+   # Should find /tools/npm/bin/claude
+   ```
+
+**If still broken:**
+File a bug report with tmux version and SHELL variable.
+
+### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
+
+**Cause:** v2.8.0 renamed `aishell:base` to `aishell:foundation`. Custom `.aishell/Dockerfile` needs update.
+
+**Resolution:**
+
+1. **Edit `.aishell/Dockerfile`:**
+   ```dockerfile
+   # Change this:
+   FROM aishell:base
+
+   # To this:
+   FROM aishell:foundation
+   ```
+
+2. **Rebuild:**
+   ```bash
+   aishell build --with-claude
+   ```
+
+**Migration detection:**
+aishell detects legacy `FROM aishell:base` and shows clear error message with migration instructions.
+
+**Backward compatibility:**
+Only the tag name changed. Functionality identical.
 
 ---
 

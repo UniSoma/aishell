@@ -2,7 +2,7 @@
 
 This document describes the internal architecture of aishell, including the data flow from host machine through container execution, and the responsibilities of each code namespace.
 
-**Last updated:** v2.7.0
+**Last updated:** v2.8.0
 
 ---
 
@@ -52,11 +52,97 @@ graph TB
 
 **Key architectural principles:**
 
-1. **Immutable Base Image:** Built once with selected harnesses, reused for all projects
-2. **Project Extension:** Optional per-project Dockerfile extends base image
-3. **Configuration Merge:** Global and project configs combine with defined semantics
-4. **Stateless Containers:** No data persists in container; all work is in mounted project dir
-5. **Security Layers:** Detection (filename patterns) + Gitleaks (content scanning) before launch
+1. **2-Tier Architecture:** Foundation image (stable system tools) + harness volume (updatable tools)
+2. **Volume-Based Harness Tools:** npm packages and binaries mounted read-only at `/tools`
+3. **Project Extension:** Optional per-project Dockerfile extends foundation image
+4. **Configuration Merge:** Global and project configs combine with defined semantics
+5. **Stateless Containers:** No data persists in container; all work is in mounted project dir
+6. **Security Layers:** Detection (filename patterns) + Gitleaks (content scanning) before launch
+
+---
+
+## 2-Tier Architecture: Foundation + Harness Volume
+
+aishell v2.8.0 separates the Docker image into two layers to optimize for harness updates.
+
+### Foundation Image (`aishell:foundation`)
+
+The foundation image contains stable system components that rarely change:
+
+**Contents:**
+- Debian bookworm-slim base
+- Node.js 24 runtime
+- Babashka CLI runtime
+- System tools (git, curl, jq, ripgrep, vim, tmux, etc.)
+- Gitleaks binary (optional, via `--without-gitleaks`)
+- Gosu for user switching
+- Entrypoint script and profile configuration
+
+**Rebuild triggers:**
+- Dockerfile template changes (detected via content hash)
+- Explicit `aishell update --force`
+
+**Why separate:** These components are stable across harness version updates.
+
+### Harness Volume (`aishell-harness-{hash}`)
+
+Harness tools are stored in Docker volumes and mounted into containers:
+
+**Contents:**
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @codex-ai/codex, @google/generative-ai-cli)
+- `/tools/bin` - Go binaries (opencode)
+
+**Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
+- Enabled harnesses (which flags passed to build)
+- Harness versions (pinned or 'latest')
+- Alphabetically sorted for order-independence
+
+**Volume sharing:** Projects with identical harness configurations share the same volume.
+
+**Rebuild triggers:**
+- `aishell update` (unconditional delete + recreate)
+- Missing volume
+- Hash mismatch (different harness config)
+
+**Why separate:** Harness updates don't require multi-gigabyte foundation image rebuilds or Docker extension cache invalidation.
+
+### Runtime Wiring
+
+**Volume mount:**
+```bash
+-v aishell-harness-abc123:/tools:ro
+```
+
+Mounted read-only for security (harnesses can't modify installed tools).
+
+**PATH setup:**
+1. Entrypoint script sets `HARNESS_VOLUME` env var as signal
+2. Checks directory existence: `if [ -d /tools/npm/bin ]`
+3. Prepends to PATH: `/tools/npm/bin:/tools/bin:$PATH`
+4. Sets NODE_PATH: `/tools/npm/lib/node_modules`
+
+**Profile.d integration:**
+`/etc/profile.d/aishell.sh` ensures tmux new-window sessions inherit PATH configuration.
+
+### Migration from v2.7.0
+
+**Image tag change:**
+- Old: `aishell:base`
+- New: `aishell:foundation`
+
+Backward compatibility maintained via error detection in `.aishell/Dockerfile`:
+```dockerfile
+# Old (triggers error)
+FROM aishell:base
+
+# New (correct)
+FROM aishell:foundation
+```
+
+**State schema evolution:**
+- New fields: `foundation-hash`, `harness-volume-hash`, `harness-volume-name`
+- Deprecated (but still written): `dockerfile-hash` → `foundation-hash`
+- Additive migration: nil values for missing fields, no migration code needed
 
 ---
 
@@ -64,7 +150,7 @@ graph TB
 
 ### Build Phase
 
-The build phase creates the base Docker image with optional harness tools.
+The build phase creates the foundation Docker image and populates the harness volume.
 
 ```
 ┌──────────────────┐
@@ -73,39 +159,56 @@ The build phase creates the base Docker image with optional harness tools.
 └────────┬─────────┘
          │
          ▼
-┌──────────────────────────────────────────┐
-│ aishell.docker.build/build-base-image    │
-│ - Check cache (Dockerfile hash)          │
-│ - Check version changes                  │
-│ - Write templates to temp dir            │
-│ - Construct docker build command         │
-└────────┬─────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ aishell.docker.build/build-foundation-image  │
+│ - Check cache (Dockerfile template hash)     │
+│ - Write templates to temp dir                │
+│ - Construct docker build command             │
+└────────┬─────────────────────────────────────┘
          │
          ▼
-┌──────────────────────────────────────────┐
-│ Docker Build                             │
-│ - FROM debian:bookworm-slim              │
-│ - Install system packages                │
-│ - Install Node.js, Babashka, Gosu        │
-│ - Install harnesses (if WITH_X=true)     │
-│ - Tag: aishell:base                      │
-└────────┬─────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ Docker Build (Foundation)                    │
+│ - FROM debian:bookworm-slim                  │
+│ - Install system packages                    │
+│ - Install Node.js, Babashka, Gosu, Gitleaks  │
+│ - Tag: aishell:foundation                    │
+└────────┬─────────────────────────────────────┘
          │
          ▼
-┌──────────────────────────────────────────┐
-│ aishell.state/write-state                │
-│ - Store build flags                      │
-│ - Store harness versions                 │
-│ - Store Dockerfile hash                  │
-│ - Location: ~/.aishell/state.edn         │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ aishell.docker.volume/compute-harness-hash   │
+│ - Hash enabled harnesses + versions          │
+│ - Generate volume name: aishell-harness-{hash}│
+└────────┬─────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────┐
+│ aishell.docker.volume/populate-volume        │
+│ - Create volume if missing                   │
+│ - Run temporary container with --rm          │
+│ - npm install to /tools/npm                  │
+│ - Download binaries to /tools/bin            │
+│ - Set world-readable permissions             │
+└────────┬─────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────┐
+│ aishell.state/write-state                    │
+│ - Store build flags                          │
+│ - Store harness versions                     │
+│ - Store foundation-hash                      │
+│ - Store harness-volume-name                  │
+│ - Location: ~/.aishell/state.edn             │
+└──────────────────────────────────────────────┘
 ```
 
 **Build artifacts:**
 
-- Docker image: `aishell:base` (tagged locally)
+- Docker image: `aishell:foundation` (tagged locally)
+- Docker volume: `aishell-harness-{hash}` (contains harness tools)
 - State file: `~/.aishell/state.edn` (EDN format)
-- Build labels: Metadata embedded in image
+- Build labels: Metadata embedded in image and volume
 
 ### Run Phase
 
@@ -230,6 +333,7 @@ aishell is organized into focused namespaces, each handling a specific concern.
 | `aishell.docker.spinner` | Build UI | Animated spinner during quiet builds |
 | `aishell.docker.naming` | Container naming | Deterministic naming, Docker state queries, conflict detection |
 | `aishell.docker.extension` | Project extensions | Build per-project extended images |
+| `aishell.docker.volume` | Volume management | Harness volume creation, population, hash computation, listing, pruning |
 
 ### Security Namespaces
 
@@ -284,17 +388,21 @@ aishell is organized into focused namespaces, each handling a specific concern.
 **State file schema (`~/.aishell/state.edn`):**
 
 ```clojure
-{:with-claude true             ; boolean: Claude Code installed?
- :with-opencode false          ; boolean: OpenCode installed?
- :with-codex false             ; boolean: Codex CLI installed?
- :with-gemini false            ; boolean: Gemini CLI installed?
- :claude-version "2.0.22"      ; string or nil: pinned version
- :opencode-version nil         ; string or nil: pinned version
- :codex-version "0.89.0"       ; string or nil: pinned version
- :gemini-version nil           ; string or nil: pinned version
- :image-tag "aishell:base"     ; string: Docker image tag
- :build-time "2026-01-25..."   ; ISO-8601 timestamp
- :dockerfile-hash "abc123def"}  ; 12-char SHA-256 hash
+{:with-claude true                       ; boolean: Claude Code enabled?
+ :with-opencode false                    ; boolean: OpenCode enabled?
+ :with-codex false                       ; boolean: Codex CLI enabled?
+ :with-gemini false                      ; boolean: Gemini CLI enabled?
+ :with-gitleaks true                     ; boolean: Gitleaks installed?
+ :claude-version "2.0.22"                ; string or nil: pinned version
+ :opencode-version nil                   ; string or nil: pinned version
+ :codex-version "0.89.0"                 ; string or nil: pinned version
+ :gemini-version nil                     ; string or nil: pinned version
+ :image-tag "aishell:foundation"         ; string: Docker image tag
+ :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
+ :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)
+ :harness-volume-hash "def456ghi"        ; 12-char hash of harness config (NEW in v2.8.0)
+ :harness-volume-name "aishell-harness-def456ghi" ; Volume name (NEW in v2.8.0)
+ :dockerfile-hash "abc123def"}           ; DEPRECATED: use :foundation-hash (kept for backward compat)
 ```
 
 ---

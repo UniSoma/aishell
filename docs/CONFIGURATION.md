@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options. This document covers both global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) configuration files.
 
-**Last updated:** v2.7.0
+**Last updated:** v2.8.0
 
 ---
 
@@ -956,9 +956,48 @@ harness_args:
 
 ## Build Options
 
+### Harness Selection Flags
+
+**Purpose:** Choose which AI harnesses to include in the harness volume.
+
+**Usage:**
+```bash
+# Single harness
+aishell build --with-claude
+
+# Multiple harnesses
+aishell build --with-claude --with-opencode --with-codex
+
+# With version pinning
+aishell build --with-claude=2.0.22 --with-codex=0.1.2025062501
+```
+
+**Available harnesses:**
+- `--with-claude` - Anthropic Claude Code
+- `--with-opencode` - Multi-provider OpenCode
+- `--with-codex` - OpenAI Codex CLI
+- `--with-gemini` - Google Gemini CLI
+
+**Version pinning:**
+Use `=VERSION` syntax to pin specific versions:
+```bash
+--with-claude=2.0.22
+--with-codex=0.1.2025062501
+```
+
+Omit version for latest:
+```bash
+--with-claude  # Uses latest version
+```
+
+**State tracking:**
+Harness selection is saved in `~/.aishell/state.edn` and preserved across updates.
+
+---
+
 ### --without-gitleaks
 
-**Purpose:** Skip Gitleaks installation during build to reduce image size.
+**Purpose:** Skip Gitleaks installation during build to reduce foundation image size.
 
 **Usage:**
 ```bash
@@ -966,7 +1005,7 @@ aishell build --with-claude --without-gitleaks
 ```
 
 **Behavior:**
-- By default, Gitleaks is installed in the container (~15MB)
+- By default, Gitleaks is installed in the foundation image (~15MB)
 - `--without-gitleaks` skips installation
 - Build state records installation status in `~/.aishell/state.edn`
 - `aishell --help` still shows `gitleaks` command (may work via host installation)
@@ -979,7 +1018,7 @@ cat ~/.aishell/state.edn
 ```
 
 **When to use:**
-- **Minimal images:** Reduce container size when Gitleaks not needed
+- **Minimal images:** Reduce foundation image size when Gitleaks not needed
 - **External Gitleaks:** Using Gitleaks installed on host instead
 - **CI/CD:** Build environments where secret scanning handled elsewhere
 
@@ -989,3 +1028,77 @@ cat ~/.aishell/state.edn
 - Savings: ~15MB
 
 **Note:** The `aishell gitleaks` command may still work if Gitleaks is installed on your host system or mounted into the container.
+
+---
+
+### --force (build flag)
+
+**Purpose:** Force full foundation image rebuild, bypassing Docker cache.
+
+**Usage:**
+```bash
+aishell build --with-claude --force
+```
+
+**Behavior:**
+- Passes `--no-cache` to `docker build`
+- Rebuilds all layers from scratch
+- Useful for troubleshooting build issues or ensuring fresh dependencies
+
+**When to use:**
+- **Troubleshooting:** Build behaving unexpectedly
+- **Fresh start:** Want to ensure all system packages are latest
+- **Cache corruption:** Suspect Docker cache has stale layers
+
+---
+
+## Update Command
+
+### aishell update
+
+**Purpose:** Refresh harness tools to latest versions without rebuilding foundation image.
+
+**Usage:**
+```bash
+# Refresh harness volume only (fast)
+aishell update
+
+# Also rebuild foundation image
+aishell update --force
+```
+
+**Default behavior (no flags):**
+1. Delete existing harness volume
+2. Create new harness volume
+3. Populate volume with harness tools (npm install, binary download)
+4. Update state.edn with new build-time
+5. Foundation image untouched
+
+**With --force:**
+1. Rebuild foundation image with `--no-cache`
+2. Delete existing harness volume
+3. Create new harness volume
+4. Populate volume with harness tools
+5. Update state.edn with new build-time and foundation-hash
+
+**Preserved from last build:**
+- Which harnesses are enabled (`--with-claude`, etc.)
+- Harness version pins
+- Gitleaks installation status
+
+**Cannot change harness selection:**
+To add/remove harnesses, use `aishell build`:
+```bash
+# Add OpenCode to existing Claude installation
+aishell build --with-claude --with-opencode
+```
+
+**When to use update:**
+- **npm package updates:** Get latest harness versions
+- **Regular refresh:** Periodically update tools
+- **After npm publish:** New harness version released
+
+**When to use update --force:**
+- **System package updates:** Debian/Node.js security updates
+- **Foundation changes:** After aishell version upgrade
+- **Troubleshooting:** Foundation image behaving unexpectedly

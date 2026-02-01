@@ -4,7 +4,7 @@ This guide is for developers who want to extend aishell with new features or har
 
 **Target audience:** Developers adding new AI harness integrations or core aishell features.
 
-**Last updated:** v2.7.0
+**Last updated:** v2.8.0
 
 ---
 
@@ -69,12 +69,13 @@ aishell/
 │   ├── config.clj            # Configuration loading and merging
 │   ├── state.clj             # State persistence (state.edn)
 │   ├── docker/
-│   │   ├── build.clj         # Image building orchestration
+│   │   ├── build.clj         # Foundation image building orchestration
 │   │   ├── run.clj           # Docker run argument construction
-│   │   ├── templates.clj     # Dockerfile generation
+│   │   ├── templates.clj     # Dockerfile template generation
 │   │   ├── extension.clj     # Project-level Dockerfile handling
 │   │   ├── hash.clj          # Dockerfile content hashing
 │   │   ├── naming.clj        # Container naming and Docker state queries
+│   │   ├── volume.clj        # Harness volume management (NEW in v2.8.0)
 │   │   └── spinner.clj       # Build progress UI
 │   ├── detection/            # Sensitive file detection
 │   │   ├── core.clj          # Detection orchestration
@@ -96,11 +97,117 @@ aishell/
 
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
-- **docker/build.clj:** Orchestrate Docker build, manage state
-- **docker/templates.clj:** Generate Dockerfile from template
-- **docker/run.clj:** Construct docker run command with mounts, env vars
+- **docker/build.clj:** Orchestrate foundation image build, manage state
+- **docker/templates.clj:** Generate Dockerfile template from harness config
+- **docker/run.clj:** Construct docker run command with mounts, env vars, volume
+- **docker/volume.clj:** Harness volume hash computation, creation, population, listing, pruning
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
+- **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)
+
+---
+
+## Build Flow and Volume Population Internals
+
+### Foundation Image Build Flow
+
+1. **Check cache:** `docker/hash/compute-hash` computes SHA-256 of Dockerfile template content
+2. **Compare hash:** If foundation-hash matches state, skip rebuild (unless `--force`)
+3. **Generate Dockerfile:** `docker/templates/base-dockerfile` generates template
+4. **Write to temp dir:** `/tmp/aishell-build-{uuid}/Dockerfile`
+5. **Docker build:** `docker build --tag aishell:foundation`
+6. **Label image:** Embed foundation hash in image metadata
+
+### Volume Hash Computation
+
+**Source:** `docker/volume/compute-harness-hash`
+
+**Inputs:**
+```clojure
+{:with-claude true
+ :claude-version "2.0.22"
+ :with-opencode true
+ :opencode-version nil  ; treated as "latest"
+ :with-codex false
+ :with-gemini false}
+```
+
+**Algorithm:**
+1. Filter to enabled harnesses only
+2. Normalize nil versions to `"latest"`
+3. Create sorted map: `{"claude" "2.0.22", "opencode" "latest"}`
+4. EDN serialize: `"{\"claude\" \"2.0.22\", \"opencode\" \"latest\"}"`
+5. SHA-256 hash, take first 12 chars
+
+**Result:** `aishell-harness-abc123def456`
+
+**Volume sharing:** Identical configs produce identical hashes → same volume.
+
+### Volume Population
+
+**Source:** `docker/volume/populate-volume`
+
+**Flow:**
+1. **Create volume:** `docker volume create aishell-harness-{hash} --label aishell.harness.hash={hash}`
+2. **Start temporary container:**
+   ```bash
+   docker run --rm \
+     -v aishell-harness-{hash}:/tools \
+     aishell:foundation \
+     sh -c "npm install commands..."
+   ```
+3. **npm installation:**
+   - Set `NPM_CONFIG_PREFIX=/tools/npm`
+   - Run `npm install -g @anthropic-ai/claude-code@{version}`
+   - Repeat for each enabled npm harness
+4. **Binary download (OpenCode):**
+   - `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
+   - Extract to `/tools/bin`
+5. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
+6. **Container exits:** Volume populated, temporary container auto-removed
+
+**On population failure:**
+- Volume is deleted (rollback)
+- Error message shown
+- Build exits with non-zero status
+
+### State Schema v2.8.0
+
+**File:** `~/.aishell/state.edn`
+
+**New fields:**
+```clojure
+{:foundation-hash "abc123def"                    ; NEW: Dockerfile template hash
+ :harness-volume-hash "def456ghi"                ; NEW: Harness config hash
+ :harness-volume-name "aishell-harness-def456ghi" ; NEW: Volume name
+ :dockerfile-hash "abc123def"}                   ; DEPRECATED: alias for foundation-hash
+```
+
+**Backward compatibility:**
+- Old aishell versions ignore unknown keys (EDN is schemaless)
+- New aishell writes both `:dockerfile-hash` and `:foundation-hash`
+- Migration is additive: nil values for missing fields, no migration code
+
+**State writes:**
+- `cli/handle-build`: After foundation build + volume population
+- `cli/handle-update`: Updates build-time (and foundation-hash if `--force`)
+
+### Extension Cache Invalidation
+
+**Source:** `docker/extension/build-project-extension`
+
+**Old behavior (v2.7.0):**
+- Used base image ID to invalidate cache
+- Harness version change → base image rebuild → extension cache invalidated
+
+**New behavior (v2.8.0):**
+- Uses foundation image ID to invalidate cache
+- Foundation image label: `aishell.foundation.id={image-id}`
+- Harness updates don't change foundation ID → no cache invalidation
+
+**Migration detection:**
+- If label `aishell.foundation.id` is nil → old extension, trigger rebuild
+- Shows message: "Rebuilding extension (foundation image updated)"
 
 ---
 
