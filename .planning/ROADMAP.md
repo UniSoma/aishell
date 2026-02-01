@@ -101,8 +101,8 @@ Plans:
 - [x] 37-02: Implement lazy volume population with staleness detection on container run
 - [x] 37-03: Update extension cache invalidation to use foundation image ID
 - [x] 37-04: Wire foundation build and volume population into unified build command flow
-- [ ] 37-05: Add OpenCode binary installation to volume population (GAP-01 fix)
-- [ ] 37-06: Fix tmux new-window environment loss via /etc/profile.d script (GAP-02 fix)
+- [x] 37-05: Add OpenCode binary installation to volume population (GAP-01 fix)
+- [x] 37-06: Fix tmux new-window environment loss via /etc/profile.d script (GAP-02 fix)
 
 #### Phase 38: Volume Cleanup & Documentation
 
@@ -136,10 +136,10 @@ Phases execute numerically: 35 → 36 → 37 → 38
 |-------|----------------|--------|-----------|
 | 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
 | 36. Harness Volume Core | 3/3 | ✅ Complete | 2026-02-01 |
-| 37. Build Integration & Migration | 4/4 | ✅ Complete | 2026-02-01 |
+| 37. Build Integration & Migration | 6/6 | ✅ Complete | 2026-02-01 |
 | 38. Volume Cleanup & Documentation | 0/2 | Not started | - |
 
-**Total:** 9/11 plans complete (82%)
+**Total:** 11/13 plans complete (85%)
 
 ---
 *Roadmap created: 2026-01-31*
