@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.8.0 Decouple Harness Tools (Shipped: 2026-02-01)
+
+**Delivered:** Foundation/volume architecture split eliminating cascade invalidation — harness tools now live in Docker named volumes, so version updates no longer force multi-gigabyte extension rebuilds.
+
+**Phases completed:** 35-38 (14 plans total)
+
+**Key accomplishments:**
+
+- Foundation image split: stable base (Debian + Node.js + system tools) without harness packages, tagged `aishell:foundation`
+- Volume-mounted harness tools with content-hash naming (`aishell-harness-{hash}`) for cross-project sharing
+- Lazy volume population with staleness detection on first container run
+- Transparent build UX: `aishell build` handles foundation + volume, `aishell update` refreshes harness tools
+- Volume management commands (`aishell volumes` list/prune) with orphan detection and safety checks
+- Clean migration from `aishell:base` with clear error messages and comprehensive documentation across 6 docs
+
+**Stats:**
+
+- 59 files changed (8,863 insertions, 401 deletions)
+- ~4,305 lines of Clojure (total codebase)
+- 4 phases, 14 plans
+- 2 days (2026-01-31 → 2026-02-01)
+
+**Git range:** `docs(35)` → `fix(38)` (56 commits)
+
+**What's next:** Host-native bind mounts, volume lifecycle policies, or new harnesses (Aider, Cursor)
+
+---
+
 ## v2.7.0 tmux Integration & Named Containers (Shipped: 2026-01-31)
 
 **Delivered:** tmux session management for all container modes, deterministic named containers with project-hash isolation, detached mode for background execution, attach/detach workflow, and project-scoped container discovery.

@@ -87,16 +87,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ TERM validation with xterm-256color fallback for unsupported terminals — v2.7.0
 - ✓ Detached mode (`--detach`/`-d`) for background container execution — v2.7.0
 
+**v2.8.0 (2026-02-01) — Decouple Harness Tools:**
+- ✓ Foundation image split: Stable base without harness packages, tagged `aishell:foundation` — v2.8.0
+- ✓ Volume-mounted harness tools: npm packages in Docker named volumes with content-hash naming — v2.8.0
+- ✓ Lazy volume population: Auto-populated on first run if empty/stale — v2.8.0
+- ✓ Per-project harness volumes: `aishell-harness-{hash}` shared across identical configs — v2.8.0
+- ✓ Transparent build UX: `aishell build` handles foundation + volume transparently — v2.8.0
+- ✓ Clean migration: `aishell:foundation` replaces `aishell:base` with clear error for legacy references — v2.8.0
+- ✓ Cache invalidation: Extension tracking uses foundation image ID — v2.8.0
+- ✓ Update command redesign: `aishell update` refreshes harness volume, `--force` rebuilds foundation — v2.8.0
+- ✓ Volume management: `aishell volumes` list/prune with orphan detection and safety checks — v2.8.0
+
 ### Active
 
-**v2.8.0 — Decouple Harness Tools from Docker Extensions:**
-- [ ] Foundation image split: Stable base (Debian + Node.js + system tools) without harness packages
-- [ ] Volume-mounted harness tools: npm packages installed into Docker named volume, mounted at runtime
-- [ ] Lazy volume population: Harness volume auto-populated on first run if empty/stale
-- [ ] Per-project harness volumes: Content-hash named volumes (aishell-harness-{hash}) for different harness combos
-- [ ] Transparent build UX: `aishell build` handles both foundation + volume, harness volume auto-rebuilds when stale
-- [ ] Clean migration: `aishell:foundation` tag replaces `aishell:base`, clear error for old FROM references
-- [ ] Cache invalidation update: Extension tracking references foundation image ID, not base image ID
+(No active requirements — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -110,34 +114,22 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - Binary install for Claude/Codex — native binaries larger than npm packages (investigated v2.5.0)
 - Conditional Node.js — abandoned with binary install (Node.js still needed for npm harnesses)
 
-## Current Milestone: v2.8.0 Decouple Harness Tools
-
-**Goal:** Eliminate cascade invalidation by splitting the monolithic base image into a stable foundation layer and volume-mounted harness tools, so harness version updates no longer force multi-gigabyte extension rebuilds.
-
-**Target features:**
-- Foundation image without harness tools (stable, rarely rebuilt)
-- Harness tools in Docker named volumes (rebuilt in ~90s, not minutes)
-- Lazy volume population on first container run
-- Per-project volumes keyed by harness combination hash
-- Transparent UX — `aishell build` and `aishell <harness>` work the same
-- Clean break from `aishell:base` to `aishell:foundation`
-
 ## Current State
 
-**Shipped:** v2.7.0 on 2026-01-31
-**Next:** v2.8.0 — Decouple Harness Tools
+**Shipped:** v2.8.0 on 2026-02-01
+**Next:** Not yet planned
 
-**Codebase:** ~3,457 LOC Clojure (Babashka)
+**Codebase:** ~4,305 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux
-**Documentation:** 4,000+ lines across docs/ and README
+**Documentation:** 5,000+ lines across docs/ and README
 
-**v2.7.0 accomplishments:**
-- Deterministic container naming with 8-char SHA-256 project hashing
-- tmux auto-start in all container modes with TERM validation
-- Detached mode for background execution with conflict detection
-- Attach command for reconnecting to running containers
-- PS command for project-scoped container discovery
-- 19 of 19 v2.7.0 requirements satisfied (2 overridden by user decision)
+**v2.8.0 accomplishments:**
+- Foundation/volume architecture split eliminating cascade invalidation
+- Volume-mounted harness tools with content-hash naming for cross-project sharing
+- Lazy volume population with staleness detection
+- Update command redesigned for volume-first workflow
+- Volume management commands with orphan detection and safety checks
+- 19 of 19 v2.8.0 requirements shipped
 
 ## Milestone Conventions
 
@@ -239,5 +231,21 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Troubleshooting organized by symptom | Users search for symptoms, not components | Good |
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
+**v2.8.0 (Decouple Harness Tools):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| 2-tier architecture: foundation image + harness volume | Simpler than 3-image approach, volume mounts are fast | Good |
+| Volume-based injection over COPY --link layer inversion | Simpler for local dev workflow, no Docker buildx dependency | Good |
+| Clean break from aishell:base to aishell:foundation | Backward compat alias adds maintenance burden | Good |
+| Content-hash volume naming (aishell-harness-{hash}) | Identical configs share volumes across projects | Good |
+| Lazy volume population on first run | Avoids unnecessary work during build; auto-recovers | Good |
+| Gitleaks in foundation (not harness volume) | Security infrastructure belongs in stable layer | Good |
+| Read-only volume mount at /tools | Prevents accidental modification of shared tools | Good |
+| Update command: volume refresh by default, --force for foundation | Most common use case is harness update, not system update | Good |
+| OpenCode binary via curl/tar (not npm) | Go binary, not npm package; established /tools/bin pattern | Good |
+| Profile.d script for login shell environment | Fixes tmux new-window PATH loss; POSIX compatible | Good |
+| Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
+
 ---
-*Last updated: 2026-01-31 after v2.8.0 milestone start*
+*Last updated: 2026-02-01 after v2.8.0 milestone*
