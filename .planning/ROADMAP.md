@@ -106,26 +106,28 @@ Plans:
 
 #### Phase 38: Volume Cleanup & Documentation
 
-**Goal:** Volume management commands and comprehensive documentation for new architecture
+**Goal:** Repurpose update command for harness refresh, add volume management commands, and comprehensive documentation for new architecture
 
 **Depends on:** Phase 37
 
-**Requirements:** CLEAN-01, CLEAN-02, DOCS-01
+**Requirements:** CLEAN-01, CLEAN-02, UPDATE-01, DOCS-01
 
 **Success Criteria** (what must be TRUE):
-1. User can list all harness volumes and identify which are orphaned (not referenced by current state)
-2. User can prune orphaned volumes with confirmation prompt to prevent accidental deletion
-3. README.md reflects new foundation/volume architecture with migration guidance
-4. ARCHITECTURE.md explains 2-tier architecture with foundation image and harness volumes
-5. CONFIGURATION.md documents new build behavior and volume management commands
-6. TROUBLESHOOTING.md covers common volume-related issues and debugging steps
-7. DEVELOPMENT.md updated for contributors understanding the new build system
+1. `aishell update` repopulates harness volume unconditionally (delete + recreate for clean slate)
+2. `aishell update --force` rebuilds foundation image AND repopulates harness volume
+3. `aishell update` shows version diff when detectable (before/after harness versions)
+4. `aishell update` does not accept harness selection flags (strictly refreshes last build config)
+5. User can list all harness volumes and identify which are orphaned (not referenced by current state)
+6. User can prune orphaned volumes; in-use volumes skipped with warning
+7. All six documentation files updated (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
+8. Single v2.8.0 changelog entry covering phases 35-38
 
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] 38-01: Implement volume list and prune commands with orphan detection
-- [ ] 38-02: Update all documentation files (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
+- [ ] 38-01: Repurpose `aishell update` command for harness volume refresh with version diff output
+- [ ] 38-02: Implement volume list and prune commands with orphan detection
+- [ ] 38-03: Update all documentation files and create v2.8.0 changelog
 
 ## Progress
 
@@ -137,9 +139,9 @@ Phases execute numerically: 35 → 36 → 37 → 38
 | 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
 | 36. Harness Volume Core | 3/3 | ✅ Complete | 2026-02-01 |
 | 37. Build Integration & Migration | 6/6 | ✅ Complete | 2026-02-01 |
-| 38. Volume Cleanup & Documentation | 0/2 | Not started | - |
+| 38. Volume Cleanup & Documentation | 0/3 | Not started | - |
 
-**Total:** 11/13 plans complete (85%)
+**Total:** 11/14 plans complete (79%)
 
 ---
 *Roadmap created: 2026-01-31*
