@@ -22,7 +22,7 @@
 (defn write-state
   "Write state to file, creating directory if needed.
 
-   State schema:
+   State schema (v2.8.0):
    {:with-claude true            ; boolean
     :with-opencode false         ; boolean
     :with-codex false            ; boolean
@@ -32,9 +32,12 @@
     :opencode-version nil        ; string or nil
     :codex-version \"0.89.0\"    ; string or nil
     :gemini-version nil          ; string or nil
-    :image-tag \"aishell:base\"  ; string
+    :image-tag \"aishell:foundation\"  ; string
     :build-time \"2026-01-20...\" ; ISO-8601 string
-    :dockerfile-hash \"abc123def456\"} ; 12-char SHA-256 hash"
+    :dockerfile-hash \"abc123def456\" ; DEPRECATED: Use :foundation-hash
+    :foundation-hash \"abc123def456\"  ; 12-char SHA-256 of foundation Dockerfile template
+    :harness-volume-hash \"def789ghi012\" ; 12-char SHA-256 of enabled harnesses+versions
+    :harness-volume-name \"aishell-harness-def789ghi012\"} ; Docker volume name for runtime mounting"
   [state]
   (let [path (state-file)]
     (util/ensure-dir (util/config-dir))
