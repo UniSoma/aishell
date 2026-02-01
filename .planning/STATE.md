@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 ## Current Position
 
 Phase: 37 of 38 (Build Integration & Migration)
-Plan: 3 of 4 complete in phase
-Status: In progress
-Last activity: 2026-02-01 - Completed 37-03-PLAN.md
+Plan: 4 of 4 complete in phase
+Status: Phase complete
+Last activity: 2026-02-01 - Completed 37-04-PLAN.md
 
-Progress: [███████░░░] 73% (8/11 plans complete)
+Progress: [████████░░] 82% (9/11 plans complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -30,9 +30,9 @@ Progress: [███████░░░] 73% (8/11 plans complete)
 ## Performance Metrics
 
 **Velocity (v2.8.0):**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 2 min
-- Total execution time: 0.20 hours
+- Total execution time: 0.22 hours
 
 **By Phase:**
 
@@ -40,12 +40,12 @@ Progress: [███████░░░] 73% (8/11 plans complete)
 |-------|-------|-------|----------|
 | 35 | 2/2 | 6 min | 3 min |
 | 36 | 3/3 | 5 min | 2 min |
-| 37 | 3/4 | 4 min | 1 min |
+| 37 | 4/4 | 5 min | 1 min |
 | 38 | 0/2 | 0 min | - |
 
 **Recent Trend:**
-- Last plan: 2 min (37-03)
-- Trend: Refactoring tasks ~2 min with atomic commits
+- Last plan: 1 min (37-04)
+- Trend: Integration tasks ~1 min with atomic commits
 
 **Cumulative (v1.0-v2.7.0):**
 - Total plans: 80
@@ -115,6 +115,12 @@ Recent decisions affecting v2.8.0 work:
 - Backward-compat alias base-image-id-label maintained in build.clj
 - Function renamed: get-base-image-id → get-foundation-image-id
 
+**Build integration wiring (from 37-04):**
+- Volume population only happens when at least one harness is enabled (some check on harness flags)
+- Volume is only populated if missing OR hash mismatch (lazy, not every build)
+- Both :dockerfile-hash (deprecated) and :foundation-hash (new) are written for backward compatibility
+- :harness-volume-name is stored so run.clj can use it without recomputing
+
 **Key files for implementation:**
 - src/aishell/docker/templates.clj - Dockerfile templates
 - src/aishell/docker/build.clj - Build orchestration
@@ -136,8 +142,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-01T01:31:55Z
-Stopped at: Completed 37-03-PLAN.md (Extension Cache Migration)
+Last session: 2026-02-01T01:35:44Z
+Stopped at: Completed 37-04-PLAN.md (Build Integration Wiring)
 Resume file: None
 
-**Next step:** `/gsd:execute-phase 37-04` to integrate volume creation during build
+**Next step:** Move to Phase 38 (Testing & Validation) to verify end-to-end flow
