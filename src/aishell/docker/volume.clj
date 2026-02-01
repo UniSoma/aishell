@@ -228,6 +228,49 @@
          (when opencode-install (str " && " opencode-install))
          " && chmod -R a+rX /tools")))
 
+(defn list-harness-volumes
+  "List all aishell harness volumes with metadata.
+   Returns vector of maps with :name, :hash, :harnesses keys."
+  []
+  (try
+    (let [{:keys [exit out]} (p/shell {:continue true :out :string :err :string}
+                                      "docker" "volume" "ls"
+                                      "--filter" "name=aishell-harness-"
+                                      "--format" "{{.Name}}")
+          names (when (zero? exit)
+                  (remove str/blank? (str/split-lines out)))]
+      (vec (map (fn [vol-name]
+                  {:name vol-name
+                   :hash (get-volume-label vol-name "aishell.harness.hash")
+                   :harnesses (get-volume-label vol-name "aishell.harnesses")})
+                names)))
+    (catch Exception _ [])))
+
+(defn volume-in-use?
+  "Check if volume is mounted by any running or stopped container."
+  [volume-name]
+  (try
+    (let [{:keys [exit out]} (p/shell {:continue true :out :string :err :string}
+                                      "docker" "ps" "-a"
+                                      "--filter" (str "volume=" volume-name)
+                                      "--format" "{{.Names}}")]
+      (and (zero? exit) (not (str/blank? out))))
+    (catch Exception _ false)))
+
+(defn get-volume-size
+  "Get size of Docker volume. Returns formatted string or 'N/A'."
+  [volume-name]
+  (try
+    (let [{:keys [exit out]} (p/shell {:continue true :out :string :err :string}
+                                      "docker" "system" "df" "-v"
+                                      "--format" "table {{.Name}}\t{{.Size}}")
+          lines (when (zero? exit) (str/split-lines out))
+          match (some #(when (str/starts-with? % volume-name) %) lines)]
+      (if match
+        (str/trim (second (str/split match #"\t")))
+        "N/A"))
+    (catch Exception _ "N/A")))
+
 (defn populate-volume
   "Install harness tools into Docker volume via temporary container.
 
