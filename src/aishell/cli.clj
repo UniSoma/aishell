@@ -7,6 +7,7 @@
             [aishell.docker.hash :as hash]
             [aishell.docker.naming :as naming]
             [aishell.docker.templates :as templates]
+            [aishell.docker.volume :as vol]
             [aishell.output :as output]
             [aishell.run :as run]
             [aishell.check :as check]
@@ -169,22 +170,41 @@
           result (build/build-foundation-image
                    {:with-gitleaks with-gitleaks
                     :verbose (:verbose opts)
-                    :force (:force opts)})]
+                    :force (:force opts)})
+
+          ;; Step 2: Compute harness volume hash
+          state-map {:with-claude (:enabled? claude-config)
+                     :with-opencode (:enabled? opencode-config)
+                     :with-codex (:enabled? codex-config)
+                     :with-gemini (:enabled? gemini-config)
+                     :with-gitleaks with-gitleaks
+                     :claude-version (:version claude-config)
+                     :opencode-version (:version opencode-config)
+                     :codex-version (:version codex-config)
+                     :gemini-version (:version gemini-config)}
+
+          harness-hash (vol/compute-harness-hash state-map)
+          volume-name (vol/volume-name harness-hash)
+
+          ;; Step 3: Populate volume if needed (only if missing or stale)
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
+              (when (or (not (vol/volume-exists? volume-name))
+                        (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+                              harness-hash))
+                (when-not (vol/volume-exists? volume-name)
+                  (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
+                                                  "aishell.harness.version" "2.8.0"}))
+                (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})))]
 
       ;; Persist state (always, even on failure this won't run due to error exit)
       (state/write-state
-        {:with-claude (:enabled? claude-config)
-         :with-opencode (:enabled? opencode-config)
-         :with-codex (:enabled? codex-config)
-         :with-gemini (:enabled? gemini-config)
-         :with-gitleaks with-gitleaks
-         :claude-version (:version claude-config)
-         :opencode-version (:version opencode-config)
-         :codex-version (:version codex-config)
-         :gemini-version (:version gemini-config)
-         :image-tag (:image result)
-         :build-time (str (java.time.Instant/now))
-         :dockerfile-hash (hash/compute-hash templates/base-dockerfile)}))))
+        (assoc state-map
+               :image-tag (:image result)
+               :build-time (str (java.time.Instant/now))
+               :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
+               :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
+               :harness-volume-hash harness-hash                               ; NEW
+               :harness-volume-name volume-name)))))                           ; NEW
 
 (defn handle-update
   "Update command: force rebuild with preserved configuration.
@@ -211,14 +231,31 @@
     (let [result (build/build-foundation-image
                    {:with-gitleaks (:with-gitleaks state true)  ; default true for backwards compat
                     :verbose (:verbose opts)
-                    :force true})]  ; Always force for update
+                    :force true})  ; Always force for update
+
+          ;; Compute harness volume hash
+          harness-hash (vol/compute-harness-hash state)
+          volume-name (vol/volume-name harness-hash)
+
+          ;; Populate volume if needed (only if missing or stale)
+          _ (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+              (when (or (not (vol/volume-exists? volume-name))
+                        (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+                              harness-hash))
+                (when-not (vol/volume-exists? volume-name)
+                  (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
+                                                  "aishell.harness.version" "2.8.0"}))
+                (vol/populate-volume volume-name state {:verbose (:verbose opts)})))]
 
       ;; Update state with new build-time and hash
       (state/write-state
         (assoc state
                :image-tag (:image result)
                :build-time (str (java.time.Instant/now))
-               :dockerfile-hash (hash/compute-hash templates/base-dockerfile))))))
+               :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
+               :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
+               :harness-volume-hash harness-hash                               ; NEW
+               :harness-volume-name volume-name)))))                           ; NEW
 
 (defn handle-default [{:keys [opts args]}]
   (cond
