@@ -1,8 +1,8 @@
 (ns aishell.docker.extension
   "Per-project Dockerfile extension support with legacy tag validation.
 
-   Projects can extend the base image with .aishell/Dockerfile.
-   The extension is auto-rebuilt when base image or extension Dockerfile changes."
+   Projects can extend the foundation image with .aishell/Dockerfile.
+   The extension is auto-rebuilt when foundation image or extension Dockerfile changes."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as str]
@@ -12,7 +12,7 @@
             [aishell.output :as output]))
 
 ;; Labels for tracking rebuild dependencies
-(def base-image-id-label "aishell.base.id")
+(def foundation-image-id-label "aishell.foundation.id")
 (def extension-hash-label "aishell.extension.hash")
 
 (defn project-dockerfile
@@ -52,11 +52,11 @@ Why: v2.8.0 splits the base image into a stable foundation layer and
 Fix: Edit .aishell/Dockerfile and change:
      FROM aishell:base  ->  FROM aishell:foundation")))))
 
-(defn get-base-image-id
-  "Get Docker image ID for a given image tag.
+(defn get-foundation-image-id
+  "Get Docker image ID for foundation image.
 
    Arguments:
-   - image-tag: Docker image tag (e.g., \"aishell:base\")
+   - image-tag: Docker image tag (e.g., \"aishell:foundation\")
 
    Returns: Image ID string or nil on error"
   [image-tag]
@@ -94,30 +94,30 @@ Fix: Edit .aishell/Dockerfile and change:
 
    Rebuild is needed when:
    1. Extended image doesn't exist
-   2. Base image ID has changed
+   2. Foundation image ID has changed
    3. Extension Dockerfile content has changed
 
    Arguments:
    - extended-tag: Tag for extended image
-   - base-image-tag: Tag for base image
+   - foundation-image-tag: Tag for foundation image
    - project-dir: Path to project directory (optional, for Dockerfile hash check)
 
    Returns: true if rebuild needed, false otherwise"
-  ([extended-tag base-image-tag]
-   (needs-extended-rebuild? extended-tag base-image-tag nil))
-  ([extended-tag base-image-tag project-dir]
+  ([extended-tag foundation-image-tag]
+   (needs-extended-rebuild? extended-tag foundation-image-tag nil))
+  ([extended-tag foundation-image-tag project-dir]
    (cond
      ;; Extended image doesn't exist
      (not (docker/image-exists? extended-tag))
      true
 
-     ;; Check base image ID
+     ;; Check foundation image ID
      :else
-     (let [stored-base-id (docker/get-image-label extended-tag base-image-id-label)
-           current-base-id (get-base-image-id base-image-tag)]
+     (let [stored-foundation-id (docker/get-image-label extended-tag foundation-image-id-label)
+           current-foundation-id (get-foundation-image-id foundation-image-tag)]
        (cond
-         ;; Base image changed
-         (not= stored-base-id current-base-id)
+         ;; Foundation image changed (or extension has no foundation label - triggers rebuild for migration)
+         (not= stored-foundation-id current-foundation-id)
          true
 
          ;; Check extension Dockerfile hash if project-dir provided
@@ -134,20 +134,20 @@ Fix: Edit .aishell/Dockerfile and change:
 
    Arguments (map):
    - project-dir: Path to project directory
-   - base-tag: Tag for base image
+   - foundation-tag: Tag for foundation image
    - extended-tag: Tag for extended image
    - force: Force rebuild (--no-cache)
    - verbose: Show detailed build output
 
    Returns: {:success true :image extended-tag} or nil if no extension,
             exits on error"
-  [{:keys [project-dir base-tag extended-tag force verbose]}]
+  [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
-    (let [base-id (get-base-image-id base-tag)
+    (let [foundation-id (get-foundation-image-id foundation-tag)
           extension-hash (get-extension-dockerfile-hash project-dir)
           build-args (cond-> ["-f" dockerfile-path
                               "-t" extended-tag
-                              (str "--label=" base-image-id-label "=" base-id)
+                              (str "--label=" foundation-image-id-label "=" foundation-id)
                               (str "--label=" extension-hash-label "=" extension-hash)]
                        force (conj "--no-cache")
                        verbose (conj "--progress=plain"))

@@ -75,7 +75,7 @@
       (when (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (ext/build-extended-image
           {:project-dir project-dir
-           :base-tag base-tag
+           :foundation-tag base-tag
            :extended-tag extended-tag
            :force force?
            :verbose false}))

@@ -14,7 +14,8 @@
 
 ;; Label keys for cache tracking
 (def dockerfile-hash-label "aishell.dockerfile.hash")
-(def base-image-id-label "aishell.base.id")
+(def foundation-image-id-label "aishell.foundation.id")
+(def base-image-id-label foundation-image-id-label) ;; Backward compatibility alias
 (def foundation-image-tag "aishell:foundation")
 (def base-image-tag foundation-image-tag)
 
