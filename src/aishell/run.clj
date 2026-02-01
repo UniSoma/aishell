@@ -254,8 +254,11 @@
                   (binding [*out* *err*]
                     (print (:err result)))
                   (System/exit (:exit result)))))
-            ;; Foreground mode: exec (replaces process) - existing behavior
-            (apply p/exec (concat docker-args container-cmd))))))))
+            ;; Foreground mode: set window title, then exec (replaces process)
+            (let [project-name (.getName (java.io.File. project-dir))]
+              (print (str "\033]2;[aishell] " project-name "\007"))
+              (flush)
+              (apply p/exec (concat docker-args container-cmd)))))))))
 
 (defn run-exec
   "Run one-off command in container.
