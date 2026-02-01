@@ -173,6 +173,10 @@ if [ -d \"/tools/npm/bin\" ]; then
   export NODE_PATH=\"/tools/npm/lib/node_modules\"
 fi
 
+if [ -d \"/tools/bin\" ]; then
+  export PATH=\"/tools/bin:$PATH\"
+fi
+
 # Suppress Claude Code npm vs native installer warning (npm install still works)
 export DISABLE_INSTALLATION_CHECKS=1
 
