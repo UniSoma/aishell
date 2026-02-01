@@ -43,7 +43,8 @@
   [build-dir]
   (spit (str (fs/path build-dir "Dockerfile")) templates/base-dockerfile)
   (spit (str (fs/path build-dir "entrypoint.sh")) templates/entrypoint-script)
-  (spit (str (fs/path build-dir "bashrc.aishell")) templates/bashrc-content))
+  (spit (str (fs/path build-dir "bashrc.aishell")) templates/bashrc-content)
+  (spit (str (fs/path build-dir "profile.d-aishell.sh")) templates/profile-d-script))
 
 (defn- build-docker-args
   "Construct docker build argument vector."

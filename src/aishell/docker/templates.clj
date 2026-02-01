@@ -94,6 +94,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Copy custom bashrc
 COPY bashrc.aishell /etc/bash.aishell
 
+# Copy profile.d script for login shell environment (tmux new-window compatibility)
+COPY profile.d-aishell.sh /etc/profile.d/aishell.sh
+
 ENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]
 CMD [\"/bin/bash\"]
 ")
@@ -232,4 +235,25 @@ export VISUAL=vim
 export HISTSIZE=10000
 export HISTFILESIZE=20000
 export HISTCONTROL=ignoreboth:erasedups
+")
+
+(def profile-d-script
+  "# /etc/profile.d/aishell.sh - Login shell environment for aishell containers
+# Sourced by /etc/profile on login shell startup (new tmux windows, ssh, etc.)
+# Ensures harness tools and shell customizations persist across tmux windows.
+
+# Volume-mounted harness tools PATH configuration
+if [ -d \"/tools/npm/bin\" ]; then
+  export PATH=\"/tools/npm/bin:$PATH\"
+  export NODE_PATH=\"/tools/npm/lib/node_modules\"
+fi
+
+if [ -d \"/tools/bin\" ]; then
+  export PATH=\"/tools/bin:$PATH\"
+fi
+
+# Source shell customizations (prompt, aliases, locale)
+if [ -f \"/etc/bash.aishell\" ]; then
+  . /etc/bash.aishell
+fi
 ")
