@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Planning next milestone
+**Current focus:** v2.9.0 — tmux Opt-in & Plugin Support
 
 ## Current Position
 
-Phase: 38 of 38 (all milestones complete)
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-02-01 — v2.8.0 milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-01 — Milestone v2.9.0 started
 
-Progress: [██████████] 100% (90/90 plans complete across 9 milestones)
+Progress: [░░░░░░░░░░] 0%
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -36,9 +36,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-2 deferred todos:
+1 deferred todo:
 - [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) — deferred to future milestone
-- [Make tmux opt-in with --with-tmux flag](./todos/pending/2026-01-31-make-tmux-opt-in-with-flag.md) — opt-in tmux via `aishell build --with-tmux`
 
 ### Blockers/Concerns
 
@@ -47,7 +46,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: v2.8.0 milestone complete
+Stopped at: Milestone v2.9.0 started, defining requirements
 Resume file: None
 
-**Next step:** `/gsd:new-milestone` to start next milestone cycle.
+**Next step:** Complete requirements and roadmap definition.

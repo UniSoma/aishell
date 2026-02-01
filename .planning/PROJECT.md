@@ -100,13 +100,18 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements — next milestone not yet defined)
+**v2.9.0 — tmux Opt-in & Plugin Support:**
+- tmux opt-in: `aishell build --with-tmux` makes tmux opt-in (default = no tmux)
+- tmux config mounting: User's `~/.tmux.conf` auto-mounted when tmux is active
+- tmux plugins via config.yaml: `tmux.plugins` list, plugins installed into harness volume
+- tmux-resurrect persistence: Session state persisted to host via volume mount
+- Documentation: All CLI changes reflected in docs/
 
 ### Out of Scope
 
 - Persistent containers — ephemeral is the design choice (named containers in v2.7.0 are still ephemeral with --rm)
-- Persistent tmux sessions across container restarts — violates ephemeral design principle
-- tmux plugin installation in base image — version drift, slow builds
+- Per-project tmux.conf — global host config only, no project-level override
+- tmux plugin installation in foundation image — version drift, slow builds (plugins go in harness volume instead)
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -117,7 +122,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.8.0 on 2026-02-01
-**Next:** Not yet planned
+**Next:** v2.9.0 — tmux Opt-in & Plugin Support
 
 **Codebase:** ~4,305 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux
@@ -248,4 +253,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-01 after v2.8.0 milestone*
+*Last updated: 2026-02-01 after v2.9.0 milestone start*
