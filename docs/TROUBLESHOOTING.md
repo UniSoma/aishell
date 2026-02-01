@@ -143,7 +143,7 @@ sudo aishell build --with-claude
    npm view @codex-ai/codex versions
 
    # For Gemini CLI
-   npm view @google/generative-ai-cli versions
+   npm view @google/gemini-cli versions
    ```
 
 2. **Use exact version from npm:**

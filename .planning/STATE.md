@@ -85,7 +85,7 @@ Recent decisions affecting v2.8.0 work:
 - 12-character hex hash matches existing hash.clj pattern
 
 **Volume population (from 36-02):**
-- NPM package names: @anthropic-ai/claude-code, @codex-ai/codex, @google/generative-ai-cli
+- NPM package names: @anthropic-ai/claude-code, @codex-ai/codex, @google/gemini-cli
 - OpenCode excluded from npm installation (Go binary, not npm package)
 - Use NPM_CONFIG_PREFIX=/tools/npm for installation directory
 - Set world-readable permissions (chmod -R a+rX) for non-root execution

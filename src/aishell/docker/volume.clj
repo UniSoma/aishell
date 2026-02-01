@@ -20,7 +20,7 @@
    OpenCode is excluded as it's a Go binary, not an npm package."
   {:claude "@anthropic-ai/claude-code"
    :codex "@codex-ai/codex"
-   :gemini "@google/generative-ai-cli"})
+   :gemini "@google/gemini-cli"})
 
 (defn normalize-harness-config
   "Extract and normalize harness configuration for deterministic hashing.

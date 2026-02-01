@@ -425,7 +425,7 @@ Gemini CLI supports OAuth and API key authentication.
 
 ```bash
 # Install Gemini CLI on host
-npm install -g @google/generative-ai-cli
+npm install -g @google/gemini-cli
 
 # Authenticate
 gemini login
