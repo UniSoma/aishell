@@ -15,18 +15,18 @@ Requirements for harness tool decoupling. Each maps to roadmap phases.
 
 ### Harness Volume
 
-- [ ] **HVOL-01**: Harness tools installed into Docker named volume via `npm install -g --prefix`
-- [ ] **HVOL-02**: Harness volume mounted at runtime with PATH and NODE_PATH environment variables configured
-- [ ] **HVOL-03**: Per-project volumes named `aishell-harness-{hash}` where hash derives from harness flags+versions
+- [x] **HVOL-01**: Harness tools installed into Docker named volume via `npm install -g --prefix`
+- [x] **HVOL-02**: Harness volume mounted at runtime with PATH and NODE_PATH environment variables configured
+- [x] **HVOL-03**: Per-project volumes named `aishell-harness-{hash}` where hash derives from harness flags+versions
 - [ ] **HVOL-04**: Lazy volume population on first container run if volume is empty or stale
 - [ ] **HVOL-05**: Stale volume detection comparing state hash against current harness flags+versions
-- [ ] **HVOL-06**: Volume shared across projects with identical harness combinations (same hash = same volume)
+- [x] **HVOL-06**: Volume shared across projects with identical harness combinations (same hash = same volume)
 
 ### Build UX
 
 - [ ] **BUILD-01**: `aishell build` handles both foundation image and harness volume transparently
 - [x] **BUILD-02**: Foundation image only rebuilds when system dependencies change (Dockerfile template changes)
-- [ ] **BUILD-03**: Harness volume only rebuilds when harness versions or flags change
+- [x] **BUILD-03**: Harness volume only rebuilds when harness versions or flags change
 
 ### Cache Invalidation
 
@@ -77,11 +77,11 @@ Deferred to later milestones.
 | FNDN-02 | Phase 35 | Complete |
 | FNDN-03 | Phase 35 | Complete |
 | BUILD-02 | Phase 35 | Complete |
-| HVOL-01 | Phase 36 | Pending |
-| HVOL-02 | Phase 36 | Pending |
-| HVOL-03 | Phase 36 | Pending |
-| HVOL-06 | Phase 36 | Pending |
-| BUILD-03 | Phase 36 | Pending |
+| HVOL-01 | Phase 36 | Complete |
+| HVOL-02 | Phase 36 | Complete |
+| HVOL-03 | Phase 36 | Complete |
+| HVOL-06 | Phase 36 | Complete |
+| BUILD-03 | Phase 36 | Complete |
 | BUILD-01 | Phase 37 | Pending |
 | HVOL-04 | Phase 37 | Pending |
 | HVOL-05 | Phase 37 | Pending |

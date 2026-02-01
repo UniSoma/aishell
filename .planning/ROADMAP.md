@@ -73,9 +73,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 36-01: Implement harness hash computation from flags and versions
-- [ ] 36-02: Create volume population logic with npm install commands
-- [ ] 36-03: Wire volume mount into docker run with PATH/NODE_PATH environment configuration
+- [x] 36-01: Implement harness hash computation from flags and versions
+- [x] 36-02: Create volume population logic with npm install commands
+- [x] 36-03: Wire volume mount into docker run with PATH/NODE_PATH environment configuration
 
 #### Phase 37: Build Integration & Migration
 
@@ -133,11 +133,11 @@ Phases execute numerically: 35 → 36 → 37 → 38
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
-| 36. Harness Volume Core | 0/3 | Not started | - |
+| 36. Harness Volume Core | 3/3 | ✅ Complete | 2026-02-01 |
 | 37. Build Integration & Migration | 0/4 | Not started | - |
 | 38. Volume Cleanup & Documentation | 0/2 | Not started | - |
 
-**Total:** 2/11 plans complete (18%)
+**Total:** 5/11 plans complete (45%)
 
 ---
 *Roadmap created: 2026-01-31*

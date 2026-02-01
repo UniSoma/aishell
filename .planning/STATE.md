@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 36 - Harness Volume Core
+**Current focus:** Phase 37 - Build Integration & Migration
 
 ## Current Position
 
@@ -122,4 +122,4 @@ Last session: 2026-01-31T23:54:02Z
 Stopped at: Completed 36-03-PLAN.md (Volume Runtime Wiring)
 Resume file: None
 
-**Next step:** Phase 36 complete. Continue with Phase 37 (Harness Lazy Population)
+**Next step:** `/gsd:plan-phase 37` to create execution plans for build integration and migration
