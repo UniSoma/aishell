@@ -100,6 +100,7 @@
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
   (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
+  (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
   (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
@@ -191,11 +192,19 @@
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
-                                         harness-hash))]
+                                         harness-hash))
+                    ;; Compute harness list for label
+                    harness-list (str/join "," (keep (fn [[k v]]
+                                                       (when v (name k)))
+                                                     {:claude (:with-claude state-map)
+                                                      :opencode (:with-opencode state-map)
+                                                      :codex (:with-codex state-map)
+                                                      :gemini (:with-gemini state-map)}))]
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                    "aishell.harness.version" "2.8.0"}))
+                                                    "aishell.harness.version" "2.8.0"
+                                                    "aishell.harnesses" harness-list}))
                   (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})]
                     (when-not (:success pop-result)
                       (when vol-missing? (vol/remove-volume volume-name))
@@ -233,6 +242,9 @@
   {:force   {:coerce :boolean :desc "Also rebuild foundation image (--no-cache)"}
    :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
    :help    {:alias :h :coerce :boolean :desc "Show update help"}})
+
+(def volumes-prune-spec
+  {:yes {:alias :y :coerce :boolean :desc "Skip confirmation prompt"}})
 
 (defn print-update-help []
   (println (str output/BOLD "Usage:" output/NC " aishell update [OPTIONS]"))
@@ -293,11 +305,18 @@
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
-                (do
+                (let [;; Compute harness list for label
+                      harness-list (str/join "," (keep (fn [[k v]]
+                                                         (when v (name k)))
+                                                       {:claude (:with-claude state)
+                                                        :opencode (:with-opencode state)
+                                                        :codex (:with-codex state)
+                                                        :gemini (:with-gemini state)}))]
                   (println "Repopulating harness volume...")
                   (vol/remove-volume volume-name)
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "2.8.0"})
+                                                  "aishell.harness.version" "2.8.0"
+                                                  "aishell.harnesses" harness-list})
                   (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
                     (when-not (:success pop-result)
                       (vol/remove-volume volume-name)
@@ -312,6 +331,96 @@
             result (assoc :image-tag (:image result)
                          :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
                          :foundation-hash (hash/compute-hash templates/base-dockerfile))))))))
+
+(defn- prompt-yn
+  "Prompt user for yes/no confirmation."
+  [message]
+  (print (str message " (y/n): "))
+  (flush)
+  (= "y" (str/trim (read-line))))
+
+(defn handle-volumes-list
+  "List all harness volumes with active/orphaned status."
+  []
+  (let [state (state/read-state)
+        volumes (vol/list-harness-volumes)
+        current-vol (:harness-volume-name state)]
+    (if (empty? volumes)
+      (println "No harness volumes found.\n\nVolumes are created automatically during 'aishell build' when harnesses are enabled.")
+      (do
+        (pp/print-table [:NAME :STATUS :SIZE :HARNESSES]
+                       (map (fn [{:keys [name harnesses]}]
+                              {:NAME name
+                               :STATUS (if (= name current-vol) "active" "orphaned")
+                               :SIZE (vol/get-volume-size name)
+                               :HARNESSES (or harnesses "unknown")})
+                            volumes))
+        (println "\nTo remove orphaned volumes: aishell volumes prune")))))
+
+(defn handle-volumes-prune
+  "Remove orphaned volumes with confirmation prompt."
+  [opts]
+  (let [state (state/read-state)
+        current-vol (:harness-volume-name state)
+        all-volumes (vol/list-harness-volumes)
+        orphaned (filter #(and (not= (:name %) current-vol)
+                              (str/starts-with? (:name %) "aishell-harness-"))
+                        all-volumes)]
+    (if (empty? orphaned)
+      (println "No orphaned volumes to prune.")
+      (do
+        (println "The following volumes will be removed:")
+        (doseq [{:keys [name]} orphaned]
+          (println (str "  - " name)))
+        (when (or (:yes opts) (prompt-yn "Remove these volumes?"))
+          (doseq [{:keys [name]} orphaned]
+            (if (vol/volume-in-use? name)
+              (println (str "Skipping " name " (in use by container)"))
+              (do
+                (vol/remove-volume name)
+                (println (str "Removed " name)))))
+          (println "Prune complete."))))))
+
+(defn print-volumes-help
+  "Print help for volumes command."
+  []
+  (println (str output/BOLD "Usage:" output/NC " aishell volumes [SUBCOMMAND]"))
+  (println)
+  (println "Manage harness volumes.")
+  (println)
+  (println (str output/BOLD "Subcommands:" output/NC))
+  (println "  list     List all harness volumes (default)")
+  (println "  prune    Remove orphaned volumes")
+  (println)
+  (println (str output/BOLD "Prune Options:" output/NC))
+  (println (cli/format-opts {:spec volumes-prune-spec
+                             :order [:yes]}))
+  (println)
+  (println (str output/BOLD "Examples:" output/NC))
+  (println (str "  " output/CYAN "aishell volumes" output/NC "              List volumes"))
+  (println (str "  " output/CYAN "aishell volumes list" output/NC "        List volumes"))
+  (println (str "  " output/CYAN "aishell volumes prune" output/NC "       Remove orphaned volumes"))
+  (println (str "  " output/CYAN "aishell volumes prune --yes" output/NC " Skip confirmation")))
+
+(defn handle-volumes
+  "Dispatcher for volumes subcommands."
+  [args]
+  (let [subcommand (first args)]
+    (cond
+      (or (= subcommand "--help") (= subcommand "-h"))
+      (print-volumes-help)
+
+      (or (nil? subcommand) (= subcommand "list"))
+      (handle-volumes-list)
+
+      (= subcommand "prune")
+      (let [opts (cli/parse-opts (vec (rest args)) {:spec volumes-prune-spec})]
+        (handle-volumes-prune opts))
+
+      :else
+      (output/error (str "Unknown volumes subcommand: " subcommand
+                        "\n\nValid subcommands: list, prune"
+                        "\n\nTry: aishell volumes --help")))))
 
 (defn- extract-short-name
   "Extract user-friendly name from full container name.
@@ -385,6 +494,7 @@
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
       "ps" (handle-ps nil)
+      "volumes" (handle-volumes (vec (rest clean-args)))
       "attach" (let [rest-args (vec (rest clean-args))]
                  (cond
                    (some #{"-h" "--help"} rest-args)
