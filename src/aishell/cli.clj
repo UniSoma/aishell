@@ -96,7 +96,7 @@
   (println)
   (println (str output/BOLD "Commands:" output/NC))
   (println (str "  " output/CYAN "build" output/NC "      Build the container image"))
-  (println (str "  " output/CYAN "update" output/NC "     Rebuild with latest versions"))
+  (println (str "  " output/CYAN "update" output/NC "     Refresh harness tools to latest versions"))
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
   (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
@@ -211,62 +211,6 @@
                :harness-volume-hash harness-hash                               ; NEW
                :harness-volume-name volume-name)))))                           ; NEW
 
-(defn handle-update
-  "Update command: force rebuild with preserved configuration.
-   Reads existing state and rebuilds with same flags + force (--no-cache).
-   This is NOT a 'check for updates' command - it always rebuilds."
-  [{:keys [opts]}]
-  (let [state (state/read-state)]
-    ;; Must have prior build
-    (when-not state
-      (output/error "No previous build found. Run: aishell build"))
-
-    ;; Show what we're updating
-    (println "Updating with preserved configuration...")
-    (when (:with-claude state)
-      (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
-    (when (:with-opencode state)
-      (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
-    (when (:with-codex state)
-      (println (str "  Codex: " (or (:codex-version state) "latest"))))
-    (when (:with-gemini state)
-      (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
-
-    ;; Rebuild foundation image with same config + force (always --no-cache for update)
-    (let [result (build/build-foundation-image
-                   {:with-gitleaks (:with-gitleaks state true)  ; default true for backwards compat
-                    :verbose (:verbose opts)
-                    :force true})  ; Always force for update
-
-          ;; Compute harness volume hash
-          harness-hash (vol/compute-harness-hash state)
-          volume-name (vol/volume-name harness-hash)
-
-          ;; Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
-              (let [vol-missing? (not (vol/volume-exists? volume-name))
-                    vol-stale? (and (not vol-missing?)
-                                   (not= (vol/get-volume-label volume-name "aishell.harness.hash")
-                                         harness-hash))]
-                (when (or vol-missing? vol-stale?)
-                  (when vol-missing?
-                    (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                    "aishell.harness.version" "2.8.0"}))
-                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
-                    (when-not (:success pop-result)
-                      (when vol-missing? (vol/remove-volume volume-name))
-                      (output/error "Failed to populate harness volume"))))))]
-
-      ;; Update state with new build-time and hash
-      (state/write-state
-        (assoc state
-               :image-tag (:image result)
-               :build-time (str (java.time.Instant/now))
-               :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
-               :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
-               :harness-volume-hash harness-hash                               ; NEW
-               :harness-volume-name volume-name)))))                           ; NEW
-
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -286,7 +230,88 @@
     (run/run-container nil [] {})))
 
 (def update-spec
-  {:verbose {:alias :v :coerce :boolean :desc "Show full Docker build output"}})
+  {:force   {:coerce :boolean :desc "Also rebuild foundation image (--no-cache)"}
+   :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
+   :help    {:alias :h :coerce :boolean :desc "Show update help"}})
+
+(defn print-update-help []
+  (println (str output/BOLD "Usage:" output/NC " aishell update [OPTIONS]"))
+  (println)
+  (println "Refresh harness tools to latest versions using existing configuration.")
+  (println)
+  (println (str output/BOLD "Options:" output/NC))
+  (println (cli/format-opts {:spec update-spec
+                             :order [:force :verbose :help]}))
+  (println)
+  (println (str output/BOLD "Notes:" output/NC))
+  (println "  - Refreshes harnesses from last build configuration")
+  (println "  - To change which harnesses are installed, use 'aishell build'")
+  (println "  - Volume is deleted and recreated for a clean slate")
+  (println "  - Foundation image is NOT rebuilt (unless --force is used)")
+  (println)
+  (println (str output/BOLD "Examples:" output/NC))
+  (println (str "  " output/CYAN "aishell update" output/NC "          Refresh harness tools only"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "  Also rebuild foundation image")))
+
+(defn handle-update
+  "Update command: refresh harness tools to latest versions.
+   Default behavior: repopulates volume (delete + recreate) without rebuilding foundation.
+   With --force: also rebuilds foundation image using --no-cache."
+  [{:keys [opts]}]
+  (if (:help opts)
+    (print-update-help)
+    (let [state (state/read-state)]
+      ;; Must have prior build
+      (when-not state
+        (output/error "No previous build found. Run: aishell build"))
+
+      ;; Show what we're updating
+      (println "Updating with preserved configuration...")
+      (when (:with-claude state)
+        (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
+      (when (:with-opencode state)
+        (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
+      (when (:with-codex state)
+        (println (str "  Codex: " (or (:codex-version state) "latest"))))
+      (when (:with-gemini state)
+        (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
+
+      ;; Conditionally rebuild foundation image (only with --force)
+      (let [result (when (:force opts)
+                     (build/build-foundation-image
+                       {:with-gitleaks (:with-gitleaks state true)
+                        :verbose (:verbose opts)
+                        :force true}))
+
+            ;; Volume repopulation (unconditional delete + recreate)
+            harness-hash (vol/compute-harness-hash state)
+            volume-name (or (:harness-volume-name state)
+                           (vol/volume-name harness-hash))
+
+            ;; Check if any harness is enabled
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+
+            _ (if harnesses-enabled?
+                ;; Repopulate volume (delete + recreate)
+                (do
+                  (println "Repopulating harness volume...")
+                  (vol/remove-volume volume-name)
+                  (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
+                                                  "aishell.harness.version" "2.8.0"})
+                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
+                    (when-not (:success pop-result)
+                      (vol/remove-volume volume-name)
+                      (output/error "Failed to populate harness volume"))))
+                ;; No harnesses enabled
+                (println "No harnesses enabled. Nothing to update."))]
+
+        ;; Update state with new build-time (and foundation-hash if --force was used)
+        (state/write-state
+          (cond-> state
+            true (assoc :build-time (str (java.time.Instant/now)))
+            result (assoc :image-tag (:image result)
+                         :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
+                         :foundation-hash (hash/compute-hash templates/base-dockerfile))))))))
 
 (defn- extract-short-name
   "Extract user-friendly name from full container name.
