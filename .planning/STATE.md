@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 37 - Build Integration & Migration
+**Current focus:** Phase 38 - Volume Cleanup & Documentation
 
 ## Current Position
 
@@ -146,4 +146,4 @@ Last session: 2026-02-01T01:35:44Z
 Stopped at: Completed 37-04-PLAN.md (Build Integration Wiring)
 Resume file: None
 
-**Next step:** Move to Phase 38 (Testing & Validation) to verify end-to-end flow
+**Next step:** `/gsd:plan-phase 38` to plan volume cleanup and documentation

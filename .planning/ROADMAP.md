@@ -97,10 +97,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 37-01: Update state schema with foundation-hash and harness-volume-hash fields, implement backward-compatible migration
-- [ ] 37-02: Implement lazy volume population with staleness detection on container run
-- [ ] 37-03: Update extension cache invalidation to use foundation image ID
-- [ ] 37-04: Wire foundation build and volume population into unified build command flow
+- [x] 37-01: Update state schema with foundation-hash and harness-volume-hash fields, implement backward-compatible migration
+- [x] 37-02: Implement lazy volume population with staleness detection on container run
+- [x] 37-03: Update extension cache invalidation to use foundation image ID
+- [x] 37-04: Wire foundation build and volume population into unified build command flow
 
 #### Phase 38: Volume Cleanup & Documentation
 
@@ -134,11 +134,11 @@ Phases execute numerically: 35 → 36 → 37 → 38
 |-------|----------------|--------|-----------|
 | 35. Foundation Image Split | 2/2 | ✅ Complete | 2026-01-31 |
 | 36. Harness Volume Core | 3/3 | ✅ Complete | 2026-02-01 |
-| 37. Build Integration & Migration | 0/4 | Not started | - |
+| 37. Build Integration & Migration | 4/4 | ✅ Complete | 2026-02-01 |
 | 38. Volume Cleanup & Documentation | 0/2 | Not started | - |
 
-**Total:** 5/11 plans complete (45%)
+**Total:** 9/11 plans complete (82%)
 
 ---
 *Roadmap created: 2026-01-31*
-*Last updated: 2026-01-31*
+*Last updated: 2026-02-01*
