@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2026-02-01
+
+### Added
+- Set terminal window title (OSC 2) before foreground container launch for easier window identification in Alt+Tab
+
 ## [2.8.0] - 2026-02-01
 
 Split monolithic base image into stable foundation layer and volume-mounted harness tools.
