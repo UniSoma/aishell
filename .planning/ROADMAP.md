@@ -80,10 +80,10 @@ Plans:
   3. tmux session only starts when :with-tmux flag is true in state
   4. Shell mode works correctly with tmux disabled
   5. Harness commands work correctly with tmux disabled
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 41-01: TBD
+- [ ] 41-01-PLAN.md -- Entrypoint plugin bridging, config injection, conditional tmux/shell startup + WITH_TMUX env var
 
 #### Phase 42: Resurrect State Persistence
 **Goal**: Enable optional session state persistence via tmux-resurrect
