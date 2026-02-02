@@ -52,7 +52,7 @@ Plans:
 - [x] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
 - [x] 39-02-PLAN.md -- Conditional tmux config mount in docker run
 
-#### Phase 40: Plugin Installation in Volume (UAT gap closure in progress)
+#### ✅ Phase 40: Plugin Installation in Volume (Complete 2026-02-02)
 **Goal**: Install TPM and declared plugins into harness volume at build time
 **Depends on**: Phase 39
 **Requirements**: PLUG-01, PLUG-02, PLUG-03, PLUG-06
@@ -67,7 +67,7 @@ Plans:
 Plans:
 - [x] 40-01-PLAN.md -- Plugin format validation in config parsing
 - [x] 40-02-PLAN.md -- TPM and plugin installation in volume population
-- [ ] 40-03-PLAN.md -- Gap closure: volume hash includes tmux state, idempotent TPM clone
+- [x] 40-03-PLAN.md -- Gap closure: volume hash includes tmux state, idempotent TPM clone
 
 #### Phase 41: TPM Initialization in Entrypoint
 **Goal**: Make installed plugins discoverable to tmux at runtime

@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE
-Plan: All complete
-Status: Phase 40 verified (9/9 must-haves passed), ready for Phase 41
-Last activity: 2026-02-02 — Phase 40 verified and complete
+Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE (with gap closure)
+Plan: All complete (including 40-03 gap closure)
+Status: Phase 40 fully verified, all UAT gaps closed, ready for Phase 41
+Last activity: 2026-02-02 — Completed 40-03 gap closure plan
 
 Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phases complete)
 
@@ -31,11 +31,11 @@ Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 94 (90 in v1.0-v2.8.0 + 4 in v2.9.0)
-- v2.9.0 tracking: 4 plans completed (39-01, 39-02, 40-01, 40-02)
+- Total plans completed: 95 (90 in v1.0-v2.8.0 + 5 in v2.9.0)
+- v2.9.0 tracking: 5 plans completed (39-01, 39-02, 40-01, 40-02, 40-03)
 
 **Recent Trend:**
-- v2.9.0: 4 plans completed (avg 2.25min duration)
+- v2.9.0: 5 plans completed (avg 2.2min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity
 
@@ -54,6 +54,9 @@ Recent decisions affecting current work:
 - v2.9.0: GitHub owner/repo regex pattern for plugin validation
 - v2.9.0: TPM installs to /tools/tmux/plugins with TMUX_PLUGIN_MANAGER_PATH override
 - v2.9.0: Config threading to volume population uses optional :config key for backward compatibility
+- v2.9.0: Volume hash includes tmux state (:with-tmux flag and sorted plugin list)
+- v2.9.0: Idempotent git clone uses pull-if-exists pattern (safer than rm -rf)
+- v2.9.0: Build/update guards check :with-tmux to trigger volume population for tmux-only configs
 - v2.8.0: Volume-based harness tool injection decouples tools from foundation image
 - v2.8.0: Foundation image (aishell:foundation) replaces base image with clean break
 - v2.8.0: Content-hash volume naming enables cross-project sharing
@@ -72,7 +75,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Phase 40 complete and verified
+Stopped at: Completed 40-03 gap closure plan
 Resume file: None
 
 **Next step:** Run `/gsd:plan-phase 41` to plan TPM initialization in entrypoint
+
+**Recent completions:**
+- 40-03: Gap closure fixing UAT test failures (volume hash, idempotent git clone) - 2min
