@@ -46,10 +46,11 @@ See MILESTONES.md for full historical context.
   2. User can run `aishell build` without flag and tmux is disabled
   3. User's ~/.tmux.conf is mounted read-only into container when tmux enabled
   4. Missing ~/.tmux.conf on host is handled gracefully with no error
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 39-01: TBD
+- [ ] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
+- [ ] 39-02-PLAN.md -- Conditional tmux config mount in docker run
 
 #### Phase 40: Plugin Installation in Volume
 **Goal**: Install TPM and declared plugins into harness volume at build time
@@ -124,10 +125,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 0/TBD | Not started | - |
+| 39-43 | v2.9.0 | 0/2 | In progress | - |
 
-**Total:** 90/90 plans complete across 9 milestones, v2.9.0 planning in progress
+**Total:** 90/92 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-01 after v2.9.0 milestone planning*
+*Last updated: 2026-02-02 after Phase 39 planning*
