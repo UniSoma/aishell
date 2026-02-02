@@ -43,7 +43,7 @@
   "Ensure harness volume exists and is up-to-date.
    Populates lazily if missing or stale (hash mismatch).
    Returns volume name for docker run mounting, or nil if no harnesses enabled."
-  [state]
+  [state config]
   (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
     (let [expected-hash (vol/compute-harness-hash state)
           volume-name (or (:harness-volume-name state)
@@ -54,7 +54,7 @@
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
                                           "aishell.harness.version" "2.8.0"})
-          (let [result (vol/populate-volume volume-name state)]
+          (let [result (vol/populate-volume volume-name state {:config config})]
             (when-not (:success result)
               ;; Remove empty volume so next run retries population
               (vol/remove-volume volume-name)
@@ -63,7 +63,7 @@
         ;; Volume exists but stale (hash mismatch or missing label)
         (not= (vol/get-volume-label volume-name "aishell.harness.hash")
               expected-hash)
-        (let [result (vol/populate-volume volume-name state)]
+        (let [result (vol/populate-volume volume-name state {:config config})]
           (when-not (:success result)
             (output/error "Failed to populate harness volume"))))
       ;; Return volume name regardless
@@ -109,6 +109,7 @@
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
           base-tag (or (:image-tag state) "aishell:base")
+          cfg (config/load-config project-dir)
 
           ;; Resolve container name: --name override or harness name (or "shell" for shell mode)
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
@@ -121,7 +122,7 @@
           _ (output/verbose (str "Container name: " container-name-str))
 
           ;; Ensure harness volume ready (lazy population)
-          harness-volume-name (ensure-harness-volume state)]
+          harness-volume-name (ensure-harness-volume state cfg)]
 
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)
@@ -138,7 +139,6 @@
 
       ;; Resolve final image (may auto-build extension)
       (let [image-tag (resolve-image-tag base-tag project-dir false)
-            cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
 
             ;; Extract defaults for this harness (if any)
@@ -294,7 +294,7 @@
             git-id (docker-run/read-git-identity project-dir)
 
             ;; Ensure harness volume ready (lazy population)
-            harness-volume-name (ensure-harness-volume state)
+            harness-volume-name (ensure-harness-volume state cfg)
 
             ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
             tty? (some? (System/console))

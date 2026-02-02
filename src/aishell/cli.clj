@@ -12,6 +12,7 @@
             [aishell.run :as run]
             [aishell.check :as check]
             [aishell.state :as state]
+            [aishell.config :as config]
             [aishell.util :as util]
             [aishell.attach :as attach]))
 
@@ -177,6 +178,8 @@
                     :force (:force opts)})
 
           ;; Step 2: Compute harness volume hash
+          project-dir (System/getProperty "user.dir")
+          cfg (config/load-config project-dir)
           state-map {:with-claude (:enabled? claude-config)
                      :with-opencode (:enabled? opencode-config)
                      :with-codex (:enabled? codex-config)
@@ -209,7 +212,7 @@
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
                                                     "aishell.harness.version" "2.8.0"
                                                     "aishell.harnesses" harness-list}))
-                  (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})]
+                  (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
                       (when vol-missing? (vol/remove-volume volume-name))
                       (output/error "Failed to populate harness volume"))))))]
@@ -295,7 +298,9 @@
         (println "  tmux: enabled"))
 
       ;; Conditionally rebuild foundation image (only with --force)
-      (let [result (when (:force opts)
+      (let [project-dir (System/getProperty "user.dir")
+            cfg (config/load-config project-dir)
+            result (when (:force opts)
                      (build/build-foundation-image
                        {:with-gitleaks (:with-gitleaks state true)
                         :verbose (:verbose opts)
@@ -323,7 +328,7 @@
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
                                                   "aishell.harness.version" "2.8.0"
                                                   "aishell.harnesses" harness-list})
-                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
+                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
                       (vol/remove-volume volume-name)
                       (output/error "Failed to populate harness volume"))))
