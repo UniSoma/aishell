@@ -71,29 +71,36 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TMUX-01 | — | Pending |
-| TMUX-02 | — | Pending |
-| TMUX-03 | — | Pending |
-| TMUX-04 | — | Pending |
-| TMUX-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| PLUG-01 | — | Pending |
-| PLUG-02 | — | Pending |
-| PLUG-03 | — | Pending |
-| PLUG-04 | — | Pending |
-| PLUG-05 | — | Pending |
-| PLUG-06 | — | Pending |
-| PERS-01 | — | Pending |
-| PERS-02 | — | Pending |
-| PERS-03 | — | Pending |
-| DOCS-01 | — | Pending |
+| TMUX-01 | Phase 39 | Pending |
+| TMUX-02 | Phase 39 | Pending |
+| TMUX-03 | Phase 41 | Pending |
+| TMUX-04 | Phase 43 | Pending |
+| TMUX-05 | Phase 43 | Pending |
+| CONF-01 | Phase 39 | Pending |
+| CONF-02 | Phase 39 | Pending |
+| PLUG-01 | Phase 40 | Pending |
+| PLUG-02 | Phase 40 | Pending |
+| PLUG-03 | Phase 40 | Pending |
+| PLUG-04 | Phase 41 | Pending |
+| PLUG-05 | Phase 41 | Pending |
+| PLUG-06 | Phase 40 | Pending |
+| PERS-01 | Phase 42 | Pending |
+| PERS-02 | Phase 42 | Pending |
+| PERS-03 | Phase 42 | Pending |
+| DOCS-01 | Phase 43 | Pending |
 
 **Coverage:**
 - v2.9.0 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 (pending roadmap creation)
+- Mapped to phases: 17/17 (100%)
+- Unmapped: 0
+
+**Phase Distribution:**
+- Phase 39: 4 requirements (TMUX-01, TMUX-02, CONF-01, CONF-02)
+- Phase 40: 4 requirements (PLUG-01, PLUG-02, PLUG-03, PLUG-06)
+- Phase 41: 3 requirements (TMUX-03, PLUG-04, PLUG-05)
+- Phase 42: 3 requirements (PERS-01, PERS-02, PERS-03)
+- Phase 43: 3 requirements (TMUX-04, TMUX-05, DOCS-01)
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after initial definition*
+*Last updated: 2026-02-01 after roadmap creation*

@@ -11,6 +11,7 @@
 - ✅ **v2.5.0 Optimization & Polish** - Phases 28-29 (shipped 2026-01-26)
 - ✅ **v2.7.0 tmux Integration & Named Containers** - Phases 30-34 (shipped 2026-01-31)
 - ✅ **v2.8.0 Decouple Harness Tools** - Phases 35-38 (shipped 2026-02-01)
+- 📋 **v2.9.0 tmux Opt-in & Plugin Support** - Phases 39-43 (planned)
 
 ## Phases
 
@@ -32,6 +33,84 @@ See MILESTONES.md for full historical context.
 
 </details>
 
+### 📋 v2.9.0 tmux Opt-in & Plugin Support (Planned)
+
+**Milestone Goal:** Make tmux opt-in, add plugin management, support user config mounting, enable session persistence.
+
+#### Phase 39: State Schema & Config Mounting
+**Goal**: Establish opt-in flag and mount user tmux configuration
+**Depends on**: Phase 38
+**Requirements**: TMUX-01, TMUX-02, CONF-01, CONF-02
+**Success Criteria** (what must be TRUE):
+  1. User can run `aishell build --with-tmux` and flag is stored in state.edn
+  2. User can run `aishell build` without flag and tmux is disabled
+  3. User's ~/.tmux.conf is mounted read-only into container when tmux enabled
+  4. Missing ~/.tmux.conf on host is handled gracefully with no error
+**Plans**: TBD
+
+Plans:
+- [ ] 39-01: TBD
+
+#### Phase 40: Plugin Installation in Volume
+**Goal**: Install TPM and declared plugins into harness volume at build time
+**Depends on**: Phase 39
+**Requirements**: PLUG-01, PLUG-02, PLUG-03, PLUG-06
+**Success Criteria** (what must be TRUE):
+  1. User can declare plugins in .aishell/config.yaml under tmux.plugins list
+  2. TPM installed into /tools/tmux/plugins/tpm during volume population
+  3. Declared plugins installed non-interactively during aishell build
+  4. Plugin format validation catches invalid owner/repo patterns before build
+  5. aishell update refreshes plugin installations
+**Plans**: TBD
+
+Plans:
+- [ ] 40-01: TBD
+
+#### Phase 41: TPM Initialization in Entrypoint
+**Goal**: Make installed plugins discoverable to tmux at runtime
+**Depends on**: Phase 40
+**Requirements**: TMUX-03, PLUG-04, PLUG-05
+**Success Criteria** (what must be TRUE):
+  1. Plugins installed in /tools/tmux/plugins are accessible at ~/.tmux/plugins
+  2. TPM initialization appended to user's tmux config at container startup
+  3. tmux session only starts when :with-tmux flag is true in state
+  4. Shell mode works correctly with tmux disabled
+  5. Harness commands work correctly with tmux disabled
+**Plans**: TBD
+
+Plans:
+- [ ] 41-01: TBD
+
+#### Phase 42: Resurrect State Persistence
+**Goal**: Enable optional session state persistence via tmux-resurrect
+**Depends on**: Phase 41
+**Requirements**: PERS-01, PERS-02, PERS-03
+**Success Criteria** (what must be TRUE):
+  1. User can configure tmux.resurrect section in config.yaml
+  2. Resurrect state directory mounted from host when resurrect enabled
+  3. Process restoration disabled by default with only layout restoration active
+  4. Session state persists across container restarts when resurrect configured
+**Plans**: TBD
+
+Plans:
+- [ ] 42-01: TBD
+
+#### Phase 43: Validation & Migration
+**Goal**: Ensure graceful failures and smooth upgrade path for existing users
+**Depends on**: Phase 42
+**Requirements**: TMUX-04, TMUX-05, DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. aishell attach validates tmux is enabled and shows helpful error when not
+  2. Users upgrading from v2.7-2.8 see migration warning about tmux behavior change
+  3. All CLI changes reflected in README.md
+  4. All architecture changes reflected in docs/ARCHITECTURE.md
+  5. All config changes reflected in docs/CONFIGURATION.md
+  6. Troubleshooting guide updated for tmux-related issues
+**Plans**: TBD
+
+Plans:
+- [ ] 43-01: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -45,9 +124,10 @@ See MILESTONES.md for full historical context.
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
+| 39-43 | v2.9.0 | 0/TBD | Not started | - |
 
-**Total:** 90/90 plans complete across 9 milestones
+**Total:** 90/90 plans complete across 9 milestones, v2.9.0 planning in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-01 after v2.8.0 milestone completion*
+*Last updated: 2026-02-01 after v2.9.0 milestone planning*
