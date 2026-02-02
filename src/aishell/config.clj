@@ -14,6 +14,12 @@
   "Valid harness names for harness_args validation."
   #{"claude" "opencode" "codex" "gemini"})
 
+(def plugin-format-pattern
+  "Regex for GitHub owner/repo format validation.
+   Matches: owner/repo where owner is 1-39 chars (alphanumeric, hyphens, no leading/trailing hyphens)
+   and repo is 1-100 chars (alphanumeric, dots, hyphens, underscores)."
+  #"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?/[a-zA-Z0-9._-]{1,100}$")
+
 (defn project-config-path
   "Path to project config: PROJECT_DIR/.aishell/config.yaml"
   [project-dir]
@@ -65,6 +71,13 @@
                          " harness_args: "
                          (clojure.string/join ", " unknown)))))))
 
+(defn validate-plugin-format
+  "Validate single plugin string matches owner/repo format.
+   Returns nil if valid, error message string if invalid."
+  [plugin]
+  (when-not (re-matches plugin-format-pattern plugin)
+    (str "Invalid plugin format: '" plugin "' - expected 'owner/repo'")))
+
 (defn validate-detection-config
   "Validate detection config. Warns on invalid severity and missing reason.
    Returns config unchanged."
@@ -101,7 +114,22 @@
     (when-not (map? tmux-config)
       (output/warn (str "Invalid tmux section in " source-path
                        ": expected map, got " (type tmux-config)
-                       "\nExample:\n  tmux:\n    plugins:\n      - tmux-plugins/tmux-sensible"))))
+                       "\nExample:\n  tmux:\n    plugins:\n      - tmux-plugins/tmux-sensible")))
+    ;; Validate :plugins if present
+    (when-let [plugins (:plugins tmux-config)]
+      (if-not (sequential? plugins)
+        (output/warn (str "Invalid tmux.plugins in " source-path
+                         ": expected list, got " (type plugins)))
+        ;; Validate each plugin entry
+        (doseq [plugin plugins]
+          (cond
+            (not (string? plugin))
+            (output/warn (str "Invalid plugin entry in " source-path
+                             ": expected string, got " (type plugin) " - " (pr-str plugin)))
+
+            :else
+            (when-let [error-msg (validate-plugin-format plugin)]
+              (output/warn (str error-msg " in " source-path))))))))
   tmux-config)
 
 (defn validate-config
