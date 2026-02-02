@@ -249,6 +249,25 @@ if [ \"$WITH_TMUX\" = \"true\" ]; then
     fi
 fi
 
+# Resurrect configuration: inject tmux-resurrect settings into runtime config
+if [ \"$WITH_TMUX\" = \"true\" ] && [ \"$RESURRECT_ENABLED\" = \"true\" ]; then
+    # Set resurrect save directory (matches volume mount point)
+    echo \"\" >> \"$RUNTIME_TMUX_CONF\"
+    echo \"# tmux-resurrect configuration (auto-added by aishell)\" >> \"$RUNTIME_TMUX_CONF\"
+    echo \"set -g @resurrect-dir '~/.tmux/resurrect'\" >> \"$RUNTIME_TMUX_CONF\"
+
+    # Configure process restoration
+    if [ \"$RESURRECT_RESTORE_PROCESSES\" = \"true\" ]; then
+        echo \"set -g @resurrect-processes ':all:'\" >> \"$RUNTIME_TMUX_CONF\"
+    else
+        echo \"set -g @resurrect-processes 'false'\" >> \"$RUNTIME_TMUX_CONF\"
+    fi
+
+    # Auto-restore: run resurrect restore script on tmux start
+    # This restores the last saved session if state exists, no-ops if no state
+    echo \"run-shell '~/.tmux/plugins/tmux-resurrect/scripts/restore.sh r'\" >> \"$RUNTIME_TMUX_CONF\"
+fi
+
 # Conditional startup: tmux session or direct shell
 # When WITH_TMUX=true: starts tmux with runtime config and plugin support
 # When WITH_TMUX is unset/false: direct shell execution without tmux

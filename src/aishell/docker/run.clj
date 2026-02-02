@@ -251,6 +251,20 @@
     (when (fs/exists? creds-path)
       ["-v" (str creds-path ":" creds-path ":ro")])))
 
+(defn- build-resurrect-env-args
+  "Build -e flags for resurrect configuration.
+   Returns empty vector if resurrect not enabled or tmux not active."
+  [state config]
+  (if-let [resurrect-val (and (get state :with-tmux)
+                               (get-in config [:tmux :resurrect]))]
+    (let [resurrect-cfg (cfg/parse-resurrect-config resurrect-val)]
+      (if (:enabled resurrect-cfg)
+        (cond-> ["-e" "RESURRECT_ENABLED=true"]
+          (:restore_processes resurrect-cfg)
+          (into ["-e" "RESURRECT_RESTORE_PROCESSES=true"]))
+        []))
+    []))
+
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
@@ -306,6 +320,9 @@
         ;; Pass WITH_TMUX flag to entrypoint for conditional tmux startup
         (cond-> (get state :with-tmux)
           (into ["-e" "WITH_TMUX=true"]))
+
+        ;; Pass resurrect config to entrypoint
+        (into (build-resurrect-env-args state config))
 
         ;; Config: mounts
         (cond-> (:mounts config)
