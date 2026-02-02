@@ -41,14 +41,18 @@
    - Same configuration always produces same canonical form
    - nil versions consistently normalized to \"latest\""
   [state]
-  (->> harness-keys
-       (filter #(get state (keyword (str "with-" (name %)))))
-       (map (fn [harness-kw]
-              (let [version-key (keyword (str (name harness-kw) "-version"))
-                    version (get state version-key)]
-                [harness-kw (or version "latest")])))
-       (sort-by first)
-       vec))
+  (let [harness-pairs (->> harness-keys
+                           (filter #(get state (keyword (str "with-" (name %)))))
+                           (map (fn [harness-kw]
+                                  (let [version-key (keyword (str (name harness-kw) "-version"))
+                                        version (get state version-key)]
+                                    [harness-kw (or version "latest")])))
+                           (sort-by first)
+                           vec)
+        tmux-state (when (:with-tmux state)
+                     [:tmux {:plugins (vec (sort (or (:tmux-plugins state) [])))}])]
+    (cond-> harness-pairs
+      tmux-state (conj tmux-state))))
 
 (defn compute-harness-hash
   "Compute deterministic hash from harness configuration.

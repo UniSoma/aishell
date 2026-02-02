@@ -186,6 +186,8 @@
                      :with-gemini (:enabled? gemini-config)
                      :with-gitleaks with-gitleaks
                      :with-tmux with-tmux
+                     :tmux-plugins (when with-tmux
+                                     (get-in cfg [:tmux :plugins]))
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
@@ -195,7 +197,7 @@
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -312,7 +314,7 @@
                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
