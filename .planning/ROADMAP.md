@@ -127,10 +127,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 4/5 | In progress | - |
+| 39-43 | v2.9.0 | 5/5 | In progress | - |
 
-**Total:** 94/95 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 95/95 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 40 UAT gap closure planning*
+*Last updated: 2026-02-02 after Phase 40 gap closure execution and verification*
