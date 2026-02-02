@@ -70,6 +70,7 @@
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :without-gitleaks {:coerce :boolean :desc "Skip Gitleaks installation"}
+   :with-tmux     {:coerce :boolean :desc "Enable tmux multiplexer in container"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
@@ -144,6 +145,7 @@
   (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell build --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
+  (println (str "  " output/CYAN "aishell build --with-claude --with-tmux" output/NC " Include Claude + tmux"))
   (println (str "  " output/CYAN "aishell build --without-gitleaks" output/NC "   Skip Gitleaks"))
   (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
@@ -156,6 +158,7 @@
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
           with-gitleaks (not (:without-gitleaks opts))  ; invert flag for positive tracking
+          with-tmux (boolean (:with-tmux opts))
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
@@ -179,6 +182,7 @@
                      :with-codex (:enabled? codex-config)
                      :with-gemini (:enabled? gemini-config)
                      :with-gitleaks with-gitleaks
+                     :with-tmux with-tmux
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
@@ -287,6 +291,8 @@
         (println (str "  Codex: " (or (:codex-version state) "latest"))))
       (when (:with-gemini state)
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
+      (when (:with-tmux state)
+        (println "  tmux: enabled"))
 
       ;; Conditionally rebuild foundation image (only with --force)
       (let [result (when (:force opts)
