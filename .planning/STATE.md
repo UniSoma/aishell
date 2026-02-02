@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 42 of 43 (Resurrect State Persistence) — IN PROGRESS
-Plan: 1 of 2 complete
-Status: Config parsing and state mounting complete
-Last activity: 2026-02-02 — Completed 42-01 resurrect config parsing and state mounting
+Phase: 42 of 43 (Resurrect State Persistence) — COMPLETE
+Plan: 2 of 2 complete
+Status: Phase complete - resurrect feature fully operational
+Last activity: 2026-02-02 — Completed 42-02 plugin injection and auto-restore
 
-Progress: [███████░░░] 68% (of v2.9.0 milestone, plan 42-01 complete)
+Progress: [████████░░] 73% (of v2.9.0 milestone, phase 42 complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,11 +31,11 @@ Progress: [███████░░░] 68% (of v2.9.0 milestone, plan 42-01 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 98 (90 in v1.0-v2.8.0 + 8 in v2.9.0)
-- v2.9.0 tracking: 8 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01)
+- Total plans completed: 100 (90 in v1.0-v2.8.0 + 10 in v2.9.0)
+- v2.9.0 tracking: 10 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02)
 
 **Recent Trend:**
-- v2.9.0: 8 plans completed (avg 1.6min duration)
+- v2.9.0: 10 plans completed (avg 1.5min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity with quick gap closures
 
@@ -46,6 +46,11 @@ Progress: [███████░░░] 68% (of v2.9.0 milestone, plan 42-01 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.9.0: Auto-inject tmux-resurrect plugin when resurrect enabled (no manual declaration needed)
+- v2.9.0: Deduplicate resurrect plugin if user already declared it (silent, no warnings)
+- v2.9.0: Process restoration defaults to 'false' for safety, explicit restore_processes: true enables ':all:' mode
+- v2.9.0: Auto-restore runs via run-shell after TPM initialization in config file
+- v2.9.0: Pass resurrect config as RESURRECT_ENABLED and RESURRECT_RESTORE_PROCESSES env vars to entrypoint
 - v2.9.0: resurrect: true -> {:enabled true :restore_processes false} (sensible default)
 - v2.9.0: resurrect state directory at ~/.aishell/resurrect/{project-hash}/ for per-project isolation
 - v2.9.0: resurrect config silently ignored when tmux disabled (no warnings)
@@ -82,12 +87,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 42-01 resurrect config parsing and state mounting
+Stopped at: Completed 42-02 plugin injection and auto-restore
 Resume file: None
 
-**Next step:** Execute 42-02 to add entrypoint plugin declarations for resurrect
+**Next step:** Phase 42 complete. v2.9.0 milestone ready for testing.
 
 **Recent completions:**
+- 42-02: Resurrect plugin injection and auto-restore - 2min
 - 42-01: Resurrect config parsing and state directory mounting - 1min
 - 41-01: TPM initialization in entrypoint with conditional startup - 1.4min
 - 40-04: Gap closure fixing TPM plugin installation path - <1min
