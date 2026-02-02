@@ -206,7 +206,7 @@
            "; else"
            " git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm"
            "; fi"
-           " && printf '%s\\n' \"" plugin-lines "\" > /tmp/plugins.conf"
+           " && printf '%s\\n' \"" plugin-lines "\" > ~/.tmux.conf"
            " && TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins /tools/tmux/plugins/tpm/bin/install_plugins"
            " && chmod -R a+rX /tools/tmux"))))
 
