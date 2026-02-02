@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 40 of 43 (Plugin Installation in Volume) — IN PROGRESS
-Plan: 01 of 02 complete
-Status: Plan 40-01 complete (plugin format validation)
-Last activity: 2026-02-02 — Completed 40-01-PLAN.md
+Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE
+Plan: 02 of 02 complete
+Status: Phase 40 complete (plugin installation in volume)
+Last activity: 2026-02-02 — Completed 40-02-PLAN.md
 
-Progress: [██░░░░░░░░] 20% (of v2.9.0 milestone, 1 of 5 phases complete)
+Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phases complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,11 +31,11 @@ Progress: [██░░░░░░░░] 20% (of v2.9.0 milestone, 1 of 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 93 (90 in v1.0-v2.8.0 + 3 in v2.9.0)
-- v2.9.0 tracking: 3 plans completed (39-01, 39-02, 40-01)
+- Total plans completed: 94 (90 in v1.0-v2.8.0 + 4 in v2.9.0)
+- v2.9.0 tracking: 4 plans completed (39-01, 39-02, 40-01, 40-02)
 
 **Recent Trend:**
-- v2.9.0: 3 plans completed (avg 1.67min duration)
+- v2.9.0: 4 plans completed (avg 2.25min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity
 
@@ -52,6 +52,8 @@ Recent decisions affecting current work:
 - v2.9.0: tmux config uses scalar merge (project replaces global)
 - v2.9.0: Plugin format validation uses warning-only approach (consistent with existing validation framework)
 - v2.9.0: GitHub owner/repo regex pattern for plugin validation
+- v2.9.0: TPM installs to /tools/tmux/plugins with TMUX_PLUGIN_MANAGER_PATH override
+- v2.9.0: Config threading to volume population uses optional :config key for backward compatibility
 - v2.8.0: Volume-based harness tool injection decouples tools from foundation image
 - v2.8.0: Foundation image (aishell:foundation) replaces base image with clean break
 - v2.8.0: Content-hash volume naming enables cross-project sharing
@@ -70,7 +72,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 40-01-PLAN.md
+Stopped at: Completed 40-02-PLAN.md (Phase 40 complete)
 Resume file: None
 
-**Next step:** Execute plan 40-02 (TPM and plugin installation in volume)
+**Next step:** Begin Phase 41 (tmux config mounting) or Phase 42 (UAT)
