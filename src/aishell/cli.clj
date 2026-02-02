@@ -137,7 +137,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec build-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :without-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :without-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
