@@ -270,6 +270,10 @@
         ;; Tmux config mount (read-only, if enabled and file exists)
         (into (build-tmux-config-mount state config))
 
+        ;; Pass WITH_TMUX flag to entrypoint for conditional tmux startup
+        (cond-> (get state :with-tmux)
+          (into ["-e" "WITH_TMUX=true"]))
+
         ;; Config: mounts
         (cond-> (:mounts config)
           (into (build-mount-args (:mounts config))))
