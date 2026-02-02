@@ -193,6 +193,15 @@
                 (str "https://github.com/anomalyco/opencode/releases/download/v" version "/opencode-linux-x64.tar.gz"))]
       (str "mkdir -p /tools/bin && curl -fsSL " url " | tar -xz -C /tools/bin"))))
 
+(defn inject-resurrect-plugin
+  "Auto-add tmux-resurrect to plugin list when resurrect is enabled.
+   Deduplicates if user already declared it."
+  [plugins resurrect-enabled?]
+  (if (and resurrect-enabled?
+           (not (some #(= % "tmux-plugins/tmux-resurrect") plugins)))
+    (conj (vec plugins) "tmux-plugins/tmux-resurrect")
+    (vec (or plugins []))))
+
 (defn build-tpm-install-command
   "Build shell command for installing TPM and plugins into /tools/tmux.
    Returns shell command string or nil if no plugins declared."
@@ -323,7 +332,13 @@
   [volume-name state & [opts]]
   (let [install-commands (build-install-commands state)
         tmux-plugins (when (:with-tmux state)
-                       (get-in opts [:config :tmux :plugins]))
+                       (let [plugins (get-in opts [:config :tmux :plugins])
+                             resurrect-val (get-in opts [:config :tmux :resurrect])
+                             resurrect-enabled? (cond
+                                                  (true? resurrect-val) true
+                                                  (map? resurrect-val) (get resurrect-val :enabled true)
+                                                  :else false)]
+                         (inject-resurrect-plugin plugins resurrect-enabled?)))
         tmux-install (build-tpm-install-command tmux-plugins)
         full-commands (str install-commands
                           (when tmux-install (str " && " tmux-install)))

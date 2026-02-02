@@ -187,11 +187,20 @@
                      :with-gitleaks with-gitleaks
                      :with-tmux with-tmux
                      :tmux-plugins (when with-tmux
-                                     (get-in cfg [:tmux :plugins]))
+                                     (let [plugins (vec (or (get-in cfg [:tmux :plugins]) []))
+                                           resurrect-val (get-in cfg [:tmux :resurrect])
+                                           resurrect-cfg (config/parse-resurrect-config resurrect-val)
+                                           needs-resurrect? (:enabled resurrect-cfg)
+                                           has-resurrect? (some #(= % "tmux-plugins/tmux-resurrect") plugins)]
+                                       (if (and needs-resurrect? (not has-resurrect?))
+                                         (conj plugins "tmux-plugins/tmux-resurrect")
+                                         plugins)))
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
-                     :gemini-version (:version gemini-config)}
+                     :gemini-version (:version gemini-config)
+                     :resurrect-config (when with-tmux
+                                         (config/parse-resurrect-config (get-in cfg [:tmux :resurrect])))}
 
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
