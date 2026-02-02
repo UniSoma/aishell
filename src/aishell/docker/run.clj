@@ -5,7 +5,9 @@
             [babashka.fs :as fs]
             [clojure.string :as str]
             [aishell.util :as util]
-            [aishell.output :as output]))
+            [aishell.output :as output]
+            [aishell.docker.naming :as naming]
+            [aishell.config :as cfg]))
 
 (defn read-git-identity
   "Read git identity from host configuration.
@@ -197,6 +199,24 @@
         []))
     []))
 
+(defn- build-resurrect-mount
+  "Build mount args for resurrect state directory if enabled.
+   Mounts host ~/.aishell/resurrect/{project-hash}/ into container
+   at ~/.tmux/resurrect/ for tmux-resurrect state persistence.
+   Creates host directory if it doesn't exist."
+  [state config project-dir]
+  (if (and (get state :with-tmux)
+           (when-let [resurrect-val (get-in config [:tmux :resurrect])]
+             (:enabled (cfg/parse-resurrect-config resurrect-val))))
+    (let [home (util/get-home)
+          hash (naming/project-hash project-dir)
+          host-dir (str home "/.aishell/resurrect/" hash)
+          container-home (str home "/.tmux/resurrect")]
+      ;; Ensure host directory exists
+      (fs/create-dirs host-dir)
+      ["-v" (str host-dir ":" container-home)])
+    []))
+
 (def api-key-vars
   "Environment variables to pass through for API access."
   ["ANTHROPIC_API_KEY"
@@ -279,6 +299,9 @@
 
         ;; Tmux config mount (read-only, if enabled and file exists)
         (into (build-tmux-config-mount state config))
+
+        ;; Resurrect state directory mount (persistent tmux session state)
+        (into (build-resurrect-mount state config project-dir))
 
         ;; Pass WITH_TMUX flag to entrypoint for conditional tmux startup
         (cond-> (get state :with-tmux)
