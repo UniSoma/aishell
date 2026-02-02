@@ -189,6 +189,19 @@
                 (str "https://github.com/anomalyco/opencode/releases/download/v" version "/opencode-linux-x64.tar.gz"))]
       (str "mkdir -p /tools/bin && curl -fsSL " url " | tar -xz -C /tools/bin"))))
 
+(defn build-tpm-install-command
+  "Build shell command for installing TPM and plugins into /tools/tmux.
+   Returns shell command string or nil if no plugins declared."
+  [plugins]
+  (when (seq plugins)
+    (let [plugin-lines (str/join "\\n"
+                         (map #(str "set -g @plugin '" % "'") plugins))]
+      (str "mkdir -p /tools/tmux/plugins"
+           " && git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm"
+           " && printf '%s\\n' \"" plugin-lines "\" > /tmp/plugins.conf"
+           " && TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins /tools/tmux/plugins/tpm/bin/install_plugins"
+           " && chmod -R a+rX /tools/tmux"))))
+
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
 
@@ -277,16 +290,17 @@
    Arguments:
    - volume-name: Volume name string
    - state: State map with harness flags and versions
-   - opts: Optional map with :verbose key for output control
+   - opts: Optional map with :verbose key for output control and :config for tmux plugins
 
    Returns: {:success true :volume volume-name} on success
 
    Process:
    1. Generate npm install commands based on enabled harnesses
-   2. Run temporary container mounting volume at /tools
-   3. Execute npm install commands inside container
-   4. Set world-readable permissions for non-root execution
-   5. Container is automatically removed (--rm flag)
+   2. Conditionally add tmux plugin installation if :with-tmux and plugins declared
+   3. Run temporary container mounting volume at /tools
+   4. Execute install commands inside container
+   5. Set world-readable permissions for non-root execution
+   6. Container is automatically removed (--rm flag)
 
    Output handling:
    - :verbose true -> Show all npm output
@@ -298,12 +312,17 @@
    - Volume must exist before calling this function"
   [volume-name state & [opts]]
   (let [install-commands (build-install-commands state)
+        tmux-plugins (when (:with-tmux state)
+                       (get-in opts [:config :tmux :plugins]))
+        tmux-install (build-tpm-install-command tmux-plugins)
+        full-commands (str install-commands
+                          (when tmux-install (str " && " tmux-install)))
         verbose? (:verbose opts)
         cmd ["docker" "run" "--rm"
              "-v" (str volume-name ":/tools")
              "--entrypoint" ""
              build/foundation-image-tag
-             "sh" "-c" install-commands]]
+             "sh" "-c" full-commands]]
     (try
       (if verbose?
         ;; Verbose: inherit output streams
