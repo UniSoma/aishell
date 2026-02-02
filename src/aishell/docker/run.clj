@@ -165,6 +165,28 @@
          (filter (fn [[src _]] (fs/exists? src)))
          (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
 
+(defn- user-mounted-tmux-config?
+  "Check if user explicitly mounted .tmux.conf in their config mounts.
+   Prevents duplicate mount when auto-mount would also add it."
+  [config]
+  (let [mounts (get config :mounts [])]
+    (some #(str/includes? (str %) ".tmux.conf") mounts)))
+
+(defn- build-tmux-config-mount
+  "Build mount args for ~/.tmux.conf if tmux is enabled and file exists.
+   Mounts read-only to prevent container from modifying host config.
+   Skips if user already mounted .tmux.conf explicitly in config.
+   Returns vector of ['-v' 'path:path:ro'] or empty vector."
+  [state config]
+  (if (and (get state :with-tmux)
+           (not (user-mounted-tmux-config? config)))
+    (let [home (util/get-home)
+          host-path (str home "/.tmux.conf")]
+      (if (fs/exists? host-path)
+        ["-v" (str host-path ":" host-path ":ro")]
+        []))
+    []))
+
 (def api-key-vars
   "Environment variables to pass through for API access."
   ["ANTHROPIC_API_KEY"
@@ -202,7 +224,7 @@
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
@@ -244,6 +266,9 @@
         ;; Harness volume mount (volume-mounted harness tools)
         (into (build-harness-volume-args harness-volume-name))
         (into (build-harness-env-args harness-volume-name))
+
+        ;; Tmux config mount (read-only, if enabled and file exists)
+        (into (build-tmux-config-mount state config))
 
         ;; Config: mounts
         (cond-> (:mounts config)
@@ -288,11 +313,12 @@
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
+     :state state
      :git-identity git-identity
      :skip-pre-start skip-pre-start
      :detach detach
@@ -316,11 +342,12 @@
    - tty?: When true, allocate TTY (-it); when false, stdin only (-i)
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
-  [{:keys [project-dir image-tag config git-identity tty? harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity tty? harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
+     :state state
      :git-identity git-identity
      :skip-pre-start true  ; Always skip pre_start for exec
      :harness-volume-name harness-volume-name
