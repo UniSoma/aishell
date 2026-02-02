@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE (with gap closure)
-Plan: All complete (including 40-03 gap closure)
+Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE
+Plan: All complete (including 40-03 and 40-04 gap closure)
 Status: Phase 40 fully verified, all UAT gaps closed, ready for Phase 41
-Last activity: 2026-02-02 — Completed 40-03 gap closure plan
+Last activity: 2026-02-02 — Completed 40-04 TPM plugin declaration path fix
 
 Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phases complete)
 
@@ -31,13 +31,13 @@ Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 95 (90 in v1.0-v2.8.0 + 5 in v2.9.0)
-- v2.9.0 tracking: 5 plans completed (39-01, 39-02, 40-01, 40-02, 40-03)
+- Total plans completed: 96 (90 in v1.0-v2.8.0 + 6 in v2.9.0)
+- v2.9.0 tracking: 6 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04)
 
 **Recent Trend:**
-- v2.9.0: 5 plans completed (avg 2.2min duration)
+- v2.9.0: 6 plans completed (avg 1.9min duration)
 - v2.8.0: 14 plans across 4 phases
-- Trend: Stable execution velocity
+- Trend: Stable execution velocity with quick gap closures
 
 ## Accumulated Context
 
@@ -52,6 +52,7 @@ Recent decisions affecting current work:
 - v2.9.0: tmux config uses scalar merge (project replaces global)
 - v2.9.0: Plugin format validation uses warning-only approach (consistent with existing validation framework)
 - v2.9.0: GitHub owner/repo regex pattern for plugin validation
+- v2.9.0: TPM plugin declarations written to ~/.tmux.conf for install_plugins AWK parser
 - v2.9.0: TPM installs to /tools/tmux/plugins with TMUX_PLUGIN_MANAGER_PATH override
 - v2.9.0: Config threading to volume population uses optional :config key for backward compatibility
 - v2.9.0: Volume hash includes tmux state (:with-tmux flag and sorted plugin list)
@@ -75,10 +76,11 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 40-03 gap closure plan
+Stopped at: Completed 40-04 TPM plugin declaration path fix
 Resume file: None
 
 **Next step:** Run `/gsd:plan-phase 41` to plan TPM initialization in entrypoint
 
 **Recent completions:**
+- 40-04: Gap closure fixing TPM plugin installation path - <1min
 - 40-03: Gap closure fixing UAT test failures (volume hash, idempotent git clone) - 2min
