@@ -70,7 +70,7 @@ Plans:
 - [x] 40-03-PLAN.md -- Gap closure: volume hash includes tmux state, idempotent TPM clone
 - [x] 40-04-PLAN.md -- Gap closure: fix plugin declaration path for TPM install_plugins
 
-#### Phase 41: TPM Initialization in Entrypoint
+#### ✅ Phase 41: TPM Initialization in Entrypoint (Complete 2026-02-02)
 **Goal**: Make installed plugins discoverable to tmux at runtime
 **Depends on**: Phase 40
 **Requirements**: TMUX-03, PLUG-04, PLUG-05
@@ -83,7 +83,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 41-01-PLAN.md -- Entrypoint plugin bridging, config injection, conditional tmux/shell startup + WITH_TMUX env var
+- [x] 41-01-PLAN.md -- Entrypoint plugin bridging, config injection, conditional tmux/shell startup + WITH_TMUX env var
 
 #### Phase 42: Resurrect State Persistence
 **Goal**: Enable optional session state persistence via tmux-resurrect
@@ -128,10 +128,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 6/6 | In progress | - |
+| 39-43 | v2.9.0 | 7/7 | In progress | - |
 
-**Total:** 96/96 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 97/97 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 40 gap closure execution complete*
+*Last updated: 2026-02-02 after Phase 41 execution complete*
