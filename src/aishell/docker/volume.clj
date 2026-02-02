@@ -198,17 +198,19 @@
    Returns shell command string or nil if no plugins declared."
   [plugins]
   (when (seq plugins)
-    (let [plugin-lines (str/join "\\n"
-                         (map #(str "set -g @plugin '" % "'") plugins))]
+    (let [plugin-args (str/join " "
+                        (map #(str "\"set -g @plugin '" % "'\"") plugins))]
       (str "mkdir -p /tools/tmux/plugins"
            " && if [ -d /tools/tmux/plugins/tpm ]; then"
            " git -C /tools/tmux/plugins/tpm pull --ff-only 2>/dev/null || true"
            "; else"
            " git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm"
            "; fi"
-           " && printf '%s\\n' \"" plugin-lines "\" > ~/.tmux.conf"
+           " && printf '%s\\n' " plugin-args " > ~/.tmux.conf"
+           " && printf '%s\\n' " plugin-args " > /tools/tmux/plugins.conf"
            " && TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins /tools/tmux/plugins/tpm/bin/install_plugins"
-           " && chmod -R a+rX /tools/tmux"))))
+           " && chmod -R a+rwX /tools/tmux/plugins"
+           " && chmod -R a+rX /tools/tmux/plugins.conf"))))
 
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
