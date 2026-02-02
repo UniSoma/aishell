@@ -22,12 +22,12 @@ Requirements for tmux opt-in and plugin support. Each maps to roadmap phases.
 
 ### Plugin Management
 
-- [ ] **PLUG-01**: `tmux.plugins` list in `.aishell/config.yaml` declares plugins (format: `owner/repo`)
-- [ ] **PLUG-02**: TPM (tmux plugin manager) installed into harness volume at `/tools/tmux/plugins/tpm`
-- [ ] **PLUG-03**: Declared plugins installed non-interactively during `aishell build` / `aishell update`
+- [x] **PLUG-01**: `tmux.plugins` list in `.aishell/config.yaml` declares plugins (format: `owner/repo`)
+- [x] **PLUG-02**: TPM (tmux plugin manager) installed into harness volume at `/tools/tmux/plugins/tpm`
+- [x] **PLUG-03**: Declared plugins installed non-interactively during `aishell build` / `aishell update`
 - [ ] **PLUG-04**: Plugin path bridging: symlink from `/tools/tmux/plugins` to `~/.tmux/plugins` in entrypoint
 - [ ] **PLUG-05**: TPM run command appended to tmux config at container startup
-- [ ] **PLUG-06**: Plugin format validated (`owner/repo` pattern) during config parsing
+- [x] **PLUG-06**: Plugin format validated (`owner/repo` pattern) during config parsing
 
 ### Session Persistence
 
@@ -78,12 +78,12 @@ Deferred to later milestones.
 | TMUX-05 | Phase 43 | Pending |
 | CONF-01 | Phase 39 | Complete |
 | CONF-02 | Phase 39 | Complete |
-| PLUG-01 | Phase 40 | Pending |
-| PLUG-02 | Phase 40 | Pending |
-| PLUG-03 | Phase 40 | Pending |
+| PLUG-01 | Phase 40 | Complete |
+| PLUG-02 | Phase 40 | Complete |
+| PLUG-03 | Phase 40 | Complete |
 | PLUG-04 | Phase 41 | Pending |
 | PLUG-05 | Phase 41 | Pending |
-| PLUG-06 | Phase 40 | Pending |
+| PLUG-06 | Phase 40 | Complete |
 | PERS-01 | Phase 42 | Pending |
 | PERS-02 | Phase 42 | Pending |
 | PERS-03 | Phase 42 | Pending |
@@ -103,4 +103,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-02 after Phase 39 execution*
+*Last updated: 2026-02-02 after Phase 40 execution*

@@ -52,7 +52,7 @@ Plans:
 - [x] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
 - [x] 39-02-PLAN.md -- Conditional tmux config mount in docker run
 
-#### Phase 40: Plugin Installation in Volume
+#### ✅ Phase 40: Plugin Installation in Volume (Complete 2026-02-02)
 **Goal**: Install TPM and declared plugins into harness volume at build time
 **Depends on**: Phase 39
 **Requirements**: PLUG-01, PLUG-02, PLUG-03, PLUG-06
@@ -65,8 +65,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 40-01-PLAN.md -- Plugin format validation in config parsing
-- [ ] 40-02-PLAN.md -- TPM and plugin installation in volume population
+- [x] 40-01-PLAN.md -- Plugin format validation in config parsing
+- [x] 40-02-PLAN.md -- TPM and plugin installation in volume population
 
 #### Phase 41: TPM Initialization in Entrypoint
 **Goal**: Make installed plugins discoverable to tmux at runtime
@@ -126,10 +126,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 2/2 | In progress | - |
+| 39-43 | v2.9.0 | 4/4 | In progress | - |
 
-**Total:** 92/92 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 94/94 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 40 planning*
+*Last updated: 2026-02-02 after Phase 40 execution*

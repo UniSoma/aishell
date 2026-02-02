@@ -6,14 +6,14 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 40 - Plugin Installation in Volume
+**Current focus:** Phase 41 - TPM Initialization in Entrypoint
 
 ## Current Position
 
 Phase: 40 of 43 (Plugin Installation in Volume) — COMPLETE
-Plan: 02 of 02 complete
-Status: Phase 40 complete (plugin installation in volume)
-Last activity: 2026-02-02 — Completed 40-02-PLAN.md
+Plan: All complete
+Status: Phase 40 verified (9/9 must-haves passed), ready for Phase 41
+Last activity: 2026-02-02 — Phase 40 verified and complete
 
 Progress: [████░░░░░░] 40% (of v2.9.0 milestone, 2 of 5 phases complete)
 
@@ -72,7 +72,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 40-02-PLAN.md (Phase 40 complete)
+Stopped at: Phase 40 complete and verified
 Resume file: None
 
-**Next step:** Begin Phase 41 (tmux config mounting) or Phase 42 (UAT)
+**Next step:** Run `/gsd:plan-phase 41` to plan TPM initialization in entrypoint
