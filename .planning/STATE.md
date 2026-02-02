@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 39 of 43 (State Schema & Config Mounting)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-01 — Roadmap created for v2.9.0 milestone
+Plan: 1 of 2 (CLI flag and config schema)
+Status: In progress
+Last activity: 2026-02-02 — Completed 39-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (of v2.9.0 milestone)
+Progress: [█░░░░░░░░░] 10% (of v2.9.0 milestone, 1 of ~10 estimated plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,14 +31,13 @@ Progress: [░░░░░░░░░░] 0% (of v2.9.0 milestone)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 90 (across v1.0-v2.8.0)
-- v2.9.0 tracking: Will begin with first plan execution
+- Total plans completed: 91 (90 in v1.0-v2.8.0 + 1 in v2.9.0)
+- v2.9.0 tracking: 1 plan completed (39-01)
 
 **Recent Trend:**
+- v2.9.0: 1 plan completed (3min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity
-
-*Metrics tracking begins with v2.9.0 plan execution*
 
 ## Accumulated Context
 
@@ -47,10 +46,11 @@ Progress: [░░░░░░░░░░] 0% (of v2.9.0 milestone)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.9.0: :with-tmux defaults to FALSE (opt-in, not opt-out per TMUX-01 requirements)
+- v2.9.0: tmux config uses scalar merge (project replaces global)
 - v2.8.0: Volume-based harness tool injection decouples tools from foundation image
 - v2.8.0: Foundation image (aishell:foundation) replaces base image with clean break
 - v2.8.0: Content-hash volume naming enables cross-project sharing
-- v2.7.0: tmux always-on behavior (changing to opt-in in v2.9.0)
 - v2.7.0: Named containers with project hash isolation
 
 ### Pending Todos
@@ -65,8 +65,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Roadmap created for v2.9.0 milestone, ready to plan Phase 39
+Last session: 2026-02-02
+Stopped at: Completed 39-01-PLAN.md (CLI flag and config schema)
 Resume file: None
 
-**Next step:** Run `/gsd:plan-phase 39` to create execution plan
+**Next step:** Execute 39-02-PLAN.md (conditional tmux config mount)
