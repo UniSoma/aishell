@@ -31,9 +31,9 @@ Requirements for tmux opt-in and plugin support. Each maps to roadmap phases.
 
 ### Session Persistence
 
-- [ ] **PERS-01**: tmux-resurrect state directory mounted from host when enabled in config
-- [ ] **PERS-02**: `tmux.resurrect` section in config.yaml configures state persistence
-- [ ] **PERS-03**: Process restoration disabled by default (only window/pane layout restored)
+- [x] **PERS-01**: tmux-resurrect state directory mounted from host when enabled in config
+- [x] **PERS-02**: `tmux.resurrect` section in config.yaml configures state persistence
+- [x] **PERS-03**: Process restoration disabled by default (only window/pane layout restored)
 
 ### Documentation
 
@@ -84,9 +84,9 @@ Deferred to later milestones.
 | PLUG-04 | Phase 41 | Complete |
 | PLUG-05 | Phase 41 | Complete |
 | PLUG-06 | Phase 40 | Complete |
-| PERS-01 | Phase 42 | Pending |
-| PERS-02 | Phase 42 | Pending |
-| PERS-03 | Phase 42 | Pending |
+| PERS-01 | Phase 42 | Complete |
+| PERS-02 | Phase 42 | Complete |
+| PERS-03 | Phase 42 | Complete |
 | DOCS-01 | Phase 43 | Pending |
 
 **Coverage:**
@@ -103,4 +103,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-02 after Phase 41 execution*
+*Last updated: 2026-02-02 after Phase 42 execution*

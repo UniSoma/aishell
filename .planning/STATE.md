@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 42 - Resurrect State Persistence
+**Current focus:** Phase 43 - Validation & Migration
 
 ## Current Position
 
 Phase: 42 of 43 (Resurrect State Persistence) — COMPLETE
 Plan: 2 of 2 complete
-Status: Phase complete - resurrect feature fully operational
-Last activity: 2026-02-02 — Completed 42-02 plugin injection and auto-restore
+Status: Phase 42 fully verified, ready for Phase 43
+Last activity: 2026-02-02 — Phase 42 verified, all 11 must-haves passed
 
-Progress: [████████░░] 73% (of v2.9.0 milestone, phase 42 complete)
+Progress: [████████░░] 80% (of v2.9.0 milestone, 4 of 5 phases complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,11 +31,11 @@ Progress: [████████░░] 73% (of v2.9.0 milestone, phase 42 co
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 100 (90 in v1.0-v2.8.0 + 10 in v2.9.0)
-- v2.9.0 tracking: 10 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02)
+- Total plans completed: 99 (90 in v1.0-v2.8.0 + 9 in v2.9.0)
+- v2.9.0 tracking: 9 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02)
 
 **Recent Trend:**
-- v2.9.0: 10 plans completed (avg 1.5min duration)
+- v2.9.0: 9 plans completed (avg 1.5min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity with quick gap closures
 
@@ -90,7 +90,7 @@ Last session: 2026-02-02
 Stopped at: Completed 42-02 plugin injection and auto-restore
 Resume file: None
 
-**Next step:** Phase 42 complete. v2.9.0 milestone ready for testing.
+**Next step:** Run `/gsd:plan-phase 43` to plan validation & migration
 
 **Recent completions:**
 - 42-02: Resurrect plugin injection and auto-restore - 2min

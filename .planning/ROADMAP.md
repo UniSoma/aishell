@@ -85,7 +85,7 @@ Plans:
 Plans:
 - [x] 41-01-PLAN.md -- Entrypoint plugin bridging, config injection, conditional tmux/shell startup + WITH_TMUX env var
 
-#### Phase 42: Resurrect State Persistence
+#### ✅ Phase 42: Resurrect State Persistence (Complete 2026-02-02)
 **Goal**: Enable optional session state persistence via tmux-resurrect
 **Depends on**: Phase 41
 **Requirements**: PERS-01, PERS-02, PERS-03
@@ -97,8 +97,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
-- [ ] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
+- [x] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
+- [x] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
 
 #### Phase 43: Validation & Migration
 **Goal**: Ensure graceful failures and smooth upgrade path for existing users
@@ -129,10 +129,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 7/7 | In progress | - |
+| 39-43 | v2.9.0 | 9/9 | In progress | - |
 
-**Total:** 97/97 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 99/99 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 42 planning complete*
+*Last updated: 2026-02-02 after Phase 42 execution complete*
