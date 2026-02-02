@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 39 of 43 (State Schema & Config Mounting)
-Plan: 1 of 2 (CLI flag and config schema)
-Status: In progress
-Last activity: 2026-02-02 — Completed 39-01-PLAN.md
+Plan: 2 of 2 (conditional tmux config mount)
+Status: Phase complete
+Last activity: 2026-02-02 — Completed 39-02-PLAN.md
 
-Progress: [█░░░░░░░░░] 10% (of v2.9.0 milestone, 1 of ~10 estimated plans)
+Progress: [██░░░░░░░░] 20% (of v2.9.0 milestone, 2 of ~10 estimated plans)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,11 +31,11 @@ Progress: [█░░░░░░░░░] 10% (of v2.9.0 milestone, 1 of ~10 es
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 91 (90 in v1.0-v2.8.0 + 1 in v2.9.0)
-- v2.9.0 tracking: 1 plan completed (39-01)
+- Total plans completed: 92 (90 in v1.0-v2.8.0 + 2 in v2.9.0)
+- v2.9.0 tracking: 2 plans completed (39-01, 39-02)
 
 **Recent Trend:**
-- v2.9.0: 1 plan completed (3min duration)
+- v2.9.0: 2 plans completed (avg 2.25min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity
 
@@ -46,6 +46,8 @@ Progress: [█░░░░░░░░░] 10% (of v2.9.0 milestone, 1 of ~10 es
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.9.0: Mount ~/.tmux.conf read-only to prevent container modification
+- v2.9.0: Auto-mount skipped if user has explicit .tmux.conf in config mounts
 - v2.9.0: :with-tmux defaults to FALSE (opt-in, not opt-out per TMUX-01 requirements)
 - v2.9.0: tmux config uses scalar merge (project replaces global)
 - v2.8.0: Volume-based harness tool injection decouples tools from foundation image
@@ -66,7 +68,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 39-01-PLAN.md (CLI flag and config schema)
+Stopped at: Completed 39-02-PLAN.md (conditional tmux config mount)
 Resume file: None
 
-**Next step:** Execute 39-02-PLAN.md (conditional tmux config mount)
+**Next step:** Execute 40-tmux-bootstrap plans (tmux installation and bootstrap)
