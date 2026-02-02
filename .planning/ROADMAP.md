@@ -94,10 +94,11 @@ Plans:
   2. Resurrect state directory mounted from host when resurrect enabled
   3. Process restoration disabled by default with only layout restoration active
   4. Session state persists across container restarts when resurrect configured
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 42-01: TBD
+- [ ] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
+- [ ] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
 
 #### Phase 43: Validation & Migration
 **Goal**: Ensure graceful failures and smooth upgrade path for existing users
@@ -134,4 +135,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 41 execution complete*
+*Last updated: 2026-02-02 after Phase 42 planning complete*
