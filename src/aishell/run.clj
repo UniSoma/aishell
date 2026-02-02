@@ -195,6 +195,7 @@
                           {:project-dir project-dir
                            :image-tag image-tag
                            :config cfg
+                           :state state
                            :git-identity git-id
                            :skip-pre-start (:skip-pre-start opts)
                            :detach (:detach opts)
@@ -303,6 +304,7 @@
                           {:project-dir project-dir
                            :image-tag image-tag
                            :config cfg
+                           :state state
                            :git-identity git-id
                            :tty? tty?
                            :harness-volume-name harness-volume-name})
