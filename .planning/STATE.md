@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 39 - State Schema & Config Mounting
+**Current focus:** Phase 40 - Plugin Installation in Volume
 
 ## Current Position
 
-Phase: 39 of 43 (State Schema & Config Mounting)
-Plan: 2 of 2 (conditional tmux config mount)
-Status: Phase complete
-Last activity: 2026-02-02 — Completed 39-02-PLAN.md
+Phase: 39 of 43 (State Schema & Config Mounting) — COMPLETE
+Plan: All complete
+Status: Phase 39 verified, ready for Phase 40
+Last activity: 2026-02-02 — Phase 39 verified (9/9 must-haves passed)
 
-Progress: [██░░░░░░░░] 20% (of v2.9.0 milestone, 2 of ~10 estimated plans)
+Progress: [██░░░░░░░░] 20% (of v2.9.0 milestone, 1 of 5 phases complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -68,7 +68,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 39-02-PLAN.md (conditional tmux config mount)
+Stopped at: Phase 39 complete and verified
 Resume file: None
 
-**Next step:** Execute 40-tmux-bootstrap plans (tmux installation and bootstrap)
+**Next step:** Run `/gsd:plan-phase 40` to plan plugin installation in volume

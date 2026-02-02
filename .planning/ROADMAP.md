@@ -37,7 +37,7 @@ See MILESTONES.md for full historical context.
 
 **Milestone Goal:** Make tmux opt-in, add plugin management, support user config mounting, enable session persistence.
 
-#### Phase 39: State Schema & Config Mounting
+#### ✅ Phase 39: State Schema & Config Mounting (Complete 2026-02-02)
 **Goal**: Establish opt-in flag and mount user tmux configuration
 **Depends on**: Phase 38
 **Requirements**: TMUX-01, TMUX-02, CONF-01, CONF-02
@@ -49,8 +49,8 @@ See MILESTONES.md for full historical context.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
-- [ ] 39-02-PLAN.md -- Conditional tmux config mount in docker run
+- [x] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
+- [x] 39-02-PLAN.md -- Conditional tmux config mount in docker run
 
 #### Phase 40: Plugin Installation in Volume
 **Goal**: Install TPM and declared plugins into harness volume at build time
@@ -125,10 +125,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 0/2 | In progress | - |
+| 39-43 | v2.9.0 | 2/2 | In progress | - |
 
-**Total:** 90/92 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 92/92 plans complete across 9 milestones, v2.9.0 in progress
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 39 planning*
+*Last updated: 2026-02-02 after Phase 39 execution*

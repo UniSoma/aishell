@@ -9,16 +9,16 @@ Requirements for tmux opt-in and plugin support. Each maps to roadmap phases.
 
 ### Opt-in Behavior
 
-- [ ] **TMUX-01**: `aishell build --with-tmux` enables tmux; default behavior is no tmux
-- [ ] **TMUX-02**: `:with-tmux` flag stored in state.edn and used by downstream commands
+- [x] **TMUX-01**: `aishell build --with-tmux` enables tmux; default behavior is no tmux
+- [x] **TMUX-02**: `:with-tmux` flag stored in state.edn and used by downstream commands
 - [ ] **TMUX-03**: Entrypoint conditionally starts tmux session (skips when disabled)
 - [ ] **TMUX-04**: `attach` command validates tmux is enabled and fails gracefully with helpful message when not
 - [ ] **TMUX-05**: Users upgrading from v2.7-2.8 see migration warning about tmux behavioral change
 
 ### Config Mounting
 
-- [ ] **CONF-01**: User's `~/.tmux.conf` mounted read-only into container when tmux is enabled
-- [ ] **CONF-02**: Missing `~/.tmux.conf` on host is handled gracefully (no error, just skipped)
+- [x] **CONF-01**: User's `~/.tmux.conf` mounted read-only into container when tmux is enabled
+- [x] **CONF-02**: Missing `~/.tmux.conf` on host is handled gracefully (no error, just skipped)
 
 ### Plugin Management
 
@@ -71,13 +71,13 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TMUX-01 | Phase 39 | Pending |
-| TMUX-02 | Phase 39 | Pending |
+| TMUX-01 | Phase 39 | Complete |
+| TMUX-02 | Phase 39 | Complete |
 | TMUX-03 | Phase 41 | Pending |
 | TMUX-04 | Phase 43 | Pending |
 | TMUX-05 | Phase 43 | Pending |
-| CONF-01 | Phase 39 | Pending |
-| CONF-02 | Phase 39 | Pending |
+| CONF-01 | Phase 39 | Complete |
+| CONF-02 | Phase 39 | Complete |
 | PLUG-01 | Phase 40 | Pending |
 | PLUG-02 | Phase 40 | Pending |
 | PLUG-03 | Phase 40 | Pending |
@@ -103,4 +103,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after roadmap creation*
+*Last updated: 2026-02-02 after Phase 39 execution*
