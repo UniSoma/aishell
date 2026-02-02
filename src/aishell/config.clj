@@ -105,6 +105,33 @@
                            " allowlist entry for path: " (:path entry)))))))
   detection-config)
 
+(defn parse-resurrect-config
+  "Parse tmux.resurrect config: boolean sugar or map with options.
+   - true -> {:enabled true :restore_processes false}
+   - false -> nil
+   - {:restore_processes true} -> {:enabled true :restore_processes true}
+   - {:enabled false} -> nil
+   - {:enabled false :restore_processes true} -> nil (enabled wins)
+   Returns normalized map or nil if disabled/invalid."
+  [resurrect-value]
+  (cond
+    (true? resurrect-value)
+    {:enabled true :restore_processes false}
+
+    (false? resurrect-value)
+    nil
+
+    (map? resurrect-value)
+    (let [enabled? (get resurrect-value :enabled true)
+          restore-processes? (get resurrect-value :restore_processes false)]
+      (when enabled?
+        {:enabled true :restore_processes (boolean restore-processes?)}))
+
+    :else
+    (do (output/warn (str "Invalid tmux.resurrect value: expected boolean or map, got "
+                          (type resurrect-value)))
+        nil)))
+
 (defn validate-tmux-config
   "Validate tmux config structure. Warns on invalid format.
    Expected: map with optional keys like :plugins, :resurrect.
@@ -129,7 +156,13 @@
 
             :else
             (when-let [error-msg (validate-plugin-format plugin)]
-              (output/warn (str error-msg " in " source-path))))))))
+              (output/warn (str error-msg " in " source-path)))))))
+    ;; Validate :resurrect if present
+    (when-let [resurrect (:resurrect tmux-config)]
+      (when-not (or (boolean? resurrect) (map? resurrect))
+        (output/warn (str "Invalid tmux.resurrect in " source-path
+                         ": expected boolean or map, got " (type resurrect)
+                         "\nExamples:\n  tmux:\n    resurrect: true\n  or:\n  tmux:\n    resurrect:\n      restore_processes: true")))))
   tmux-config)
 
 (defn validate-config
