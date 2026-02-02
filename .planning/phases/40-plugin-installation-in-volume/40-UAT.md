@@ -1,9 +1,9 @@
 ---
 status: diagnosed
 phase: 40-plugin-installation-in-volume
-source: [40-01-SUMMARY.md, 40-02-SUMMARY.md]
-started: 2026-02-02T18:00:00Z
-updated: 2026-02-02T18:15:00Z
+source: [40-01-SUMMARY.md, 40-02-SUMMARY.md, 40-03-SUMMARY.md]
+started: 2026-02-02T17:00:00Z
+updated: 2026-02-02T17:30:00Z
 ---
 
 ## Current Test
@@ -12,97 +12,51 @@ updated: 2026-02-02T18:15:00Z
 
 ## Tests
 
-### 1. Invalid plugin format triggers warning
-expected: Add an invalid plugin entry (e.g., "not-a-valid-format") to tmux.plugins in .aishell/config.yaml. Run `aishell build --with-tmux`. Config loading warns about invalid plugin format but does not fail.
+### 1. TPM installed during build (re-verify)
+expected: With a valid plugin declared in tmux.plugins, run `aishell build --with-tmux`. Start container and verify /tools/tmux/plugins/tpm exists.
 result: pass
 
-### 2. Valid plugin format accepted silently
-expected: Add a valid plugin (e.g., "tmux-plugins/tmux-sensible") to tmux.plugins. Run `aishell build --with-tmux`. No validation warnings for that plugin.
-result: pass
-
-### 3. TPM installed into volume during build
-expected: With valid plugins declared and --with-tmux, run `aishell build`. After build completes, the harness volume should contain /tools/tmux/plugins/tpm (TPM clone).
+### 2. Declared plugins installed during build (re-verify)
+expected: With tmux-plugins/tmux-sensible in tmux.plugins, after `aishell build --with-tmux`, start container and verify /tools/tmux/plugins/tmux-sensible exists.
 result: issue
-reported: "Failed. See that my config has a plugin defined, but starting the container there's no such directory /tools/tmux"
+reported: "Neither aishell build --with-tmux nor aishell update resulted in tmux-sensible being installed. Only tpm folder is inside plugins."
 severity: major
 
-### 4. Declared plugins installed during build
-expected: With "tmux-plugins/tmux-sensible" in plugins list, after `aishell build --with-tmux`, the volume should contain /tools/tmux/plugins/tmux-sensible.
-result: issue
-reported: "same issue, /tools/tmux doesn't exist"
-severity: major
-
-### 5. No plugins declared skips TPM installation
-expected: Remove all plugins from tmux.plugins (empty list or omit). Run `aishell build --with-tmux`. Build succeeds without TPM installation step.
-result: skipped
-reason: Blocked by tests 3/4 - build path not installing plugins
-
-### 6. tmux disabled skips plugin installation
-expected: Run `aishell build` without --with-tmux flag. Even if plugins are declared in config, no plugin installation occurs.
-result: skipped
-reason: Blocked by tests 3/4 - build path not installing plugins
-
-### 7. Update refreshes plugin installations
-expected: With plugins declared and --with-tmux, run `aishell update`. Plugins are re-installed/refreshed in the volume.
+### 3. Repeated update is idempotent (re-verify)
+expected: Run `aishell update` multiple times in a row. No git clone errors — TPM handles existing directory gracefully with pull-if-exists pattern.
 result: pass
 
-### 8. Non-string plugin entry triggers type warning
-expected: Add a non-string entry to tmux.plugins (e.g., a number like 123). Config loading warns about invalid type.
+### 4. No plugins skips TPM installation
+expected: Remove all plugins from tmux.plugins (empty list or omit key). Run `aishell build --with-tmux`. Build succeeds without TPM installation step.
 result: pass
 
-### 9. Multiple plugins installed correctly
-expected: Declare 2+ plugins (e.g., "tmux-plugins/tmux-sensible", "tmux-plugins/tmux-yank"). After build, both are present in /tools/tmux/plugins/.
-result: issue
-reported: "aishell update fails with: fatal: destination path '/tools/tmux/plugins/tpm' already exists and is not an empty directory. Error: Failed to populate harness volume"
-severity: major
+### 5. Without --with-tmux skips plugin installation
+expected: Even with plugins declared in config, run `aishell build` (no --with-tmux). Plugin installation is skipped entirely.
+result: pass
+
+### 6. Volume hash changes on tmux config change
+expected: After building with --with-tmux and one plugin, add a second plugin to config and run `aishell build --with-tmux` again. A new volume is created (hash changed) and both plugins are installed.
+result: pass
 
 ## Summary
 
-total: 9
-passed: 4
-issues: 3
+total: 6
+passed: 5
+issues: 1
 pending: 0
-skipped: 2
+skipped: 0
 
 ## Gaps
 
-- truth: "TPM and plugins installed into volume during aishell build --with-tmux"
+- truth: "Declared plugins (e.g., tmux-sensible) installed into /tools/tmux/plugins/ during build"
   status: failed
-  reason: "User reported: /tools/tmux directory doesn't exist after build. Build path does not trigger plugin installation."
+  reason: "User reported: Neither aishell build --with-tmux nor aishell update resulted in tmux-sensible being installed. Only tpm folder is inside plugins."
   severity: major
-  test: 3
-  root_cause: "compute-harness-hash only includes AI harness configs (claude/codex/gemini/opencode), not tmux state or plugins. Volume hash unchanged when adding --with-tmux, so build skips populate-volume."
+  test: 2
+  root_cause: "build-tpm-install-command writes plugin declarations to /tmp/plugins.conf, but TPM install_plugins script only reads from ~/.tmux.conf. It uses AWK to parse for 'set -g @plugin' lines in the tmux config file, so /tmp/plugins.conf is never read."
   artifacts:
     - path: "src/aishell/docker/volume.clj"
-      issue: "harness-keys excludes :tmux; normalize-harness-config doesn't include tmux config in hash"
-    - path: "src/aishell/cli.clj"
-      issue: "Build path only calls populate-volume when vol-missing? or vol-stale? (lines 210-218)"
+      issue: "Line 209: writes plugin declarations to /tmp/plugins.conf instead of ~/.tmux.conf where TPM expects them"
   missing:
-    - "Include :with-tmux flag and plugin list in volume hash computation"
-  debug_session: ".planning/debug/build-missing-plugins.md"
-
-- truth: "Declared plugins present in volume after aishell build --with-tmux"
-  status: failed
-  reason: "User reported: /tools/tmux doesn't exist after build. Same root cause as test 3."
-  severity: major
-  test: 4
-  root_cause: "Same as test 3 — volume hash doesn't include tmux config, build path skips repopulation"
-  artifacts:
-    - path: "src/aishell/docker/volume.clj"
-      issue: "harness-keys excludes :tmux"
-  missing:
-    - "Same fix as test 3"
-  debug_session: ".planning/debug/build-missing-plugins.md"
-
-- truth: "Multiple plugins installed correctly on repeated update (idempotent)"
-  status: failed
-  reason: "User reported: aishell update fails with git clone fatal error - destination path already exists and is not empty"
-  severity: major
-  test: 9
-  root_cause: "build-tpm-install-command generates bare git clone without existence check. On second run, /tools/tmux/plugins/tpm already exists, causing git clone to fail."
-  artifacts:
-    - path: "src/aishell/docker/volume.clj"
-      issue: "Line 200: git clone command has no idempotency guard"
-  missing:
-    - "Add existence check before git clone (skip if exists, or rm -rf first, or git pull if exists)"
-  debug_session: ".planning/debug/tpm-clone-idempotency.md"
+    - "Write plugin declarations to ~/.tmux.conf (or pass correct path) so TPM install_plugins can find them"
+  debug_session: ".planning/debug/plugins-not-installing.md"
