@@ -201,7 +201,11 @@
     (let [plugin-lines (str/join "\\n"
                          (map #(str "set -g @plugin '" % "'") plugins))]
       (str "mkdir -p /tools/tmux/plugins"
-           " && git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm"
+           " && if [ -d /tools/tmux/plugins/tpm ]; then"
+           " git -C /tools/tmux/plugins/tpm pull --ff-only 2>/dev/null || true"
+           "; else"
+           " git clone --depth 1 https://github.com/tmux-plugins/tpm /tools/tmux/plugins/tpm"
+           "; fi"
            " && printf '%s\\n' \"" plugin-lines "\" > /tmp/plugins.conf"
            " && TMUX_PLUGIN_MANAGER_PATH=/tools/tmux/plugins /tools/tmux/plugins/tpm/bin/install_plugins"
            " && chmod -R a+rX /tools/tmux"))))
