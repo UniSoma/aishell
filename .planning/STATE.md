@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 41 of 43 (TPM Initialization in Entrypoint) — COMPLETE
-Plan: All complete (1/1)
-Status: Phase 41 fully verified, ready for Phase 42
-Last activity: 2026-02-02 — Phase 41 verified, all 5 must-haves passed
+Phase: 42 of 43 (Resurrect State Persistence) — IN PROGRESS
+Plan: 1 of 2 complete
+Status: Config parsing and state mounting complete
+Last activity: 2026-02-02 — Completed 42-01 resurrect config parsing and state mounting
 
-Progress: [██████░░░░] 60% (of v2.9.0 milestone, 3 of 5 phases complete)
+Progress: [███████░░░] 68% (of v2.9.0 milestone, plan 42-01 complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,11 +31,11 @@ Progress: [██████░░░░] 60% (of v2.9.0 milestone, 3 of 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 97 (90 in v1.0-v2.8.0 + 7 in v2.9.0)
-- v2.9.0 tracking: 7 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01)
+- Total plans completed: 98 (90 in v1.0-v2.8.0 + 8 in v2.9.0)
+- v2.9.0 tracking: 8 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01)
 
 **Recent Trend:**
-- v2.9.0: 7 plans completed (avg 1.7min duration)
+- v2.9.0: 8 plans completed (avg 1.6min duration)
 - v2.8.0: 14 plans across 4 phases
 - Trend: Stable execution velocity with quick gap closures
 
@@ -46,6 +46,9 @@ Progress: [██████░░░░] 60% (of v2.9.0 milestone, 3 of 5 phas
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.9.0: resurrect: true -> {:enabled true :restore_processes false} (sensible default)
+- v2.9.0: resurrect state directory at ~/.aishell/resurrect/{project-hash}/ for per-project isolation
+- v2.9.0: resurrect config silently ignored when tmux disabled (no warnings)
 - v2.9.0: Mount ~/.tmux.conf read-only to prevent container modification
 - v2.9.0: Auto-mount skipped if user has explicit .tmux.conf in config mounts
 - v2.9.0: :with-tmux defaults to FALSE (opt-in, not opt-out per TMUX-01 requirements)
@@ -79,12 +82,12 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 41-01 TPM initialization and conditional startup
+Stopped at: Completed 42-01 resurrect config parsing and state mounting
 Resume file: None
 
-**Next step:** Run `/gsd:plan-phase 42` to plan resurrect state persistence
+**Next step:** Execute 42-02 to add entrypoint plugin declarations for resurrect
 
 **Recent completions:**
+- 42-01: Resurrect config parsing and state directory mounting - 1min
 - 41-01: TPM initialization in entrypoint with conditional startup - 1.4min
 - 40-04: Gap closure fixing TPM plugin installation path - <1min
-- 40-03: Gap closure fixing UAT test failures (volume hash, idempotent git clone) - 2min
