@@ -8,7 +8,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection :tmux})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
@@ -92,6 +92,18 @@
                            " allowlist entry for path: " (:path entry)))))))
   detection-config)
 
+(defn validate-tmux-config
+  "Validate tmux config structure. Warns on invalid format.
+   Expected: map with optional keys like :plugins, :resurrect.
+   Returns config unchanged."
+  [tmux-config source-path]
+  (when tmux-config
+    (when-not (map? tmux-config)
+      (output/warn (str "Invalid tmux section in " source-path
+                       ": expected map, got " (type tmux-config)
+                       "\nExample:\n  tmux:\n    plugins:\n      - tmux-plugins/tmux-sensible"))))
+  tmux-config)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -101,11 +113,13 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, tmux"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
-      (validate-detection-config detection source-path)))
+      (validate-detection-config detection source-path))
+    (when-let [tmux (:tmux config)]
+      (validate-tmux-config tmux source-path)))
   config)
 
 (defn merge-harness-args
@@ -151,7 +165,7 @@
   (let [list-keys #{:mounts :ports :docker_args}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
-        scalar-keys #{:pre_start :gitleaks_freshness_check}
+        scalar-keys #{:pre_start :gitleaks_freshness_check :tmux}
         ;; Extract detection config before reduce
         global-detection (get global-config :detection)
         project-detection (get project-config :detection)
