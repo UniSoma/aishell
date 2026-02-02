@@ -44,7 +44,7 @@
    Populates lazily if missing or stale (hash mismatch).
    Returns volume name for docker run mounting, or nil if no harnesses enabled."
   [state config]
-  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
     (let [expected-hash (vol/compute-harness-hash state)
           volume-name (or (:harness-volume-name state)
                           (vol/volume-name expected-hash))]

@@ -210,13 +210,19 @@ if [ \"$WITH_TMUX\" = \"true\" ] && [ -d \"/tools/tmux/plugins\" ]; then
     fi
 fi
 
-# Config injection: copy user's tmux config to writable location, append TPM run
+# Config injection: build runtime tmux config with plugin declarations.
+# Host config is staged at /tmp/host-tmux.conf (not at its original path)
+# so it doesn't shadow the XDG location that TPM reads for plugin discovery.
+# The runtime config is written to the XDG path so both tmux and TPM read it.
 if [ \"$WITH_TMUX\" = \"true\" ]; then
-    RUNTIME_TMUX_CONF=\"$HOME/.tmux.conf.runtime\"
+    RUNTIME_TMUX_CONF=\"$HOME/.config/tmux/tmux.conf\"
     TPM_RUN_LINE=\"run '~/.tmux/plugins/tpm/tpm'\"
 
-    if [ -f \"$HOME/.tmux.conf\" ]; then
-        cp \"$HOME/.tmux.conf\" \"$RUNTIME_TMUX_CONF\"
+    mkdir -p \"$HOME/.config/tmux\"
+
+    # Copy host config from staging path (mounted at /tmp/host-tmux.conf)
+    if [ -f /tmp/host-tmux.conf ]; then
+        cp /tmp/host-tmux.conf \"$RUNTIME_TMUX_CONF\"
     else
         : > \"$RUNTIME_TMUX_CONF\"
     fi

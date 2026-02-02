@@ -166,24 +166,34 @@
          (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
 
 (defn- user-mounted-tmux-config?
-  "Check if user explicitly mounted .tmux.conf in their config mounts.
+  "Check if user explicitly mounted tmux config in their config mounts.
    Prevents duplicate mount when auto-mount would also add it."
   [config]
   (let [mounts (get config :mounts [])]
-    (some #(str/includes? (str %) ".tmux.conf") mounts)))
+    (some #(or (str/includes? (str %) ".tmux.conf")
+              (str/includes? (str %) "tmux/tmux.conf"))
+          mounts)))
 
 (defn- build-tmux-config-mount
-  "Build mount args for ~/.tmux.conf if tmux is enabled and file exists.
-   Mounts read-only to prevent container from modifying host config.
-   Skips if user already mounted .tmux.conf explicitly in config.
-   Returns vector of ['-v' 'path:path:ro'] or empty vector."
+  "Build mount args for tmux config if tmux is enabled and file exists.
+   Checks XDG path (~/.config/tmux/tmux.conf) first, then ~/.tmux.conf.
+   Mounts read-only at /tmp/host-tmux.conf (staging path) so it doesn't
+   shadow the XDG location inside the container — TPM reads XDG first
+   and would find the original config without plugin declarations.
+   Skips if user already mounted tmux config explicitly in config.
+   Returns vector of ['-v' 'path:/tmp/host-tmux.conf:ro'] or empty vector."
   [state config]
   (if (and (get state :with-tmux)
            (not (user-mounted-tmux-config? config)))
     (let [home (util/get-home)
-          host-path (str home "/.tmux.conf")]
-      (if (fs/exists? host-path)
-        ["-v" (str host-path ":" host-path ":ro")]
+          xdg-path (str home "/.config/tmux/tmux.conf")
+          classic-path (str home "/.tmux.conf")
+          host-path (cond
+                      (fs/exists? xdg-path) xdg-path
+                      (fs/exists? classic-path) classic-path
+                      :else nil)]
+      (if host-path
+        ["-v" (str host-path ":/tmp/host-tmux.conf:ro")]
         []))
     []))
 
