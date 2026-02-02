@@ -62,10 +62,11 @@ Plans:
   3. Declared plugins installed non-interactively during aishell build
   4. Plugin format validation catches invalid owner/repo patterns before build
   5. aishell update refreshes plugin installations
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 40-01: TBD
+- [ ] 40-01-PLAN.md -- Plugin format validation in config parsing
+- [ ] 40-02-PLAN.md -- TPM and plugin installation in volume population
 
 #### Phase 41: TPM Initialization in Entrypoint
 **Goal**: Make installed plugins discoverable to tmux at runtime
@@ -131,4 +132,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 39 execution*
+*Last updated: 2026-02-02 after Phase 40 planning*
