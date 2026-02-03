@@ -178,7 +178,7 @@ aishell v2.9.0 adds opt-in tmux support with plugin management and session persi
 tmux is **disabled by default**. Enable it via the `--with-tmux` build flag:
 
 ```bash
-aishell build --with-claude --with-tmux
+aishell setup --with-claude --with-tmux
 ```
 
 The `:with-tmux` flag in `state.edn` controls which tmux features are available:
@@ -265,7 +265,7 @@ The build phase creates the foundation Docker image and populates the harness vo
 
 ```
 ┌──────────────────┐
-│ aishell build    │
+│ aishell setup    │
 │ --with-claude    │
 └────────┬─────────┘
          │
@@ -549,7 +549,7 @@ Foundation Image          Project Extension           Extended Image
 
 1. **Auto-build:** If `.aishell/Dockerfile` exists, the extension builds automatically before run
 2. **Cache:** Extended image tagged by content hash; rebuilt only on Dockerfile changes
-3. **Foundation dependency:** Extension requires the foundation image (`aishell build` must run first)
+3. **Foundation dependency:** Extension requires the foundation image (`aishell setup` must run first)
 4. **Persistence:** Extended images persist locally and are shared across runs
 
 **Example project extension:**

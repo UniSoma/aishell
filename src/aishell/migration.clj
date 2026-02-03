@@ -37,7 +37,7 @@
       (println "tmux is now OPT-IN (was always-enabled in v2.7-2.8):")
       (println "  - Your existing containers: tmux remains enabled (no action needed)")
       (println "  - New builds after v2.9.0: tmux disabled by default")
-      (println "  - To enable tmux: aishell build --with-tmux")
+      (println "  - To enable tmux: aishell setup --with-tmux")
       (println)
       (println "Session name changed:")
       (println "  - Old default: main")

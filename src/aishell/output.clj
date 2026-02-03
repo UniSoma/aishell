@@ -16,7 +16,7 @@
 (def NC (if (colors-enabled?) "\u001b[0m" ""))
 
 ;; Known commands for suggestion matching
-(def known-commands #{"build" "update" "check" "exec" "attach" "ps" "volumes"
+(def known-commands #{"setup" "update" "check" "exec" "attach" "ps" "volumes"
                       "claude" "opencode" "codex" "gemini" "gitleaks"})
 
 (defn- levenshtein-distance
@@ -85,9 +85,9 @@
     (println (str "Try: " CYAN "aishell --help" NC)))
   (System/exit 1))
 
-(defn error-no-build
-  "Print error when no image has been built for the project"
+(defn error-no-setup
+  "Print error when no setup has been run for the project"
   []
   (binding [*out* *err*]
-    (println (str RED "Error:" NC " No image built. Run: " CYAN "aishell build" NC)))
+    (println (str RED "Error:" NC " No setup found. Run: " CYAN "aishell setup" NC)))
   (System/exit 1))

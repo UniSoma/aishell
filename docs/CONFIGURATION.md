@@ -1081,7 +1081,7 @@ harness_args:
 
 ---
 
-## Build Options
+## Setup Options
 
 ### Harness Selection Flags
 
@@ -1090,13 +1090,13 @@ harness_args:
 **Usage:**
 ```bash
 # Single harness
-aishell build --with-claude
+aishell setup --with-claude
 
 # Multiple harnesses
-aishell build --with-claude --with-opencode --with-codex
+aishell setup --with-claude --with-opencode --with-codex
 
 # With version pinning
-aishell build --with-claude=2.0.22 --with-codex=0.1.2025062501
+aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501
 ```
 
 **Available harnesses:**
@@ -1128,7 +1128,7 @@ aishell saves harness selection in `~/.aishell/state.edn` and preserves it acros
 
 **Usage:**
 ```bash
-aishell build --with-claude --with-tmux
+aishell setup --with-claude --with-tmux
 ```
 
 **Behavior:**
@@ -1155,7 +1155,7 @@ aishell build --with-claude --with-tmux
 
 ```bash
 # Build with tmux support
-aishell build --with-claude --with-tmux
+aishell setup --with-claude --with-tmux
 
 # Run detached
 aishell claude --detach
@@ -1172,7 +1172,7 @@ aishell attach --name claude
 
 **Usage:**
 ```bash
-aishell build --with-claude --without-gitleaks
+aishell setup --with-claude --without-gitleaks
 ```
 
 **Behavior:**
@@ -1202,13 +1202,13 @@ cat ~/.aishell/state.edn
 
 ---
 
-### --force (build flag)
+### --force (setup flag)
 
 **Purpose:** Force full foundation image rebuild, bypassing Docker cache.
 
 **Usage:**
 ```bash
-aishell build --with-claude --force
+aishell setup --with-claude --force
 ```
 
 **Behavior:**
@@ -1258,10 +1258,10 @@ aishell update --force
 - Gitleaks installation status
 
 **Cannot change harness selection.**
-To add or remove harnesses, use `aishell build`:
+To add or remove harnesses, use `aishell setup`:
 ```bash
 # Add OpenCode to existing Claude installation
-aishell build --with-claude --with-opencode
+aishell setup --with-claude --with-opencode
 ```
 
 **When to use update:**

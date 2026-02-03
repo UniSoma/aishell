@@ -52,7 +52,7 @@
       (output/error (str "Container '" short-name "' does not have tmux enabled.\n\n"
                         "The 'attach' command requires tmux for session management.\n\n"
                         "To enable tmux:\n"
-                        "  1. Rebuild: aishell build --with-tmux\n"
+                        "  1. Run: aishell setup --with-tmux\n"
                         "  2. Restart: aishell " short-name " --detach\n"
                         "  3. Attach: aishell attach --name " short-name)))))
 

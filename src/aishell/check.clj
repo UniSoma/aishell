@@ -48,14 +48,14 @@
     (do (print-status :ok "Docker is available")
         :ok)))
 
-(defn- check-build-state
-  "Check if build state exists. Returns state map or nil."
+(defn- check-setup-state
+  "Check if setup state exists. Returns state map or nil."
   []
   (if-let [s (state/read-state)]
-    (do (print-status :ok (str "Build state found (built: "
+    (do (print-status :ok (str "Setup state found (built: "
                                 (or (:build-time s) "unknown") ")"))
         s)
-    (do (print-status :fail (str "No build found. Run: " output/CYAN "aishell build" output/NC))
+    (do (print-status :fail (str "No setup found. Run: " output/CYAN "aishell setup" output/NC))
         nil)))
 
 (defn- check-base-image
@@ -212,8 +212,8 @@
     (println)
 
     ;; Build state
-    (println (str output/BOLD "Build" output/NC))
-    (let [state (check-build-state)]
+    (println (str output/BOLD "Setup" output/NC))
+    (let [state (check-setup-state)]
       (if state
         (do
           ;; Base image

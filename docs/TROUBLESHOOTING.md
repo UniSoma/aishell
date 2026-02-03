@@ -9,7 +9,7 @@ Find the symptom you are experiencing, then follow the resolution steps.
 ## Table of Contents
 
 - [Quick Diagnostics](#quick-diagnostics)
-- [Build Issues](#build-issues)
+- [Setup Issues](#setup-issues)
 - [Container Issues](#container-issues)
 - [Volume Issues](#volume-issues)
 - [Authentication Issues](#authentication-issues)
@@ -45,7 +45,7 @@ cat .aishell/config.yaml
 
 ---
 
-## Build Issues
+## Setup Issues
 
 ### Symptom: "Docker not found" or "Cannot connect to Docker daemon"
 
@@ -72,7 +72,7 @@ cat .aishell/config.yaml
    docker info
    ```
 
-### Symptom: "Permission denied" when running build
+### Symptom: "Permission denied" when running setup
 
 **Cause:** Your user lacks permission to access the Docker socket.
 
@@ -93,12 +93,12 @@ docker ps
 
 **Option 2: Use sudo**
 ```bash
-sudo aishell build --with-claude
+sudo aishell setup --with-claude
 ```
 
 **Note:** Some systems require a reboot before the docker group change takes effect.
 
-### Symptom: "Image build fails" with Docker syntax errors
+### Symptom: "Image setup fails" with Docker syntax errors
 
 **Cause:** Custom `.aishell/Dockerfile` has invalid syntax or references a missing resource.
 
@@ -118,7 +118,7 @@ sudo aishell build --with-claude
 3. **Test manually:**
    ```bash
    # Build just the base image first
-   aishell build --with-claude
+   aishell setup --with-claude
 
    # Then try your custom Dockerfile
    docker build -f .aishell/Dockerfile -t test .
@@ -147,12 +147,12 @@ sudo aishell build --with-claude
 
 2. **Use exact version from npm:**
    ```bash
-   aishell build --with-claude=2.0.22
+   aishell setup --with-claude=2.0.22
    ```
 
 3. **Omit version to use latest:**
    ```bash
-   aishell build --with-claude
+   aishell setup --with-claude
    ```
 
 ---
@@ -326,7 +326,7 @@ If you still see warnings:
 2. **If the volume is missing:**
    ```bash
    # Rebuild to create and populate volume
-   aishell build --with-claude
+   aishell setup --with-claude
    ```
 
 3. **If the volume exists but the harness still fails:**
@@ -475,7 +475,7 @@ File a bug report including your tmux version and `SHELL` variable.
 
 2. **Rebuild:**
    ```bash
-   aishell build --with-claude
+   aishell setup --with-claude
    ```
 
 **Migration detection:**
@@ -880,7 +880,7 @@ aishell validates TERM and falls back to `xterm-256color` for unsupported values
 
 1. **Rebuild with tmux support:**
    ```bash
-   aishell build --with-claude --with-tmux
+   aishell setup --with-claude --with-tmux
    ```
 
 2. **Restart container:**
@@ -915,7 +915,7 @@ aishell attach --name claude --session harness
 
 **Migration note:** If you upgraded from v2.8.0 and still have containers with "main" sessions, rebuild:
 ```bash
-aishell build --with-claude --with-tmux
+aishell setup --with-claude --with-tmux
 ```
 
 ### Symptom: tmux plugins not loading
@@ -1196,7 +1196,7 @@ Before filing an issue, verify:
 
 - [ ] Docker daemon is running
 - [ ] Your user is in the docker group (or using sudo)
-- [ ] You built an image with `aishell build --with-<harness>`
+- [ ] You built an image with `aishell setup --with-<harness>`
 - [ ] Config files use absolute paths, not relative
 - [ ] Environment variables are set on the host before running aishell
 - [ ] You are in the correct directory (if using project-specific config)

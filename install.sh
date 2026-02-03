@@ -147,7 +147,7 @@ install_aishell() {
     else
         echo ""
         echo "Quick start:"
-        echo "  aishell build    # Build Docker image for your harness"
+        echo "  aishell setup    # Set up Docker image and select harnesses"
         echo "  aishell shell    # Start interactive shell in container"
         echo ""
     fi

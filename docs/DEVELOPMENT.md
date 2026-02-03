@@ -33,7 +33,7 @@ git clone https://github.com/UniSoma/aishell.git
 cd aishell
 
 # Run directly from source
-bb -m aishell.core build --with-claude
+bb -m aishell.core setup --with-claude
 
 # Run commands
 bb -m aishell.core claude
@@ -189,7 +189,7 @@ aishell/
 - Migration is additive: missing fields default to nil, with no migration code
 
 **State writes:**
-- `cli/handle-build`: After foundation build + volume population
+- `cli/handle-setup`: After foundation build + volume population
 - `cli/handle-update`: Updates build-time (and foundation-hash if `--force`)
 
 ### Extension Cache Invalidation
@@ -330,9 +330,9 @@ In the section that prints installed harnesses after build:
 
 **File:** `src/aishell/cli.clj`
 
-**a. Add to `build-spec`:**
+**a. Add to `setup-spec`:**
 ```clojure
-(def build-spec
+(def setup-spec
   {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
@@ -342,13 +342,13 @@ In the section that prints installed harnesses after build:
    ;; ...
 ```
 
-**b. Add to `handle-build` function:**
+**b. Add to `handle-setup` function:**
 
 Parse the flag and validate the version:
 ```clojure
-(defn handle-build [{:keys [opts]}]
+(defn handle-setup [{:keys [opts]}]
   (if (:help opts)
-    (print-build-help)
+    (print-setup-help)
     (let [cursor-config (parse-with-flag (:with-cursor opts))
           _ (validate-version (:version cursor-config) "Cursor")
           ;; ...
@@ -372,7 +372,7 @@ Preserve the harness configuration on update:
 
 **d. Add to state persistence:**
 
-Both in `handle-build` and `handle-update`:
+Both in `handle-setup` and `handle-update`:
 ```clojure
 (state/write-state
   {:with-cursor (:enabled? cursor-config)
@@ -398,10 +398,10 @@ Both in `handle-build` and `handle-update`:
 ```
 
 **Checklist:**
-- [ ] Added `:with-cursor` to `build-spec`
-- [ ] Added flag parsing in `handle-build`
+- [ ] Added `:with-cursor` to `setup-spec`
+- [ ] Added flag parsing in `handle-setup`
 - [ ] Added version validation
-- [ ] Added to build invocation
+- [ ] Added to setup invocation
 - [ ] Added to state persistence
 - [ ] Added to `handle-update` output
 - [ ] Added to help text
@@ -505,7 +505,7 @@ The state file records which harnesses are installed and their versions.
 
 **Add to state writes:**
 
-In `cli.clj` `handle-build` and `handle-update`:
+In `cli.clj` `handle-setup` and `handle-update`:
 ```clojure
 (state/write-state
   {:with-cursor (:enabled? cursor-config)
@@ -539,10 +539,10 @@ Update these files to cover the new harness:
 **a. README.md:**
 ```markdown
 # Build with Cursor
-aishell build --with-cursor
+aishell setup --with-cursor
 
 # Build with specific version
-aishell build --with-cursor=1.0.5
+aishell setup --with-cursor=1.0.5
 ```
 
 **b. docs/HARNESSES.md:**
@@ -574,7 +574,7 @@ Add a troubleshooting section if the harness has auth quirks.
 
 ```bash
 # 1. Build with new harness
-bb -m aishell.core build --with-cursor
+bb -m aishell.core setup --with-cursor
 
 # 2. Verify build state
 cat ~/.aishell/state.edn
@@ -594,7 +594,7 @@ ls ~/.cursor
 
 ```bash
 # Build with specific version
-bb -m aishell.core build --with-cursor=1.0.5
+bb -m aishell.core setup --with-cursor=1.0.5
 
 # Verify version in state
 cat ~/.aishell/state.edn
@@ -607,7 +607,7 @@ bb -m aishell.core cursor --version
 
 ```bash
 # Build with version
-bb -m aishell.core build --with-cursor=1.0.5
+bb -m aishell.core setup --with-cursor=1.0.5
 
 # Update (should preserve harness and version)
 bb -m aishell.core update
@@ -682,7 +682,7 @@ When adding a new harness, mirror existing harnesses:
 Use `output/error` for user-facing errors (exits with message):
 ```clojure
 (when (not (docker/image-exists? image-tag))
-  (output/error "No image found. Run: aishell build --with-cursor"))
+  (output/error "No image found. Run: aishell setup --with-cursor"))
 ```
 
 Use try/catch for recoverable errors:
@@ -742,7 +742,7 @@ Add support for [Harness Name] integration.
 - Updated documentation (README, HARNESSES, TROUBLESHOOTING)
 
 ## Testing
-- [ ] Built image: `aishell build --with-[harness]`
+- [ ] Built image: `aishell setup --with-[harness]`
 - [ ] Ran harness: `aishell [harness] --help`
 - [ ] Verified config mounting persists credentials
 - [ ] Verified environment variable passthrough

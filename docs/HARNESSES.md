@@ -63,10 +63,10 @@ Build aishell with Claude Code support:
 
 ```bash
 # Latest version
-aishell build --with-claude
+aishell setup --with-claude
 
 # Specific version
-aishell build --with-claude=2.0.22
+aishell setup --with-claude=2.0.22
 ```
 
 Pin versions for reproducible environments.
@@ -177,10 +177,10 @@ Build aishell with OpenCode support:
 
 ```bash
 # Latest version
-aishell build --with-opencode
+aishell setup --with-opencode
 
 # Specific version
-aishell build --with-opencode=0.2.3
+aishell setup --with-opencode=0.2.3
 ```
 
 **Note:** OpenCode installs as a Go binary (not an npm package), downloaded from GitHub releases to `/tools/bin`.
@@ -292,10 +292,10 @@ Build aishell with Codex CLI support:
 
 ```bash
 # Latest version
-aishell build --with-codex
+aishell setup --with-codex
 
 # Specific version
-aishell build --with-codex=1.0.7
+aishell setup --with-codex=1.0.7
 ```
 
 ### Authentication
@@ -407,10 +407,10 @@ Build aishell with Gemini CLI support:
 
 ```bash
 # Latest version
-aishell build --with-gemini
+aishell setup --with-gemini
 
 # Specific version
-aishell build --with-gemini=0.1.5
+aishell setup --with-gemini=0.1.5
 ```
 
 ### Authentication
@@ -522,7 +522,7 @@ Build with tmux support:
 
 ```bash
 # Build with harness and tmux
-aishell build --with-claude --with-tmux
+aishell setup --with-claude --with-tmux
 ```
 
 ### Running in Background
@@ -617,13 +617,13 @@ Build with any combination:
 
 ```bash
 # Two harnesses
-aishell build --with-claude --with-opencode
+aishell setup --with-claude --with-opencode
 
 # Three harnesses
-aishell build --with-claude --with-opencode --with-codex
+aishell setup --with-claude --with-opencode --with-codex
 
 # All harnesses
-aishell build --with-claude --with-opencode --with-codex --with-gemini
+aishell setup --with-claude --with-opencode --with-codex --with-gemini
 ```
 
 Each added harness increases image size.

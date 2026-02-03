@@ -42,7 +42,7 @@ You can use both: devcontainers for your development environment, aishell for ru
 
 ## Quick Start
 
-**Requirements:** Linux or macOS, Docker, [Babashka](https://babashka.org)
+**Requirements:** Linux, macOS, or WSL2 on Windows; Docker; [Babashka](https://babashka.org)
 
 Install Babashka if you haven't already: https://babashka.org
 
@@ -58,11 +58,22 @@ Add `~/.local/bin` to your PATH if not already present:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Build and run:
+Set up the foundation image and select your harnesses (one-time setup):
 
 ```bash
-aishell build --with-claude
+aishell setup --with-claude
+```
+
+Run:
+
+```bash
 aishell claude
+```
+
+To update harness tools later:
+
+```bash
+aishell update
 ```
 
 ## Features
@@ -87,24 +98,24 @@ aishell claude
 
 ## Usage
 
-### Build an image
+### Set up harnesses
 
 ```bash
-# Build with a single harness
-aishell build --with-claude
-aishell build --with-opencode
-aishell build --with-codex
-aishell build --with-gemini
+# Set up with a single harness
+aishell setup --with-claude
+aishell setup --with-opencode
+aishell setup --with-codex
+aishell setup --with-gemini
 
-# Build with multiple harnesses
-aishell build --with-claude --with-opencode --with-codex --with-gemini
+# Set up with multiple harnesses
+aishell setup --with-claude --with-opencode --with-codex --with-gemini
 
-# Build with tmux support
-aishell build --with-claude --with-tmux
+# Set up with tmux support
+aishell setup --with-claude --with-tmux
 
-# Build with specific versions
-aishell build --with-claude=2.0.22
-aishell build --with-codex=0.1.2025062501
+# Set up with specific versions
+aishell setup --with-claude=2.0.22
+aishell setup --with-codex=0.1.2025062501
 ```
 
 ### Run harnesses

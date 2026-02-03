@@ -62,11 +62,11 @@
     (= value "latest") {:enabled? true}
     :else {:enabled? true :version (str value)}))
 
-;; Build subcommand spec
+;; Setup subcommand spec
 ;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
 ;; returns boolean true for flags without values, which can't be coerced to string.
 ;; parse-with-flag handles both boolean true and string values.
-(def build-spec
+(def setup-spec
   {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
@@ -75,7 +75,7 @@
    :with-tmux     {:coerce :boolean :desc "Enable tmux multiplexer in container"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
-   :help          {:alias :h :coerce :boolean :desc "Show build help"}})
+   :help          {:alias :h :coerce :boolean :desc "Show setup help"}})
 
 (defn installed-harnesses
   "Return set of installed harness names based on state.
@@ -95,10 +95,10 @@
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
   (println)
-  (println "Build and run ephemeral containers for AI harnesses.")
+  (println "Set up and run ephemeral containers for AI harnesses.")
   (println)
   (println (str output/BOLD "Commands:" output/NC))
-  (println (str "  " output/CYAN "build" output/NC "      Build the container image"))
+  (println (str "  " output/CYAN "setup" output/NC "      Set up the container image and select harnesses"))
   (println (str "  " output/CYAN "update" output/NC "     Refresh harness tools to latest versions"))
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
@@ -124,7 +124,7 @@
                              :order [:help :version :json]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell build --with-claude" output/NC "     Build with Claude Code"))
+  (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "     Set up with Claude Code"))
   (println (str "  " output/CYAN "aishell check" output/NC "                    Validate setup"))
   (println (str "  " output/CYAN "aishell exec ls -la" output/NC "             Run command in container"))
   (println (str "  " output/CYAN "aishell ps" output/NC "                       List containers"))
@@ -132,30 +132,30 @@
   (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
 
-(defn print-build-help []
-  (println (str output/BOLD "Usage:" output/NC " aishell build [OPTIONS]"))
+(defn print-setup-help []
+  (println (str output/BOLD "Usage:" output/NC " aishell setup [OPTIONS]"))
   (println)
-  (println "Build the container image with optional harness installations.")
+  (println "Set up the container image and select harnesses.")
   (println)
   (println (str output/BOLD "Options:" output/NC))
-  (println (cli/format-opts {:spec build-spec
+  (println (cli/format-opts {:spec setup-spec
                              :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :without-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
-  (println (str "  " output/CYAN "aishell build --with-claude" output/NC "        Include Claude Code (latest)"))
-  (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
-  (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
-  (println (str "  " output/CYAN "aishell build --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
-  (println (str "  " output/CYAN "aishell build --with-claude --with-tmux" output/NC " Include Claude + tmux"))
-  (println (str "  " output/CYAN "aishell build --without-gitleaks" output/NC "   Skip Gitleaks"))
-  (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
+  (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
+  (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "        Include Claude Code (latest)"))
+  (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
+  (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
+  (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
+  (println (str "  " output/CYAN "aishell setup --with-claude --with-tmux" output/NC " Include Claude + tmux"))
+  (println (str "  " output/CYAN "aishell setup --without-gitleaks" output/NC "   Skip Gitleaks"))
+  (println (str "  " output/CYAN "aishell setup --force" output/NC "               Force rebuild")))
 
-(defn handle-build [{:keys [opts]}]
+(defn handle-setup [{:keys [opts]}]
   ;; Show migration warning on first touch for upgraders
   (migration/show-v2.9-migration-warning!)
   (if (:help opts)
-    (print-build-help)
+    (print-setup-help)
     (let [;; Parse flags
           claude-config (parse-with-flag (:with-claude opts))
           opencode-config (parse-with-flag (:with-opencode opts))
@@ -278,7 +278,7 @@
   (println)
   (println (str output/BOLD "Notes:" output/NC))
   (println "  - Refreshes harnesses from last build configuration")
-  (println "  - To change which harnesses are installed, use 'aishell build'")
+  (println "  - To change which harnesses are installed, use 'aishell setup'")
   (println "  - Volume is deleted and recreated for a clean slate")
   (println "  - Foundation image is NOT rebuilt (unless --force is used)")
   (println)
@@ -296,7 +296,7 @@
     (let [state (state/read-state)]
       ;; Must have prior build
       (when-not state
-        (output/error "No previous build found. Run: aishell build"))
+        (output/error "No previous setup found. Run: aishell setup"))
 
       ;; Show what we're updating
       (println "Updating with preserved configuration...")
@@ -371,7 +371,7 @@
         volumes (vol/list-harness-volumes)
         current-vol (:harness-volume-name state)]
     (if (empty? volumes)
-      (println "No harness volumes found.\n\nVolumes are created automatically during 'aishell build' when harnesses are enabled.")
+      (println "No harness volumes found.\n\nVolumes are created automatically during 'aishell setup' when harnesses are enabled.")
       (do
         (pp/print-table [:NAME :STATUS :SIZE :HARNESSES]
                        (map (fn [{:keys [name harnesses]}]
@@ -473,7 +473,7 @@
         (println "\nTo attach: aishell attach --name <name>")))))
 
 (def dispatch-table
-  [{:cmds ["build"] :fn handle-build :spec build-spec :restrict true}
+  [{:cmds ["setup"] :fn handle-setup :spec setup-spec :restrict true}
    {:cmds ["update"] :fn handle-update :spec update-spec :restrict true}
    {:cmds [] :spec global-spec :fn handle-default}])
 
@@ -578,7 +578,7 @@
                 {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
                    {:unsafe unsafe? :container-name container-name-override :skip-pre-start true :detach detach?})
-      ;; Standard dispatch for other commands (build, update, help)
+      ;; Standard dispatch for other commands (setup, update, help)
       (if unsafe?
         ;; --unsafe with no harness command -> shell mode with unsafe
         (run/run-container nil [] {:unsafe true :container-name container-name-override :detach detach?})

@@ -18,7 +18,7 @@
             [aishell.gitleaks.scan-state :as scan-state]))
 
 (defn- verify-harness-available
-  "Check that harness was included in build. Exit with error if not."
+  "Check that harness was included in setup. Exit with error if not."
   [harness-name state-key state]
   (when-not (get state state-key)
     (output/error
@@ -27,7 +27,7 @@
              "opencode" "OpenCode"
              "codex" "Codex CLI"
              "gemini" "Gemini CLI")
-           " not installed. Run: aishell build --with-"
+           " not installed. Run: aishell setup --with-"
            harness-name))))
 
 (defn- check-dockerfile-stale
@@ -104,7 +104,7 @@
   (let [state (state/read-state)]
     ;; Verify build exists
     (when-not state
-      (output/error-no-build))
+      (output/error-no-setup))
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
@@ -127,7 +127,7 @@
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)
         (output/error (str "Image not found: " base-tag
-                          "\nRun: aishell build")))
+                          "\nRun: aishell setup")))
 
       ;; Verify harness if requested
       (case cmd
@@ -278,7 +278,7 @@
   (let [state (state/read-state)]
     ;; Verify build exists
     (when-not state
-      (output/error-no-build))
+      (output/error-no-setup))
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
@@ -287,7 +287,7 @@
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)
         (output/error (str "Image not found: " base-tag
-                          "\nRun: aishell build")))
+                          "\nRun: aishell setup")))
 
       ;; Resolve final image (may auto-build extension)
       (let [image-tag (resolve-image-tag base-tag project-dir false)
