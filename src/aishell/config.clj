@@ -127,6 +127,9 @@
       (when enabled?
         {:enabled true :restore_processes (boolean restore-processes?)}))
 
+    (nil? resurrect-value)
+    nil
+
     :else
     (do (output/warn (str "Invalid tmux.resurrect value: expected boolean or map, got "
                           (type resurrect-value)))
