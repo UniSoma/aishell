@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2] - 2026-02-03
+
 ### Changed
 - **Renamed `build` to `setup`**: The `aishell build` command is now `aishell setup` across the CLI, help text, error messages, and documentation. Internal Docker build logic is unchanged.
+
+### Fixed
+- Correct `aishell shell` to `aishell` in install script
+
+### Docs
+- Add llm.txt and UX analysis artifacts
+- Restructure README for clearer reading order and tighter prose
 
 ## [2.9.1] - 2026-02-03
 
