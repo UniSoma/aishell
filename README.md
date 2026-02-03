@@ -2,6 +2,20 @@
 
 Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) in ephemeral containers.
 
+## Why Docker?
+
+AI coding agents run arbitrary code — installing packages, writing scripts, deleting files — with
+minimal human review. On your host machine, one bad command can reach your SSH keys, cloud
+credentials, browser data, and every file you own.
+
+Docker draws a boundary. The agent sees only what you mount: your project directory and its config
+files. It cannot touch `~/.ssh`, overwrite your shell config, or install packages that outlive the
+session. When the agent exits, the container disappears. Nothing accumulates.
+
+A fixed base image also means every developer runs agents in the same environment — no "works on my
+machine" failures. And if you run multiple agents simultaneously, each gets its own container with no
+shared state.
+
 ## Why aishell?
 
 Running AI coding agents in Docker means dealing with:
