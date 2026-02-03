@@ -1,40 +1,10 @@
 # aishell
 
-Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Codex CLI, Gemini CLI) in isolated, ephemeral containers.
-
-## Features
-
-- **Isolated execution** - AI agents run in ephemeral Docker containers
-- **Host path preservation** - Projects mounted at exact host path for seamless operation
-- **Git identity passthrough** - Commits preserve your identity
-- **Per-project customization** - Extend via `.aishell/Dockerfile`
-- **Version pinning** - Lock harness versions for reproducibility
-- **Config persistence** - Mounts `~/.claude` and OpenCode configs automatically
-- **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
-- **Pre-start commands** - Run sidecar services before shell/harness
-- **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
-- **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
-- **One-off commands** - Run single commands in container with `aishell exec`
-- **Detached mode** - Run harnesses in background with `--detach` flag
-- **Named containers** - Deterministic naming with `--name` override
-- **Attach/detach** - Reconnect to running containers via `aishell attach`
-- **Container discovery** - List project containers with `aishell ps`
-- **tmux integration** - Opt-in tmux support with plugin management and session persistence
-- **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
-
-## Documentation
-
-For detailed documentation, see the [docs/](docs/) folder:
-
-- **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, and codebase structure
-- **[Configuration](docs/CONFIGURATION.md)** - Complete config.yaml reference with examples
-- **[Harnesses](docs/HARNESSES.md)** - Setup and usage guide for each AI harness
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Development](docs/DEVELOPMENT.md)** - Guide for adding new harnesses
+Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) in ephemeral containers.
 
 ## Why aishell?
 
-Running AI coding agents in Docker yourself means dealing with:
+Running AI coding agents in Docker means dealing with:
 
 ```bash
 docker run -it --rm \
@@ -49,7 +19,7 @@ docker run -it --rm \
 
 And that's the simple version. You still need to:
 
-- **Get paths right** - AI agents reference absolute paths in their responses. If `/home/you/project` on your host becomes `/app` in the container, file references break and the agent gets confused.
+- **Get paths right** - AI agents reference absolute paths. If `/home/you/project` on your host becomes `/app` in the container, file references break.
 - **Preserve git identity** - Without setup, commits appear as "root" or "unknown". You need to pass through `.gitconfig` or set `GIT_AUTHOR_*` variables.
 - **Remember all the mounts** - Config directories, credential files, SSH keys, project-specific data. Miss one and things fail mid-session.
 - **Handle project-specific needs** - One project needs PostgreSQL client, another needs Python 3.11. Managing multiple Dockerfiles gets messy.
@@ -70,15 +40,11 @@ aishell is purpose-built for AI agents:
 
 You can use both: devcontainers for your development environment, aishell for running AI agents.
 
-## Requirements
+## Quick Start
 
-- Linux or macOS
-- Docker Engine
-- [Babashka](https://babashka.org)
+**Requirements:** Linux or macOS, Docker, [Babashka](https://babashka.org)
 
-## Installation
-
-First, install Babashka if you haven't already: https://babashka.org
+Install Babashka if you haven't already: https://babashka.org
 
 Then install aishell:
 
@@ -92,33 +58,51 @@ Add `~/.local/bin` to your PATH if not already present:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Build and run:
+
+```bash
+aishell build --with-claude
+aishell claude
+```
+
+## Features
+
+- **Isolated execution** - AI agents run in ephemeral Docker containers
+- **Host path preservation** - Projects mounted at their real host path so file references stay valid
+- **Git identity passthrough** - Commits preserve your identity
+- **Per-project customization** - Extend via `.aishell/Dockerfile`
+- **Version pinning** - Lock harness versions for reproducibility
+- **Config persistence** - Mounts `~/.claude` and OpenCode configs
+- **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
+- **Pre-start commands** - Run sidecar services before shell/harness
+- **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
+- **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
+- **One-off commands** - Run single commands in container with `aishell exec`
+- **Detached mode** - Run harnesses in background with `--detach` flag
+- **Named containers** - Deterministic naming with `--name` override
+- **Attach/detach** - Reconnect to running containers via `aishell attach`
+- **Container discovery** - List project containers with `aishell ps`
+- **tmux integration** - Opt-in tmux support with plugin management and session persistence
+- **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
+
 ## Usage
 
 ### Build an image
 
 ```bash
-# Build with Claude Code
+# Build with a single harness
 aishell build --with-claude
-
-# Build with OpenCode
 aishell build --with-opencode
-
-# Build with Codex CLI
 aishell build --with-codex
-
-# Build with Gemini CLI
 aishell build --with-gemini
 
 # Build with multiple harnesses
-aishell build --with-claude --with-opencode
-
-# Build with all harnesses
 aishell build --with-claude --with-opencode --with-codex --with-gemini
 
 # Build with tmux support
 aishell build --with-claude --with-tmux
 
-# Build with specific versions (single-flag syntax)
+# Build with specific versions
 aishell build --with-claude=2.0.22
 aishell build --with-codex=0.1.2025062501
 ```
@@ -129,58 +113,23 @@ aishell build --with-codex=0.1.2025062501
 # Enter interactive shell
 aishell
 
-# Run Claude Code
+# Run a harness
 aishell claude
-
-# Run OpenCode
 aishell opencode
-
-# Run Codex CLI
 aishell codex
-
-# Run Gemini CLI
 aishell gemini
 
 # Pass arguments to harness
 aishell claude --help
-aishell codex --help
-aishell gemini --help
-
-# Run in detached mode (background) - requires --with-tmux
-aishell claude --detach
-aishell claude -d --name myproject
-
-# Reconnect to detached container (requires tmux enabled)
-aishell attach --name claude
-
-# List project containers
-aishell ps
-
-# Run Gitleaks secret scanner
-aishell gitleaks detect
-
-# Run one-off command
-aishell exec ls -la
-
-# List harness volumes
-aishell volumes
-
-# Remove orphaned harness volumes
-aishell volumes prune
 ```
 
-### One-off Commands
+### One-off commands
 
 Run commands in the container without entering interactive shell:
 
 ```bash
-# List files in container
 aishell exec ls -la
-
-# Run a build command
 aishell exec npm install
-
-# Check node version
 aishell exec node --version
 
 # Use with pipes
@@ -220,7 +169,7 @@ All containers are named `aishell-{project-hash}-{name}` where the project hash 
 
 **Conflict detection:** Starting a container with a name already in use by a running container shows an error with guidance. Stopped containers with the same name are auto-removed.
 
-### Update to latest versions
+### Update
 
 ```bash
 # Refresh harness tools (volume refresh, fast)
@@ -239,6 +188,8 @@ aishell check
 ```
 
 Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, and gitleaks scan freshness.
+
+## Configuration
 
 ### Project customization
 
@@ -282,7 +233,11 @@ tmux:
   resurrect: true
 ```
 
-**Config inheritance:** Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.
+### Config inheritance
+
+Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.
+
+## Security
 
 ### Sensitive file detection
 
@@ -313,15 +268,12 @@ Proceed? (y/n)
 aishell claude --unsafe  # Skip confirmation prompts
 ```
 
-**Gitleaks for deep scanning:**
+### Gitleaks
 
 Use `aishell gitleaks` for content-based secret detection inside the container:
 
 ```bash
-# Run gitleaks scan
 aishell gitleaks detect
-
-# Run with specific options
 aishell gitleaks detect --verbose --no-git
 ```
 
@@ -350,25 +302,6 @@ detection:
   # Custom staleness threshold in days (default: 7)
   gitleaks_freshness_days: 14
 ```
-
-### Git safe.directory
-
-When you run a container, aishell configures git to trust the mounted project directory by adding it to `safe.directory` in the container's gitconfig.
-
-**What happens:**
-1. The entrypoint runs `git config --global --add safe.directory /your/project/path`
-2. This writes to `~/.gitconfig` inside the container
-
-**Host gitconfig impact:**
-If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the container (via `mounts` in config.yaml), the safe.directory entry will be added to your **host's** gitconfig file.
-
-**Why this happens:**
-- Git requires safe.directory for directories owned by different users
-- Inside the container, the mounted project appears owned by a different user
-- This is a security feature (CVE-2022-24765), not a bug
-
-**To avoid modifying host gitconfig:**
-Don't mount your host gitconfig into the container. The container creates its own gitconfig that is discarded when the container exits.
 
 ## Authentication
 
@@ -471,7 +404,9 @@ aishell automatically passes these environment variables to containers when set 
 | `GITHUB_TOKEN` | GitHub API access | For GitHub operations |
 | `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts |
 
-## Foundation Image Contents
+## Reference
+
+### Foundation image contents
 
 Built on `debian:bookworm-slim` with:
 
@@ -489,6 +424,35 @@ Built on `debian:bookworm-slim` with:
 
 **Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image.
 This allows harness updates without rebuilding the foundation image.
+
+### Git safe.directory
+
+When you run a container, aishell configures git to trust the mounted project directory by adding it to `safe.directory` in the container's gitconfig.
+
+**What happens:**
+1. The entrypoint runs `git config --global --add safe.directory /your/project/path`
+2. This writes to `~/.gitconfig` inside the container
+
+**Host gitconfig impact:**
+If you mount your host's `~/.gitconfig` or `~/.config/git/config` into the container (via `mounts` in config.yaml), the safe.directory entry will be added to your **host's** gitconfig file.
+
+**Why this happens:**
+- Git requires safe.directory for directories owned by different users
+- Inside the container, the mounted project appears owned by a different user
+- This is a security feature (CVE-2022-24765), not a bug
+
+**To avoid modifying host gitconfig:**
+Don't mount your host gitconfig into the container. The container creates its own gitconfig that is discarded when the container exits.
+
+## Documentation
+
+For detailed documentation, see the [docs/](docs/) folder:
+
+- **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, and codebase structure
+- **[Configuration](docs/CONFIGURATION.md)** - Complete config.yaml reference with examples
+- **[Harnesses](docs/HARNESSES.md)** - Setup and usage guide for each AI harness
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Development](docs/DEVELOPMENT.md)** - Guide for adding new harnesses
 
 ## License
 
