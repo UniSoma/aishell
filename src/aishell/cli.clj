@@ -14,7 +14,8 @@
             [aishell.state :as state]
             [aishell.config :as config]
             [aishell.util :as util]
-            [aishell.attach :as attach]))
+            [aishell.attach :as attach]
+            [aishell.migration :as migration]))
 
 (def version "2.8.1")
 
@@ -151,6 +152,8 @@
   (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
 (defn handle-build [{:keys [opts]}]
+  ;; Show migration warning on first touch for upgraders
+  (migration/show-v2.9-migration-warning!)
   (if (:help opts)
     (print-build-help)
     (let [;; Parse flags
@@ -489,6 +492,8 @@
     (output/error msg)))
 
 (defn dispatch [args]
+  ;; Show migration warning on run commands for upgraders
+  (migration/show-v2.9-migration-warning!)
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
