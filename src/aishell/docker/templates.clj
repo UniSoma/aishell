@@ -165,6 +165,25 @@ if [ \"$1\" = \"/bin/bash\" ] || [ \"$1\" = \"bash\" ]; then
     fi
 fi
 
+# Generate harness aliases for interactive shell use
+# Mirrors what 'aishell <harness>' does with config defaults
+ALIAS_FILE=\"$HOME/.bash_aliases\"
+: > \"$ALIAS_FILE\"
+for var in HARNESS_ALIAS_CLAUDE HARNESS_ALIAS_OPENCODE HARNESS_ALIAS_CODEX HARNESS_ALIAS_GEMINI; do
+    cmd=\"${!var}\"
+    if [ -n \"$cmd\" ]; then
+        name=\"${var##*_}\"
+        name=\"$(echo \"$name\" | tr 'A-Z' 'a-z')\"
+        echo \"alias $name='$cmd'\" >> \"$ALIAS_FILE\"
+    fi
+done
+chown \"$USER_ID:$GROUP_ID\" \"$ALIAS_FILE\"
+
+# Ensure aliases are sourced from bashrc
+if ! grep -q \".bash_aliases\" \"$HOME/.bashrc\" 2>/dev/null; then
+    echo '[ -f ~/.bash_aliases ] && . ~/.bash_aliases' >> \"$HOME/.bashrc\"
+fi
+
 # Add harness bin directories to PATH if they exist
 export PATH=\"$HOME/.local/bin:/usr/local/bin:$PATH\"
 
@@ -314,6 +333,11 @@ export VISUAL=vim
 export HISTSIZE=10000
 export HISTFILESIZE=20000
 export HISTCONTROL=ignoreboth:erasedups
+
+# Source harness aliases if available
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
 ")
 
 (def profile-d-script
@@ -334,5 +358,10 @@ fi
 # Source shell customizations (prompt, aliases, locale)
 if [ -f \"/etc/bash.aishell\" ]; then
   . /etc/bash.aishell
+fi
+
+# Source harness aliases for login shells (tmux new-window)
+if [ -f \"$HOME/.bash_aliases\" ]; then
+  . \"$HOME/.bash_aliases\"
 fi
 ")

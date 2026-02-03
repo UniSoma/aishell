@@ -150,6 +150,28 @@
     ["-e" "HARNESS_VOLUME=true"]
     []))
 
+(defn- build-harness-alias-env-args
+  "Build -e flags for harness aliases inside the container.
+   Passes full command strings so the entrypoint can create shell aliases."
+  [config state]
+  (let [harness-args (get config :harness_args {})
+        known [["claude"   :with-claude   true]
+               ["opencode" :with-opencode false]
+               ["codex"    :with-codex    false]
+               ["gemini"   :with-gemini   false]]]
+    (->> known
+         (keep (fn [[name state-key always?]]
+                 (when (get state state-key)
+                   (let [args (get harness-args (keyword name) [])
+                         full-args (if (= name "claude")
+                                     (into ["--dangerously-skip-permissions"] args)
+                                     (vec args))]
+                     (when (or always? (seq full-args))
+                       ["-e" (str "HARNESS_ALIAS_" (str/upper-case name)
+                                  "=" name " " (str/join " " full-args))])))))
+         (apply concat)
+         vec)))
+
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
    Only mounts directories that exist on host."
@@ -330,6 +352,11 @@
         ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
         (cond-> (not skip-tmux)
           (into (build-resurrect-env-args state config)))
+
+        ;; Harness aliases for interactive shell use
+        ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
+        (cond-> (not skip-tmux)
+          (into (build-harness-alias-env-args config state)))
 
         ;; Config: mounts
         (cond-> (:mounts config)
