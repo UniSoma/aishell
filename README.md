@@ -19,7 +19,7 @@ Docker-based sandbox for running agentic AI harnesses (Claude Code, OpenCode, Co
 - **Named containers** - Deterministic naming with `--name` override
 - **Attach/detach** - Reconnect to running containers via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
-- **tmux integration** - All containers run inside tmux for session persistence
+- **tmux integration** - Opt-in tmux support with plugin management and session persistence
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
 
 ## Documentation
@@ -115,6 +115,9 @@ aishell build --with-claude --with-opencode
 # Build with all harnesses
 aishell build --with-claude --with-opencode --with-codex --with-gemini
 
+# Build with tmux support
+aishell build --with-claude --with-tmux
+
 # Build with specific versions (single-flag syntax)
 aishell build --with-claude=2.0.22
 aishell build --with-codex=0.1.2025062501
@@ -143,11 +146,11 @@ aishell claude --help
 aishell codex --help
 aishell gemini --help
 
-# Run in detached mode (background)
+# Run in detached mode (background) - requires --with-tmux
 aishell claude --detach
 aishell claude -d --name myproject
 
-# Reconnect to detached container
+# Reconnect to detached container (requires tmux enabled)
 aishell attach --name claude
 
 # List project containers
@@ -205,7 +208,7 @@ aishell ps
 aishell attach --name claude
 
 # Reconnect to a specific tmux session
-aishell attach --name claude --session main
+aishell attach --name claude --session harness
 
 # Detach from tmux without stopping: Ctrl+B D
 
@@ -271,6 +274,12 @@ ports:
 docker_args: "--memory=4g --cpus=2"
 
 pre_start: "redis-server --daemonize yes"
+
+# tmux plugin and session persistence (requires --with-tmux)
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+  resurrect: true
 ```
 
 **Config inheritance:** Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.

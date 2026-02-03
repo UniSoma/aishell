@@ -4,7 +4,7 @@ This guide helps diagnose and resolve common issues with aishell.
 
 **How to use this guide:** Find the symptom you're experiencing, then follow the resolution steps.
 
-**Last updated:** v2.8.0
+**Last updated:** v2.9.0
 
 ---
 
@@ -17,6 +17,7 @@ This guide helps diagnose and resolve common issues with aishell.
 - [Authentication Issues](#authentication-issues)
 - [Sensitive File Detection](#sensitive-file-detection)
 - [Detached Mode & Attach Issues](#detached-mode--attach-issues)
+- [tmux Issues](#tmux-issues)
 - [Exec Command Issues](#exec-command-issues)
 - [Network Issues](#network-issues)
 - [Getting Help](#getting-help)
@@ -780,6 +781,8 @@ aishell claude  # No warning for allowlisted files
 
 ## Detached Mode & Attach Issues
 
+**Note:** The `aishell attach` command requires tmux to be enabled at build time (`--with-tmux` flag). Without tmux, attach shows an error with guidance to rebuild.
+
 ### Symptom: "Container name already in use" when starting detached
 
 **Cause:** A container with the same name is already running.
@@ -870,6 +873,166 @@ aishell automatically validates TERM and falls back to `xterm-256color` for unsu
    aishell claude --detach
    aishell ps
    ```
+
+---
+
+## tmux Issues
+
+### Symptom: "Container does not have tmux enabled" when running attach
+
+**Cause:** Container was built without `--with-tmux` flag.
+
+**Resolution:**
+
+1. **Rebuild with tmux support:**
+   ```bash
+   aishell build --with-claude --with-tmux
+   ```
+
+2. **Restart container:**
+   ```bash
+   docker stop aishell-{hash}-{name}
+   aishell claude --detach
+   ```
+
+3. **Attach to container:**
+   ```bash
+   aishell attach --name claude
+   ```
+
+**Note:** The `--with-tmux` flag must be specified at build time. You cannot enable tmux without rebuilding.
+
+### Symptom: "attach" works but "main" session not found
+
+**Cause:** Session name changed from "main" to "harness" in v2.9.0.
+
+**Resolution:**
+
+**Option 1: Omit --session (recommended)**
+```bash
+aishell attach --name claude
+# Defaults to "harness" session
+```
+
+**Option 2: Use correct session name**
+```bash
+aishell attach --name claude --session harness
+```
+
+**Migration note:** If you upgraded from v2.8.0 and have containers with "main" sessions, rebuild:
+```bash
+aishell build --with-claude --with-tmux
+```
+
+### Symptom: tmux plugins not loading
+
+**Cause:** Plugins installed at build time but TPM not initialized, or plugin format invalid.
+
+**Resolution:**
+
+1. **Check plugin format in config.yaml:**
+   ```yaml
+   tmux:
+     plugins:
+       - tmux-plugins/tmux-sensible  # Correct: owner/repo
+       # - tmux-sensible              # Wrong: missing owner
+   ```
+
+2. **Rebuild with updated config:**
+   ```bash
+   aishell update
+   ```
+
+3. **Verify plugins installed:**
+   ```bash
+   aishell
+   ls -la ~/.tmux/plugins/
+   # Should show symlink to /tools/tmux/plugins
+   ls -la /tools/tmux/plugins/
+   # Should show tpm and plugin directories
+   ```
+
+4. **Check TPM initialization:**
+   ```bash
+   aishell
+   cat ~/.tmux.conf.runtime
+   # Should source TPM run script
+   ```
+
+**Common issues:**
+- Wrong format (missing owner: `tmux-sensible` instead of `tmux-plugins/tmux-sensible`)
+- Private repositories (TPM can't clone during build)
+- Network issues during build (plugin clone fails)
+
+### Symptom: tmux-resurrect not restoring sessions
+
+**Cause:** Resurrect not configured, state directory not mounted, or resurrect disabled.
+
+**Resolution:**
+
+1. **Enable resurrect in config.yaml:**
+   ```yaml
+   tmux:
+     resurrect: true
+   ```
+
+2. **Rebuild to apply config:**
+   ```bash
+   aishell update
+   ```
+
+3. **Verify state directory exists:**
+   ```bash
+   ls -la ~/.aishell/resurrect/
+   # Should show project-hash subdirectories
+   ```
+
+4. **Check resurrect plugin loaded:**
+   ```bash
+   aishell
+   tmux list-keys | grep resurrect
+   # Should show resurrect key bindings
+   ```
+
+5. **Manual save/restore test:**
+   ```bash
+   # Inside tmux session
+   # Prefix + Ctrl-s  # Save
+   # Prefix + Ctrl-r  # Restore
+   ```
+
+**Notes:**
+- Auto-restore happens on container start
+- State directory: `~/.aishell/resurrect/{project-hash}/`
+- Resurrect config silently ignored when tmux not enabled
+
+### Symptom: Migration warning keeps appearing
+
+**Cause:** Marker file missing or unwritable.
+
+**Resolution:**
+
+1. **Check marker file:**
+   ```bash
+   ls -la ~/.aishell/.migration-v2.9-warned
+   # Should exist after first warning
+   ```
+
+2. **Verify write permissions:**
+   ```bash
+   ls -ld ~/.aishell/
+   # Should be writable by your user
+   ```
+
+3. **Create marker manually (if needed):**
+   ```bash
+   touch ~/.aishell/.migration-v2.9-warned
+   ```
+
+**The warning explains:**
+- tmux is now opt-in (not automatic)
+- Session name changed from "main" to "harness"
+- Rebuild required with `--with-tmux` for attach/detach
 
 ---
 

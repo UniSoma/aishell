@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options. This document covers both global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) configuration files.
 
-**Last updated:** v2.8.0
+**Last updated:** v2.9.0
 
 ---
 
@@ -21,6 +21,7 @@ Complete reference for aishell configuration options. This document covers both 
   - [harness_args](#harness_args)
   - [gitleaks_freshness_check](#gitleaks_freshness_check)
   - [detection](#detection)
+  - [tmux](#tmux)
 - [Common Patterns](#common-patterns)
 
 ---
@@ -213,6 +214,18 @@ gitleaks_freshness_check: true
 
 # To disable:
 # gitleaks_freshness_check: false
+
+# =============================================================================
+# TMUX - tmux plugin and session persistence (requires --with-tmux)
+# =============================================================================
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+  resurrect: true
+  # Or with options:
+  # resurrect:
+  #   restore_processes: true
 
 # =============================================================================
 # DETECTION - Sensitive file detection configuration
@@ -817,6 +830,120 @@ detection:
 
 ---
 
+### tmux
+
+**Purpose:** Configure tmux plugin management and session persistence.
+
+**Type:** Map with `plugins` (list) and `resurrect` (boolean or map)
+
+**Requirements:** tmux must be enabled at build time via `--with-tmux` flag. This configuration is silently ignored when tmux is disabled.
+
+**Structure:**
+
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+  resurrect: true
+  # Or with options:
+  # resurrect:
+  #   restore_processes: true
+```
+
+#### tmux.plugins
+
+**Purpose:** List of tmux plugins to install via TPM (Tmux Plugin Manager).
+
+**Type:** List of strings in `owner/repo` format
+
+**Format:** GitHub repository format: `owner/repo` (e.g., `tmux-plugins/tmux-sensible`)
+
+**Installation:**
+- Plugins installed at build time to harness volume
+- Plugin files stored in `/tools/tmux/plugins/{plugin-name}`
+- Entrypoint creates symlink from `~/.tmux/plugins` to volume location
+
+**Example:**
+
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible      # Sensible defaults
+    - tmux-plugins/tmux-yank          # System clipboard integration
+    - tmux-plugins/tmux-resurrect     # Manual save/restore (if not using resurrect: true)
+```
+
+**Notes:**
+- Format validation shows warnings for invalid patterns
+- Plugins must be public GitHub repositories
+- TPM initialization happens at container runtime
+- If `resurrect: true`, tmux-resurrect plugin is auto-added (no need to declare)
+
+**Merge behavior:** Global and project plugin lists concatenate (both apply).
+
+#### tmux.resurrect
+
+**Purpose:** Enable automatic session persistence via tmux-resurrect plugin.
+
+**Type:** Boolean or map
+
+**Simple format (boolean):**
+```yaml
+tmux:
+  resurrect: true    # Enable with defaults (restore_processes: false)
+```
+
+**Advanced format (map):**
+```yaml
+tmux:
+  resurrect:
+    restore_processes: true   # Enable process restoration (uses ':all:' strategy)
+```
+
+**Behavior:**
+- `true` or `{enabled: true}`: Enable resurrect with safe defaults (no process restoration)
+- `{restore_processes: true}`: Enable full process restoration
+- `false` or omitted: Disable resurrect
+
+**State directory:** `~/.aishell/resurrect/{project-hash}/`
+- Per-project isolation
+- Contains saved session layouts, window states, process states
+- Mounted into container automatically
+
+**Auto-injection:**
+- `tmux-resurrect` plugin automatically added to plugin list
+- Deduplicated if already in user's plugin list
+- No manual plugin declaration needed
+
+**Auto-restore:**
+- Entrypoint runs `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh` after TPM init
+- Previous session state restored automatically on container start
+
+**Merge behavior:** Scalar (project replaces global).
+
+**Example:**
+
+```yaml
+# Minimal setup
+tmux:
+  resurrect: true
+
+# Full featured setup
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+  resurrect:
+    restore_processes: true  # Restore running programs
+```
+
+**Notes:**
+- Resurrect config silently ignored when tmux not enabled (`--with-tmux`)
+- Process restoration can be risky - programs may not restore cleanly
+- Default behavior (`restore_processes: false`) is safer for most use cases
+
+---
+
 ## Common Patterns
 
 ### Database Credentials Mounting
@@ -992,6 +1119,50 @@ Omit version for latest:
 
 **State tracking:**
 Harness selection is saved in `~/.aishell/state.edn` and preserved across updates.
+
+---
+
+### --with-tmux
+
+**Purpose:** Enable tmux multiplexer in containers.
+
+**Usage:**
+```bash
+aishell build --with-claude --with-tmux
+```
+
+**Behavior:**
+- Enables tmux session management (attach/detach capability)
+- Enables plugin support via TPM (Tmux Plugin Manager)
+- Enables session persistence via tmux-resurrect (if configured)
+- Session name: `harness` (default)
+
+**State tracking:** Stored as `:with-tmux true` in state.edn
+
+**Container features enabled:**
+- `aishell attach` command works
+- `--detach` flag for background execution
+- tmux plugins installed from `config.yaml`
+- Session persistence across container restarts
+
+**Without this flag:**
+- Containers run commands directly (no tmux wrapper)
+- `aishell attach` shows error with guidance
+- `--detach` still works but no tmux session management
+- Plugin and resurrect config silently ignored
+
+**Example workflow:**
+
+```bash
+# Build with tmux support
+aishell build --with-claude --with-tmux
+
+# Run detached
+aishell claude --detach
+
+# Reconnect later
+aishell attach --name claude
+```
 
 ---
 
