@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-02-03
+
+Make tmux fully opt-in with plugin management, user config mounting, and session persistence.
+
+### Changed
+- **tmux is now opt-in**: `aishell build --with-tmux` enables tmux; default behavior is no tmux (previously always enabled since v2.7.0)
+- **Session name**: tmux session renamed from `main` to `harness` for project naming consistency
+- **Attach command**: `aishell attach` now connects to `harness` session by default
+
+### Added
+- **`--with-tmux` build flag**: Opt-in to tmux integration at build time, stored in state.edn
+- **tmux config mounting**: User's `~/.tmux.conf` auto-mounted read-only into container when tmux is enabled
+- **Plugin management**: Declare tmux plugins in `.aishell/config.yaml` under `tmux.plugins` list
+  - Format: `owner/repo` (e.g., `tmux-plugins/tmux-sensible`)
+  - TPM installed into harness volume at `/tools/tmux/plugins/tpm`
+  - Plugins installed non-interactively during `aishell build` / `aishell update`
+  - Plugin format validated during config parsing
+  - Runtime bridging via symlink from volume to `~/.tmux/plugins`
+  - TPM initialization appended to tmux config at container startup
+- **tmux-resurrect support**: `tmux.resurrect` config section for session state persistence
+  - `resurrect: true` enables with sensible defaults (layout only, no process restoration)
+  - Per-project state directory at `~/.aishell/resurrect/{project-hash}/`
+  - tmux-resurrect plugin auto-injected when resurrect enabled
+  - `restore_processes: true` to opt-in to full process restoration
+- **Migration warning**: Users upgrading from v2.7-2.8 see one-time warning about tmux behavior change
+- **Attach validation**: `aishell attach` shows helpful error when tmux is not enabled
+
+### Fixed
+- Missing `~/.tmux.conf` on host handled gracefully (no error, just skipped)
+
+### Internal
+- State schema: added `:with-tmux` field
+- Volume hash includes tmux state for proper cache invalidation
+- `WITH_TMUX` env var passed to container (simpler than mounting state.edn)
+- Migration detection uses state schema shape (presence without `:harness-volume-hash`)
+- Marker file at `~/.aishell/.migration-v2.9-warned` prevents repeat warnings
+
 ## [2.8.1] - 2026-02-01
 
 ### Added
