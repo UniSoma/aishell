@@ -1,32 +1,32 @@
 # aishell Harness Guide
 
-This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
+This guide covers installation, authentication, and usage for all AI harnesses that aishell supports.
 
 **Last updated:** v2.9.0
 
 ## What are Harnesses?
 
-Harnesses are agentic AI CLI tools that aishell runs in isolated containers. Each harness provides a different AI provider or multi-provider interface:
+Harnesses are AI CLI tools that aishell runs in isolated containers. Each harness wraps a different AI provider or multi-provider interface:
 
 - **Claude Code** - Anthropic's autonomous coding agent
 - **OpenCode** - Multi-provider AI coding agent (Anthropic, OpenAI, Google, etc.)
 - **Codex CLI** - OpenAI's ChatGPT integration for coding
 - **Gemini CLI** - Google's Gemini models for development
 
-### How Harnesses are Installed (v2.8.0+)
+### How Harnesses Install (v2.8.0+)
 
-Harnesses are installed in **Docker volumes**, not baked into the foundation image. This enables fast updates:
+Harnesses install into **Docker volumes**, not into the foundation image. This enables fast updates:
 
-**Volume-based installation:**
-- npm packages installed to `/tools/npm` in volume
-- Go binaries downloaded to `/tools/bin` in volume
-- Volume mounted read-only at `/tools` in containers
+**Volume layout:**
+- npm packages install to `/tools/npm`
+- Go binaries download to `/tools/bin`
+- Containers mount the volume read-only at `/tools`
 - PATH includes `/tools/npm/bin` and `/tools/bin`
 
 **Benefits:**
-- **Fast updates:** `aishell update` refreshes tools without rebuilding foundation image
-- **Shared volumes:** Projects with identical harness configs share volumes
-- **No cache invalidation:** Harness updates don't invalidate Docker extension cache
+- **Fast updates:** `aishell update` refreshes tools without rebuilding the foundation image
+- **Shared volumes:** Projects with identical harness configs share a volume
+- **Stable cache:** Harness updates leave the Docker extension cache intact
 
 **Volume management:**
 ```bash
@@ -52,7 +52,7 @@ aishell volumes prune
 
 ### Overview
 
-Claude Code is Anthropic's official CLI for autonomous coding tasks. It provides deep IDE-like capabilities with file operations, code analysis, and multi-step execution.
+Claude Code is Anthropic's official CLI for autonomous coding tasks. It offers IDE-like file operations, code analysis, and multi-step execution.
 
 **Provider:** Anthropic
 **Models:** Claude 3.5 Sonnet, Claude Opus 4.5
@@ -69,36 +69,36 @@ aishell build --with-claude
 aishell build --with-claude=2.0.22
 ```
 
-**Version pinning recommended** for reproducible environments.
+Pin versions for reproducible environments.
 
-**What happens during build:**
-1. Foundation image builds (Debian, Node.js, system tools) - if not cached
-2. Harness volume created: `aishell-harness-{hash}`
-3. Claude Code npm package installed to volume: `npm install -g @anthropic-ai/claude-code`
-4. Volume mounted read-only at `/tools` in containers
+**Build steps:**
+1. Builds the foundation image (Debian, Node.js, system tools) -- skipped if cached
+2. Creates a harness volume: `aishell-harness-{hash}`
+3. Installs the Claude Code npm package into the volume: `npm install -g @anthropic-ai/claude-code`
+4. Mounts the volume read-only at `/tools` in containers
 
 **Updating Claude Code:**
 ```bash
-# Refresh to latest version
+# Update to latest version
 aishell update
 
-# Deletes volume, recreates, reinstalls harness tools
+# Deletes the volume, recreates it, and reinstalls harness tools
 ```
 
 ### Authentication
 
-Claude Code supports two authentication methods:
+Claude Code supports two authentication methods.
 
 #### OAuth (Recommended for containers)
 
-OAuth works well in containers via copy-paste URL flow:
+OAuth works in containers through a copy-paste URL flow:
 
 ```bash
 aishell claude
 # Follow prompts, copy URL to browser, authenticate
 ```
 
-Container authentication uses the copy-paste URL method automatically.
+The container uses the copy-paste URL method automatically.
 
 #### API Key
 
@@ -153,20 +153,20 @@ harnesses:
 - **Host:** `~/.claude`
 - **Container:** `/root/.claude`
 
-Config persists across container restarts via volume mount.
+A volume mount preserves config across container restarts.
 
 ### Tips & Best Practices
 
-1. **OAuth in containers:** Copy-paste URL flow works seamlessly
-2. **Model selection:** Use `--model` flag or config.yaml for Opus 4.5
-3. **Session handling:** Each `aishell claude` invocation is a new session
-4. **File operations:** Claude Code has full filesystem access within container
+1. **OAuth in containers:** The copy-paste URL flow works well
+2. **Model selection:** Use the `--model` flag or config.yaml to select Opus 4.5
+3. **Session handling:** Each `aishell claude` invocation starts a new session
+4. **File operations:** Claude Code has full filesystem access within the container
 
 ## OpenCode
 
 ### Overview
 
-OpenCode is a multi-provider AI coding agent supporting Anthropic, OpenAI, Google, and other providers. It provides flexibility to switch models and providers without changing tools.
+OpenCode is a multi-provider AI coding agent that supports Anthropic, OpenAI, Google, and others. It lets you switch models and providers without changing tools.
 
 **Providers:** Anthropic, OpenAI, Google, Azure OpenAI, Vertex AI
 **Models:** Provider-dependent (Claude, GPT, Gemini, etc.)
@@ -183,16 +183,16 @@ aishell build --with-opencode
 aishell build --with-opencode=0.2.3
 ```
 
-**Note:** OpenCode is installed as a Go binary (not npm package), downloaded from GitHub releases to `/tools/bin`.
+**Note:** OpenCode installs as a Go binary (not an npm package), downloaded from GitHub releases to `/tools/bin`.
 
 **Updating OpenCode:**
 ```bash
-aishell update  # Deletes volume, reinstalls OpenCode binary
+aishell update  # Deletes the volume and reinstalls the OpenCode binary
 ```
 
 ### Authentication
 
-OpenCode authentication is **provider-specific**. Set the appropriate environment variable for your chosen provider.
+OpenCode authentication varies by provider. Set the environment variable for your chosen provider.
 
 #### Anthropic
 
@@ -222,7 +222,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 aishell opencode
 ```
 
-Pass credentials file into container:
+Pass the credentials file into the container:
 
 ```bash
 aishell --mount $GOOGLE_APPLICATION_CREDENTIALS:/creds/gcp.json \
@@ -272,16 +272,16 @@ harnesses:
 
 ### Tips & Best Practices
 
-1. **Multi-provider workflows:** Switch models by changing `--model` flag
-2. **Vertex AI setup:** Pre-authenticate on host, mount credentials
+1. **Multi-provider workflows:** Switch models with the `--model` flag
+2. **Vertex AI setup:** Authenticate on the host first, then mount credentials
 3. **Model availability:** Check OpenCode docs for supported models
-4. **Cost management:** Different providers/models have different pricing
+4. **Cost management:** Pricing varies by provider and model
 
 ## Codex CLI
 
 ### Overview
 
-Codex CLI provides command-line access to OpenAI's ChatGPT for coding tasks. It integrates conversational AI with shell workflows.
+Codex CLI gives command-line access to OpenAI's ChatGPT for coding tasks, integrating conversational AI with shell workflows.
 
 **Provider:** OpenAI
 **Models:** GPT-4o, GPT-4, GPT-3.5-turbo
@@ -317,7 +317,7 @@ aishell codex
 aishell codex login --device-auth
 ```
 
-Device code flow provides a code to enter at a URL, working well in headless environments.
+The device code flow displays a code to enter at a URL, which suits headless environments.
 
 #### API Key
 
@@ -396,7 +396,7 @@ harnesses:
 
 ### Overview
 
-Gemini CLI provides command-line access to Google's Gemini models for development tasks. Supports both direct API access and Vertex AI.
+Gemini CLI gives command-line access to Google's Gemini models for development tasks. It supports both direct API access and Vertex AI.
 
 **Provider:** Google
 **Models:** Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
@@ -417,9 +417,9 @@ aishell build --with-gemini=0.1.5
 
 Gemini CLI supports OAuth and API key authentication.
 
-#### OAuth (Important: Host authentication required)
+#### OAuth (Host authentication required)
 
-**CRITICAL:** OAuth requires authentication on the host system FIRST, then the container can use cached credentials.
+**Important:** You must authenticate on the host first; the container then uses the cached credentials.
 
 **Step 1 - Authenticate on host:**
 
@@ -438,7 +438,7 @@ aishell gemini
 # Uses cached OAuth credentials
 ```
 
-Container automatically mounts `~/.gemini` config directory.
+The container mounts `~/.gemini` automatically.
 
 #### API Key
 
@@ -459,7 +459,7 @@ Get API keys from: https://aistudio.google.com/app/apikey
 
 #### Vertex AI
 
-For Vertex AI access, set `GOOGLE_APPLICATION_CREDENTIALS`:
+For Vertex AI, set `GOOGLE_APPLICATION_CREDENTIALS`:
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
@@ -507,14 +507,14 @@ harnesses:
 
 ### Tips & Best Practices
 
-1. **OAuth setup:** Must authenticate on host first, then container uses cache
-2. **API key simplicity:** Use `GEMINI_API_KEY` for straightforward setup
-3. **Vertex AI:** Provides enterprise features (audit logs, VPC, quotas)
-4. **Model selection:** Gemini 2.0 Flash recommended for speed and quality balance
+1. **OAuth setup:** Authenticate on the host first; the container uses the cache
+2. **API key:** Use `GEMINI_API_KEY` for the simplest setup
+3. **Vertex AI:** Adds enterprise features (audit logs, VPC, quotas)
+4. **Model selection:** Gemini 2.0 Flash balances speed and quality
 
 ## Detached Mode & tmux
 
-tmux is **opt-in** via the `--with-tmux` build flag. When enabled, containers run inside a tmux session named `harness`.
+tmux is opt-in via the `--with-tmux` build flag. When enabled, each container runs inside a tmux session named `harness`.
 
 ### Enabling tmux
 
@@ -527,7 +527,7 @@ aishell build --with-claude --with-tmux
 
 ### Running in Background
 
-Detached mode requires tmux to be enabled:
+Detached mode requires tmux:
 
 ```bash
 # Start Claude Code detached
@@ -540,7 +540,7 @@ aishell claude --detach --name reviewer
 aishell claude -d --name reviewer
 ```
 
-**Note:** Without `--with-tmux`, `aishell attach` will show an error with guidance to rebuild.
+**Note:** Without `--with-tmux`, `aishell attach` shows an error and prompts you to rebuild.
 
 ### Reconnecting
 
@@ -597,17 +597,17 @@ tmux:
   resurrect: true  # Enable session persistence
 ```
 
-**Requirements:** Must build with `--with-tmux` flag. Plugin config silently ignored otherwise.
+**Requirements:** Build with `--with-tmux`. Without it, the plugin config is silently ignored.
 
-**Plugin installation:** Plugins installed to harness volume at build time, loaded at container runtime.
+**Plugin installation:** The build installs plugins to the harness volume; containers load them at runtime.
 
 ### Container Naming
 
-Containers are named `aishell-{project-hash}-{name}`:
-- **project-hash**: First 8 chars of SHA-256 of your project directory path
-- **name**: Defaults to harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`), overridable with `--name`
+Containers follow the naming pattern `aishell-{project-hash}-{name}`:
+- **project-hash**: First 8 characters of the SHA-256 of your project directory path
+- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`); override with `--name`
 
-This allows multiple instances per project and isolation across projects.
+This scheme supports multiple instances per project and isolation across projects.
 
 ## Running Multiple Harnesses
 
@@ -626,11 +626,11 @@ aishell build --with-claude --with-opencode --with-codex
 aishell build --with-claude --with-opencode --with-codex --with-gemini
 ```
 
-Image size increases with each harness added.
+Each added harness increases image size.
 
 ### Switching Between Harnesses
 
-Each harness is invoked separately:
+Invoke each harness separately:
 
 ```bash
 # Use Claude Code
@@ -646,11 +646,11 @@ aishell codex "implement feature Z"
 aishell gemini "implement feature W"
 ```
 
-Containers are isolated per invocation.
+Each invocation runs in its own container.
 
 ### Shared Environment Variables
 
-Some environment variables work across harnesses:
+Some environment variables apply to multiple harnesses:
 
 ```bash
 # Works for both Claude Code and OpenCode (Anthropic)
@@ -721,33 +721,32 @@ harnesses:
 - Gemini CLI: Authenticate on host first with `gemini login`
 
 **API key not recognized:**
-- Check environment variable name matches harness requirements
-- Verify API key has correct format and permissions
-- Use `--env` flag to pass explicitly: `aishell --env KEY=value harness`
+- Check that the environment variable name matches the harness requirements
+- Verify the API key format and permissions
+- Pass the key explicitly with `--env`: `aishell --env KEY=value harness`
 
 ### Configuration Persistence
 
 **Config not persisting:**
-- Verify volume mounts: `aishell info` shows mount points
-- Check config directory permissions in container
-- Ensure `~/.aishell/config.yaml` mounted correctly
+- Verify volume mounts with `aishell info`
+- Check config directory permissions in the container
+- Confirm `~/.aishell/config.yaml` mounts correctly
 
-**Multiple configs conflicting:**
-- Remember config precedence: project > user > system
-- Use `aishell debug` to see effective config
-- Check `extends` key isn't creating circular references
+**Configs conflicting:**
+- Config precedence: project > user > system
+- Run `aishell debug` to see the effective config
+- Check that the `extends` key does not create circular references
 
 ### Performance Issues
 
 **Slow startup:**
-- Multiple harnesses increase image size
-- Consider building separate images per harness
-- Use version pinning to cache layers
+- Multiple harnesses increase image size; consider separate images per harness
+- Pin versions to cache layers
 
 **Network timeouts:**
-- Increase timeout via environment variables
-- Check network connectivity from container
-- Verify proxy settings if behind corporate firewall
+- Increase the timeout via environment variables
+- Check network connectivity from the container
+- Verify proxy settings if behind a corporate firewall
 
 ## See Also
 

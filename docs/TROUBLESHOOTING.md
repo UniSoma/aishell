@@ -1,8 +1,6 @@
 # aishell Troubleshooting
 
-This guide helps diagnose and resolve common issues with aishell.
-
-**How to use this guide:** Find the symptom you're experiencing, then follow the resolution steps.
+Find the symptom you are experiencing, then follow the resolution steps.
 
 **Last updated:** v2.9.0
 
@@ -26,7 +24,7 @@ This guide helps diagnose and resolve common issues with aishell.
 
 ## Quick Diagnostics
 
-Before troubleshooting, gather diagnostic information:
+Before troubleshooting, gather this diagnostic information:
 
 ```bash
 # Check aishell version
@@ -51,7 +49,7 @@ cat .aishell/config.yaml
 
 ### Symptom: "Docker not found" or "Cannot connect to Docker daemon"
 
-**Cause:** Docker is not installed or the Docker daemon is not running.
+**Cause:** Docker is not installed, or the Docker daemon is not running.
 
 **Resolution:**
 
@@ -76,7 +74,7 @@ cat .aishell/config.yaml
 
 ### Symptom: "Permission denied" when running build
 
-**Cause:** Your user doesn't have permission to access the Docker socket.
+**Cause:** Your user lacks permission to access the Docker socket.
 
 **Resolution:**
 
@@ -85,8 +83,8 @@ cat .aishell/config.yaml
 # Add your user to docker group
 sudo usermod -aG docker $USER
 
-# Log out and back in for group membership to take effect
-# Or start a new shell session:
+# Log out and back in for the group change to take effect,
+# or start a new shell session:
 newgrp docker
 
 # Verify you can run docker without sudo
@@ -98,11 +96,11 @@ docker ps
 sudo aishell build --with-claude
 ```
 
-**Note:** After adding yourself to the docker group, you may need to reboot for the change to fully take effect on some systems.
+**Note:** Some systems require a reboot before the docker group change takes effect.
 
 ### Symptom: "Image build fails" with Docker syntax errors
 
-**Cause:** Custom `.aishell/Dockerfile` has invalid syntax or references missing resources.
+**Cause:** Custom `.aishell/Dockerfile` has invalid syntax or references a missing resource.
 
 **Resolution:**
 
@@ -126,12 +124,12 @@ sudo aishell build --with-claude
    docker build -f .aishell/Dockerfile -t test .
    ```
 
-4. **Simplify to isolate problem:**
-   Temporarily rename `.aishell/Dockerfile` and rebuild to verify base image works.
+4. **Isolate the problem:**
+   Temporarily rename `.aishell/Dockerfile` and rebuild to verify the base image works.
 
 ### Symptom: "Version not found" for harness
 
-**Cause:** Specified harness version doesn't exist in npm registry.
+**Cause:** The specified harness version does not exist in the npm registry.
 
 **Resolution:**
 
@@ -163,7 +161,7 @@ sudo aishell build --with-claude
 
 ### Symptom: "Container exits immediately" after launch
 
-**Cause:** Pre-start command fails or is misconfigured.
+**Cause:** The pre-start command fails or is misconfigured.
 
 **Resolution:**
 
@@ -173,8 +171,8 @@ sudo aishell build --with-claude
    ```
 
 2. **Common issues:**
-   - Command not found (service not installed in image)
-   - Command doesn't daemonize (runs in foreground and blocks)
+   - Command not found (service not installed in the image)
+   - Command runs in foreground and blocks instead of daemonizing
    - Command fails silently
 
 3. **Debug the pre_start command:**
@@ -203,7 +201,7 @@ sudo aishell build --with-claude
 
 ### Symptom: "File not found" errors inside container
 
-**Cause:** Expected files aren't mounted or mount paths are incorrect.
+**Cause:** Expected files are not mounted, or the mount paths are wrong.
 
 **Resolution:**
 
@@ -218,8 +216,8 @@ sudo aishell build --with-claude
 2. **Common issues:**
    - Relative paths in source (must be absolute)
    - Typo in source path
-   - Source path doesn't exist on host
-   - Environment variables not expanded ($HOME)
+   - Source path does not exist on host
+   - Environment variables not expanded (`$HOME`)
 
 3. **Check mounts from inside container:**
    ```bash
@@ -281,11 +279,7 @@ sudo aishell build --with-claude
 
 ### Symptom: "git safe.directory" warnings
 
-**Cause:** Git security feature (CVE-2022-24765) prevents operations on directories owned by different users.
-
-**Why this happens:**
-- Inside the container, mounted directories appear owned by a different user
-- Git requires explicit trust via `safe.directory` configuration
+**Cause:** Git's security feature (CVE-2022-24765) blocks operations on directories owned by a different user. Inside the container, mounted directories appear owned by another user, so Git requires explicit trust via `safe.directory`.
 
 **Resolution:**
 
@@ -301,10 +295,10 @@ If you still see warnings:
        target: /home/dev/.gitconfig
    ```
 
-   If you mount host gitconfig, the safe.directory entry will be written to your **host** file.
+   Mounting host gitconfig causes the safe.directory entry to be written to your **host** file.
 
 2. **To avoid modifying host gitconfig:**
-   Don't mount `~/.gitconfig`. The container creates its own gitconfig (discarded when container exits).
+   Omit the `~/.gitconfig` mount. The container creates its own gitconfig, discarded when the container exits.
 
 3. **Manual override (if needed):**
    ```bash
@@ -312,7 +306,7 @@ If you still see warnings:
    git config --global --add safe.directory /your/project/path
    ```
 
-**Note:** This is a security feature, not a bug. The warning is expected and handled by aishell's entrypoint.
+**Note:** This is a security feature, not a bug. The aishell entrypoint handles this warning automatically.
 
 ---
 
@@ -320,7 +314,7 @@ If you still see warnings:
 
 ### Symptom: "Harness command not found" inside container
 
-**Cause:** Harness volume is missing or not populated.
+**Cause:** The harness volume is missing or empty.
 
 **Resolution:**
 
@@ -329,13 +323,13 @@ If you still see warnings:
    aishell volumes
    ```
 
-2. **If no volumes or volume missing:**
+2. **If the volume is missing:**
    ```bash
    # Rebuild to create and populate volume
    aishell build --with-claude
    ```
 
-3. **If volume exists but harness not working:**
+3. **If the volume exists but the harness still fails:**
    ```bash
    # Delete and repopulate volume
    aishell update
@@ -358,12 +352,12 @@ If you still see warnings:
    # Should show: aishell-harness-{hash} on /tools type ext4 (ro,...)
    ```
 
-**If harness still not found after rebuild:**
-Check build output for npm installation errors.
+**If the harness is still missing after a rebuild:**
+Check the build output for npm installation errors.
 
 ### Symptom: "Volume disk usage growing" - many orphaned volumes
 
-**Cause:** Changing harness configuration creates new volumes, old ones remain.
+**Cause:** Changing harness configuration creates new volumes; old ones remain.
 
 **Resolution:**
 
@@ -387,21 +381,21 @@ Check build output for npm installation errors.
    docker system df
    ```
 
-**When volumes become orphaned:**
-- Changed harness selection (`--with-claude` → `--with-opencode`)
-- Changed harness versions (version pin updated)
-- Rebuilt with different harness combination
+**Volumes become orphaned when you:**
+- Change harness selection (`--with-claude` to `--with-opencode`)
+- Change harness versions (update a version pin)
+- Rebuild with a different harness combination
 
 **Safe to prune:**
-Only removes volumes not referenced by current state. Active volume is never deleted.
+Pruning removes only volumes not referenced by current state. The active volume is never deleted.
 
 ### Symptom: "Update seems to hang" during volume population
 
-**Cause:** Volume population downloads npm packages, may be slow on first run or slow network.
+**Cause:** Volume population downloads npm packages and may be slow on the first run or on a slow network.
 
 **Resolution:**
 
-1. **Check if actually hung or just slow:**
+1. **Check whether it is hung or just slow:**
    ```bash
    # In another terminal, check Docker container activity
    docker ps
@@ -415,9 +409,9 @@ Only removes volumes not referenced by current state. Active volume is never del
    ```
 
 3. **Network issues:**
-   - Check internet connection
-   - npm registry may be slow/unavailable
-   - Try again later
+   - Check your internet connection
+   - The npm registry may be slow or unavailable
+   - Retry later
 
 4. **Abort and retry:**
    ```bash
@@ -429,11 +423,11 @@ Only removes volumes not referenced by current state. Active volume is never del
 **Expected duration:**
 - First population: 30-60 seconds (downloads npm packages)
 - Subsequent updates: 20-40 seconds (npm cache helps)
-- Slow on: slow network, large harness packages
+- Slower on slow networks or with large harness packages
 
 ### Symptom: "tmux new-window missing tools" (harness commands not in PATH)
 
-**Cause:** Fixed in v2.8.0 via `/etc/profile.d/aishell.sh`. If still occurring, foundation image needs rebuild.
+**Cause:** Fixed in v2.8.0 via `/etc/profile.d/aishell.sh`. If the problem persists, rebuild the foundation image.
 
 **Resolution:**
 
@@ -462,11 +456,11 @@ Only removes volumes not referenced by current state. Active volume is never del
    ```
 
 **If still broken:**
-File a bug report with tmux version and SHELL variable.
+File a bug report including your tmux version and `SHELL` variable.
 
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
-**Cause:** v2.8.0 renamed `aishell:base` to `aishell:foundation`. Custom `.aishell/Dockerfile` needs update.
+**Cause:** v2.8.0 renamed `aishell:base` to `aishell:foundation`. Update your custom `.aishell/Dockerfile`.
 
 **Resolution:**
 
@@ -485,10 +479,10 @@ File a bug report with tmux version and SHELL variable.
    ```
 
 **Migration detection:**
-aishell detects legacy `FROM aishell:base` and shows clear error message with migration instructions.
+aishell detects `FROM aishell:base` and shows an error with migration instructions.
 
 **Backward compatibility:**
-Only the tag name changed. Functionality identical.
+Only the tag name changed. Functionality is identical.
 
 ---
 
@@ -496,11 +490,11 @@ Only the tag name changed. Functionality identical.
 
 ### Symptom: "Claude: API key not working" or "Anthropic API error"
 
-**Cause:** `ANTHROPIC_API_KEY` environment variable is not set, incorrect, or expired.
+**Cause:** `ANTHROPIC_API_KEY` is unset, incorrect, or expired.
 
 **Resolution:**
 
-1. **Check if variable is set on host:**
+1. **Check whether the variable is set on the host:**
    ```bash
    echo $ANTHROPIC_API_KEY
    ```
@@ -534,7 +528,7 @@ Only the tag name changed. Functionality identical.
 
 ### Symptom: "Codex: Login fails" or "Device code expired"
 
-**Cause:** OAuth device code flow has issues or API key not set.
+**Cause:** The OAuth device code flow failed, or the API key is not set.
 
 **Resolution:**
 
@@ -548,7 +542,7 @@ aishell codex
 codex login --device-auth
 ```
 
-This displays a code and URL. Open the URL in your browser, enter the code.
+This displays a code and a URL. Open the URL in your browser and enter the code.
 
 **Option 2: Use API key**
 ```bash
@@ -557,8 +551,8 @@ aishell codex
 ```
 
 **Common issues:**
-- Device code expires after 15 minutes - be quick
-- Network issues can interrupt OAuth flow
+- The device code expires after 15 minutes
+- Network interruptions can break the OAuth flow
 - `CODEX_API_KEY` only works with `codex exec`, not interactive mode
 
 **Verify authentication:**
@@ -569,7 +563,7 @@ codex whoami
 
 ### Symptom: "Gemini: OAuth fails in container"
 
-**Cause:** Gemini CLI doesn't support device code flow for headless authentication.
+**Cause:** Gemini CLI lacks device code flow for headless authentication.
 
 **Resolution:**
 
@@ -578,8 +572,8 @@ codex whoami
 # On your host machine (outside container)
 gemini  # Select "Login with Google"
 
-# Credentials are stored in ~/.gemini
-# aishell mounts this automatically
+# Credentials stored in ~/.gemini
+# aishell mounts this directory automatically
 aishell gemini
 ```
 
@@ -600,7 +594,7 @@ ls -la ~/.gemini/
 
 ### Symptom: "Credentials not persisting" between sessions
 
-**Cause:** Config directories aren't being mounted or are getting wiped.
+**Cause:** Config directories are not mounted, or they are wiped between sessions.
 
 **Resolution:**
 
@@ -617,14 +611,14 @@ ls -la ~/.gemini/
    ls -la ~/.gemini
    ```
 
-3. **Check they're being mounted:**
+3. **Check they are mounted:**
    ```bash
    aishell
    mount | grep -E '\.claude|\.codex|\.gemini'
    ```
 
 4. **If not mounted, check for conflicts:**
-   Custom mounts in `.aishell/config.yaml` may be overriding defaults.
+   Custom mounts in `.aishell/config.yaml` may override the defaults.
 
 5. **Verify permissions:**
    ```bash
@@ -634,7 +628,7 @@ ls -la ~/.gemini/
 
 ### Symptom: "Permission denied (publickey)" when using git over SSH
 
-**Cause:** SSH keys are not mounted in the container. By default, aishell does NOT mount `~/.ssh`.
+**Cause:** SSH keys are not mounted in the container. By default, aishell does not mount `~/.ssh`.
 
 **Resolution:**
 
@@ -658,7 +652,7 @@ env:
 
 **Alternative: Mount SSH keys (with security considerations):**
 
-⚠️ **Security warning:** Mounting SSH keys gives AI harnesses access to your private keys. They can execute arbitrary code and could use your keys to authenticate anywhere.
+**Security warning:** Mounting SSH keys gives AI harnesses access to your private keys. They can execute arbitrary code and could use your keys to authenticate anywhere.
 
 If you understand the risks and still need SSH:
 
@@ -681,7 +675,7 @@ See [CONFIGURATION.md - SSH Keys Security Note](CONFIGURATION.md#mounts) for det
 
 ### Symptom: "False positive on test file" in detection warnings
 
-**Cause:** Test fixtures or example files match sensitive file patterns.
+**Cause:** Test fixtures or example files match the sensitive file patterns.
 
 **Resolution:**
 
@@ -709,7 +703,7 @@ aishell claude  # No warning for allowlisted files
 
 ### Symptom: "Custom pattern not matching" files I want to detect
 
-**Cause:** Incorrect glob syntax or pattern not being applied.
+**Cause:** Incorrect glob syntax, or the pattern is not applied.
 
 **Resolution:**
 
@@ -734,7 +728,7 @@ aishell claude  # No warning for allowlisted files
    find . -name "*.secret"
    ```
 
-4. **Check config is loaded:**
+4. **Verify config is loaded:**
    ```bash
    cat .aishell/config.yaml
    ```
@@ -743,7 +737,7 @@ aishell claude  # No warning for allowlisted files
 
 ### Symptom: "Gitleaks scan takes too long" on large repositories
 
-**Cause:** Gitleaks is scanning large binary files or generated directories.
+**Cause:** Gitleaks scans large binary files or generated directories.
 
 **Resolution:**
 
@@ -781,11 +775,11 @@ aishell claude  # No warning for allowlisted files
 
 ## Detached Mode & Attach Issues
 
-**Note:** The `aishell attach` command requires tmux to be enabled at build time (`--with-tmux` flag). Without tmux, attach shows an error with guidance to rebuild.
+**Note:** `aishell attach` requires tmux, enabled at build time with `--with-tmux`. Without tmux, attach shows an error with rebuild instructions.
 
 ### Symptom: "Container name already in use" when starting detached
 
-**Cause:** A container with the same name is already running.
+**Cause:** A container with that name is already running.
 
 **Resolution:**
 
@@ -805,11 +799,11 @@ aishell claude  # No warning for allowlisted files
    aishell claude --detach
    ```
 
-**Note:** If the container is stopped (not running), aishell auto-removes it and starts a new one.
+**Note:** If the container is stopped, aishell removes it and starts a new one.
 
 ### Symptom: "attach: container not found" or "container is not running"
 
-**Cause:** The container has exited or the name is wrong.
+**Cause:** The container has exited, or the name is wrong.
 
 **Resolution:**
 
@@ -824,25 +818,25 @@ aishell claude  # No warning for allowlisted files
    ```
 
 3. **Common issues:**
-   - Container stopped (exited): Restart with `aishell claude --detach`
-   - Wrong name: Use `aishell ps` to see actual container names
-   - Wrong project directory: Container names are project-scoped
+   - Container exited: restart with `aishell claude --detach`
+   - Wrong name: run `aishell ps` to see actual container names
+   - Wrong directory: container names are project-scoped
 
 ### Symptom: "tmux: open terminal failed: not a terminal"
 
-**Cause:** Running `aishell attach` from a non-interactive terminal (e.g., script, pipe, CI).
+**Cause:** `aishell attach` was run from a non-interactive context (script, pipe, or CI).
 
 **Resolution:**
 
-The attach command requires an interactive terminal. Run from a terminal emulator, not from scripts or pipes.
+Run `aishell attach` from an interactive terminal emulator, not from scripts or pipes.
 
 ### Symptom: tmux fails with "open terminal failed: missing or unsuitable terminal"
 
-**Cause:** Your terminal's `TERM` value (e.g., `xterm-ghostty`) doesn't have a terminfo entry in the container.
+**Cause:** Your terminal's `TERM` value (e.g., `xterm-ghostty`) lacks a terminfo entry in the container.
 
 **Resolution:**
 
-aishell automatically validates TERM and falls back to `xterm-256color` for unsupported values. If you still see this:
+aishell validates TERM and falls back to `xterm-256color` for unsupported values. If you still see this error:
 
 1. **Rebuild the image** to get the TERM validation fix:
    ```bash
@@ -856,11 +850,11 @@ aishell automatically validates TERM and falls back to `xterm-256color` for unsu
 
 ### Symptom: "aishell ps" shows no containers
 
-**Cause:** No containers running for the current project, or you're in a different directory.
+**Cause:** No containers are running for the current project, or you are in a different directory.
 
 **Resolution:**
 
-1. **Verify you're in the right project directory:**
+1. **Verify you are in the correct project directory:**
    Container names are scoped by project path hash. Running `aishell ps` from a different directory shows different containers.
 
 2. **Check Docker directly:**
@@ -880,7 +874,7 @@ aishell automatically validates TERM and falls back to `xterm-256color` for unsu
 
 ### Symptom: "Container does not have tmux enabled" when running attach
 
-**Cause:** Container was built without `--with-tmux` flag.
+**Cause:** The container was built without the `--with-tmux` flag.
 
 **Resolution:**
 
@@ -900,11 +894,11 @@ aishell automatically validates TERM and falls back to `xterm-256color` for unsu
    aishell attach --name claude
    ```
 
-**Note:** The `--with-tmux` flag must be specified at build time. You cannot enable tmux without rebuilding.
+**Note:** `--with-tmux` must be specified at build time. Enabling tmux requires a rebuild.
 
 ### Symptom: "attach" works but "main" session not found
 
-**Cause:** Session name changed from "main" to "harness" in v2.9.0.
+**Cause:** v2.9.0 renamed the session from "main" to "harness".
 
 **Resolution:**
 
@@ -919,14 +913,14 @@ aishell attach --name claude
 aishell attach --name claude --session harness
 ```
 
-**Migration note:** If you upgraded from v2.8.0 and have containers with "main" sessions, rebuild:
+**Migration note:** If you upgraded from v2.8.0 and still have containers with "main" sessions, rebuild:
 ```bash
 aishell build --with-claude --with-tmux
 ```
 
 ### Symptom: tmux plugins not loading
 
-**Cause:** Plugins installed at build time but TPM not initialized, or plugin format invalid.
+**Cause:** Plugins were installed at build time but TPM was not initialized, or the plugin format is invalid.
 
 **Resolution:**
 
@@ -966,7 +960,7 @@ aishell build --with-claude --with-tmux
 
 ### Symptom: tmux-resurrect not restoring sessions
 
-**Cause:** Resurrect not configured, state directory not mounted, or resurrect disabled.
+**Cause:** Resurrect is not configured, the state directory is not mounted, or resurrect is disabled.
 
 **Resolution:**
 
@@ -1004,11 +998,11 @@ aishell build --with-claude --with-tmux
 **Notes:**
 - Auto-restore happens on container start
 - State directory: `~/.aishell/resurrect/{project-hash}/`
-- Resurrect config silently ignored when tmux not enabled
+- Resurrect config is silently ignored when tmux is not enabled
 
 ### Symptom: Migration warning keeps appearing
 
-**Cause:** Marker file missing or unwritable.
+**Cause:** The marker file is missing or unwritable.
 
 **Resolution:**
 
@@ -1029,10 +1023,10 @@ aishell build --with-claude --with-tmux
    touch ~/.aishell/.migration-v2.9-warned
    ```
 
-**The warning explains:**
-- tmux is now opt-in (not automatic)
+**The warning covers:**
+- tmux is now opt-in, not automatic
 - Session name changed from "main" to "harness"
-- Rebuild required with `--with-tmux` for attach/detach
+- Attach/detach requires a rebuild with `--with-tmux`
 
 ---
 
@@ -1040,19 +1034,19 @@ aishell build --with-claude --with-tmux
 
 ### "the input device is not a TTY"
 
-**Symptom:** Running `aishell exec` in a script or CI produces this Docker error.
+**Symptom:** `aishell exec` in a script or CI produces this Docker error.
 
-**Cause:** This should not happen - aishell auto-detects TTY and omits the `-t` flag when stdin is not a terminal.
+**Cause:** This should not happen. aishell detects TTY and omits the `-t` flag when stdin is not a terminal.
 
 **Resolution:**
-1. Ensure you're using the latest version of aishell
+1. Ensure you are using the latest version of aishell
 2. If issue persists, report it as a bug
 
 ### Piped input not working
 
 **Symptom:** `echo "test" | aishell exec cat` produces no output.
 
-**Cause:** TTY detection may be incorrectly identifying stdin as a terminal.
+**Cause:** TTY detection may incorrectly identify stdin as a terminal.
 
 **Solution:**
 1. Verify the pipe is correctly formed
@@ -1072,7 +1066,7 @@ aishell build --with-claude --with-tmux
 
 **Symptom:** `aishell exec mycommand` fails with "command not found".
 
-**Cause:** The command is not installed in the base image or your project extension.
+**Cause:** The command is not installed in the base image or in your project extension.
 
 **Solution:**
 1. Use full path: `aishell exec /usr/bin/mycommand`
@@ -1085,7 +1079,7 @@ aishell build --with-claude --with-tmux
 
 ### Symptom: "Port not accessible" from host
 
-**Cause:** Port forwarding is misconfigured or not specified.
+**Cause:** Port forwarding is misconfigured or unspecified.
 
 **Resolution:**
 
@@ -1113,7 +1107,7 @@ aishell build --with-claude --with-tmux
    ```
 
 5. **Conflicts:**
-   Ensure host port isn't already in use:
+   Ensure the host port is not already in use:
    ```bash
    sudo netstat -tlnp | grep 3000
    ```
@@ -1153,13 +1147,13 @@ aishell build --with-claude --with-tmux
    ```
 
 5. **VPN conflicts:**
-   Some VPNs break Docker networking. Disconnect VPN temporarily to test.
+   Some VPNs break Docker networking. Disconnect the VPN temporarily to test.
 
 ---
 
 ## Getting Help
 
-If you've tried the above and are still stuck:
+If none of the above resolves your issue:
 
 ### Before Reporting a Bug
 
@@ -1202,17 +1196,17 @@ Before filing an issue, verify:
 
 - [ ] Docker daemon is running
 - [ ] Your user is in the docker group (or using sudo)
-- [ ] You've built an image with `aishell build --with-<harness>`
+- [ ] You built an image with `aishell build --with-<harness>`
 - [ ] Config files use absolute paths, not relative
-- [ ] Environment variables are set on host before running aishell
-- [ ] You're in the correct directory (if using project-specific config)
+- [ ] Environment variables are set on the host before running aishell
+- [ ] You are in the correct directory (if using project-specific config)
 - [ ] Config YAML syntax is valid (use `yamllint` or online validator)
 
 ---
 
 **Quick Tips:**
 
-- **"Try turning it off and on again"** - Rebuild the image: `aishell update`
-- **"Is it plugged in?"** - Check Docker is running: `docker info`
-- **"Clear the cache"** - Remove old images: `docker image prune`
-- **"Read the error message"** - Error output often contains the solution
+- **Rebuild the image:** `aishell update`
+- **Check Docker is running:** `docker info`
+- **Remove old images:** `docker image prune`
+- **Read the error message** -- it often contains the solution

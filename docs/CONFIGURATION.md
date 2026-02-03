@@ -1,6 +1,6 @@
 # aishell Configuration Reference
 
-Complete reference for aishell configuration options. This document covers both global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) configuration files.
+Complete reference for aishell configuration options, covering both the global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) config files.
 
 **Last updated:** v2.9.0
 
@@ -28,7 +28,7 @@ Complete reference for aishell configuration options. This document covers both 
 
 ## Configuration Files
 
-aishell supports two configuration files that can work together or independently:
+aishell reads two configuration files, which can work together or independently:
 
 | File | Location | Purpose | Scope |
 |------|----------|---------|-------|
@@ -37,9 +37,9 @@ aishell supports two configuration files that can work together or independently
 
 **Loading behavior:**
 
-1. **Project config exists:** Uses project config (with optional global merge)
-2. **No project config:** Falls back to global config
-3. **Neither exists:** Uses aishell defaults (minimal mounts only)
+1. **Project config exists:** aishell uses the project config (with optional global merge)
+2. **No project config:** aishell falls back to global config
+3. **Neither exists:** aishell uses built-in defaults (minimal mounts only)
 
 ---
 
@@ -61,7 +61,7 @@ extends: none    # Ignore global config
 
 ### Merge Strategy
 
-When `extends: global` (default), configs merge according to data type:
+With `extends: global` (the default), aishell merges configs by data type:
 
 | Type | Keys | Behavior | Example |
 |------|------|----------|---------|
@@ -75,23 +75,23 @@ When `extends: global` (default), configs merge according to data type:
 
 Use `extends: none` when:
 
-- **Testing isolation:** You want to ensure only project config is active
-- **Conflicting requirements:** Global config interferes with project needs
-- **Explicit configuration:** You prefer to specify everything in project config
+- **Testing isolation:** Only the project config should be active
+- **Conflicts:** The global config interferes with project needs
+- **Self-contained config:** You prefer to specify everything in the project config
 
-**Note:** Even with `extends: none`, aishell always mounts the project directory (at the same path as on the host). This is the only core mount required for operation. Add `~/.ssh` to your mounts config if you need SSH access inside the container.
+**Note:** Even with `extends: none`, aishell always mounts the project directory at the same host path. This is the only mount required for operation. Add `~/.ssh` to your mounts if you need SSH access inside the container.
 
 ---
 
 ## Full Annotated Example
 
-Complete example showing all available options:
+Example showing all available options:
 
 ```yaml
 # =============================================================================
 # EXTENDS - Config inheritance strategy
 # =============================================================================
-# Controls how this project config relates to global (~/.aishell/config.yaml):
+# Controls how this project config relates to the global (~/.aishell/config.yaml):
 #   - "global" (default): Merge with global config
 #       - Lists (mounts, ports, docker_args): concatenate (global + project)
 #       - Maps (env): shallow merge (project overrides global)
@@ -161,7 +161,7 @@ docker_args:
 # PRE_START - Command to run before shell starts
 # =============================================================================
 # Runs in background, output goes to /tmp/pre-start.log
-# Useful for starting services needed by your project
+# Useful for starting services your project needs
 
 pre_start: "redis-server --daemonize yes"
 
@@ -172,7 +172,7 @@ pre_start: "redis-server --daemonize yes"
 # =============================================================================
 # HARNESS_ARGS - Default arguments for AI harnesses
 # =============================================================================
-# Per-harness default arguments that are automatically prepended to CLI args.
+# Per-harness default arguments, prepended to CLI args.
 # Useful for flags you always want (--plugin, --model, etc.)
 #
 # Merging behavior:
@@ -202,8 +202,8 @@ harness_args:
 # =============================================================================
 # GITLEAKS_FRESHNESS_CHECK - Gitleaks scan freshness warning toggle
 # =============================================================================
-# When true (default), shows a warning before container launch if gitleaks
-# scan is stale (>7 days old) or has never been run. Advisory only - never
+# When true (default), warns before container launch if the gitleaks
+# scan is stale (>7 days old) or has never run. Advisory only -- never
 # blocks execution.
 #
 # The warning reminds you to run: aishell gitleaks dir .
@@ -230,8 +230,8 @@ tmux:
 # =============================================================================
 # DETECTION - Sensitive file detection configuration
 # =============================================================================
-# Controls the filename-based sensitive file detection that runs before
-# container launch. Detects .env files, SSH keys, cloud credentials, etc.
+# Controls filename-based sensitive file detection before container launch.
+# Detects .env files, SSH keys, cloud credentials, etc.
 
 detection:
   # Global toggle - set to false to disable all filename detection
@@ -275,7 +275,7 @@ detection:
 
 ### extends
 
-**Purpose:** Control config inheritance between global and project configs.
+**Purpose:** Control config inheritance between global and project config.
 
 **Type:** String
 
@@ -291,8 +291,8 @@ extends: none
 ```
 
 **Notes:**
-- Only valid in project config (`.aishell/config.yaml`)
-- In global config (`~/.aishell/config.yaml`), this key is ignored
+- Valid only in project config (`.aishell/config.yaml`)
+- The global config (`~/.aishell/config.yaml`) ignores this key
 - See [Config Inheritance](#config-inheritance-extends) for merge behavior
 
 ---
@@ -321,20 +321,20 @@ mounts:
 
 **Notes:**
 - Home directory expansion (`~`) works in source paths
-- Container paths are absolute (must start with `/`)
-- Read-only (`:ro`) prevents container from modifying host files
-- Project directory (at same path as host) is always mounted (built-in)
+- Container paths must be absolute (start with `/`)
+- Read-only (`:ro`) prevents the container from modifying host files
+- aishell always mounts the project directory at the same host path
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 
-**Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Use `--unsafe` to bypass.
+**Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Pass `--unsafe` to bypass.
 
-**⚠️ SSH Keys Security Note:**
+**SSH Keys Security Note:**
 
-Mounting `~/.ssh` gives AI harnesses access to your private keys. Since these agents can execute arbitrary code, they could:
+Mounting `~/.ssh` exposes your private keys to AI harnesses. Because these agents can execute arbitrary code, they could:
 - Read your private keys
-- Authenticate to any server your keys access (git push, SSH to servers)
-- Potentially expose key material in conversation context
+- Authenticate to any server your keys reach (git push, SSH to servers)
+- Expose key material in conversation context
 
 **Safer alternatives:**
 
@@ -352,7 +352,7 @@ mounts:
   - ~/.ssh/known_hosts:~/.ssh/known_hosts:ro
 ```
 
-For most workflows, AI harnesses don't need SSH access — git operations work with HTTPS and tokens.
+Most workflows need no SSH access -- git operations work with HTTPS and tokens.
 
 ---
 
@@ -388,10 +388,10 @@ env:
 ```
 
 **Notes:**
-- Map format recommended for readability
-- Empty map value (`:`) passes through host environment variable
+- Map format is more readable
+- An empty map value (`:`) passes through the host environment variable
 - Literal values must be quoted strings
-- Both formats can coexist (map + list), but pick one for consistency
+- Both formats can coexist, but pick one for consistency
 
 **Merge behavior:** Global and project envs shallow-merge (project keys override global).
 
@@ -430,9 +430,9 @@ ports:
 
 **Notes:**
 - Default protocol is `tcp`
-- `127.0.0.1` binding restricts to localhost (more secure)
-- `0.0.0.0` binding exposes to all network interfaces
-- Host port must be free (Docker will error if already in use)
+- `127.0.0.1` restricts the binding to localhost (more secure)
+- `0.0.0.0` exposes the port on all network interfaces
+- The host port must be free; Docker errors if it is already in use
 
 **Merge behavior:** Global and project ports concatenate (both apply).
 
@@ -468,8 +468,8 @@ docker_args:
 ```
 
 **Notes:**
-- Array format recommended for complex arguments
-- Flags are passed directly to `docker run` (after built-in args)
+- Array format is clearer for multi-flag arguments
+- aishell passes flags directly to `docker run` (after built-in args)
 - Some flags trigger security warnings (see below)
 
 **Merge behavior:** Global and project docker_args concatenate (both apply).
@@ -500,7 +500,7 @@ docker_args:
 
 ### pre_start
 
-**Purpose:** Run a background command before the shell/harness starts.
+**Purpose:** Run a command in the background before the shell/harness starts.
 
 **Type:** String or List (v2.5+)
 
@@ -521,8 +521,8 @@ pre_start:
 ```
 
 **Behavior:**
-- **String:** Executed as-is via `sh -c`
-- **List:** Items joined with ` && ` separator, then executed via `sh -c`
+- **String:** Runs as-is via `sh -c`
+- **List:** Items join with ` && `, then run via `sh -c`
 - **Empty list:** No pre-start command runs
 - **Empty items:** Filtered out automatically
 
@@ -538,11 +538,11 @@ pre_start: "echo 'Step 1' && echo 'Step 2'"
 ```
 
 **Notes:**
-- Command runs in background (via `nohup ... &`)
-- Output redirected to `/tmp/pre-start.log` (check if command fails)
-- Runs as container user (not root)
-- Use `&&` separator means if any command fails, execution stops
-- Container doesn't wait for command completion (non-blocking)
+- Runs in background via `nohup ... &`
+- Output goes to `/tmp/pre-start.log` (check this file on failure)
+- Runs as the container user, not root
+- The `&&` separator stops execution if any command fails
+- The container does not wait for command completion (non-blocking)
 
 **Merge behavior:** Project replaces global (only one pre_start runs).
 
@@ -559,7 +559,7 @@ pre_start: "echo 'Step 1' && echo 'Step 2'"
 
 ### harness_args
 
-**Purpose:** Set default arguments for AI harnesses (prepended to CLI args).
+**Purpose:** Set default arguments for AI harnesses, prepended to CLI args.
 
 **Type:** Map of harness name to list (or string)
 
@@ -596,8 +596,8 @@ harness_args:
 ```
 
 **Notes:**
-- Defaults prepend to CLI args (CLI comes after)
-- Positional flags: Last occurrence wins (CLI can override defaults)
+- Defaults precede CLI args
+- For positional flags, the last occurrence wins (CLI overrides defaults)
 - String values auto-convert to single-element lists
 
 **Merge behavior:** Per-harness lists concatenate (global defaults + project defaults).
@@ -657,19 +657,19 @@ gitleaks_freshness_check: false
 ```
 
 **Notes:**
-- Advisory only - never blocks execution
-- Warning appears before container launch (for shell/claude/opencode, not gitleaks itself)
-- "Stale" = scan >7 days old or never run
-- Warning suggests: `aishell gitleaks dir .`
-- Timestamp stored in `~/.aishell/gitleaks-scan.edn` (per-project)
+- Advisory only -- never blocks execution
+- The warning appears before container launch (for shell/claude/opencode, not gitleaks itself)
+- "Stale" means the scan is >7 days old or has never run
+- The warning suggests running `aishell gitleaks dir .`
+- aishell stores timestamps in `~/.aishell/gitleaks-scan.edn` (per-project)
 
 **Merge behavior:** Project replaces global (scalar).
 
 **When to disable:**
 
-- **CI/CD environments:** Automated systems don't need reminders
+- **CI/CD environments:** Automated systems need no reminders
 - **Trusted projects:** Internal code with no sensitive data
-- **Frequent annoyers:** You run Gitleaks separately and don't want reminders
+- **Separate scanning:** You run Gitleaks outside aishell
 
 ---
 
@@ -742,9 +742,9 @@ detection:
 
 **Notes:**
 - Patterns use glob syntax (`*`, `**`, `?`, `[]`)
-- Extends default patterns (doesn't replace)
+- Extends default patterns rather than replacing them
 - Reason is optional (shown in warning output)
-- Merge behavior: Global and project patterns map-merge (project keys override global)
+- Merge: global and project patterns map-merge; project keys override global
 
 **Default patterns (built-in):**
 
@@ -781,13 +781,13 @@ detection:
 ```
 
 **Notes:**
-- Each entry MUST have both `path` and `reason` keys
-- Allowlisted files are completely hidden (no warning)
-- Merge behavior: Global and project allowlists concatenate (both apply)
+- Each entry requires both `path` and `reason` keys
+- Allowlisted files produce no warning
+- Merge: global and project allowlists concatenate
 
 #### detection merge behavior
 
-The `detection` config has custom merge logic:
+The `detection` config uses custom merge logic:
 
 | Key | Merge Type | Behavior |
 |-----|------------|----------|
@@ -836,7 +836,7 @@ detection:
 
 **Type:** Map with `plugins` (list) and `resurrect` (boolean or map)
 
-**Requirements:** tmux must be enabled at build time via `--with-tmux` flag. This configuration is silently ignored when tmux is disabled.
+**Requirements:** Enable tmux at build time with the `--with-tmux` flag. aishell silently ignores this section when tmux is disabled.
 
 **Structure:**
 
@@ -860,9 +860,9 @@ tmux:
 **Format:** GitHub repository format: `owner/repo` (e.g., `tmux-plugins/tmux-sensible`)
 
 **Installation:**
-- Plugins installed at build time to harness volume
-- Plugin files stored in `/tools/tmux/plugins/{plugin-name}`
-- Entrypoint creates symlink from `~/.tmux/plugins` to volume location
+- aishell installs plugins at build time into the harness volume
+- Plugin files live in `/tools/tmux/plugins/{plugin-name}`
+- The entrypoint symlinks `~/.tmux/plugins` to the volume location
 
 **Example:**
 
@@ -875,10 +875,10 @@ tmux:
 ```
 
 **Notes:**
-- Format validation shows warnings for invalid patterns
+- Validation warns on invalid format patterns
 - Plugins must be public GitHub repositories
-- TPM initialization happens at container runtime
-- If `resurrect: true`, tmux-resurrect plugin is auto-added (no need to declare)
+- TPM initializes at container runtime
+- When `resurrect: true`, aishell auto-adds the tmux-resurrect plugin
 
 **Merge behavior:** Global and project plugin lists concatenate (both apply).
 
@@ -908,17 +908,17 @@ tmux:
 
 **State directory:** `~/.aishell/resurrect/{project-hash}/`
 - Per-project isolation
-- Contains saved session layouts, window states, process states
-- Mounted into container automatically
+- Contains saved session layouts, window states, and process states
+- aishell mounts it into the container automatically
 
 **Auto-injection:**
-- `tmux-resurrect` plugin automatically added to plugin list
-- Deduplicated if already in user's plugin list
-- No manual plugin declaration needed
+- aishell adds `tmux-resurrect` to the plugin list automatically
+- Deduplicated if already present
+- No manual declaration needed
 
 **Auto-restore:**
-- Entrypoint runs `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh` after TPM init
-- Previous session state restored automatically on container start
+- The entrypoint runs `tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh` after TPM init
+- The previous session state restores automatically on container start
 
 **Merge behavior:** Scalar (project replaces global).
 
@@ -938,9 +938,9 @@ tmux:
 ```
 
 **Notes:**
-- Resurrect config silently ignored when tmux not enabled (`--with-tmux`)
-- Process restoration can be risky - programs may not restore cleanly
-- Default behavior (`restore_processes: false`) is safer for most use cases
+- aishell silently ignores resurrect config when tmux is disabled (`--with-tmux`)
+- Process restoration is risky -- programs may not restore cleanly
+- The default (`restore_processes: false`) is safer for most use cases
 
 ---
 
@@ -948,7 +948,7 @@ tmux:
 
 ### Database Credentials Mounting
 
-Mount database credentials from host into container:
+Mount database credentials from the host into the container:
 
 ```yaml
 mounts:
@@ -961,7 +961,7 @@ env:
 
 ### Port Exposure for Web Servers
 
-Expose ports for local development servers:
+Expose ports for local development:
 
 ```yaml
 ports:
@@ -972,7 +972,7 @@ ports:
 
 ### Custom Docker Resource Limits
 
-Limit container resource usage:
+Limit container resources:
 
 ```yaml
 docker_args:
@@ -999,7 +999,7 @@ harness_args:
 
 ### Service Startup with pre_start
 
-Start background services before harness runs:
+Start background services before the harness runs:
 
 ```yaml
 pre_start: "redis-server --daemonize yes && postgres -D /data/postgres &"
@@ -1085,7 +1085,7 @@ harness_args:
 
 ### Harness Selection Flags
 
-**Purpose:** Choose which AI harnesses to include in the harness volume.
+**Purpose:** Choose which AI harnesses to install in the harness volume.
 
 **Usage:**
 ```bash
@@ -1118,7 +1118,7 @@ Omit version for latest:
 ```
 
 **State tracking:**
-Harness selection is saved in `~/.aishell/state.edn` and preserved across updates.
+aishell saves harness selection in `~/.aishell/state.edn` and preserves it across updates.
 
 ---
 
@@ -1132,10 +1132,10 @@ aishell build --with-claude --with-tmux
 ```
 
 **Behavior:**
-- Enables tmux session management (attach/detach capability)
-- Enables plugin support via TPM (Tmux Plugin Manager)
-- Enables session persistence via tmux-resurrect (if configured)
-- Session name: `harness` (default)
+- Adds tmux session management (attach/detach)
+- Adds plugin support via TPM (Tmux Plugin Manager)
+- Adds session persistence via tmux-resurrect (if configured)
+- Default session name: `harness`
 
 **State tracking:** Stored as `:with-tmux true` in state.edn
 
@@ -1146,10 +1146,10 @@ aishell build --with-claude --with-tmux
 - Session persistence across container restarts
 
 **Without this flag:**
-- Containers run commands directly (no tmux wrapper)
-- `aishell attach` shows error with guidance
-- `--detach` still works but no tmux session management
-- Plugin and resurrect config silently ignored
+- Containers run commands directly, without tmux
+- `aishell attach` shows an error with guidance
+- `--detach` still works but lacks tmux session management
+- aishell silently ignores plugin and resurrect config
 
 **Example workflow:**
 
@@ -1168,7 +1168,7 @@ aishell attach --name claude
 
 ### --without-gitleaks
 
-**Purpose:** Skip Gitleaks installation during build to reduce foundation image size.
+**Purpose:** Skip Gitleaks installation during build, reducing foundation image size.
 
 **Usage:**
 ```bash
@@ -1176,10 +1176,10 @@ aishell build --with-claude --without-gitleaks
 ```
 
 **Behavior:**
-- By default, Gitleaks is installed in the foundation image (~15MB)
-- `--without-gitleaks` skips installation
+- By default, aishell installs Gitleaks in the foundation image (~15MB)
+- `--without-gitleaks` skips that installation
 - Build state records installation status in `~/.aishell/state.edn`
-- `aishell --help` still shows `gitleaks` command (may work via host installation)
+- `aishell --help` still lists the `gitleaks` command (it may work via a host installation)
 
 **State tracking:**
 ```bash
@@ -1189,16 +1189,16 @@ cat ~/.aishell/state.edn
 ```
 
 **When to use:**
-- **Minimal images:** Reduce foundation image size when Gitleaks not needed
-- **External Gitleaks:** Using Gitleaks installed on host instead
-- **CI/CD:** Build environments where secret scanning handled elsewhere
+- **Minimal images:** Reduce foundation image size when you do not need Gitleaks
+- **External Gitleaks:** You use Gitleaks installed on the host
+- **CI/CD:** Secret scanning runs elsewhere
 
 **Image size impact:**
 - With Gitleaks: ~280MB
 - Without Gitleaks: ~265MB
 - Savings: ~15MB
 
-**Note:** The `aishell gitleaks` command may still work if Gitleaks is installed on your host system or mounted into the container.
+**Note:** `aishell gitleaks` may still work if Gitleaks is installed on your host or mounted into the container.
 
 ---
 
@@ -1214,12 +1214,12 @@ aishell build --with-claude --force
 **Behavior:**
 - Passes `--no-cache` to `docker build`
 - Rebuilds all layers from scratch
-- Useful for troubleshooting build issues or ensuring fresh dependencies
+- Useful for troubleshooting build issues or pulling fresh dependencies
 
 **When to use:**
-- **Troubleshooting:** Build behaving unexpectedly
-- **Fresh start:** Want to ensure all system packages are latest
-- **Cache corruption:** Suspect Docker cache has stale layers
+- **Troubleshooting:** The build behaves unexpectedly
+- **Fresh start:** You want the latest system packages
+- **Cache corruption:** You suspect Docker cache has stale layers
 
 ---
 
@@ -1227,7 +1227,7 @@ aishell build --with-claude --force
 
 ### aishell update
 
-**Purpose:** Refresh harness tools to latest versions without rebuilding foundation image.
+**Purpose:** Refresh harness tools to latest versions without rebuilding the foundation image.
 
 **Usage:**
 ```bash
@@ -1239,37 +1239,37 @@ aishell update --force
 ```
 
 **Default behavior (no flags):**
-1. Delete existing harness volume
-2. Create new harness volume
-3. Populate volume with harness tools (npm install, binary download)
-4. Update state.edn with new build-time
-5. Foundation image untouched
+1. Deletes the existing harness volume
+2. Creates a new harness volume
+3. Populates the volume with harness tools (npm install, binary download)
+4. Updates state.edn with the new build time
+5. Leaves the foundation image untouched
 
 **With --force:**
-1. Rebuild foundation image with `--no-cache`
-2. Delete existing harness volume
-3. Create new harness volume
-4. Populate volume with harness tools
-5. Update state.edn with new build-time and foundation-hash
+1. Rebuilds the foundation image with `--no-cache`
+2. Deletes the existing harness volume
+3. Creates a new harness volume
+4. Populates the volume with harness tools
+5. Updates state.edn with new build time and foundation hash
 
-**Preserved from last build:**
-- Which harnesses are enabled (`--with-claude`, etc.)
+**Preserved from the last build:**
+- Enabled harnesses (`--with-claude`, etc.)
 - Harness version pins
 - Gitleaks installation status
 
-**Cannot change harness selection:**
-To add/remove harnesses, use `aishell build`:
+**Cannot change harness selection.**
+To add or remove harnesses, use `aishell build`:
 ```bash
 # Add OpenCode to existing Claude installation
 aishell build --with-claude --with-opencode
 ```
 
 **When to use update:**
-- **npm package updates:** Get latest harness versions
+- **npm package updates:** Get the latest harness versions
 - **Regular refresh:** Periodically update tools
-- **After npm publish:** New harness version released
+- **After npm publish:** A new harness version was released
 
 **When to use update --force:**
-- **System package updates:** Debian/Node.js security updates
-- **Foundation changes:** After aishell version upgrade
-- **Troubleshooting:** Foundation image behaving unexpectedly
+- **System package updates:** Debian/Node.js security patches
+- **Foundation changes:** After an aishell version upgrade
+- **Troubleshooting:** The foundation image behaves unexpectedly

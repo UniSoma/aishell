@@ -1,8 +1,6 @@
 # aishell Development Guide
 
-This guide is for developers who want to extend aishell with new features or harnesses.
-
-**Target audience:** Developers adding new AI harness integrations or core aishell features.
+This guide helps developers extend aishell with new harnesses or core features.
 
 **Last updated:** v2.9.0
 
@@ -42,7 +40,7 @@ bb -m aishell.core claude
 bb -m aishell.core --help
 ```
 
-The `bb -m aishell.core` command runs the main namespace without installation.
+The `bb -m aishell.core` command runs the main namespace without installing.
 
 ### Symlink for Development
 
@@ -58,7 +56,7 @@ aishell-dev --version
 
 ## Project Structure
 
-Brief overview (see [ARCHITECTURE.md](ARCHITECTURE.md) for full details):
+Overview (see [ARCHITECTURE.md](ARCHITECTURE.md) for full details):
 
 ```
 aishell/
@@ -69,13 +67,13 @@ aishell/
 │   ├── config.clj            # Configuration loading and merging
 │   ├── state.clj             # State persistence (state.edn)
 │   ├── docker/
-│   │   ├── build.clj         # Foundation image building orchestration
+│   │   ├── build.clj         # Foundation image build orchestration
 │   │   ├── run.clj           # Docker run argument construction
 │   │   ├── templates.clj     # Dockerfile template generation
 │   │   ├── extension.clj     # Project-level Dockerfile handling
 │   │   ├── hash.clj          # Dockerfile content hashing
 │   │   ├── naming.clj        # Container naming and Docker state queries
-│   │   ├── volume.clj        # Harness volume management (NEW in v2.8.0)
+│   │   ├── volume.clj        # Harness volume management (v2.8.0+)
 │   │   └── spinner.clj       # Build progress UI
 │   ├── detection/            # Sensitive file detection
 │   │   ├── core.clj          # Detection orchestration
@@ -88,7 +86,7 @@ aishell/
 │   ├── attach.clj            # Attach command (reconnect to containers)
 │   ├── check.clj             # Pre-flight validation command
 │   ├── validation.clj        # Argument validation
-│   ├── migration.clj         # Version migration warnings (NEW in v2.9.0)
+│   ├── migration.clj         # Version migration warnings (v2.9.0+)
 │   ├── output.clj            # Terminal output utilities
 │   └── util.clj              # Shared utilities
 ├── entrypoint.sh             # Container entrypoint script
@@ -101,11 +99,11 @@ aishell/
 - **docker/build.clj:** Orchestrate foundation image build, manage state
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
-- **docker/volume.clj:** Harness volume hash computation, creation, population, listing, pruning
+- **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
 - **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)
-- **migration.clj:** Version migration warnings and marker management
+- **migration.clj:** Version migration warnings and markers
 
 ---
 
@@ -113,12 +111,12 @@ aishell/
 
 ### Foundation Image Build Flow
 
-1. **Check cache:** `docker/hash/compute-hash` computes SHA-256 of Dockerfile template content
+1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the Dockerfile template
 2. **Compare hash:** If foundation-hash matches state, skip rebuild (unless `--force`)
-3. **Generate Dockerfile:** `docker/templates/base-dockerfile` generates template
+3. **Generate Dockerfile:** `docker/templates/base-dockerfile` produces the template
 4. **Write to temp dir:** `/tmp/aishell-build-{uuid}/Dockerfile`
 5. **Docker build:** `docker build --tag aishell:foundation`
-6. **Label image:** Embed foundation hash in image metadata
+6. **Label image:** Embed the foundation hash in image metadata
 
 ### Volume Hash Computation
 
@@ -143,7 +141,7 @@ aishell/
 
 **Result:** `aishell-harness-abc123def456`
 
-**Volume sharing:** Identical configs produce identical hashes → same volume.
+**Volume sharing:** Identical configs produce identical hashes, so they share one volume.
 
 ### Volume Population
 
@@ -159,19 +157,19 @@ aishell/
      sh -c "npm install commands..."
    ```
 3. **npm installation:**
-   - Set `NPM_CONFIG_PREFIX=/tools/npm`
-   - Run `npm install -g @anthropic-ai/claude-code@{version}`
-   - Repeat for each enabled npm harness
+   - Sets `NPM_CONFIG_PREFIX=/tools/npm`
+   - Runs `npm install -g @anthropic-ai/claude-code@{version}`
+   - Repeats for each enabled npm harness
 4. **Binary download (OpenCode):**
-   - `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
-   - Extract to `/tools/bin`
+   - Downloads `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
+   - Extracts to `/tools/bin`
 5. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
-6. **Container exits:** Volume populated, temporary container auto-removed
+6. **Container exits:** Volume is populated; Docker auto-removes the temporary container
 
-**On population failure:**
-- Volume is deleted (rollback)
-- Error message shown
-- Build exits with non-zero status
+**On failure:**
+- The system deletes the volume (rollback)
+- Prints an error message
+- Exits with non-zero status
 
 ### State Schema v2.8.0
 
@@ -179,16 +177,16 @@ aishell/
 
 **New fields:**
 ```clojure
-{:foundation-hash "abc123def"                    ; NEW: Dockerfile template hash
- :harness-volume-hash "def456ghi"                ; NEW: Harness config hash
- :harness-volume-name "aishell-harness-def456ghi" ; NEW: Volume name
+{:foundation-hash "abc123def"                    ; Dockerfile template hash
+ :harness-volume-hash "def456ghi"                ; Harness config hash
+ :harness-volume-name "aishell-harness-def456ghi" ; Volume name
  :dockerfile-hash "abc123def"}                   ; DEPRECATED: alias for foundation-hash
 ```
 
 **Backward compatibility:**
-- Old aishell versions ignore unknown keys (EDN is schemaless)
+- Old aishell versions ignore unknown keys because EDN is schemaless
 - New aishell writes both `:dockerfile-hash` and `:foundation-hash`
-- Migration is additive: nil values for missing fields, no migration code
+- Migration is additive: missing fields default to nil, with no migration code
 
 **State writes:**
 - `cli/handle-build`: After foundation build + volume population
@@ -198,30 +196,30 @@ aishell/
 
 **Source:** `docker/extension/build-project-extension`
 
-**Old behavior (v2.7.0):**
-- Used base image ID to invalidate cache
-- Harness version change → base image rebuild → extension cache invalidated
+**v2.7.0 behavior:**
+- Used the base image ID to invalidate cache
+- A harness version change rebuilt the base image, which invalidated the extension cache
 
-**New behavior (v2.8.0):**
-- Uses foundation image ID to invalidate cache
+**v2.8.0 behavior:**
+- Uses the foundation image ID to invalidate cache
 - Foundation image label: `aishell.foundation.id={image-id}`
-- Harness updates don't change foundation ID → no cache invalidation
+- Harness updates leave the foundation ID unchanged, so the cache persists
 
 **Migration detection:**
-- If label `aishell.foundation.id` is nil → old extension, trigger rebuild
-- Shows message: "Rebuilding extension (foundation image updated)"
+- If label `aishell.foundation.id` is nil, the extension is old; trigger a rebuild
+- Prints: "Rebuilding extension (foundation image updated)"
 
 ---
 
 ## Adding a New Harness
 
-Follow this checklist to integrate a new AI harness (e.g., `cursor`, `aider`, etc.).
+Follow this checklist to integrate a new harness (e.g., `cursor`, `aider`).
 
 ### Step 1: Dockerfile Template
 
 **File:** `src/aishell/docker/templates.clj`
 
-Add harness installation to the Dockerfile template:
+Add the harness installation to the Dockerfile template:
 
 **a. Add build arguments:**
 ```dockerfile
@@ -267,7 +265,7 @@ RUN if [ "$WITH_CURSOR" = "true" ]; then \
     fi
 ```
 
-**Check where binary is installed:**
+**Binary install locations:**
 - npm global: `/usr/local/bin/{harness}`
 - Custom installer: May install to `/usr/local/bin` or `$HOME/.local/bin`
 
@@ -287,7 +285,7 @@ RUN if [ "$WITH_CURSOR" = "true" ]; then \
 
 **a. Add to `build-docker-args` function:**
 
-Find the function that constructs Docker build args:
+In the function that constructs Docker build args:
 ```clojure
 (defn- build-docker-args
   [{:keys [with-claude with-opencode with-codex with-gemini
@@ -302,11 +300,11 @@ Find the function that constructs Docker build args:
     ;; ...
 ```
 
-Add to the function signature and the cond-> threading macro.
+Add the new keys to both the function signature and the `cond->` threading macro.
 
 **b. Add to `needs-rebuild?` function:**
 
-Ensure version changes trigger rebuild:
+Ensure version changes trigger a rebuild:
 ```clojure
 (and (:with-cursor opts)
      (not= (:cursor-version opts) (:cursor-version state)))
@@ -314,7 +312,7 @@ Ensure version changes trigger rebuild:
 
 **c. Add to build output:**
 
-Find the section that prints installed harnesses after build:
+In the section that prints installed harnesses after build:
 ```clojure
 (when (:with-cursor opts)
   (println (format-harness-line "Cursor" (:cursor-version opts))))
@@ -346,7 +344,7 @@ Find the section that prints installed harnesses after build:
 
 **b. Add to `handle-build` function:**
 
-Parse the flag and validate version:
+Parse the flag and validate the version:
 ```clojure
 (defn handle-build [{:keys [opts]}]
   (if (:help opts)
@@ -366,7 +364,7 @@ Include in `build-base-image` call:
 
 **c. Add to `handle-update` function:**
 
-Preserve configuration on update:
+Preserve the harness configuration on update:
 ```clojure
 (when (:with-cursor state)
   (println (str "  Cursor: " (or (:cursor-version state) "latest"))))
@@ -415,7 +413,7 @@ Both in `handle-build` and `handle-update`:
 
 **File:** `src/aishell/docker/run.clj`
 
-Add config directory mount to `harness-config-mounts` function:
+Add a config directory mount to the `harness-config-mounts` function:
 
 ```clojure
 (defn harness-config-mounts
@@ -469,7 +467,7 @@ ls -la ~/.cursor
 
 **File:** `src/aishell/docker/run.clj`
 
-Add API key environment variable to `env-passthrough-keys`:
+Add the API key environment variable to `env-passthrough-keys`:
 
 ```clojure
 (def env-passthrough-keys
@@ -485,7 +483,7 @@ Add API key environment variable to `env-passthrough-keys`:
    ;; ...
 ```
 
-**Pattern:** Add to the vector with appropriate comment grouping.
+**Pattern:** Add to the vector under the appropriate comment group.
 
 **Common naming conventions:**
 - `{HARNESS}_API_KEY` - Most common
@@ -503,7 +501,7 @@ Add API key environment variable to `env-passthrough-keys`:
 
 **File:** `src/aishell/state.clj`
 
-The state file tracks which harnesses are installed and their versions.
+The state file records which harnesses are installed and their versions.
 
 **Add to state writes:**
 
@@ -536,7 +534,7 @@ In `cli.clj` `handle-build` and `handle-update`:
 
 ### Step 7: Documentation
 
-Update documentation to include the new harness:
+Update these files to cover the new harness:
 
 **a. README.md:**
 ```markdown
@@ -549,7 +547,7 @@ aishell build --with-cursor=1.0.5
 
 **b. docs/HARNESSES.md:**
 
-Add new section following existing pattern:
+Add a section following the existing pattern:
 - Overview
 - Installation
 - Authentication (OAuth, API Key, both)
@@ -559,7 +557,7 @@ Add new section following existing pattern:
 
 **c. docs/TROUBLESHOOTING.md:**
 
-Add authentication troubleshooting section if the harness has specific auth quirks.
+Add a troubleshooting section if the harness has auth quirks.
 
 **Checklist:**
 - [ ] Added to README.md usage examples
@@ -654,11 +652,11 @@ echo $CURSOR_API_KEY  # Should output "test-key-123"
 
 ### Clojure Conventions
 
-- **Use kebab-case** for function and variable names
-- **Add docstrings** to public functions
-- **Threading macros** for readability (→, →>, cond→)
-- **Let bindings** for intermediate values
-- **Destructuring** in function signatures where appropriate
+- Use kebab-case for function and variable names
+- Add docstrings to public functions
+- Prefer threading macros for readability (→, →>, cond→)
+- Use let bindings for intermediate values
+- Destructure function signatures where appropriate
 
 **Example:**
 ```clojure
@@ -673,11 +671,11 @@ echo $CURSOR_API_KEY  # Should output "test-key-123"
 
 ### Follow Existing Patterns
 
-When adding a new harness, mirror the structure of existing harnesses:
+When adding a new harness, mirror existing harnesses:
 
-1. **Look at Claude Code integration** as the reference implementation
-2. **Copy the pattern** for Codex or Gemini (both use npm global install)
-3. **Keep structure parallel** - if Claude has X, your harness should have X
+1. Use the Claude Code integration as the reference implementation
+2. Copy the Codex or Gemini pattern (both use npm global install)
+3. Keep structure parallel: if Claude has X, your harness should too
 
 ### Error Handling
 
@@ -762,7 +760,7 @@ Add support for [Harness Name] integration.
 
 ### Adding Optional Dependencies
 
-For harnesses requiring system packages:
+For harnesses that require system packages:
 
 ```dockerfile
 # In templates.clj, add to base RUN block or create conditional:
@@ -775,7 +773,7 @@ RUN if [ "$WITH_CURSOR" = "true" ]; then \
 
 ### Handling Multiple Config Locations
 
-Some tools use multiple directories:
+Some tools store config in multiple directories:
 
 ```clojure
 (defn harness-config-mounts []
@@ -791,12 +789,12 @@ Some tools use multiple directories:
 **npm packages:** `1.2.3` (standard semver)
 **Custom installers:** May use `v1.2.3` prefix or `VERSION=1.2.3` env var
 
-Check harness documentation for correct version syntax.
+Check each harness's documentation for the correct version syntax.
 
 ---
 
 ## Questions?
 
-- Review existing harness integrations (claude, codex, gemini)
-- Check [ARCHITECTURE.md](ARCHITECTURE.md) for system design
+- Review existing integrations (claude, codex, gemini)
+- See [ARCHITECTURE.md](ARCHITECTURE.md) for system design
 - Ask in GitHub Discussions or Issues

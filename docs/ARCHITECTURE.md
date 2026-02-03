@@ -1,6 +1,6 @@
 # aishell Architecture
 
-This document describes the internal architecture of aishell, including the data flow from host machine through container execution, and the responsibilities of each code namespace.
+This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
 **Last updated:** v2.9.0
 
@@ -18,7 +18,7 @@ This document describes the internal architecture of aishell, including the data
 
 ## System Overview
 
-aishell orchestrates ephemeral Docker containers for AI harnesses. The system is split across two environments:
+aishell orchestrates ephemeral Docker containers for AI harnesses, split across two environments:
 
 - **Host Machine:** CLI, configuration loading, Docker API interaction
 - **Container:** Harness tools, project files, isolated execution environment
@@ -50,7 +50,7 @@ graph TB
     Harness --> Tools
 ```
 
-**Key architectural principles:**
+**Architectural principles:**
 
 1. **2-Tier Architecture:** Foundation image (stable system tools) + harness volume (updatable tools)
 2. **Volume-Based Harness Tools:** npm packages and binaries mounted read-only at `/tools`
@@ -64,11 +64,11 @@ graph TB
 
 ## 2-Tier Architecture: Foundation + Harness Volume
 
-aishell v2.8.0 separates the Docker image into two layers to optimize for harness updates.
+aishell v2.8.0 separates the Docker image into two layers to speed up harness updates.
 
 ### Foundation Image (`aishell:foundation`)
 
-The foundation image contains stable system components that rarely change:
+The foundation image contains stable system components that change rarely:
 
 **Contents:**
 - Debian bookworm-slim base
@@ -83,11 +83,11 @@ The foundation image contains stable system components that rarely change:
 - Dockerfile template changes (detected via content hash)
 - Explicit `aishell update --force`
 
-**Why separate:** These components are stable across harness version updates.
+**Why separate:** These components stay stable across harness version updates.
 
 ### Harness Volume (`aishell-harness-{hash}`)
 
-Harness tools are stored in Docker volumes and mounted into containers:
+Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
 - `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli)
@@ -98,14 +98,14 @@ Harness tools are stored in Docker volumes and mounted into containers:
 - Harness versions (pinned or 'latest')
 - Alphabetically sorted for order-independence
 
-**Volume sharing:** Projects with identical harness configurations share the same volume.
+**Volume sharing:** Projects with identical harness configurations share a volume.
 
 **Rebuild triggers:**
 - `aishell update` (unconditional delete + recreate)
 - Missing volume
 - Hash mismatch (different harness config)
 
-**Why separate:** Harness updates don't require multi-gigabyte foundation image rebuilds or Docker extension cache invalidation.
+**Why separate:** Harness updates skip multi-gigabyte foundation image rebuilds and Docker extension cache invalidation.
 
 ### Runtime Wiring
 
@@ -114,16 +114,16 @@ Harness tools are stored in Docker volumes and mounted into containers:
 -v aishell-harness-abc123:/tools:ro
 ```
 
-Mounted read-only for security (harnesses can't modify installed tools).
+Mounted read-only so harnesses cannot modify installed tools.
 
 **PATH setup:**
-1. Entrypoint script sets `HARNESS_VOLUME` env var as signal
+1. Entrypoint sets `HARNESS_VOLUME` env var as a signal
 2. Checks directory existence: `if [ -d /tools/npm/bin ]`
 3. Prepends to PATH: `/tools/npm/bin:/tools/bin:$PATH`
 4. Sets NODE_PATH: `/tools/npm/lib/node_modules`
 
 **Profile.d integration:**
-`/etc/profile.d/aishell.sh` ensures tmux new-window sessions inherit PATH configuration.
+`/etc/profile.d/aishell.sh` lets tmux new-window sessions inherit PATH configuration.
 
 ### Migration
 
@@ -133,7 +133,7 @@ Mounted read-only for security (harnesses can't modify installed tools).
 - Old: `aishell:base`
 - New: `aishell:foundation`
 
-Backward compatibility maintained via error detection in `.aishell/Dockerfile`:
+Error detection in `.aishell/Dockerfile` maintains backward compatibility:
 ```dockerfile
 # Old (triggers error)
 FROM aishell:base
@@ -155,8 +155,8 @@ FROM aishell:foundation
 - Session name changed from "main" to "harness"
 
 **attach command validation:**
-- Now checks `:with-tmux` in state before allowing attach
-- Shows error with guidance if tmux not enabled
+- Checks `:with-tmux` in state before allowing attach
+- Shows an error with guidance if tmux is disabled
 
 **Migration warning:**
 - One-time warning on first use after upgrade to v2.9.0
@@ -171,7 +171,7 @@ FROM aishell:foundation
 
 ## tmux Architecture
 
-aishell v2.9.0 introduces opt-in tmux support with plugin management and session persistence.
+aishell v2.9.0 adds opt-in tmux support with plugin management and session persistence.
 
 ### Opt-in Behavior
 
@@ -181,7 +181,7 @@ tmux is **disabled by default**. Enable it via the `--with-tmux` build flag:
 aishell build --with-claude --with-tmux
 ```
 
-The `:with-tmux` flag is stored in `state.edn` and determines whether tmux features are available:
+The `:with-tmux` flag in `state.edn` controls which tmux features are available:
 - Session management (attach/detach)
 - Plugin support (TPM)
 - Session persistence (tmux-resurrect)
@@ -190,7 +190,7 @@ The `:with-tmux` flag is stored in `state.edn` and determines whether tmux featu
 
 **Plugin installation location:** `/tools/tmux/plugins/tpm` in harness volume
 
-**Plugin declaration:** Plugins are specified in `config.yaml`:
+**Plugin declaration:** Specify plugins in `config.yaml`:
 ```yaml
 tmux:
   plugins:
@@ -205,7 +205,7 @@ tmux:
 
 **Plugin bridging:**
 - Entrypoint symlinks `/tools/tmux/plugins` to `~/.tmux/plugins`
-- This allows TPM to find plugins in the volume at runtime
+- TPM then finds plugins in the volume at runtime
 
 **TPM initialization:**
 - Runtime config at `~/.tmux.conf.runtime` sources TPM
@@ -214,7 +214,7 @@ tmux:
 
 ### Resurrect Persistence
 
-**Optional session persistence** via tmux-resurrect plugin:
+tmux-resurrect provides optional session persistence:
 
 ```yaml
 tmux:
@@ -230,32 +230,30 @@ tmux:
 - Contains session layout, window state, process state
 
 **Auto-injection:**
-- `tmux-resurrect` plugin automatically added to plugin list when `resurrect: true`
-- No manual plugin declaration needed
+- `tmux-resurrect` plugin added to the plugin list automatically when `resurrect: true`
+- Manual plugin declaration unnecessary
 
 **Auto-restore:**
-- Entrypoint runs resurrect auto-restore after TPM initialization
-- Restores previous session state automatically
+- Entrypoint runs resurrect auto-restore after TPM initialization, restoring previous session state
 
 ### User Config Mounting
 
 When tmux is enabled:
-- User's `~/.tmux.conf` mounted read-only
-- Prevents container from modifying host config
-- Skipped if user has explicit `.tmux.conf` in config mounts
+- User's `~/.tmux.conf` mounted read-only, preventing the container from modifying host config
+- Skipped if user has an explicit `.tmux.conf` in config mounts
 
 ### Session Name
 
 Default tmux session name: **`harness`** (changed from `main` in v2.9.0)
 
-Consistent with project naming conventions.
+This aligns with project naming conventions.
 
 ### Migration Note
 
-tmux behavior changed in v2.9.0:
+v2.9.0 changed tmux behavior:
 - **Old:** Always enabled, session name "main"
 - **New:** Opt-in via `--with-tmux`, session name "harness"
-- **Migration:** One-time warning shown on first use after upgrade
+- **Migration:** One-time warning on first use after upgrade
 
 ---
 
@@ -263,7 +261,7 @@ tmux behavior changed in v2.9.0:
 
 ### Build Phase
 
-The build phase creates the foundation Docker image and populates the harness volume.
+The build phase creates the foundation Docker image and populates the harness volume:
 
 ```
 ┌──────────────────┐
@@ -325,7 +323,7 @@ The build phase creates the foundation Docker image and populates the harness vo
 
 ### Run Phase
 
-The run phase executes a harness (or shell) in a container with project files mounted.
+The run phase executes a harness (or shell) in a container with project files mounted:
 
 ```
 ┌──────────────────┐
@@ -388,7 +386,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 
 ### Config Merge Strategy
 
-Configuration files are merged with defined semantics based on the `extends` key.
+The `extends` key controls how configuration files merge:
 
 ```
 ┌─────────────────────────────┐
@@ -421,7 +419,7 @@ For detailed merge behavior, see [Configuration Reference](./CONFIGURATION.md).
 
 ## Namespace Responsibilities
 
-aishell is organized into focused namespaces, each handling a specific concern.
+Each namespace handles one concern:
 
 ### Core Namespaces
 
@@ -470,9 +468,9 @@ aishell is organized into focused namespaces, each handling a specific concern.
    - Supports custom patterns and allowlists
 
 2. **Gitleaks layer (aishell.gitleaks.*):** Content-based secret scanning
-   - Slow, runs on-demand via `aishell gitleaks dir .`
-   - Advisory freshness warnings (>7 days stale)
-   - Never blocks execution (advisory only)
+   - Slower; runs on-demand via `aishell gitleaks dir .`
+   - Warns when scans exceed 7 days old
+   - Advisory only; never blocks execution
 
 3. **Validation layer (aishell.validation):** Config safety checks
    - Warns about dangerous `docker_args` (--privileged, --network=host)
@@ -528,7 +526,7 @@ aishell is organized into focused namespaces, each handling a specific concern.
 
 ## Extension System
 
-Projects can extend the base image with custom Dockerfile layers.
+Projects extend the foundation image with custom Dockerfile layers.
 
 **Extension flow:**
 
@@ -549,10 +547,10 @@ Foundation Image          Project Extension           Extended Image
 
 **Extension behavior:**
 
-1. **Auto-build:** If `.aishell/Dockerfile` exists, extension builds automatically before run
-2. **Cache:** Extended image tagged with hash (content-based), rebuilt only on Dockerfile changes
-3. **Foundation dependency:** Extension requires foundation image to exist (`aishell build` must run first)
-4. **Persistence:** Extended images persist locally, shared across runs
+1. **Auto-build:** If `.aishell/Dockerfile` exists, the extension builds automatically before run
+2. **Cache:** Extended image tagged by content hash; rebuilt only on Dockerfile changes
+3. **Foundation dependency:** Extension requires the foundation image (`aishell build` must run first)
+4. **Persistence:** Extended images persist locally and are shared across runs
 
 **Example project extension:**
 
@@ -567,7 +565,7 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 RUN apt-get update && apt-get install -y python3-pip && rm -rf /var/lib/apt/lists/*
 ```
 
-For more details, see the Dockerfile extension section in the Configuration Reference.
+See the Dockerfile extension section in the Configuration Reference for details.
 
 ---
 
@@ -575,24 +573,24 @@ For more details, see the Dockerfile extension section in the Configuration Refe
 
 **Why Babashka?**
 
-- **Fast startup:** JVM-free Clojure interpreter (sub-10ms startup vs ~1s for JVM)
-- **Single binary:** No dependency management, works in containers
-- **Shell interop:** First-class support for calling Docker CLI
+- **Fast startup:** JVM-free Clojure interpreter starts in under 10ms (vs ~1s for JVM)
+- **Single binary:** No dependency management; works in containers
+- **Shell interop:** First-class support for calling the Docker CLI
 
 **Why gosu for user switching?**
 
-- **Clean process tree:** Exec's the target command (no wrapper process)
-- **No sudo overhead:** Designed for containers, lighter than sudo
-- **UID/GID matching:** Ensures created files have correct ownership on host
+- **Clean process tree:** Execs the target command directly (no wrapper process)
+- **No sudo overhead:** Designed for containers; lighter than sudo
+- **UID/GID matching:** Files created in the container get correct ownership on the host
 
 **Why immutable base + extensions?**
 
-- **Fast iteration:** Base image builds once, projects build extensions in seconds
-- **Reproducibility:** Same base shared across all projects
-- **Flexibility:** Projects can add languages, databases, or tools without rebuilding base
+- **Fast iteration:** Base image builds once; projects add extensions in seconds
+- **Reproducibility:** All projects share the same base
+- **Flexibility:** Projects add languages, databases, or tools without rebuilding the base
 
 **Why two-layer security (detection + gitleaks)?**
 
-- **Speed vs thoroughness:** Detection is instant, Gitleaks is comprehensive
-- **Fail-fast:** Catch obvious mistakes before expensive builds
+- **Speed vs thoroughness:** Detection runs instantly; Gitleaks scans comprehensively
+- **Fail-fast:** Catches obvious mistakes before expensive builds
 - **Non-blocking:** Advisory warnings never block power users
