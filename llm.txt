@@ -1,0 +1,632 @@
+# aishell
+
+> Docker sandbox for running AI coding agents in ephemeral containers.
+
+aishell runs AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) inside isolated Docker containers. It handles path preservation, git identity, configuration, mounts, and security scanning so you don't have to write long `docker run` commands.
+
+Version: 2.9.1
+License: MIT
+Repository: https://github.com/UniSoma/aishell
+Requirements: Linux, macOS, or WSL2; Docker; Babashka (https://babashka.org)
+
+---
+
+## How It Works
+
+aishell builds a foundation Docker image (Debian bookworm-slim with Node.js 24, git, and CLI tools) and populates a Docker volume with harness tools (npm packages and binaries). When you run a harness, it launches an ephemeral container with your project mounted at its real host path, your git identity forwarded, and the harness tools available.
+
+Key design principles:
+
+- Containers are ephemeral and stateless. All work happens in the mounted project directory.
+- Your project mounts at its real host path (e.g., `/home/you/project` stays `/home/you/project`), so file references from AI agents remain valid.
+- Git identity (user.name, user.email) passes through automatically. Commits appear under your name.
+- The container user matches your host UID/GID, so file ownership is correct.
+- Harness tools live in a Docker volume mounted read-only at `/tools`, separate from the foundation image. This makes updates fast.
+
+---
+
+## Installation
+
+```
+curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+---
+
+## Commands
+
+### setup
+
+Build the foundation image and install harnesses. Run once, or again to change harness selection.
+
+```
+aishell setup --with-claude
+aishell setup --with-claude --with-opencode --with-tmux
+aishell setup --with-claude=2.0.22
+```
+
+Options:
+- `--with-claude[=VERSION]` - Install Claude Code. Optionally pin a version.
+- `--with-opencode[=VERSION]` - Install OpenCode.
+- `--with-codex[=VERSION]` - Install Codex CLI.
+- `--with-gemini[=VERSION]` - Install Gemini CLI.
+- `--with-tmux` - Enable tmux multiplexer for attach/detach workflows.
+- `--without-gitleaks` - Skip Gitleaks installation (saves ~15MB).
+- `--force` - Rebuild everything, bypass Docker cache.
+- `--verbose`, `-v` - Show full Docker build output.
+
+### Running Harnesses
+
+Run any installed harness. All arguments after the harness name pass through to the harness binary.
+
+```
+aishell claude
+aishell claude --model sonnet
+aishell opencode
+aishell codex
+aishell gemini
+aishell gitleaks detect --verbose
+```
+
+Common options for all harnesses:
+- `--detach`, `-d` - Run in background, print container info.
+- `--name NAME` - Custom container name (default: harness name).
+- `--unsafe` - Skip sensitive file detection.
+
+### Default (No Command)
+
+Enter an interactive bash shell inside the container.
+
+```
+aishell
+aishell --unsafe
+```
+
+### exec
+
+Run a one-off command in the container. Uses the same mounts and environment as harnesses but skips pre-start hooks and sensitive file detection.
+
+```
+aishell exec ls -la
+aishell exec npm test
+echo "hello" | aishell exec cat
+```
+
+Auto-detects TTY for interactive vs piped usage.
+
+### update
+
+Refresh harness tools to latest versions. Preserves harness selection from the last setup.
+
+```
+aishell update           # Recreate harness volume only (fast)
+aishell update --force   # Also rebuild foundation image
+```
+
+Cannot change harness selection. Use `aishell setup` for that.
+
+### check
+
+Run pre-flight validation without launching a container.
+
+```
+aishell check
+```
+
+Validates: Docker availability, setup state, image existence, Dockerfile staleness, harness versions, project extensions, configuration validity, mount source existence, dangerous Docker options, sensitive files, Gitleaks scan freshness.
+
+### ps
+
+List all running and stopped containers for the current project.
+
+```
+aishell ps
+```
+
+Output: table with NAME, STATUS, CREATED.
+
+### attach
+
+Reconnect to a running container's tmux session. Requires `--with-tmux` during setup.
+
+```
+aishell attach --name claude
+aishell attach --name claude --session debug
+aishell attach --name claude --shell
+```
+
+Options:
+- `--name NAME` - Container name (required).
+- `--session SESSION` - Tmux session name (default: "harness").
+- `--shell` - Open a bash shell (creates or reattaches to a "shell" session).
+
+Press Ctrl+B D to detach without stopping the container.
+
+### volumes
+
+Manage harness volumes.
+
+```
+aishell volumes              # List all volumes with status and size
+aishell volumes list         # Same as above
+aishell volumes prune        # Remove orphaned volumes (prompts for confirmation)
+aishell volumes prune --yes  # Remove without confirmation
+```
+
+### --version
+
+```
+aishell --version       # Human-readable version
+aishell --version --json  # JSON output
+```
+
+---
+
+## Configuration
+
+aishell reads YAML configuration from two files:
+
+- `~/.aishell/config.yaml` - Global defaults for all projects.
+- `.aishell/config.yaml` - Project-specific overrides.
+
+### Config Inheritance
+
+The `extends` key in project config controls merging:
+
+- `extends: global` (default) - Merge with global config.
+  - Lists (mounts, ports, docker_args): concatenate.
+  - Maps (env): shallow merge, project keys win.
+  - Map-of-lists (harness_args): merge keys, concatenate per-harness lists.
+  - Scalars (pre_start, gitleaks_freshness_check): project replaces global.
+  - Detection: enabled = project wins, custom_patterns = map merge, allowlist = concatenate.
+- `extends: none` - Ignore global config entirely.
+
+### All Configuration Keys
+
+#### mounts
+
+Mount host directories into the container.
+
+```yaml
+mounts:
+  - ~/.gitconfig                      # Same path inside container
+  - ~/data:/data                      # Custom mapping
+  - ~/.aws:/home/user/.aws:ro         # Read-only
+```
+
+Home expansion (~) works. Read-only (:ro) prevents container writes.
+
+#### env
+
+Set environment variables. Map format recommended.
+
+```yaml
+env:
+  DEBUG: "true"                       # Literal value
+  DATABASE_URL: "postgres://db/app"   # Literal value
+  EDITOR:                             # Passthrough from host (empty value)
+```
+
+Alternative list format:
+
+```yaml
+env:
+  - DEBUG=true
+  - EDITOR                            # Passthrough (no =)
+```
+
+#### ports
+
+Expose container ports.
+
+```yaml
+ports:
+  - "8080:8080"                       # All interfaces
+  - "127.0.0.1:5432:5432"             # Localhost only
+  - "9090:9090/udp"                   # UDP
+```
+
+#### docker_args
+
+Additional arguments passed to `docker run`.
+
+```yaml
+docker_args:
+  - "--cpus=2"
+  - "--memory=4g"
+  - "--hostname=aishell"
+```
+
+Dangerous flags (--privileged, --network=host, --cap-add=ALL, etc.) trigger warnings.
+
+#### pre_start
+
+Command(s) run inside the container before the harness starts. Runs in background via `nohup`. Output goes to `/tmp/pre-start.log`.
+
+```yaml
+pre_start: "redis-server --daemonize yes"
+```
+
+List format (items join with &&):
+
+```yaml
+pre_start:
+  - "redis-server --daemonize yes"
+  - "sleep 2"
+  - "echo 'Ready'"
+```
+
+#### harness_args
+
+Default arguments for harnesses, prepended to CLI args.
+
+```yaml
+harness_args:
+  claude:
+    - "--plugin"
+    - "context7"
+    - "--model"
+    - "sonnet"
+  opencode:
+    - "--provider"
+    - "anthropic"
+```
+
+Argument order: [global defaults] + [project defaults] + [CLI args].
+
+#### gitleaks_freshness_check
+
+Boolean (default: true). Warn before container launch if Gitleaks scan is older than 7 days. Advisory only, never blocks.
+
+```yaml
+gitleaks_freshness_check: false
+```
+
+#### detection
+
+Configure sensitive file detection.
+
+```yaml
+detection:
+  enabled: true                       # Global toggle (default: true)
+
+  custom_patterns:                    # Add project-specific patterns
+    "*.secret":
+      severity: high
+      reason: "Project secret file"
+    "*.key": high                     # Shorthand
+
+  allowlist:                          # Suppress false positives
+    - path: ".env.test"
+      reason: "Test template, no secrets"
+    - path: "test/fixtures/*.key"
+      reason: "Test fixture keys"
+```
+
+Severities: high (requires confirmation), medium (warning), low (notice).
+
+Default detected patterns include: .env*, *.pem, *.key, gcloud-credentials.json, .aws/credentials, SSH private keys, and more.
+
+#### tmux
+
+Configure tmux plugins and session persistence. Requires `--with-tmux` at build time; silently ignored otherwise.
+
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+  resurrect: true
+```
+
+Plugins use `owner/repo` format. Installed at build time into the harness volume.
+
+Resurrect enables session persistence across container restarts. State stored in `~/.aishell/resurrect/{project-hash}/`. The tmux-resurrect plugin is auto-added when resurrect is enabled.
+
+Advanced resurrect:
+
+```yaml
+tmux:
+  resurrect:
+    restore_processes: true           # Also restore running programs
+```
+
+### Project Extension (Dockerfile)
+
+Create `.aishell/Dockerfile` to extend the foundation image:
+
+```dockerfile
+FROM aishell:foundation
+RUN apt-get update && apt-get install -y postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+Builds automatically before container launch. Rebuilt only when the Dockerfile content changes.
+
+---
+
+## Environment Variables
+
+aishell automatically passes these to containers when set on the host:
+
+### Harness Authentication
+
+- `ANTHROPIC_API_KEY` - Claude Code API access
+- `OPENAI_API_KEY` - Codex CLI login, OpenCode
+- `CODEX_API_KEY` - Codex CLI (exec mode only)
+- `GEMINI_API_KEY` - Gemini CLI
+- `GOOGLE_API_KEY` - Gemini / Vertex AI
+- `GROQ_API_KEY` - Groq API
+
+### Cloud Providers
+
+- `GOOGLE_APPLICATION_CREDENTIALS` - Vertex AI service account (path to JSON key file)
+- `GOOGLE_CLOUD_PROJECT` - GCP project ID
+- `GOOGLE_CLOUD_LOCATION` - GCP region
+- `AWS_ACCESS_KEY_ID` - AWS access key
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key
+- `AWS_REGION` - AWS region
+- `AWS_PROFILE` - AWS named profile
+- `AZURE_OPENAI_API_KEY` - Azure OpenAI
+- `AZURE_OPENAI_ENDPOINT` - Azure OpenAI endpoint
+
+### Other
+
+- `GITHUB_TOKEN` - GitHub API access
+- `AISHELL_SKIP_PERMISSIONS` - Set to "false" to re-enable Claude Code permission prompts (default: permissions are skipped)
+- `NO_COLOR` - Disable colored output
+
+---
+
+## Authentication
+
+Each harness has its own authentication methods:
+
+### Claude Code
+
+- **OAuth (recommended):** Run `aishell claude`, follow prompts. Uses copy-paste URL flow that works in containers.
+- **API key:** Set `ANTHROPIC_API_KEY`.
+
+### OpenCode
+
+- Authentication varies by provider. Set the relevant API key environment variable (ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY, etc.).
+- Config directories (`~/.config/opencode`, `~/.local/share/opencode`) are mounted from the host.
+
+### Codex CLI
+
+- **OAuth:** Run `aishell codex`. For containers, use `codex login --device-auth` (displays a code to enter at a URL).
+- **API key:** Set `OPENAI_API_KEY` for interactive mode, or `CODEX_API_KEY` for `codex exec` only.
+
+### Gemini CLI
+
+- **OAuth:** Must authenticate on the host first (`gemini login`), then run `aishell gemini`. Gemini CLI does not support device code flow in containers.
+- **API key:** Set `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+
+Harness config directories (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.config/opencode`) are mounted from the host, so authentication persists between sessions.
+
+---
+
+## Security
+
+Three layers of security run before container launch:
+
+### 1. Sensitive File Detection
+
+Scans the project for files matching known sensitive patterns. Severity levels:
+
+- **High** (SSH keys, private keys, cloud credentials, package tokens) - requires confirmation to proceed.
+- **Medium** (environment files, tool configs) - informational warning.
+- **Low** (template files like .env.example) - informational notice.
+
+Bypass with `--unsafe`. Customize with `detection` config key. Allowlist false positives.
+
+### 2. Gitleaks Integration
+
+Content-based secret scanning. Run manually:
+
+```
+aishell gitleaks detect
+aishell gitleaks detect --verbose --no-git
+```
+
+Tracks last scan timestamp per project. Warns when scans are older than 7 days (advisory, never blocks). Disable with `gitleaks_freshness_check: false`.
+
+### 3. Configuration Validation
+
+Warns about dangerous `docker_args` (--privileged, --network=host, --cap-add=ALL, etc.) and dangerous mount paths (/etc, /var/run/docker.sock).
+
+---
+
+## Container Naming and Lifecycle
+
+Containers are named `aishell-{project-hash}-{name}` where:
+- `project-hash` is derived from the project directory path (8-char SHA-256 prefix).
+- `name` is the harness name or a custom name set with `--name`.
+
+This ensures isolation across projects and allows multiple instances per project.
+
+Conflict handling:
+- If a container with the same name is running, aishell shows an error with guidance.
+- If a container with the same name is stopped, aishell auto-removes it and proceeds.
+
+---
+
+## Detached Mode and tmux
+
+Requires `--with-tmux` at build time.
+
+```
+aishell claude --detach                    # Run in background
+aishell claude --detach --name reviewer    # Custom name
+aishell ps                                 # List project containers
+aishell attach --name claude               # Reconnect
+aishell attach --name claude --shell       # Open bash shell
+# Press Ctrl+B D to detach without stopping
+docker stop aishell-<hash>-claude          # Stop container
+```
+
+Default tmux session name: "harness".
+
+---
+
+## Foundation Image Contents
+
+Built on debian:bookworm-slim:
+
+- **Runtimes:** Node.js 24 (npm, npx), Babashka
+- **Security:** Gitleaks v8.30.0 (optional)
+- **Tools:** git, curl, jq, ripgrep, vim, tree, less, file, unzip, watch, htop, sqlite3, sudo, tmux (when --with-tmux)
+- **User switching:** gosu (matches host UID/GID)
+- **Harness tools** are in a separate volume at `/tools`, not in the image
+
+---
+
+## State and Files
+
+### Host Files
+
+- `~/.aishell/state.edn` - Build state (harnesses, versions, image tags, volume names, timestamps). EDN format.
+- `~/.aishell/config.yaml` - Global configuration.
+- `~/.aishell/gitleaks-scan.edn` - Per-project Gitleaks scan timestamps.
+- `~/.aishell/resurrect/{project-hash}/` - tmux-resurrect session state (per project).
+- `.aishell/config.yaml` - Project-specific configuration.
+- `.aishell/Dockerfile` - Optional project extension Dockerfile.
+
+### Volume Architecture
+
+The foundation image and harness tools are separate:
+
+- **Foundation image** (`aishell:foundation`) - Stable system tools. Rebuilt only on Dockerfile changes or `aishell update --force`.
+- **Harness volume** (`aishell-harness-{hash}`) - npm packages and binaries at `/tools`. Mounted read-only. Recreated by `aishell update`. Volume name hash is computed from enabled harnesses and versions. Projects with identical harness configs share a volume.
+
+---
+
+## Common Workflows
+
+### First-time setup and use
+
+```
+aishell setup --with-claude
+aishell claude
+```
+
+### Multiple harnesses
+
+```
+aishell setup --with-claude --with-opencode --with-codex --with-gemini
+aishell claude
+aishell opencode
+```
+
+### Background sessions with tmux
+
+```
+aishell setup --with-claude --with-tmux
+aishell claude --detach --name feature-work
+aishell claude --detach --name code-review
+aishell ps
+aishell attach --name feature-work
+```
+
+### Project-specific configuration
+
+Create `.aishell/config.yaml`:
+
+```yaml
+mounts:
+  - ~/.gitconfig
+env:
+  DATABASE_URL: "postgres://localhost/mydb"
+ports:
+  - "3000:3000"
+pre_start: "redis-server --daemonize yes"
+harness_args:
+  claude:
+    - "--plugin"
+    - "context7"
+```
+
+### Project-specific system dependencies
+
+Create `.aishell/Dockerfile`:
+
+```dockerfile
+FROM aishell:foundation
+RUN apt-get update && apt-get install -y python3 postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+### Update harness tools
+
+```
+aishell update                    # Fast: recreate volume only
+aishell update --force            # Also rebuild foundation image
+```
+
+### Validate everything
+
+```
+aishell check
+```
+
+### Secret scanning
+
+```
+aishell gitleaks detect --verbose
+```
+
+---
+
+## Troubleshooting
+
+### "No previous setup found"
+
+Run `aishell setup --with-claude` (or whichever harness you want).
+
+### "Claude Code not installed" (or other harness)
+
+The harness was not included in setup. Run `aishell setup --with-claude`.
+
+### "Docker is not installed" or "Cannot connect to Docker daemon"
+
+Install Docker and ensure the daemon is running. Your user must be in the docker group or use sudo.
+
+### Container exits immediately
+
+Check `pre_start` in config.yaml. Test the command manually with `aishell` (interactive shell). View container logs with `docker logs <container-id>`.
+
+### Files not found inside container
+
+Verify mount paths in config.yaml are absolute and exist on the host.
+
+### "Container does not have tmux enabled" on attach
+
+Rebuild with tmux: `aishell setup --with-claude --with-tmux`.
+
+### Session name "main" not found
+
+v2.9.0 renamed the default tmux session from "main" to "harness". Omit `--session` to use the default.
+
+### Harness command not found inside container
+
+Run `aishell update` to recreate the harness volume. Verify PATH includes `/tools/npm/bin` and `/tools/bin`.
+
+### Git safe.directory warnings
+
+aishell handles this automatically. If you mount your host `~/.gitconfig`, the safe.directory entry writes to the host file. To avoid this, don't mount `~/.gitconfig`.
+
+### Credentials not persisting between sessions
+
+Verify harness config directories exist on the host (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.config/opencode`).
+
+### Port not accessible from host
+
+Add port mapping in config.yaml under `ports`. Verify the host port is not already in use.
+
+---
+
+## Exit Codes
+
+- 0 - Success
+- 1 - Error
