@@ -12,10 +12,12 @@
             [aishell.run :as run]
             [aishell.check :as check]
             [aishell.state :as state]
+            [aishell.config :as config]
             [aishell.util :as util]
-            [aishell.attach :as attach]))
+            [aishell.attach :as attach]
+            [aishell.migration :as migration]))
 
-(def version "2.8.1")
+(def version "2.9.0")
 
 (defn print-version []
   (println (str "aishell " version)))
@@ -70,6 +72,7 @@
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :without-gitleaks {:coerce :boolean :desc "Skip Gitleaks installation"}
+   :with-tmux     {:coerce :boolean :desc "Enable tmux multiplexer in container"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show build help"}})
@@ -136,7 +139,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec build-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :without-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :without-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell build" output/NC "                      Build base image"))
@@ -144,10 +147,13 @@
   (println (str "  " output/CYAN "aishell build --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell build --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell build --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
+  (println (str "  " output/CYAN "aishell build --with-claude --with-tmux" output/NC " Include Claude + tmux"))
   (println (str "  " output/CYAN "aishell build --without-gitleaks" output/NC "   Skip Gitleaks"))
   (println (str "  " output/CYAN "aishell build --force" output/NC "               Force rebuild")))
 
 (defn handle-build [{:keys [opts]}]
+  ;; Show migration warning on first touch for upgraders
+  (migration/show-v2.9-migration-warning!)
   (if (:help opts)
     (print-build-help)
     (let [;; Parse flags
@@ -156,6 +162,7 @@
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
           with-gitleaks (not (:without-gitleaks opts))  ; invert flag for positive tracking
+          with-tmux (boolean (:with-tmux opts))
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
@@ -174,21 +181,35 @@
                     :force (:force opts)})
 
           ;; Step 2: Compute harness volume hash
+          project-dir (System/getProperty "user.dir")
+          cfg (config/load-config project-dir)
           state-map {:with-claude (:enabled? claude-config)
                      :with-opencode (:enabled? opencode-config)
                      :with-codex (:enabled? codex-config)
                      :with-gemini (:enabled? gemini-config)
                      :with-gitleaks with-gitleaks
+                     :with-tmux with-tmux
+                     :tmux-plugins (when with-tmux
+                                     (let [plugins (vec (or (get-in cfg [:tmux :plugins]) []))
+                                           resurrect-val (get-in cfg [:tmux :resurrect])
+                                           resurrect-cfg (config/parse-resurrect-config resurrect-val)
+                                           needs-resurrect? (:enabled resurrect-cfg)
+                                           has-resurrect? (some #(= % "tmux-plugins/tmux-resurrect") plugins)]
+                                       (if (and needs-resurrect? (not has-resurrect?))
+                                         (conj plugins "tmux-plugins/tmux-resurrect")
+                                         plugins)))
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
-                     :gemini-version (:version gemini-config)}
+                     :gemini-version (:version gemini-config)
+                     :resurrect-config (when with-tmux
+                                         (config/parse-resurrect-config (get-in cfg [:tmux :resurrect])))}
 
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -205,7 +226,7 @@
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
                                                     "aishell.harness.version" "2.8.0"
                                                     "aishell.harnesses" harness-list}))
-                  (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts)})]
+                  (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
                       (when vol-missing? (vol/remove-volume volume-name))
                       (output/error "Failed to populate harness volume"))))))]
@@ -287,9 +308,13 @@
         (println (str "  Codex: " (or (:codex-version state) "latest"))))
       (when (:with-gemini state)
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
+      (when (:with-tmux state)
+        (println "  tmux: enabled"))
 
       ;; Conditionally rebuild foundation image (only with --force)
-      (let [result (when (:force opts)
+      (let [project-dir (System/getProperty "user.dir")
+            cfg (config/load-config project-dir)
+            result (when (:force opts)
                      (build/build-foundation-image
                        {:with-gitleaks (:with-gitleaks state true)
                         :verbose (:verbose opts)
@@ -301,7 +326,7 @@
                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
@@ -317,7 +342,7 @@
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
                                                   "aishell.harness.version" "2.8.0"
                                                   "aishell.harnesses" harness-list})
-                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts)})]
+                  (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
                       (vol/remove-volume volume-name)
                       (output/error "Failed to populate harness volume"))))
@@ -467,6 +492,8 @@
     (output/error msg)))
 
 (defn dispatch [args]
+  ;; Show migration warning on run commands for upgraders
+  (migration/show-v2.9-migration-warning!)
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
@@ -505,13 +532,13 @@
                      (println)
                      (println (str output/BOLD "Options:" output/NC))
                      (println "  --name <name>        Container name to attach to")
-                     (println "  --session <session>  Tmux session name (default: main)")
+                     (println "  --session <session>  Tmux session name (default: harness)")
                      (println "  --shell              Open a bash shell (creates tmux session 'shell')")
                      (println "  -h, --help           Show this help")
                      (println)
                      (println (str output/BOLD "Examples:" output/NC))
                      (println (str "  " output/CYAN "aishell attach --name claude" output/NC))
-                     (println (str "      Attach to the 'claude' container's main session"))
+                     (println (str "      Attach to the 'claude' container's harness session"))
                      (println)
                      (println (str "  " output/CYAN "aishell attach --name claude --shell" output/NC))
                      (println (str "      Open a bash shell in the 'claude' container"))
@@ -540,7 +567,7 @@
                        (attach/attach-shell (:name opts))
 
                        :else
-                       (attach/attach-to-session (:name opts) (or (:session opts) "main"))))))
+                       (attach/attach-to-session (:name opts) (or (:session opts) "harness"))))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override :detach detach?})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))

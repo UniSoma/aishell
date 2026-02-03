@@ -169,3 +169,8 @@ detection:
   allowlist:
     # - path: ".env.test"
     #   reason: "Test environment template"
+
+tmux:
+  plugins:
+    - "tmux-plugins/tmux-sensible"
+    - "jaclu/tmux-menus"

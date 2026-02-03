@@ -4,7 +4,7 @@ This guide is for developers who want to extend aishell with new features or har
 
 **Target audience:** Developers adding new AI harness integrations or core aishell features.
 
-**Last updated:** v2.8.0
+**Last updated:** v2.9.0
 
 ---
 
@@ -88,6 +88,7 @@ aishell/
 │   ├── attach.clj            # Attach command (reconnect to containers)
 │   ├── check.clj             # Pre-flight validation command
 │   ├── validation.clj        # Argument validation
+│   ├── migration.clj         # Version migration warnings (NEW in v2.9.0)
 │   ├── output.clj            # Terminal output utilities
 │   └── util.clj              # Shared utilities
 ├── entrypoint.sh             # Container entrypoint script
@@ -104,6 +105,7 @@ aishell/
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
 - **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)
+- **migration.clj:** Version migration warnings and marker management
 
 ---
 

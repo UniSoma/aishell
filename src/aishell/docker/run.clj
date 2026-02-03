@@ -5,7 +5,9 @@
             [babashka.fs :as fs]
             [clojure.string :as str]
             [aishell.util :as util]
-            [aishell.output :as output]))
+            [aishell.output :as output]
+            [aishell.docker.naming :as naming]
+            [aishell.config :as cfg]))
 
 (defn read-git-identity
   "Read git identity from host configuration.
@@ -165,6 +167,56 @@
          (filter (fn [[src _]] (fs/exists? src)))
          (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
 
+(defn- user-mounted-tmux-config?
+  "Check if user explicitly mounted tmux config in their config mounts.
+   Prevents duplicate mount when auto-mount would also add it."
+  [config]
+  (let [mounts (get config :mounts [])]
+    (some #(or (str/includes? (str %) ".tmux.conf")
+              (str/includes? (str %) "tmux/tmux.conf"))
+          mounts)))
+
+(defn- build-tmux-config-mount
+  "Build mount args for tmux config if tmux is enabled and file exists.
+   Checks XDG path (~/.config/tmux/tmux.conf) first, then ~/.tmux.conf.
+   Mounts read-only at /tmp/host-tmux.conf (staging path) so it doesn't
+   shadow the XDG location inside the container — TPM reads XDG first
+   and would find the original config without plugin declarations.
+   Skips if user already mounted tmux config explicitly in config.
+   Returns vector of ['-v' 'path:/tmp/host-tmux.conf:ro'] or empty vector."
+  [state config]
+  (if (and (get state :with-tmux)
+           (not (user-mounted-tmux-config? config)))
+    (let [home (util/get-home)
+          xdg-path (str home "/.config/tmux/tmux.conf")
+          classic-path (str home "/.tmux.conf")
+          host-path (cond
+                      (fs/exists? xdg-path) xdg-path
+                      (fs/exists? classic-path) classic-path
+                      :else nil)]
+      (if host-path
+        ["-v" (str host-path ":/tmp/host-tmux.conf:ro")]
+        []))
+    []))
+
+(defn- build-resurrect-mount
+  "Build mount args for resurrect state directory if enabled.
+   Mounts host ~/.aishell/resurrect/{project-hash}/ into container
+   at ~/.tmux/resurrect/ for tmux-resurrect state persistence.
+   Creates host directory if it doesn't exist."
+  [state config project-dir]
+  (if (and (get state :with-tmux)
+           (when-let [resurrect-val (get-in config [:tmux :resurrect])]
+             (:enabled (cfg/parse-resurrect-config resurrect-val))))
+    (let [home (util/get-home)
+          hash (naming/project-hash project-dir)
+          host-dir (str home "/.aishell/resurrect/" hash)
+          container-home (str home "/.tmux/resurrect")]
+      ;; Ensure host directory exists
+      (fs/create-dirs host-dir)
+      ["-v" (str host-dir ":" container-home)])
+    []))
+
 (def api-key-vars
   "Environment variables to pass through for API access."
   ["ANTHROPIC_API_KEY"
@@ -199,10 +251,24 @@
     (when (fs/exists? creds-path)
       ["-v" (str creds-path ":" creds-path ":ro")])))
 
+(defn- build-resurrect-env-args
+  "Build -e flags for resurrect configuration.
+   Returns empty vector if resurrect not enabled or tmux not active."
+  [state config]
+  (if-let [resurrect-val (and (get state :with-tmux)
+                               (get-in config [:tmux :resurrect]))]
+    (let [resurrect-cfg (cfg/parse-resurrect-config resurrect-val)]
+      (if (:enabled resurrect-cfg)
+        (cond-> ["-e" "RESURRECT_ENABLED=true"]
+          (:restore_processes resurrect-cfg)
+          (into ["-e" "RESURRECT_RESTORE_PROCESSES=true"]))
+        []))
+    []))
+
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
@@ -244,6 +310,19 @@
         ;; Harness volume mount (volume-mounted harness tools)
         (into (build-harness-volume-args harness-volume-name))
         (into (build-harness-env-args harness-volume-name))
+
+        ;; Tmux config mount (read-only, if enabled and file exists)
+        (into (build-tmux-config-mount state config))
+
+        ;; Resurrect state directory mount (persistent tmux session state)
+        (into (build-resurrect-mount state config project-dir))
+
+        ;; Pass WITH_TMUX flag to entrypoint for conditional tmux startup
+        (cond-> (get state :with-tmux)
+          (into ["-e" "WITH_TMUX=true"]))
+
+        ;; Pass resurrect config to entrypoint
+        (into (build-resurrect-env-args state config))
 
         ;; Config: mounts
         (cond-> (:mounts config)
@@ -288,11 +367,12 @@
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config git-identity skip-pre-start detach container-name harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
+     :state state
      :git-identity git-identity
      :skip-pre-start skip-pre-start
      :detach detach
@@ -316,11 +396,12 @@
    - tty?: When true, allocate TTY (-it); when false, stdin only (-i)
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
-  [{:keys [project-dir image-tag config git-identity tty? harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity tty? harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
      :config config
+     :state state
      :git-identity git-identity
      :skip-pre-start true  ; Always skip pre_start for exec
      :harness-volume-name harness-volume-name

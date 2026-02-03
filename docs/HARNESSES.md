@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses supported by aishell.
 
-**Last updated:** v2.8.0
+**Last updated:** v2.9.0
 
 ## What are Harnesses?
 
@@ -514,9 +514,20 @@ harnesses:
 
 ## Detached Mode & tmux
 
-All containers run inside a tmux session named `main`. This enables detaching from and reattaching to running harnesses.
+tmux is **opt-in** via the `--with-tmux` build flag. When enabled, containers run inside a tmux session named `harness`.
+
+### Enabling tmux
+
+Build with tmux support:
+
+```bash
+# Build with harness and tmux
+aishell build --with-claude --with-tmux
+```
 
 ### Running in Background
+
+Detached mode requires tmux to be enabled:
 
 ```bash
 # Start Claude Code detached
@@ -529,15 +540,21 @@ aishell claude --detach --name reviewer
 aishell claude -d --name reviewer
 ```
 
+**Note:** Without `--with-tmux`, `aishell attach` will show an error with guidance to rebuild.
+
 ### Reconnecting
+
+Attach to running containers:
 
 ```bash
 # Attach to a running container
 aishell attach --name claude
 
-# Attach to a specific tmux session
-aishell attach --name claude --session main
+# Attach to a specific tmux session (default: harness)
+aishell attach --name claude --session harness
 ```
+
+**Session name:** Default is `harness` (changed from `main` in v2.9.0)
 
 ### Shell Access
 
@@ -567,6 +584,22 @@ Inside a container, press `Ctrl+B D` to detach from the tmux session without sto
 ```bash
 docker stop aishell-<hash>-claude
 ```
+
+### tmux Plugins
+
+Configure tmux plugins in `.aishell/config.yaml`:
+
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+  resurrect: true  # Enable session persistence
+```
+
+**Requirements:** Must build with `--with-tmux` flag. Plugin config silently ignored otherwise.
+
+**Plugin installation:** Plugins installed to harness volume at build time, loaded at container runtime.
 
 ### Container Naming
 

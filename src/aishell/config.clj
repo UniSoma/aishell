@@ -8,11 +8,17 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection :tmux})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
   #{"claude" "opencode" "codex" "gemini"})
+
+(def plugin-format-pattern
+  "Regex for GitHub owner/repo format validation.
+   Matches: owner/repo where owner is 1-39 chars (alphanumeric, hyphens, no leading/trailing hyphens)
+   and repo is 1-100 chars (alphanumeric, dots, hyphens, underscores)."
+  #"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?/[a-zA-Z0-9._-]{1,100}$")
 
 (defn project-config-path
   "Path to project config: PROJECT_DIR/.aishell/config.yaml"
@@ -65,6 +71,13 @@
                          " harness_args: "
                          (clojure.string/join ", " unknown)))))))
 
+(defn validate-plugin-format
+  "Validate single plugin string matches owner/repo format.
+   Returns nil if valid, error message string if invalid."
+  [plugin]
+  (when-not (re-matches plugin-format-pattern plugin)
+    (str "Invalid plugin format: '" plugin "' - expected 'owner/repo'")))
+
 (defn validate-detection-config
   "Validate detection config. Warns on invalid severity and missing reason.
    Returns config unchanged."
@@ -92,6 +105,69 @@
                            " allowlist entry for path: " (:path entry)))))))
   detection-config)
 
+(defn parse-resurrect-config
+  "Parse tmux.resurrect config: boolean sugar or map with options.
+   - true -> {:enabled true :restore_processes false}
+   - false -> nil
+   - {:restore_processes true} -> {:enabled true :restore_processes true}
+   - {:enabled false} -> nil
+   - {:enabled false :restore_processes true} -> nil (enabled wins)
+   Returns normalized map or nil if disabled/invalid."
+  [resurrect-value]
+  (cond
+    (true? resurrect-value)
+    {:enabled true :restore_processes false}
+
+    (false? resurrect-value)
+    nil
+
+    (map? resurrect-value)
+    (let [enabled? (get resurrect-value :enabled true)
+          restore-processes? (get resurrect-value :restore_processes false)]
+      (when enabled?
+        {:enabled true :restore_processes (boolean restore-processes?)}))
+
+    (nil? resurrect-value)
+    nil
+
+    :else
+    (do (output/warn (str "Invalid tmux.resurrect value: expected boolean or map, got "
+                          (type resurrect-value)))
+        nil)))
+
+(defn validate-tmux-config
+  "Validate tmux config structure. Warns on invalid format.
+   Expected: map with optional keys like :plugins, :resurrect.
+   Returns config unchanged."
+  [tmux-config source-path]
+  (when tmux-config
+    (when-not (map? tmux-config)
+      (output/warn (str "Invalid tmux section in " source-path
+                       ": expected map, got " (type tmux-config)
+                       "\nExample:\n  tmux:\n    plugins:\n      - tmux-plugins/tmux-sensible")))
+    ;; Validate :plugins if present
+    (when-let [plugins (:plugins tmux-config)]
+      (if-not (sequential? plugins)
+        (output/warn (str "Invalid tmux.plugins in " source-path
+                         ": expected list, got " (type plugins)))
+        ;; Validate each plugin entry
+        (doseq [plugin plugins]
+          (cond
+            (not (string? plugin))
+            (output/warn (str "Invalid plugin entry in " source-path
+                             ": expected string, got " (type plugin) " - " (pr-str plugin)))
+
+            :else
+            (when-let [error-msg (validate-plugin-format plugin)]
+              (output/warn (str error-msg " in " source-path)))))))
+    ;; Validate :resurrect if present
+    (when-let [resurrect (:resurrect tmux-config)]
+      (when-not (or (boolean? resurrect) (map? resurrect))
+        (output/warn (str "Invalid tmux.resurrect in " source-path
+                         ": expected boolean or map, got " (type resurrect)
+                         "\nExamples:\n  tmux:\n    resurrect: true\n  or:\n  tmux:\n    resurrect:\n      restore_processes: true")))))
+  tmux-config)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -101,11 +177,13 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, tmux"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
-      (validate-detection-config detection source-path)))
+      (validate-detection-config detection source-path))
+    (when-let [tmux (:tmux config)]
+      (validate-tmux-config tmux source-path)))
   config)
 
 (defn merge-harness-args
@@ -151,7 +229,7 @@
   (let [list-keys #{:mounts :ports :docker_args}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
-        scalar-keys #{:pre_start :gitleaks_freshness_check}
+        scalar-keys #{:pre_start :gitleaks_freshness_check :tmux}
         ;; Extract detection config before reduce
         global-detection (get global-config :detection)
         project-detection (get project-config :detection)

@@ -87,6 +87,13 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ TERM validation with xterm-256color fallback for unsupported terminals — v2.7.0
 - ✓ Detached mode (`--detach`/`-d`) for background container execution — v2.7.0
 
+**v2.9.0 (2026-02-03) — tmux Opt-in & Plugin Support:**
+- ✓ tmux opt-in: `aishell build --with-tmux` makes tmux opt-in (default = no tmux) — v2.9.0
+- ✓ tmux config mounting: User's `~/.tmux.conf` auto-mounted when tmux is active — v2.9.0
+- ✓ tmux plugins via config.yaml: `tmux.plugins` list, plugins installed into harness volume — v2.9.0
+- ✓ tmux-resurrect persistence: Session state persisted to host via volume mount — v2.9.0
+- ✓ Documentation: All CLI changes reflected in docs/ — v2.9.0
+
 **v2.8.0 (2026-02-01) — Decouple Harness Tools:**
 - ✓ Foundation image split: Stable base without harness packages, tagged `aishell:foundation` — v2.8.0
 - ✓ Volume-mounted harness tools: npm packages in Docker named volumes with content-hash naming — v2.8.0
@@ -100,18 +107,15 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-**v2.9.0 — tmux Opt-in & Plugin Support:**
-- tmux opt-in: `aishell build --with-tmux` makes tmux opt-in (default = no tmux)
-- tmux config mounting: User's `~/.tmux.conf` auto-mounted when tmux is active
-- tmux plugins via config.yaml: `tmux.plugins` list, plugins installed into harness volume
-- tmux-resurrect persistence: Session state persisted to host via volume mount
-- Documentation: All CLI changes reflected in docs/
+(None — next milestone requirements TBD via `/gsd:new-milestone`)
 
 ### Out of Scope
 
 - Persistent containers — ephemeral is the design choice (named containers in v2.7.0 are still ephemeral with --rm)
-- Per-project tmux.conf — global host config only, no project-level override
-- tmux plugin installation in foundation image — version drift, slow builds (plugins go in harness volume instead)
+- Per-project tmux.conf — global host config only; per-project adds complexity without clear value (validated in v2.9.0)
+- tmux plugin installation in foundation image — version drift, slow rebuilds; harness volume is the right layer (validated in v2.9.0)
+- Runtime plugin installation (via TPM at container start) — slow, unreproducible; build-time is better (v2.9.0)
+- Automatic plugin updates — version drift risk; explicit update via `aishell update` (v2.9.0)
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -121,20 +125,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.8.0 on 2026-02-01
-**Next:** v2.9.0 — tmux Opt-in & Plugin Support
+**Shipped:** v2.9.0 on 2026-02-03
+**Next:** TBD — start with `/gsd:new-milestone`
 
-**Codebase:** ~4,305 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux
+**Codebase:** ~4,417 LOC Clojure (Babashka)
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux, TPM
 **Documentation:** 5,000+ lines across docs/ and README
 
-**v2.8.0 accomplishments:**
-- Foundation/volume architecture split eliminating cascade invalidation
-- Volume-mounted harness tools with content-hash naming for cross-project sharing
-- Lazy volume population with staleness detection
-- Update command redesigned for volume-first workflow
-- Volume management commands with orphan detection and safety checks
-- 19 of 19 v2.8.0 requirements shipped
+**v2.9.0 accomplishments:**
+- tmux made fully opt-in with --with-tmux build flag
+- Plugin management pipeline: config.yaml → validate → TPM + plugins in harness volume → runtime bridging
+- User tmux.conf auto-mounted read-only when tmux enabled
+- tmux-resurrect session persistence with per-project state directories
+- Migration path for v2.7-2.8 upgraders with schema-based detection
+- 17 of 17 v2.9.0 requirements shipped
 
 ## Milestone Conventions
 
@@ -236,6 +240,23 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Troubleshooting organized by symptom | Users search for symptoms, not components | Good |
 | 7-step harness checklist in dev guide | Explicit pattern makes contributions straightforward | Good |
 
+**v2.9.0 (tmux Opt-in & Plugin Support):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| --with-tmux opt-in (default = no tmux) | Users who don't need tmux shouldn't pay for it | Good |
+| Plugin format: owner/repo with warning-only validation | Consistent with existing validation framework | Good |
+| TPM + plugins in harness volume (not foundation) | Version drift, rebuild speed; matches tool separation architecture | Good |
+| Volume hash includes tmux state | Proper invalidation when tmux config changes | Good |
+| Session name "harness" (was "main") | Project naming consistency across all namespaces | Good |
+| WITH_TMUX as env var (not mounted state.edn) | Simpler pattern, consistent with existing env var approach | Good |
+| Runtime config at ~/.tmux.conf.runtime | Discoverable location, not hidden in /tmp | Good |
+| resurrect: true → sensible defaults | Enabled with process restoration off; safe starting point | Good |
+| Per-project resurrect state directory | Isolation between projects; follows per-project pattern | Good |
+| Schema-based migration detection | Reliable without version comparison; state shape tells the story | Good |
+| One-time migration warning with marker file | Inform once, don't nag; marker prevents repeats | Good |
+| Auto-inject resurrect plugin (no manual declaration) | UX improvement; deduplicate if user also declares it | Good |
+
 **v2.8.0 (Decouple Harness Tools):**
 
 | Decision | Rationale | Outcome |
@@ -253,4 +274,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-01 after v2.9.0 milestone start*
+*Last updated: 2026-02-03 after v2.9.0 milestone*

@@ -2,7 +2,7 @@
 
 This document describes the internal architecture of aishell, including the data flow from host machine through container execution, and the responsibilities of each code namespace.
 
-**Last updated:** v2.8.0
+**Last updated:** v2.9.0
 
 ---
 
@@ -58,6 +58,7 @@ graph TB
 4. **Configuration Merge:** Global and project configs combine with defined semantics
 5. **Stateless Containers:** No data persists in container; all work is in mounted project dir
 6. **Security Layers:** Detection (filename patterns) + Gitleaks (content scanning) before launch
+7. **tmux Opt-in:** tmux multiplexer is optional, enabled via `--with-tmux` build flag
 
 ---
 
@@ -124,7 +125,9 @@ Mounted read-only for security (harnesses can't modify installed tools).
 **Profile.d integration:**
 `/etc/profile.d/aishell.sh` ensures tmux new-window sessions inherit PATH configuration.
 
-### Migration from v2.7.0
+### Migration
+
+**From v2.7.0 to v2.8.0:**
 
 **Image tag change:**
 - Old: `aishell:base`
@@ -143,6 +146,116 @@ FROM aishell:foundation
 - New fields: `foundation-hash`, `harness-volume-hash`, `harness-volume-name`
 - Deprecated (but still written): `dockerfile-hash` → `foundation-hash`
 - Additive migration: nil values for missing fields, no migration code needed
+
+**From v2.8.0 to v2.9.0:**
+
+**tmux behavior change:**
+- Old: tmux always enabled
+- New: tmux opt-in via `--with-tmux` flag
+- Session name changed from "main" to "harness"
+
+**attach command validation:**
+- Now checks `:with-tmux` in state before allowing attach
+- Shows error with guidance if tmux not enabled
+
+**Migration warning:**
+- One-time warning on first use after upgrade to v2.9.0
+- Explains tmux changes and rebuild requirements
+- Marker file: `~/.aishell/.migration-v2.9-warned`
+
+**State schema additions:**
+- New fields: `:with-tmux`, `:tmux-plugins`, `:resurrect-config`
+- Additive migration: nil values for missing fields
+
+---
+
+## tmux Architecture
+
+aishell v2.9.0 introduces opt-in tmux support with plugin management and session persistence.
+
+### Opt-in Behavior
+
+tmux is **disabled by default**. Enable it via the `--with-tmux` build flag:
+
+```bash
+aishell build --with-claude --with-tmux
+```
+
+The `:with-tmux` flag is stored in `state.edn` and determines whether tmux features are available:
+- Session management (attach/detach)
+- Plugin support (TPM)
+- Session persistence (tmux-resurrect)
+
+### Plugin Management
+
+**Plugin installation location:** `/tools/tmux/plugins/tpm` in harness volume
+
+**Plugin declaration:** Plugins are specified in `config.yaml`:
+```yaml
+tmux:
+  plugins:
+    - tmux-plugins/tmux-sensible
+    - tmux-plugins/tmux-yank
+```
+
+**Build-time installation:**
+1. TPM cloned to `/tools/tmux/plugins/tpm` during harness volume population
+2. Plugin repositories cloned to `/tools/tmux/plugins/{plugin-name}`
+3. Format: `owner/repo` (e.g., `tmux-plugins/tmux-sensible`)
+
+**Plugin bridging:**
+- Entrypoint symlinks `/tools/tmux/plugins` to `~/.tmux/plugins`
+- This allows TPM to find plugins in the volume at runtime
+
+**TPM initialization:**
+- Runtime config at `~/.tmux.conf.runtime` sources TPM
+- User's `~/.tmux.conf` mounted read-only when tmux enabled
+- Entrypoint sources runtime config to initialize TPM
+
+### Resurrect Persistence
+
+**Optional session persistence** via tmux-resurrect plugin:
+
+```yaml
+tmux:
+  resurrect: true
+  # Or with options:
+  # resurrect:
+  #   restore_processes: true
+```
+
+**State directory:** `~/.aishell/resurrect/{project-hash}/`
+- Per-project isolation
+- Mounted into container
+- Contains session layout, window state, process state
+
+**Auto-injection:**
+- `tmux-resurrect` plugin automatically added to plugin list when `resurrect: true`
+- No manual plugin declaration needed
+
+**Auto-restore:**
+- Entrypoint runs resurrect auto-restore after TPM initialization
+- Restores previous session state automatically
+
+### User Config Mounting
+
+When tmux is enabled:
+- User's `~/.tmux.conf` mounted read-only
+- Prevents container from modifying host config
+- Skipped if user has explicit `.tmux.conf` in config mounts
+
+### Session Name
+
+Default tmux session name: **`harness`** (changed from `main` in v2.9.0)
+
+Consistent with project naming conventions.
+
+### Migration Note
+
+tmux behavior changed in v2.9.0:
+- **Old:** Always enabled, session name "main"
+- **New:** Opt-in via `--with-tmux`, session name "harness"
+- **Migration:** One-time warning shown on first use after upgrade
 
 ---
 
@@ -246,7 +359,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 │   -v /path/to/project:/path/to/project \ │
 │   -v ~/.claude:/home/user/.claude \      │
 │   -e GIT_AUTHOR_NAME=... \               │
-│   aishell:base \                         │
+│   aishell:foundation \                   │
 │   claude --model sonnet                  │
 └────────┬─────────────────────────────────┘
          │
@@ -259,8 +372,11 @@ The run phase executes a harness (or shell) in a container with project files mo
 │ 3. Run pre_start command (if configured)│
 │ 4. Validate TERM (fallback xterm-256color)│
 │ 5. Switch to user (via gosu)            │
-│ 6. Start tmux session 'main'            │
-│ 7. Execute harness command in tmux      │
+│ 6. Set up plugin bridging (if tmux)    │
+│ 7. Source TPM initialization (if tmux)  │
+│ 8. Auto-restore resurrect state (if enabled)│
+│ 9. Start tmux session 'harness' (if enabled)│
+│ 10. Execute harness command in tmux/directly│
 └──────────────────────────────────────────┘
 ```
 
@@ -393,10 +509,13 @@ aishell is organized into focused namespaces, each handling a specific concern.
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-gitleaks true                     ; boolean: Gitleaks installed?
+ :with-tmux true                         ; boolean: tmux enabled? (NEW in v2.9.0)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
  :codex-version "0.89.0"                 ; string or nil: pinned version
  :gemini-version nil                     ; string or nil: pinned version
+ :tmux-plugins ["tmux-plugins/tmux-sensible"] ; vector: tmux plugins (NEW in v2.9.0)
+ :resurrect-config {:enabled true :restore_processes false} ; map: resurrect config (NEW in v2.9.0)
  :image-tag "aishell:foundation"         ; string: Docker image tag
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
  :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)
@@ -414,33 +533,32 @@ Projects can extend the base image with custom Dockerfile layers.
 **Extension flow:**
 
 ```
-Base Image                Project Extension           Extended Image
-(aishell:base)            (.aishell/Dockerfile)       (aishell:ext-abc123)
+Foundation Image          Project Extension           Extended Image
+(aishell:foundation)      (.aishell/Dockerfile)       (aishell:ext-abc123)
      │                           │                           │
      │                           │                           │
      ▼                           ▼                           ▼
-┌─────────┐               ┌─────────────┐            ┌──────────────┐
-│ Debian  │               │ FROM         │            │ aishell:base │
-│ Node.js │               │ aishell:base │            │ +            │
-│ Harness │    +          │              │    →       │ Custom Layers│
-│ Gosu    │               │ RUN ...      │            │ (postgres,   │
-│ Tools   │               │ COPY ...     │            │  python,     │
-└─────────┘               └─────────────┘            │  etc.)       │
-                                                      └──────────────┘
+┌─────────┐               ┌─────────────┐            ┌──────────────────┐
+│ Debian  │               │ FROM         │            │ aishell:foundation│
+│ Node.js │               │ aishell:foundation│       │ +                │
+│ Tools   │    +          │              │    →       │ Custom Layers    │
+│ Gosu    │               │ RUN ...      │            │ (postgres,       │
+│ etc.    │               │ COPY ...     │            │  python, etc.)   │
+└─────────┘               └─────────────┘            └──────────────────┘
 ```
 
 **Extension behavior:**
 
 1. **Auto-build:** If `.aishell/Dockerfile` exists, extension builds automatically before run
 2. **Cache:** Extended image tagged with hash (content-based), rebuilt only on Dockerfile changes
-3. **Base dependency:** Extension requires base image to exist (`aishell build` must run first)
+3. **Foundation dependency:** Extension requires foundation image to exist (`aishell build` must run first)
 4. **Persistence:** Extended images persist locally, shared across runs
 
 **Example project extension:**
 
 ```dockerfile
 # .aishell/Dockerfile
-FROM aishell:base
+FROM aishell:foundation
 
 # Install PostgreSQL client
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*

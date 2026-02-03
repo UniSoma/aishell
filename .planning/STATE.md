@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-01)
+See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 39 - State Schema & Config Mounting
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 39 of 43 (State Schema & Config Mounting)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-01 — Roadmap created for v2.9.0 milestone
+Phase: 43 of 43 — All phases complete
+Plan: N/A
+Status: v2.9.0 shipped, ready for next milestone
+Last activity: 2026-02-03 — v2.9.0 milestone complete
 
-Progress: [░░░░░░░░░░] 0% (of v2.9.0 milestone)
+Progress: [██████████] 100% (all 10 milestones shipped)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,31 +27,19 @@ Progress: [░░░░░░░░░░] 0% (of v2.9.0 milestone)
 - v2.5.0 Optimization & Polish - Phases 28-29 (shipped 2026-01-26)
 - v2.7.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
 - v2.8.0 Decouple Harness Tools - Phases 35-38 (shipped 2026-02-01)
+- v2.9.0 tmux Opt-in & Plugin Support - Phases 39-43 (shipped 2026-02-03)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 90 (across v1.0-v2.8.0)
-- v2.9.0 tracking: Will begin with first plan execution
-
-**Recent Trend:**
-- v2.8.0: 14 plans across 4 phases
-- Trend: Stable execution velocity
-
-*Metrics tracking begins with v2.9.0 plan execution*
+- Total plans completed: 102 across 10 milestones
+- v2.9.0: 12 plans across 5 phases (avg 1.7min duration)
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- v2.8.0: Volume-based harness tool injection decouples tools from foundation image
-- v2.8.0: Foundation image (aishell:foundation) replaces base image with clean break
-- v2.8.0: Content-hash volume naming enables cross-project sharing
-- v2.7.0: tmux always-on behavior (changing to opt-in in v2.9.0)
-- v2.7.0: Named containers with project hash isolation
 
 ### Pending Todos
 
@@ -65,8 +53,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Roadmap created for v2.9.0 milestone, ready to plan Phase 39
+Last session: 2026-02-03
+Stopped at: v2.9.0 milestone archived
 Resume file: None
 
-**Next step:** Run `/gsd:plan-phase 39` to create execution plan
+**Next step:** Run `/gsd:new-milestone` to start next milestone cycle
