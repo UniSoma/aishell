@@ -111,10 +111,11 @@ Plans:
   4. All architecture changes reflected in docs/ARCHITECTURE.md
   5. All config changes reflected in docs/CONFIGURATION.md
   6. Troubleshooting guide updated for tmux-related issues
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 43-01: TBD
+- [ ] 43-01-PLAN.md -- Attach tmux validation and v2.9.0 migration warning
+- [ ] 43-02-PLAN.md -- Documentation updates for v2.9.0 (all 6 docs files)
 
 ## Progress
 
@@ -135,4 +136,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-02 after Phase 42 execution complete*
+*Last updated: 2026-02-03 after Phase 43 planning complete*
