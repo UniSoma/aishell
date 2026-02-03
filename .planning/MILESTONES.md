@@ -1,5 +1,33 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.9.0 tmux Opt-in & Plugin Support (Shipped: 2026-02-03)
+
+**Delivered:** tmux made fully opt-in with `--with-tmux` flag, plugin management via config.yaml with TPM integration, user tmux.conf mounting, and tmux-resurrect session persistence — completing the tmux story started in v2.7.0.
+
+**Phases completed:** 39-43 (12 plans total)
+
+**Key accomplishments:**
+
+- Opt-in tmux architecture: `--with-tmux` build flag with state persistence, conditional startup in entrypoint, and graceful attach validation
+- Plugin management pipeline: config.yaml declaration, format validation, TPM + plugins installed into harness volume at build time, runtime bridging via symlinks
+- User tmux config mounting: `~/.tmux.conf` auto-mounted read-only when tmux enabled, graceful handling of missing config
+- Session persistence with tmux-resurrect: per-project state directory, auto-injection of resurrect plugin, process restoration disabled by default
+- Migration path for v2.7-2.8 upgraders: schema-based detection, one-time warning with marker file, helpful error on attach without tmux
+- Comprehensive documentation updates across all 6 docs files
+
+**Stats:**
+
+- 16 code files changed (+955/-77 lines)
+- 4,417 lines of Clojure (total codebase)
+- 5 phases, 12 plans
+- 2 days (2026-02-02 → 2026-02-03)
+
+**Git range:** `docs(39)` → `docs(43)` (63 commits)
+
+**What's next:** Plugin version pinning, incremental plugin updates, Podman support, or new harnesses
+
+---
+
 ## v2.8.0 Decouple Harness Tools (Shipped: 2026-02-01)
 
 **Delivered:** Foundation/volume architecture split eliminating cascade invalidation — harness tools now live in Docker named volumes, so version updates no longer force multi-gigabyte extension rebuilds.

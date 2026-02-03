@@ -16,7 +16,7 @@
 ## Phases
 
 <details>
-<summary>✅ v1.0-v2.8.0 Completed Milestones (Phases 1-38) - Collapsed</summary>
+<summary>✅ v1.0-v2.9.0 Completed Milestones (Phases 1-43) - Collapsed</summary>
 
 See MILESTONES.md for full historical context.
 
@@ -30,95 +30,9 @@ See MILESTONES.md for full historical context.
 - v2.5.0: Optimization and polish (Phases 28-29)
 - v2.7.0: tmux integration and named containers (Phases 30-34)
 - v2.8.0: Foundation/volume architecture split (Phases 35-38)
+- v2.9.0: tmux opt-in and plugin support (Phases 39-43)
 
 </details>
-
-### ✅ v2.9.0 tmux Opt-in & Plugin Support (Shipped 2026-02-03)
-
-**Milestone Goal:** Make tmux opt-in, add plugin management, support user config mounting, enable session persistence.
-
-#### ✅ Phase 39: State Schema & Config Mounting (Complete 2026-02-02)
-**Goal**: Establish opt-in flag and mount user tmux configuration
-**Depends on**: Phase 38
-**Requirements**: TMUX-01, TMUX-02, CONF-01, CONF-02
-**Success Criteria** (what must be TRUE):
-  1. User can run `aishell build --with-tmux` and flag is stored in state.edn
-  2. User can run `aishell build` without flag and tmux is disabled
-  3. User's ~/.tmux.conf is mounted read-only into container when tmux enabled
-  4. Missing ~/.tmux.conf on host is handled gracefully with no error
-**Plans**: 2 plans
-
-Plans:
-- [x] 39-01-PLAN.md -- CLI --with-tmux flag, state schema, config tmux section
-- [x] 39-02-PLAN.md -- Conditional tmux config mount in docker run
-
-#### ✅ Phase 40: Plugin Installation in Volume (Complete 2026-02-02)
-**Goal**: Install TPM and declared plugins into harness volume at build time
-**Depends on**: Phase 39
-**Requirements**: PLUG-01, PLUG-02, PLUG-03, PLUG-06
-**Success Criteria** (what must be TRUE):
-  1. User can declare plugins in .aishell/config.yaml under tmux.plugins list
-  2. TPM installed into /tools/tmux/plugins/tpm during volume population
-  3. Declared plugins installed non-interactively during aishell build
-  4. Plugin format validation catches invalid owner/repo patterns before build
-  5. aishell update refreshes plugin installations
-**Plans**: 4 plans
-
-Plans:
-- [x] 40-01-PLAN.md -- Plugin format validation in config parsing
-- [x] 40-02-PLAN.md -- TPM and plugin installation in volume population
-- [x] 40-03-PLAN.md -- Gap closure: volume hash includes tmux state, idempotent TPM clone
-- [x] 40-04-PLAN.md -- Gap closure: fix plugin declaration path for TPM install_plugins
-
-#### ✅ Phase 41: TPM Initialization in Entrypoint (Complete 2026-02-02)
-**Goal**: Make installed plugins discoverable to tmux at runtime
-**Depends on**: Phase 40
-**Requirements**: TMUX-03, PLUG-04, PLUG-05
-**Success Criteria** (what must be TRUE):
-  1. Plugins installed in /tools/tmux/plugins are accessible at ~/.tmux/plugins
-  2. TPM initialization appended to user's tmux config at container startup
-  3. tmux session only starts when :with-tmux flag is true in state
-  4. Shell mode works correctly with tmux disabled
-  5. Harness commands work correctly with tmux disabled
-**Plans**: 1 plan
-
-Plans:
-- [x] 41-01-PLAN.md -- Entrypoint plugin bridging, config injection, conditional tmux/shell startup + WITH_TMUX env var
-
-#### ✅ Phase 42: Resurrect State Persistence (Complete 2026-02-02)
-**Goal**: Enable optional session state persistence via tmux-resurrect
-**Depends on**: Phase 41
-**Requirements**: PERS-01, PERS-02, PERS-03
-**Success Criteria** (what must be TRUE):
-  1. User can configure tmux.resurrect section in config.yaml
-  2. Resurrect state directory mounted from host when resurrect enabled
-  3. Process restoration disabled by default with only layout restoration active
-  4. Session state persists across container restarts when resurrect configured
-**Plans**: 2 plans
-
-Plans:
-- [x] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
-- [x] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
-
-#### ✅ Phase 43: Validation & Migration (Complete 2026-02-03)
-**Goal**: Ensure graceful failures and smooth upgrade path for existing users
-**Depends on**: Phase 42
-**Requirements**: TMUX-04, TMUX-05, DOCS-01
-**Success Criteria** (what must be TRUE):
-  1. aishell attach validates tmux is enabled and shows helpful error when not
-  2. Users upgrading from v2.7-2.8 see migration warning about tmux behavior change
-  3. All CLI changes reflected in README.md
-  4. All architecture changes reflected in docs/ARCHITECTURE.md
-  5. All config changes reflected in docs/CONFIGURATION.md
-  6. Troubleshooting guide updated for tmux-related issues
-  7. aishell attach connects to tmux 'harness' session by default
-  8. tmux-resurrect plugin loaded when resurrect: true configured
-**Plans**: 3 plans
-
-Plans:
-- [x] 43-01-PLAN.md -- Attach tmux validation and v2.9.0 migration warning
-- [x] 43-02-PLAN.md -- Documentation updates for v2.9.0 (all 6 docs files)
-- [x] 43-03-PLAN.md -- Gap closure: fix attach default session, resurrect plugin loading, nil guard
 
 ## Progress
 
@@ -139,4 +53,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-03 after Phase 43 gap closure execution — v2.9.0 milestone complete*
+*Last updated: 2026-02-03 — v2.9.0 milestone archived*

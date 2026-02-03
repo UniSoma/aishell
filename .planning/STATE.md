@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-01)
+See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Phase 43 - Validation & Migration
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 43 of 43 (Validation & Migration) — COMPLETE
-Plan: 3 of 3 complete
-Status: Phase 43 complete, v2.9.0 ready for release
-Last activity: 2026-02-03 — Completed 43-03 gap closure (attach + resurrect fixes)
+Phase: 43 of 43 — All phases complete
+Plan: N/A
+Status: v2.9.0 shipped, ready for next milestone
+Last activity: 2026-02-03 — v2.9.0 milestone complete
 
-Progress: [██████████] 100% (of v2.9.0 milestone, all 5 phases complete)
+Progress: [██████████] 100% (all 10 milestones shipped)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -27,58 +27,19 @@ Progress: [██████████] 100% (of v2.9.0 milestone, all 5 phas
 - v2.5.0 Optimization & Polish - Phases 28-29 (shipped 2026-01-26)
 - v2.7.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
 - v2.8.0 Decouple Harness Tools - Phases 35-38 (shipped 2026-02-01)
+- v2.9.0 tmux Opt-in & Plugin Support - Phases 39-43 (shipped 2026-02-03)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 102 (90 in v1.0-v2.8.0 + 12 in v2.9.0)
-- v2.9.0 tracking: 12 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02, 43-01, 43-02, 43-03)
-
-**Recent Trend:**
-- v2.9.0: 12 plans completed (avg 1.7min duration)
-- v2.8.0: 14 plans across 4 phases
-- Trend: v2.9.0 ready for release (all gaps closed)
+- Total plans completed: 102 across 10 milestones
+- v2.9.0: 12 plans across 5 phases (avg 1.7min duration)
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- v2.9.0: Migration warning triggers on state exists + lacks :harness-volume-hash (schema-based detection)
-- v2.9.0: Marker file prevents repeat warnings (~/.aishell/.migration-v2.9-warned)
-- v2.9.0: Fresh installs never see migration warning (no state.edn)
-- v2.9.0: Default session changed from 'main' to 'harness' for project naming consistency
-- v2.9.0: Nil resurrect config returns nil silently (not configured is valid, not an error)
-- v2.9.0: populate-volume uses pre-computed state[:tmux-plugins] instead of recalculating from raw config
-- v2.9.0: Auto-inject tmux-resurrect plugin when resurrect enabled (no manual declaration needed)
-- v2.9.0: Deduplicate resurrect plugin if user already declared it (silent, no warnings)
-- v2.9.0: Process restoration defaults to 'false' for safety, explicit restore_processes: true enables ':all:' mode
-- v2.9.0: Auto-restore runs via run-shell after TPM initialization in config file
-- v2.9.0: Pass resurrect config as RESURRECT_ENABLED and RESURRECT_RESTORE_PROCESSES env vars to entrypoint
-- v2.9.0: resurrect: true -> {:enabled true :restore_processes false} (sensible default)
-- v2.9.0: resurrect state directory at ~/.aishell/resurrect/{project-hash}/ for per-project isolation
-- v2.9.0: resurrect config silently ignored when tmux disabled (no warnings)
-- v2.9.0: Mount ~/.tmux.conf read-only to prevent container modification
-- v2.9.0: Auto-mount skipped if user has explicit .tmux.conf in config mounts
-- v2.9.0: :with-tmux defaults to FALSE (opt-in, not opt-out per TMUX-01 requirements)
-- v2.9.0: tmux config uses scalar merge (project replaces global)
-- v2.9.0: Plugin format validation uses warning-only approach (consistent with existing validation framework)
-- v2.9.0: GitHub owner/repo regex pattern for plugin validation
-- v2.9.0: TPM plugin declarations written to ~/.tmux.conf for install_plugins AWK parser
-- v2.9.0: TPM installs to /tools/tmux/plugins with TMUX_PLUGIN_MANAGER_PATH override
-- v2.9.0: Config threading to volume population uses optional :config key for backward compatibility
-- v2.9.0: Volume hash includes tmux state (:with-tmux flag and sorted plugin list)
-- v2.9.0: Idempotent git clone uses pull-if-exists pattern (safer than rm -rf)
-- v2.9.0: Build/update guards check :with-tmux to trigger volume population for tmux-only configs
-- v2.9.0: WITH_TMUX passed as env var instead of mounting state.edn (simpler and consistent with existing pattern)
-- v2.9.0: Session name changed from "main" to "harness" (project naming consistency)
-- v2.9.0: Runtime config at ~/.tmux.conf.runtime for injected TPM initialization (more discoverable than /tmp)
-- v2.8.0: Volume-based harness tool injection decouples tools from foundation image
-- v2.8.0: Foundation image (aishell:foundation) replaces base image with clean break
-- v2.8.0: Content-hash volume naming enables cross-project sharing
-- v2.7.0: Named containers with project hash isolation
 
 ### Pending Todos
 
@@ -93,14 +54,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 43-03 gap closure (attach + resurrect fixes)
+Stopped at: v2.9.0 milestone archived
 Resume file: None
 
-**Next step:** Run `/gsd:audit-milestone` or `/gsd:complete-milestone` to finalize v2.9.0
-
-**Recent completions:**
-- 43-03: Gap closure for attach + resurrect bugs - 1.7min
-- 43-02: Documentation update for v2.9.0 - 4.5min
-- 43-01: tmux validation and migration warnings - 2min
-- 42-02: Resurrect plugin injection and auto-restore - 2min
-- 42-01: Resurrect config parsing and state directory mounting - 1min
+**Next step:** Run `/gsd:new-milestone` to start next milestone cycle
