@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 42 of 43 (Resurrect State Persistence) — COMPLETE
-Plan: 2 of 2 complete
-Status: Phase 42 fully verified, ready for Phase 43
-Last activity: 2026-02-02 — Phase 42 verified, all 11 must-haves passed
+Phase: 43 of 43 (Validation & Migration) — IN PROGRESS
+Plan: 1 of 1 complete
+Status: Phase 43 execution complete, ready for verification
+Last activity: 2026-02-03 — Completed 43-01-PLAN.md (tmux validation and migration warnings)
 
-Progress: [████████░░] 80% (of v2.9.0 milestone, 4 of 5 phases complete)
+Progress: [██████████] 100% (of v2.9.0 milestone, all 5 phases complete)
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -31,13 +31,13 @@ Progress: [████████░░] 80% (of v2.9.0 milestone, 4 of 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 99 (90 in v1.0-v2.8.0 + 9 in v2.9.0)
-- v2.9.0 tracking: 9 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02)
+- Total plans completed: 100 (90 in v1.0-v2.8.0 + 10 in v2.9.0)
+- v2.9.0 tracking: 10 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02, 43-01)
 
 **Recent Trend:**
-- v2.9.0: 9 plans completed (avg 1.5min duration)
+- v2.9.0: 10 plans completed (avg 1.6min duration)
 - v2.8.0: 14 plans across 4 phases
-- Trend: Stable execution velocity with quick gap closures
+- Trend: Stable execution velocity, v2.9.0 milestone complete
 
 ## Accumulated Context
 
@@ -46,6 +46,10 @@ Progress: [████████░░] 80% (of v2.9.0 milestone, 4 of 5 phas
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v2.9.0: Migration warning triggers on state exists + lacks :harness-volume-hash (schema-based detection)
+- v2.9.0: Marker file prevents repeat warnings (~/.aishell/.migration-v2.9-warned)
+- v2.9.0: Fresh installs never see migration warning (no state.edn)
+- v2.9.0: Default session changed from 'main' to 'harness' for project naming consistency
 - v2.9.0: Auto-inject tmux-resurrect plugin when resurrect enabled (no manual declaration needed)
 - v2.9.0: Deduplicate resurrect plugin if user already declared it (silent, no warnings)
 - v2.9.0: Process restoration defaults to 'false' for safety, explicit restore_processes: true enables ':all:' mode
@@ -86,14 +90,14 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 42-02 plugin injection and auto-restore
+Last session: 2026-02-03
+Stopped at: Completed 43-01 tmux validation and migration warnings
 Resume file: None
 
-**Next step:** Run `/gsd:plan-phase 43` to plan validation & migration
+**Next step:** Run verification for Phase 43, then prepare v2.9.0 release
 
 **Recent completions:**
+- 43-01: tmux validation and migration warnings - 2min
 - 42-02: Resurrect plugin injection and auto-restore - 2min
 - 42-01: Resurrect config parsing and state directory mounting - 1min
 - 41-01: TPM initialization in entrypoint with conditional startup - 1.4min
-- 40-04: Gap closure fixing TPM plugin installation path - <1min
