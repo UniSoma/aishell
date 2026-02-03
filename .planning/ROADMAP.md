@@ -11,7 +11,7 @@
 - ✅ **v2.5.0 Optimization & Polish** - Phases 28-29 (shipped 2026-01-26)
 - ✅ **v2.7.0 tmux Integration & Named Containers** - Phases 30-34 (shipped 2026-01-31)
 - ✅ **v2.8.0 Decouple Harness Tools** - Phases 35-38 (shipped 2026-02-01)
-- 📋 **v2.9.0 tmux Opt-in & Plugin Support** - Phases 39-43 (planned)
+- ✅ **v2.9.0 tmux Opt-in & Plugin Support** - Phases 39-43 (shipped 2026-02-03)
 
 ## Phases
 
@@ -33,7 +33,7 @@ See MILESTONES.md for full historical context.
 
 </details>
 
-### 📋 v2.9.0 tmux Opt-in & Plugin Support (Planned)
+### ✅ v2.9.0 tmux Opt-in & Plugin Support (Shipped 2026-02-03)
 
 **Milestone Goal:** Make tmux opt-in, add plugin management, support user config mounting, enable session persistence.
 
@@ -100,7 +100,7 @@ Plans:
 - [x] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
 - [x] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
 
-#### Phase 43: Validation & Migration
+#### ✅ Phase 43: Validation & Migration (Complete 2026-02-03)
 **Goal**: Ensure graceful failures and smooth upgrade path for existing users
 **Depends on**: Phase 42
 **Requirements**: TMUX-04, TMUX-05, DOCS-01
@@ -114,8 +114,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 43-01-PLAN.md -- Attach tmux validation and v2.9.0 migration warning
-- [ ] 43-02-PLAN.md -- Documentation updates for v2.9.0 (all 6 docs files)
+- [x] 43-01-PLAN.md -- Attach tmux validation and v2.9.0 migration warning
+- [x] 43-02-PLAN.md -- Documentation updates for v2.9.0 (all 6 docs files)
 
 ## Progress
 
@@ -130,10 +130,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 9/9 | In progress | - |
+| 39-43 | v2.9.0 | 11/11 | Complete | 2026-02-03 |
 
-**Total:** 99/99 plans complete across 9 milestones, v2.9.0 in progress
+**Total:** 101/101 plans complete across 10 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-03 after Phase 43 planning complete*
+*Last updated: 2026-02-03 after Phase 43 execution complete*

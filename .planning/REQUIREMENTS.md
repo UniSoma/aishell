@@ -12,8 +12,8 @@ Requirements for tmux opt-in and plugin support. Each maps to roadmap phases.
 - [x] **TMUX-01**: `aishell build --with-tmux` enables tmux; default behavior is no tmux
 - [x] **TMUX-02**: `:with-tmux` flag stored in state.edn and used by downstream commands
 - [x] **TMUX-03**: Entrypoint conditionally starts tmux session (skips when disabled)
-- [ ] **TMUX-04**: `attach` command validates tmux is enabled and fails gracefully with helpful message when not
-- [ ] **TMUX-05**: Users upgrading from v2.7-2.8 see migration warning about tmux behavioral change
+- [x] **TMUX-04**: `attach` command validates tmux is enabled and fails gracefully with helpful message when not
+- [x] **TMUX-05**: Users upgrading from v2.7-2.8 see migration warning about tmux behavioral change
 
 ### Config Mounting
 
@@ -37,7 +37,7 @@ Requirements for tmux opt-in and plugin support. Each maps to roadmap phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
+- [x] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
 
 ## Future Requirements
 
@@ -74,8 +74,8 @@ Deferred to later milestones.
 | TMUX-01 | Phase 39 | Complete |
 | TMUX-02 | Phase 39 | Complete |
 | TMUX-03 | Phase 41 | Complete |
-| TMUX-04 | Phase 43 | Pending |
-| TMUX-05 | Phase 43 | Pending |
+| TMUX-04 | Phase 43 | Complete |
+| TMUX-05 | Phase 43 | Complete |
 | CONF-01 | Phase 39 | Complete |
 | CONF-02 | Phase 39 | Complete |
 | PLUG-01 | Phase 40 | Complete |
@@ -87,7 +87,7 @@ Deferred to later milestones.
 | PERS-01 | Phase 42 | Complete |
 | PERS-02 | Phase 42 | Complete |
 | PERS-03 | Phase 42 | Complete |
-| DOCS-01 | Phase 43 | Pending |
+| DOCS-01 | Phase 43 | Complete |
 
 **Coverage:**
 - v2.9.0 requirements: 17 total
@@ -103,4 +103,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-02 after Phase 42 execution*
+*Last updated: 2026-02-03 after Phase 43 execution — all v2.9.0 requirements complete*
