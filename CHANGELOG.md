@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.1] - 2026-02-03
+
+### Added
+- **Harness alias injection**: Typing `claude`, `opencode`, etc. in an interactive container session now applies the same `harness_args` from config as `aishell claude` would
+  - Claude alias always includes `--dangerously-skip-permissions`
+  - Aliases persist across tmux new-window via profile.d sourcing
+  - Bypass with `command claude` or `\claude`
+
+### Fixed
+- `pre_start` config now uses array format for consistency with other config fields
+- Bypass tmux wrapping for `exec` and `gitleaks` commands (skip-tmux guard)
+- Resurrect plugin not loading: `populate-volume` now uses pre-computed `tmux-plugins` from state instead of recalculating from raw config
+- Attach command defaults to `harness` session name (was hardcoded to `main` in CLI parser)
+- Nil guard added to `parse-resurrect-config` to prevent spurious warnings
+
 ## [2.9.0] - 2026-02-03
 
 Make tmux fully opt-in with plugin management, user config mounting, and session persistence.
