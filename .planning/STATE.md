@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 43 of 43 (Validation & Migration) — COMPLETE
-Plan: 2 of 2 complete
-Status: Phase 43 verified, v2.9.0 milestone complete
-Last activity: 2026-02-03 — Phase 43 verified, all 11 must-haves passed
+Plan: 3 of 3 complete
+Status: Phase 43 complete, v2.9.0 ready for release
+Last activity: 2026-02-03 — Completed 43-03 gap closure (attach + resurrect fixes)
 
 Progress: [██████████] 100% (of v2.9.0 milestone, all 5 phases complete)
 
@@ -31,13 +31,13 @@ Progress: [██████████] 100% (of v2.9.0 milestone, all 5 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 101 (90 in v1.0-v2.8.0 + 11 in v2.9.0)
-- v2.9.0 tracking: 11 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02, 43-01, 43-02)
+- Total plans completed: 102 (90 in v1.0-v2.8.0 + 12 in v2.9.0)
+- v2.9.0 tracking: 12 plans completed (39-01, 39-02, 40-01, 40-02, 40-03, 40-04, 41-01, 42-01, 42-02, 43-01, 43-02, 43-03)
 
 **Recent Trend:**
-- v2.9.0: 11 plans completed (avg 1.7min duration)
+- v2.9.0: 12 plans completed (avg 1.7min duration)
 - v2.8.0: 14 plans across 4 phases
-- Trend: v2.9.0 milestone complete, all documentation updated
+- Trend: v2.9.0 ready for release (all gaps closed)
 
 ## Accumulated Context
 
@@ -50,6 +50,8 @@ Recent decisions affecting current work:
 - v2.9.0: Marker file prevents repeat warnings (~/.aishell/.migration-v2.9-warned)
 - v2.9.0: Fresh installs never see migration warning (no state.edn)
 - v2.9.0: Default session changed from 'main' to 'harness' for project naming consistency
+- v2.9.0: Nil resurrect config returns nil silently (not configured is valid, not an error)
+- v2.9.0: populate-volume uses pre-computed state[:tmux-plugins] instead of recalculating from raw config
 - v2.9.0: Auto-inject tmux-resurrect plugin when resurrect enabled (no manual declaration needed)
 - v2.9.0: Deduplicate resurrect plugin if user already declared it (silent, no warnings)
 - v2.9.0: Process restoration defaults to 'false' for safety, explicit restore_processes: true enables ':all:' mode
@@ -91,12 +93,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 43-02 documentation update for v2.9.0
+Stopped at: Completed 43-03 gap closure (attach + resurrect fixes)
 Resume file: None
 
 **Next step:** Run `/gsd:audit-milestone` or `/gsd:complete-milestone` to finalize v2.9.0
 
 **Recent completions:**
+- 43-03: Gap closure for attach + resurrect bugs - 1.7min
 - 43-02: Documentation update for v2.9.0 - 4.5min
 - 43-01: tmux validation and migration warnings - 2min
 - 42-02: Resurrect plugin injection and auto-restore - 2min
