@@ -100,7 +100,7 @@ Plans:
 - [x] 42-01-PLAN.md -- Config parsing for resurrect (boolean/map) and host state directory mount
 - [x] 42-02-PLAN.md -- Plugin auto-injection, entrypoint resurrect config and auto-restore
 
-#### Phase 43: Validation & Migration (In Progress)
+#### ✅ Phase 43: Validation & Migration (Complete 2026-02-03)
 **Goal**: Ensure graceful failures and smooth upgrade path for existing users
 **Depends on**: Phase 42
 **Requirements**: TMUX-04, TMUX-05, DOCS-01
@@ -118,7 +118,7 @@ Plans:
 Plans:
 - [x] 43-01-PLAN.md -- Attach tmux validation and v2.9.0 migration warning
 - [x] 43-02-PLAN.md -- Documentation updates for v2.9.0 (all 6 docs files)
-- [ ] 43-03-PLAN.md -- Gap closure: fix attach default session, resurrect plugin loading, nil guard
+- [x] 43-03-PLAN.md -- Gap closure: fix attach default session, resurrect plugin loading, nil guard
 
 ## Progress
 
@@ -133,10 +133,10 @@ Plans:
 | 28-29 | v2.5.0 | 4/4 | Complete | 2026-01-26 |
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
-| 39-43 | v2.9.0 | 11/12 | In Progress | - |
+| 39-43 | v2.9.0 | 12/12 | Complete | 2026-02-03 |
 
-**Total:** 101/102 plans complete across 10 milestones
+**Total:** 102/102 plans complete across 10 milestones
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-03 after Phase 43 UAT gap closure planning*
+*Last updated: 2026-02-03 after Phase 43 gap closure execution — v2.9.0 milestone complete*
