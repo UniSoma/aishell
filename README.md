@@ -21,8 +21,6 @@ And that's the simple version. You still need to:
 
 - **Get paths right** - AI agents reference absolute paths. If `/home/you/project` on your host becomes `/app` in the container, file references break.
 - **Preserve git identity** - Without setup, commits appear as "root" or "unknown". You need to pass through `.gitconfig` or set `GIT_AUTHOR_*` variables.
-- **Remember all the mounts** - Config directories, credential files, SSH keys, project-specific data. Miss one and things fail mid-session.
-- **Handle project-specific needs** - One project needs PostgreSQL client, another needs Python 3.11. Managing multiple Dockerfiles gets messy.
 - **Reproduce across machines** - That 200-character docker command you perfected? Good luck remembering it on your laptop.
 
 aishell handles all of this. One command, consistent behavior, works everywhere.
@@ -42,32 +40,28 @@ You can use both: devcontainers for your development environment, aishell for ru
 
 ## Quick Start
 
+```bash
+# 1. Install
+curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
+
+# 2. Build foundation image and select harnesses (one-time)
+aishell setup --with-claude
+
+# 3. Run
+aishell claude
+```
+
+<details>
+<summary>Prerequisites & troubleshooting</summary>
+
 **Requirements:** Linux, macOS, or WSL2 on Windows; Docker; [Babashka](https://babashka.org)
 
 Install Babashka if you haven't already: https://babashka.org
-
-Then install aishell:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
-```
 
 Add `~/.local/bin` to your PATH if not already present:
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
-```
-
-Set up the foundation image and select your harnesses (one-time setup):
-
-```bash
-aishell setup --with-claude
-```
-
-Run:
-
-```bash
-aishell claude
 ```
 
 To update harness tools later:
@@ -76,16 +70,30 @@ To update harness tools later:
 aishell update
 ```
 
+</details>
+
+## How it works
+
+When you run `aishell claude`, aishell launches an ephemeral Docker container with your project mounted at its real host path so file references stay valid. Your git identity and harness configs (e.g. `~/.claude`) are passed through automatically. Any per-project customization from `.aishell/` is applied. When the agent exits, the container disappears — only your project files and harness configs persist.
+
 ## Features
+
+### Core
 
 - **Isolated execution** - AI agents run in ephemeral Docker containers
 - **Host path preservation** - Projects mounted at their real host path so file references stay valid
 - **Git identity passthrough** - Commits preserve your identity
-- **Per-project customization** - Extend via `.aishell/Dockerfile`
-- **Version pinning** - Lock harness versions for reproducibility
 - **Config persistence** - Mounts `~/.claude` and OpenCode configs
+
+### Customization
+
+- **Per-project customization** - Extend via `.aishell/Dockerfile`
 - **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
+- **Version pinning** - Lock harness versions for reproducibility
 - **Pre-start commands** - Run sidecar services before shell/harness
+
+### Power user
+
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
 - **One-off commands** - Run single commands in container with `aishell exec`
@@ -172,11 +180,11 @@ aishell attach --name claude --session harness
 
 # Detach from tmux without stopping: Ctrl+B D
 
-# Stop a container
-docker stop aishell-<hash>-claude
+# Stop a container (use `aishell ps` to find the container name)
+docker stop <container-name>
 ```
 
-All containers are named `aishell-{project-hash}-{name}` where the project hash is derived from your project directory path. This allows multiple instances per project and isolation across projects.
+Containers are named `aishell-{project-hash}-{name}`. Use `aishell ps` to discover container names for your project.
 
 **Conflict detection:** Starting a container with a name already in use by a running container shows an error with guidance. Stopped containers with the same name are auto-removed.
 
@@ -246,18 +254,13 @@ tmux:
 
 ### Config inheritance
 
-Project configs merge with `~/.aishell/config.yaml` by default. Lists (mounts, ports) concatenate, maps (env) merge with project values taking precedence, scalars (pre_start) are replaced. Set `extends: none` to disable inheritance.
+Project configs merge with `~/.aishell/config.yaml` by default. See [Configuration docs](docs/CONFIGURATION.md) for merge strategy details. Set `extends: none` to disable inheritance.
 
 ## Security
 
 ### Sensitive file detection
 
 Before launching a container, aishell scans your project for potentially sensitive files and warns you before AI agents can access them.
-
-**Severity levels:**
-- **High** - SSH keys, private keys, cloud credentials, package manager tokens → requires confirmation
-- **Medium** - Environment files, tool configs, database credentials → informational warning
-- **Low** - Template files (.env.example) → informational notice
 
 ```
 $ aishell claude
@@ -290,29 +293,7 @@ aishell gitleaks detect --verbose --no-git
 
 aishell tracks when you last ran gitleaks and reminds you if it's been more than 7 days.
 
-**Custom patterns and allowlist:**
-
-Add to `.aishell/config.yaml`:
-
-```yaml
-detection:
-  # Add custom patterns (extends defaults)
-  custom_patterns:
-    "*.secret": high
-    "internal-*.json":
-      severity: medium
-
-  # Suppress false positives
-  allowlist:
-    - path: "test/fixtures/fake-key.pem"
-      reason: "Test fixture, not a real key"
-
-  # Disable freshness warnings (default: true)
-  gitleaks_freshness_check: false
-
-  # Custom staleness threshold in days (default: 7)
-  gitleaks_freshness_days: 14
-```
+For custom detection patterns, allowlists, and freshness configuration, see [Configuration docs](docs/CONFIGURATION.md).
 
 ## Authentication
 
