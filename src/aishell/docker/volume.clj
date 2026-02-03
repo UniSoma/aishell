@@ -332,13 +332,7 @@
   [volume-name state & [opts]]
   (let [install-commands (build-install-commands state)
         tmux-plugins (when (:with-tmux state)
-                       (let [plugins (get-in opts [:config :tmux :plugins])
-                             resurrect-val (get-in opts [:config :tmux :resurrect])
-                             resurrect-enabled? (cond
-                                                  (true? resurrect-val) true
-                                                  (map? resurrect-val) (get resurrect-val :enabled true)
-                                                  :else false)]
-                         (inject-resurrect-plugin plugins resurrect-enabled?)))
+                       (:tmux-plugins state))
         tmux-install (build-tpm-install-command tmux-plugins)
         full-commands (str install-commands
                           (when tmux-install (str " && " tmux-install)))
