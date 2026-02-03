@@ -198,6 +198,7 @@
                            :state state
                            :git-identity git-id
                            :skip-pre-start (:skip-pre-start opts)
+                           :skip-tmux (= cmd "gitleaks")
                            :detach (:detach opts)
                            :container-name container-name-str
                            :harness-volume-name harness-volume-name})

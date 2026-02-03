@@ -268,7 +268,7 @@
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
    Shared by both build-docker-args and build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name tty-flags harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-tmux detach container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
         home (util/get-home)]
@@ -312,17 +312,24 @@
         (into (build-harness-env-args harness-volume-name))
 
         ;; Tmux config mount (read-only, if enabled and file exists)
-        (into (build-tmux-config-mount state config))
+        ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
+        (cond-> (not skip-tmux)
+          (into (build-tmux-config-mount state config)))
 
         ;; Resurrect state directory mount (persistent tmux session state)
-        (into (build-resurrect-mount state config project-dir))
+        ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
+        (cond-> (not skip-tmux)
+          (into (build-resurrect-mount state config project-dir)))
 
         ;; Pass WITH_TMUX flag to entrypoint for conditional tmux startup
-        (cond-> (get state :with-tmux)
+        ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
+        (cond-> (and (get state :with-tmux) (not skip-tmux))
           (into ["-e" "WITH_TMUX=true"]))
 
         ;; Pass resurrect config to entrypoint
-        (into (build-resurrect-env-args state config))
+        ;; Skip when skip-tmux is true (non-interactive commands like exec/gitleaks)
+        (cond-> (not skip-tmux)
+          (into (build-resurrect-env-args state config)))
 
         ;; Config: mounts
         (cond-> (:mounts config)
@@ -367,7 +374,7 @@
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config state git-identity skip-pre-start detach container-name harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-tmux detach container-name harness-volume-name]}]
   (build-docker-args-internal
     {:project-dir project-dir
      :image-tag image-tag
@@ -375,6 +382,7 @@
      :state state
      :git-identity git-identity
      :skip-pre-start skip-pre-start
+     :skip-tmux skip-tmux
      :detach detach
      :container-name container-name
      :harness-volume-name harness-volume-name
@@ -404,5 +412,6 @@
      :state state
      :git-identity git-identity
      :skip-pre-start true  ; Always skip pre_start for exec
+     :skip-tmux true       ; Never wrap exec in tmux
      :harness-volume-name harness-volume-name
      :tty-flags (if tty? ["-it"] ["-i"])}))
