@@ -41,6 +41,21 @@
                       "To start: aishell " short-name " --detach\n"
                       "Or use: docker start " container-name))))
 
+(defn- validate-tmux-enabled!
+  "Validate that tmux is available in the container.
+   Exits with error and rebuild instructions if tmux is not installed."
+  [container-name short-name]
+  (let [{:keys [exit]} (p/shell {:out :string :err :string :continue true}
+                                 "docker" "exec" "-u" "developer" container-name
+                                 "which" "tmux")]
+    (when-not (zero? exit)
+      (output/error (str "Container '" short-name "' does not have tmux enabled.\n\n"
+                        "The 'attach' command requires tmux for session management.\n\n"
+                        "To enable tmux:\n"
+                        "  1. Rebuild: aishell build --with-tmux\n"
+                        "  2. Restart: aishell " short-name " --detach\n"
+                        "  3. Attach: aishell attach --name " short-name)))))
+
 (defn- validate-session-exists!
   "Validate that the requested tmux session exists in the container.
    Exits with error and lists available sessions if not found."
@@ -67,24 +82,26 @@
 (defn attach-to-session
   "Attach to a tmux session in a running container.
 
-   Single-arity form uses default session 'main'.
+   Single-arity form uses default session 'harness'.
    Two-arity form allows specifying a custom session name.
 
    Performs pre-flight validations:
    1. Interactive terminal check
    2. Container exists and is running
-   3. Tmux session exists
+   3. Tmux is enabled in container
+   4. Tmux session exists
 
    On success, uses p/exec to replace current process with docker exec,
    giving tmux full terminal control."
   ([name]
-   (attach-to-session name "main"))
+   (attach-to-session name "harness"))
   ([name session]
    (let [project-dir (System/getProperty "user.dir")
          container-name (naming/container-name project-dir name)]
      ;; Run all validations
      (validate-tty!)
      (validate-container-state! container-name name)
+     (validate-tmux-enabled! container-name name)
      (validate-session-exists! container-name session name)
 
      ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
@@ -119,6 +136,7 @@
    Performs pre-flight validations:
    1. Interactive terminal check
    2. Container exists and is running
+   3. Tmux is enabled in container
 
    On success, uses p/exec to replace current process with docker exec,
    giving tmux full terminal control."
@@ -128,6 +146,7 @@
     ;; Run validations (no session check - tmux new-session -A handles both create and attach)
     (validate-tty!)
     (validate-container-state! container-name name)
+    (validate-tmux-enabled! container-name name)
 
     ;; Ensure bashrc sources /etc/bash.aishell (entrypoint skips this for non-bash commands)
     (ensure-bashrc! container-name)
