@@ -87,6 +87,13 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ TERM validation with xterm-256color fallback for unsupported terminals — v2.7.0
 - ✓ Detached mode (`--detach`/`-d`) for background container execution — v2.7.0
 
+**v2.10.0 (2026-02-05) — Gitleaks Opt-in:**
+- ✓ Gitleaks opt-in: `aishell build --with-gitleaks` enables Gitleaks (default = off) — v2.10.0
+- ✓ Help visibility: `aishell gitleaks` hidden from `--help` when not installed — v2.10.0
+- ✓ Pipeline gating: Gitleaks staleness warning skipped when not installed — v2.10.0
+- ✓ Filename-based detection continues independently of Gitleaks — v2.10.0
+- ✓ Documentation: All user-facing CLI changes reflected in docs/ — v2.10.0
+
 **v2.9.0 (2026-02-03) — tmux Opt-in & Plugin Support:**
 - ✓ tmux opt-in: `aishell build --with-tmux` makes tmux opt-in (default = no tmux) — v2.9.0
 - ✓ tmux config mounting: User's `~/.tmux.conf` auto-mounted when tmux is active — v2.9.0
@@ -107,10 +114,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-**v2.10.0 (in progress):**
-- [ ] Gitleaks opt-in: `aishell build --with-gitleaks` enables Gitleaks (default = off)
-- [ ] Help visibility: `aishell gitleaks` hidden from `--help` when not installed
-- [ ] Pipeline removal: Gitleaks detection/warnings skipped when not installed
+(None — next milestone requirements defined via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -128,20 +132,19 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.9.0 on 2026-02-03
-**Next:** v2.10.0 — Gitleaks Opt-in (in progress)
+**Shipped:** v2.10.0 on 2026-02-05
+**Next:** Planning next milestone
 
-**Codebase:** ~4,417 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux, TPM
+**Codebase:** ~4,483 LOC Clojure (Babashka)
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in), tmux (opt-in), TPM
 **Documentation:** 5,000+ lines across docs/ and README
 
-**v2.9.0 accomplishments:**
-- tmux made fully opt-in with --with-tmux build flag
-- Plugin management pipeline: config.yaml → validate → TPM + plugins in harness volume → runtime bridging
-- User tmux.conf auto-mounted read-only when tmux enabled
-- tmux-resurrect session persistence with per-project state directories
-- Migration path for v2.7-2.8 upgraders with schema-based detection
-- 17 of 17 v2.9.0 requirements shipped
+**v2.10.0 accomplishments:**
+- Gitleaks flipped from opt-out to opt-in with --with-gitleaks flag
+- Consistent --with-* positive flag pattern across all build options
+- Runtime warnings gated on build-time state (no irrelevant warnings)
+- All user-facing docs updated for opt-in semantics
+- 9 of 9 v2.10.0 requirements shipped
 
 ## Milestone Conventions
 
@@ -260,6 +263,15 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | One-time migration warning with marker file | Inform once, don't nag; marker prevents repeats | Good |
 | Auto-inject resurrect plugin (no manual declaration) | UX improvement; deduplicate if user also declares it | Good |
 
+**v2.10.0 (Gitleaks Opt-in):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Positive --with-* flag pattern (no --without-*) | Consistency across all build options | Good |
+| Opt-in default (nil -> false) | Users who don't need Gitleaks shouldn't have it installed | Good |
+| Gate staleness warnings on build state | Prevents confusing warnings for users without Gitleaks | Good |
+| Filename detection independent of Gitleaks | Lightweight Babashka-side checks valuable on their own | Good |
+
 **v2.8.0 (Decouple Harness Tools):**
 
 | Decision | Rationale | Outcome |
@@ -277,4 +289,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-05 after starting v2.10.0 milestone*
+*Last updated: 2026-02-05 after v2.10.0 milestone*

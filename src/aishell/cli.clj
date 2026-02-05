@@ -17,7 +17,7 @@
             [aishell.attach :as attach]
             [aishell.migration :as migration]))
 
-(def version "2.9.2")
+(def version "2.10.0")
 
 (defn print-version []
   (println (str "aishell " version)))
@@ -71,7 +71,7 @@
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
-   :without-gitleaks {:coerce :boolean :desc "Skip Gitleaks installation"}
+   :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :with-tmux     {:coerce :boolean :desc "Enable tmux multiplexer in container"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
@@ -88,7 +88,7 @@
       (:with-opencode state) (conj "opencode")
       (:with-codex state) (conj "codex")
       (:with-gemini state) (conj "gemini")
-      (:with-gitleaks state true) (conj "gitleaks"))
+      (:with-gitleaks state false) (conj "gitleaks"))
     ;; No state = no build yet, show all for discoverability
     #{"claude" "opencode" "codex" "gemini" "gitleaks"}))
 
@@ -139,7 +139,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :without-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :with-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -147,9 +147,9 @@
   (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
-  (println (str "  " output/CYAN "aishell setup --with-claude --with-tmux" output/NC " Include Claude + tmux"))
-  (println (str "  " output/CYAN "aishell setup --without-gitleaks" output/NC "   Skip Gitleaks"))
-  (println (str "  " output/CYAN "aishell setup --force" output/NC "               Force rebuild")))
+  (println (str "  " output/CYAN "aishell setup --with-claude --with-tmux" output/NC "  Include Claude + tmux"))
+  (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
+  (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
 (defn handle-setup [{:keys [opts]}]
   ;; Show migration warning on first touch for upgraders
@@ -161,7 +161,7 @@
           opencode-config (parse-with-flag (:with-opencode opts))
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
-          with-gitleaks (not (:without-gitleaks opts))  ; invert flag for positive tracking
+          with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
           with-tmux (boolean (:with-tmux opts))
 
           ;; Validate versions before build
@@ -316,7 +316,7 @@
             cfg (config/load-config project-dir)
             result (when (:force opts)
                      (build/build-foundation-image
-                       {:with-gitleaks (:with-gitleaks state true)
+                       {:with-gitleaks (:with-gitleaks state false)
                         :verbose (:verbose opts)
                         :force true}))
 

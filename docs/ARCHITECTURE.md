@@ -57,7 +57,7 @@ graph TB
 3. **Project Extension:** Optional per-project Dockerfile extends foundation image
 4. **Configuration Merge:** Global and project configs combine with defined semantics
 5. **Stateless Containers:** No data persists in container; all work is in mounted project dir
-6. **Security Layers:** Detection (filename patterns) + Gitleaks (content scanning) before launch
+6. **Security Layers:** Detection (filename patterns) + Gitleaks (opt-in content scanning) before launch
 7. **tmux Opt-in:** tmux multiplexer is optional, enabled via `--with-tmux` build flag
 
 ---
@@ -75,7 +75,7 @@ The foundation image contains stable system components that change rarely:
 - Node.js 24 runtime
 - Babashka CLI runtime
 - System tools (git, curl, jq, ripgrep, vim, tmux, etc.)
-- Gitleaks binary (optional, via `--without-gitleaks`)
+- Gitleaks binary (opt-in, via `--with-gitleaks`)
 - Gosu for user switching
 - Entrypoint script and profile configuration
 
@@ -282,7 +282,8 @@ The build phase creates the foundation Docker image and populates the harness vo
 │ Docker Build (Foundation)                    │
 │ - FROM debian:bookworm-slim                  │
 │ - Install system packages                    │
-│ - Install Node.js, Babashka, Gosu, Gitleaks  │
+│ - Install Node.js, Babashka, Gosu             │
+│ - Install Gitleaks (if --with-gitleaks)        │
 │ - Tag: aishell:foundation                    │
 └────────┬─────────────────────────────────────┘
          │
@@ -467,7 +468,8 @@ Each namespace handles one concern:
    - Configurable via `detection:` in config.yaml
    - Supports custom patterns and allowlists
 
-2. **Gitleaks layer (aishell.gitleaks.*):** Content-based secret scanning
+2. **Gitleaks layer (aishell.gitleaks.*):** Content-based secret scanning (opt-in via `--with-gitleaks`)
+   - Requires `--with-gitleaks` build flag; not available by default
    - Slower; runs on-demand via `aishell gitleaks dir .`
    - Warns when scans exceed 7 days old
    - Advisory only; never blocks execution
@@ -506,7 +508,7 @@ Each namespace handles one concern:
  :with-opencode false                    ; boolean: OpenCode enabled?
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
- :with-gitleaks true                     ; boolean: Gitleaks installed?
+ :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :with-tmux true                         ; boolean: tmux enabled? (NEW in v2.9.0)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
@@ -591,6 +593,6 @@ See the Dockerfile extension section in the Configuration Reference for details.
 
 **Why two-layer security (detection + gitleaks)?**
 
-- **Speed vs thoroughness:** Detection runs instantly; Gitleaks scans comprehensively
+- **Speed vs thoroughness:** Detection runs instantly; Gitleaks (when installed) scans comprehensively
 - **Fail-fast:** Catches obvious mistakes before expensive builds
 - **Non-blocking:** Advisory warnings never block power users

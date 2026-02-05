@@ -27,7 +27,7 @@
     :with-opencode false         ; boolean
     :with-codex false            ; boolean
     :with-gemini false           ; boolean
-    :with-gitleaks true          ; boolean (whether Gitleaks installed)
+    :with-gitleaks false         ; boolean (whether Gitleaks installed, default false, opt-in)
     :with-tmux false             ; boolean (whether tmux enabled, default false)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil

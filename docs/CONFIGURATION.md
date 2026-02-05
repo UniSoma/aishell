@@ -202,11 +202,12 @@ harness_args:
 # =============================================================================
 # GITLEAKS_FRESHNESS_CHECK - Gitleaks scan freshness warning toggle
 # =============================================================================
-# When true (default), warns before container launch if the gitleaks
+# When true (default), warns before container launch if the gitleaks scan
+# is stale. Requires --with-gitleaks build flag; has no effect without it.
 # scan is stale (>7 days old) or has never run. Advisory only -- never
 # blocks execution.
 #
-# The warning reminds you to run: aishell gitleaks dir .
+# When Gitleaks is installed, the warning reminds you to run: aishell gitleaks dir .
 #
 # Set to false to disable the freshness warning entirely.
 
@@ -645,6 +646,8 @@ claude --verbose --model sonnet --workspace /workspace
 **Type:** Boolean
 
 **Default:** `true`
+
+**Requires:** `--with-gitleaks` build flag. When Gitleaks is not installed, this setting has no effect (no warnings are shown).
 
 **Example:**
 
@@ -1166,20 +1169,20 @@ aishell attach --name claude
 
 ---
 
-### --without-gitleaks
+### --with-gitleaks
 
-**Purpose:** Skip Gitleaks installation during build, reducing foundation image size.
+**Purpose:** Install Gitleaks during build for content-based secret scanning.
 
 **Usage:**
 ```bash
-aishell setup --with-claude --without-gitleaks
+aishell setup --with-claude --with-gitleaks
 ```
 
 **Behavior:**
-- By default, aishell installs Gitleaks in the foundation image (~15MB)
-- `--without-gitleaks` skips that installation
+- By default, aishell does NOT install Gitleaks
+- `--with-gitleaks` enables Gitleaks installation (~15MB added to foundation image)
 - Build state records installation status in `~/.aishell/state.edn`
-- `aishell --help` still lists the `gitleaks` command (it may work via a host installation)
+- `aishell --help` shows the `gitleaks` command only when installed
 
 **State tracking:**
 ```bash
@@ -1189,16 +1192,16 @@ cat ~/.aishell/state.edn
 ```
 
 **When to use:**
-- **Minimal images:** Reduce foundation image size when you do not need Gitleaks
-- **External Gitleaks:** You use Gitleaks installed on the host
-- **CI/CD:** Secret scanning runs elsewhere
+- **Content scanning:** You want deep secret detection beyond filename patterns
+- **Pre-commit safety:** Run scans before AI agents see your code
+- **Compliance:** Your workflow requires secret scanning
 
 **Image size impact:**
+- Without Gitleaks (default): ~265MB
 - With Gitleaks: ~280MB
-- Without Gitleaks: ~265MB
-- Savings: ~15MB
+- Cost: ~15MB
 
-**Note:** `aishell gitleaks` may still work if Gitleaks is installed on your host or mounted into the container.
+**Note:** Without `--with-gitleaks`, the `aishell gitleaks` command is not available.
 
 ---
 
@@ -1255,7 +1258,7 @@ aishell update --force
 **Preserved from the last build:**
 - Enabled harnesses (`--with-claude`, etc.)
 - Harness version pins
-- Gitleaks installation status
+- Gitleaks installation status (`--with-gitleaks` opt-in)
 
 **Cannot change harness selection.**
 To add or remove harnesses, use `aishell setup`:

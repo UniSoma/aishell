@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-02-05
+
+Flip Gitleaks from opt-out to opt-in. Users who want Gitleaks scanning must explicitly request it at build time.
+
+### Changed
+- **Gitleaks is now opt-in**: `aishell setup --with-gitleaks` enables Gitleaks; default behavior is no Gitleaks (previously always installed)
+- **Consistent flag pattern**: Replaced `--without-gitleaks` with `--with-gitleaks`, establishing positive `--with-*` pattern across all build options
+- **Conditional warnings**: Gitleaks staleness warning only shown when Gitleaks is installed (no irrelevant warnings for users without Gitleaks)
+
+### Fixed
+- Gitleaks freshness warning no longer appears for users who build without `--with-gitleaks`
+
+### Docs
+- README.md updated with opt-in Gitleaks semantics and `--with-gitleaks` flag
+- CONFIGURATION.md updated with `--with-gitleaks` section (was `--without-gitleaks`)
+- TROUBLESHOOTING.md updated with "gitleaks command not found" resolution
+- ARCHITECTURE.md updated with opt-in design principles and build diagram
+
 ## [2.9.2] - 2026-02-03
 
 ### Changed

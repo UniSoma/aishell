@@ -109,7 +109,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 ### Power user
 
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
-- **Gitleaks integration** - Deep content-based secret scanning with `aishell gitleaks`
+- **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Detached mode** - Run harnesses in background with `--detach` flag
 - **Named containers** - Deterministic naming with `--name` override
@@ -220,7 +220,7 @@ Run pre-flight checks without launching any container:
 aishell check
 ```
 
-Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, and gitleaks scan freshness.
+Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, and gitleaks scan freshness (when installed).
 
 ## Configuration
 
@@ -296,9 +296,15 @@ Proceed? (y/n)
 aishell claude --unsafe  # Skip confirmation prompts
 ```
 
-### Gitleaks
+### Gitleaks (Optional)
 
-Use `aishell gitleaks` for content-based secret detection inside the container:
+Gitleaks is opt-in. Enable it at build time:
+
+```bash
+aishell setup --with-claude --with-gitleaks
+```
+
+Then use `aishell gitleaks` for content-based secret detection inside the container:
 
 ```bash
 aishell gitleaks detect
@@ -421,7 +427,7 @@ Built on `debian:bookworm-slim` with:
 - Babashka
 
 **Security tools:**
-- Gitleaks v8.30.0 (secret scanning)
+- Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
 
 **CLI tools:**
 - git, curl, jq, ripgrep, vim

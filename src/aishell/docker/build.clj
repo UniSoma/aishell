@@ -98,7 +98,7 @@
    Harness tools are installed separately via volume injection (Phase 36).
 
    Options:
-   - :with-gitleaks - Include Gitleaks (default true)
+   - :with-gitleaks - Include Gitleaks (default false, opt-in)
    - :force - Bypass cache check
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors

@@ -66,8 +66,8 @@ RUN set -eux; \\
     gosu --version; \\
     gosu nobody true
 
-# Install Gitleaks for secret scanning (conditional)
-ARG WITH_GITLEAKS=true
+# Install Gitleaks for secret scanning (conditional, opt-in)
+ARG WITH_GITLEAKS=false
 ARG GITLEAKS_VERSION=8.30.0
 RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
         set -eux; \\

@@ -186,8 +186,8 @@
                     (detection/display-warnings project-dir filtered-findings)
                     (detection/confirm-if-needed filtered-findings))))
 
-            ;; Display gitleaks freshness warning (for shell/claude/opencode, not gitleaks itself)
-            _ (when-not (= cmd "gitleaks")
+            ;; Display gitleaks freshness warning only if gitleaks is installed
+            _ (when (and (:with-gitleaks state) (not= cmd "gitleaks"))
                 (gitleaks-warnings/display-freshness-warning project-dir cfg))
 
             ;; Build docker args

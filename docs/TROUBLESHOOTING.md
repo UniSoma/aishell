@@ -735,7 +735,35 @@ aishell claude  # No warning for allowlisted files
 
 5. **Severity levels:** `high`, `medium`, `low`
 
+### Symptom: "gitleaks" command not found or missing from `aishell --help`
+
+**Cause:** Gitleaks is opt-in and was not installed during build. By default, aishell does NOT install Gitleaks.
+
+**Resolution:**
+
+1. **Rebuild with Gitleaks:**
+   ```bash
+   aishell setup --with-claude --with-gitleaks
+   ```
+
+2. **Verify installation:**
+   ```bash
+   aishell
+   gitleaks version
+   # Should show: gitleaks version
+   ```
+
+3. **Check build state:**
+   ```bash
+   cat ~/.aishell/state.edn
+   # Should show :with-gitleaks true
+   ```
+
+4. **Alternative:** If you don't need deep content scanning, aishell's built-in filename-based sensitive file detection works without Gitleaks. No action needed.
+
 ### Symptom: "Gitleaks scan takes too long" on large repositories
+
+**Note:** This section applies only when Gitleaks is installed (built with `--with-gitleaks`). If you don't have Gitleaks installed, see the section above.
 
 **Cause:** Gitleaks scans large binary files or generated directories.
 

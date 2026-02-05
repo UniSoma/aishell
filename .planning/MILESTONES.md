@@ -1,5 +1,31 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v2.10.0 Gitleaks Opt-in (Shipped: 2026-02-05)
+
+**Delivered:** Flipped Gitleaks from opt-out to opt-in, establishing consistent `--with-*` flag pattern across all build options — users who want Gitleaks scanning must now explicitly request it at build time.
+
+**Phases completed:** 44-45 (4 plans total)
+
+**Key accomplishments:**
+
+- Flipped Gitleaks default from opt-out (`--without-gitleaks`) to opt-in (`--with-gitleaks`), establishing consistent `--with-*` pattern
+- Gated runtime staleness warnings on build-time state so users without Gitleaks never see irrelevant warnings
+- Updated all user-facing documentation (README, CONFIGURATION, TROUBLESHOOTING, ARCHITECTURE) to reflect opt-in semantics
+- Filename-based secret detection continues independently of Gitleaks installation
+
+**Stats:**
+
+- 9 files modified (+79/-40 lines, non-planning)
+- 4,483 lines of Clojure (total codebase)
+- 2 phases, 4 plans, ~6 tasks
+- 1 day (2026-02-05)
+
+**Git range:** `docs(44)` → `docs(45)` (18 commits)
+
+**What's next:** Plugin version pinning, incremental plugin updates, Podman support, or new harnesses
+
+---
+
 ## v2.9.0 tmux Opt-in & Plugin Support (Shipped: 2026-02-03)
 
 **Delivered:** tmux made fully opt-in with `--with-tmux` flag, plugin management via config.yaml with TPM integration, user tmux.conf mounting, and tmux-resurrect session persistence — completing the tmux story started in v2.7.0.
