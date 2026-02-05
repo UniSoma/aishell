@@ -12,6 +12,7 @@
 - ✅ **v2.7.0 tmux Integration & Named Containers** - Phases 30-34 (shipped 2026-01-31)
 - ✅ **v2.8.0 Decouple Harness Tools** - Phases 35-38 (shipped 2026-02-01)
 - ✅ **v2.9.0 tmux Opt-in & Plugin Support** - Phases 39-43 (shipped 2026-02-03)
+- 🚧 **v2.10.0 Gitleaks Opt-in** - Phases 44-45 (in progress)
 
 ## Phases
 
@@ -34,6 +35,39 @@ See MILESTONES.md for full historical context.
 
 </details>
 
+### 🚧 v2.10.0 Gitleaks Opt-in (In Progress)
+
+**Milestone Goal:** Flip Gitleaks from opt-out to opt-in. Users who want Gitleaks scanning must explicitly request it at build time. Filename-based detection continues to work independently.
+
+#### Phase 44: Flip Gitleaks Default
+**Goal**: Gitleaks installation requires explicit opt-in at build time
+**Depends on**: Phase 43 (v2.9.0 complete)
+**Requirements**: BUILD-01, BUILD-02, HELP-01, PIPE-01, PIPE-02
+**Success Criteria** (what must be TRUE):
+  1. Building without flags produces image without Gitleaks installed
+  2. Building with `--with-gitleaks` produces image with Gitleaks installed
+  3. `aishell --help` shows `gitleaks` command only when Gitleaks is installed
+  4. Pipeline runs without Gitleaks staleness warning when Gitleaks not installed
+  5. Filename-based secret detection still blocks suspicious files (independent of Gitleaks)
+**Plans**: TBD
+
+Plans:
+- [ ] 44-01: TBD
+
+#### Phase 45: Documentation Updates
+**Goal**: Documentation reflects the new Gitleaks opt-in default
+**Depends on**: Phase 44
+**Requirements**: DOCS-01, DOCS-02, DOCS-03, DOCS-04
+**Success Criteria** (what must be TRUE):
+  1. README.md documents `--with-gitleaks` flag and explains opt-in behavior
+  2. CONFIGURATION.md explains Gitleaks configuration (when installed)
+  3. TROUBLESHOOTING.md covers Gitleaks-related issues (or notes N/A when not installed)
+  4. HARNESSES.md updated if it references Gitleaks behavior
+**Plans**: TBD
+
+Plans:
+- [ ] 45-01: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -48,9 +82,11 @@ See MILESTONES.md for full historical context.
 | 30-34 | v2.7.0 | 7/7 | Complete | 2026-01-31 |
 | 35-38 | v2.8.0 | 14/14 | Complete | 2026-02-01 |
 | 39-43 | v2.9.0 | 12/12 | Complete | 2026-02-03 |
+| 44 | v2.10.0 | 0/? | Not started | - |
+| 45 | v2.10.0 | 0/? | Not started | - |
 
-**Total:** 102/102 plans complete across 10 milestones
+**Total:** 102/102 plans complete across 10 milestones (v2.10.0 in progress)
 
 ---
 *Roadmap created: 2026-01-17*
-*Last updated: 2026-02-03 — v2.9.0 milestone archived*
+*Last updated: 2026-02-05 — v2.10.0 milestone added*

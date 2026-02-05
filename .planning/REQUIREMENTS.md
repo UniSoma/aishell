@@ -39,21 +39,21 @@ Requirements for Gitleaks Opt-in milestone. Flip Gitleaks from opt-out to opt-in
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | TBD | Pending |
-| BUILD-02 | TBD | Pending |
-| HELP-01 | TBD | Pending |
-| PIPE-01 | TBD | Pending |
-| PIPE-02 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| DOCS-03 | TBD | Pending |
-| DOCS-04 | TBD | Pending |
+| BUILD-01 | Phase 44 | Pending |
+| BUILD-02 | Phase 44 | Pending |
+| HELP-01 | Phase 44 | Pending |
+| PIPE-01 | Phase 44 | Pending |
+| PIPE-02 | Phase 44 | Pending |
+| DOCS-01 | Phase 45 | Pending |
+| DOCS-02 | Phase 45 | Pending |
+| DOCS-03 | Phase 45 | Pending |
+| DOCS-04 | Phase 45 | Pending |
 
 **Coverage:**
 - v2.10.0 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9 (pending roadmap)
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-05*
-*Last updated: 2026-02-05 after initial definition*
+*Last updated: 2026-02-05 — Traceability completed*
