@@ -107,7 +107,10 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — next milestone requirements TBD via `/gsd:new-milestone`)
+**v2.10.0 (in progress):**
+- [ ] Gitleaks opt-in: `aishell build --with-gitleaks` enables Gitleaks (default = off)
+- [ ] Help visibility: `aishell gitleaks` hidden from `--help` when not installed
+- [ ] Pipeline removal: Gitleaks detection/warnings skipped when not installed
 
 ### Out of Scope
 
@@ -126,7 +129,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.9.0 on 2026-02-03
-**Next:** TBD — start with `/gsd:new-milestone`
+**Next:** v2.10.0 — Gitleaks Opt-in (in progress)
 
 **Codebase:** ~4,417 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0, tmux, TPM
@@ -274,4 +277,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-03 after v2.9.0 milestone*
+*Last updated: 2026-02-05 after starting v2.10.0 milestone*
