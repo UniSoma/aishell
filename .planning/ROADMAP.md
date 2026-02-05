@@ -49,10 +49,10 @@ See MILESTONES.md for full historical context.
   3. `aishell --help` shows `gitleaks` command only when Gitleaks is installed
   4. Pipeline runs without Gitleaks staleness warning when Gitleaks not installed
   5. Filename-based secret detection still blocks suspicious files (independent of Gitleaks)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 44-01: TBD
+- [ ] 44-01-PLAN.md — Flip Gitleaks default from opt-out to opt-in (ARG, CLI flag, help, defaults)
 
 #### Phase 45: Documentation Updates
 **Goal**: Documentation reflects the new Gitleaks opt-in default
