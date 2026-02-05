@@ -44,8 +44,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Pending Todos
 
 2 deferred todos:
-- [Audit security detection patterns](./todos/pending/2026-01-25-audit-security-detection-patterns.md) — deferred to future milestone
 - [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) — from Distrobox investigation
+- [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) — warn when foundation image is outdated
 
 ### Blockers/Concerns
 
