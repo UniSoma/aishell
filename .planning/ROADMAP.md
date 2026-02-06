@@ -459,10 +459,10 @@ Plans:
   1. Foundation image builds without tmux package
   2. Foundation image size reduced by tmux removal
   3. `tmux` command unavailable inside containers
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 46-01: TBD
+- [ ] 46-01-PLAN.md — Remove tmux installation from Dockerfile template and verify image build
 
 #### Phase 47: State & Config Schema Cleanup
 **Goal**: tmux flags and options removed from aishell's configuration surface
