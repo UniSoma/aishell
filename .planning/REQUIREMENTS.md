@@ -57,33 +57,33 @@ None deferred — v3.0.0 is a focused removal/simplification milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TMUX-01 | — | Pending |
-| TMUX-02 | — | Pending |
-| TMUX-03 | — | Pending |
-| TMUX-04 | — | Pending |
-| TMUX-05 | — | Pending |
-| TMUX-06 | — | Pending |
-| TMUX-07 | — | Pending |
-| TMUX-08 | — | Pending |
-| TMUX-09 | — | Pending |
-| TMUX-10 | — | Pending |
-| ATTCH-01 | — | Pending |
-| ATTCH-02 | — | Pending |
-| ATTCH-03 | — | Pending |
-| ATTCH-04 | — | Pending |
-| CLI-01 | — | Pending |
-| CLI-02 | — | Pending |
-| CLI-03 | — | Pending |
-| CLI-04 | — | Pending |
-| CLI-05 | — | Pending |
-| CLI-06 | — | Pending |
-| DOCS-01 | — | Pending |
+| TMUX-01 | Phase 46 | Pending |
+| TMUX-02 | Phase 47 | Pending |
+| TMUX-03 | Phase 47 | Pending |
+| TMUX-04 | Phase 48 | Pending |
+| TMUX-05 | Phase 48 | Pending |
+| TMUX-06 | Phase 48 | Pending |
+| TMUX-07 | Phase 48 | Pending |
+| TMUX-08 | Phase 47 | Pending |
+| TMUX-09 | Phase 48 | Pending |
+| TMUX-10 | Phase 49 | Pending |
+| ATTCH-01 | Phase 50 | Pending |
+| ATTCH-02 | Phase 50 | Pending |
+| ATTCH-03 | Phase 50 | Pending |
+| ATTCH-04 | Phase 50 | Pending |
+| CLI-01 | Phase 51 | Pending |
+| CLI-02 | Phase 51 | Pending |
+| CLI-03 | Phase 51 | Pending |
+| CLI-04 | Phase 51 | Pending |
+| CLI-05 | Phase 51 | Pending |
+| CLI-06 | Phase 51 | Pending |
+| DOCS-01 | Phase 52 | Pending |
 
 **Coverage:**
 - v3.0.0 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-06*
-*Last updated: 2026-02-06 after initial definition*
+*Last updated: 2026-02-06 after roadmap creation*

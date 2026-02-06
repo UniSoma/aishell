@@ -5,55 +5,62 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-
-**Current focus:** v3.0.0 Docker-native Attach
+**Current focus:** Phase 46 - Foundation Image Cleanup (v3.0.0)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-06 — Milestone v3.0.0 started
+Phase: 46 of 52 (Foundation Image Cleanup)
+Plan: Ready to plan
+Status: Ready to plan
+Last activity: 2026-02-06 - v3.0.0 roadmap created (7 phases)
 
-**Shipped Milestones:**
-- v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
-- v1.1 Runtime Config - Phases 9-10 (shipped 2026-01-19)
-- v1.2 Hardening - Phases 11-12 (shipped 2026-01-19)
-- v2.0 Babashka Rewrite - Phases 13-18 (shipped 2026-01-21)
-- v2.3.0 Safe AI Context Protection - Phases 18.1-23 (shipped 2026-01-24)
-- v2.4.0 Multi-Harness Support - Phases 24-27 (shipped 2026-01-25)
-- v2.5.0 Optimization & Polish - Phases 28-29 (shipped 2026-01-26)
-- v2.7.0 tmux Integration & Named Containers - Phases 30-34 (shipped 2026-01-31)
-- v2.8.0 Decouple Harness Tools - Phases 35-38 (shipped 2026-02-01)
-- v2.9.0 tmux Opt-in & Plugin Support - Phases 39-43 (shipped 2026-02-03)
-- v2.10.0 Gitleaks Opt-in - Phases 44-45 (shipped 2026-02-05)
+Progress: [████████████████████████████████████████░░░░] 87% (45/52 phases total)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 108 across 11 milestones
-- v2.10.0: 4 plans across 2 phases
+- Total plans completed: 108+ across 11 milestones
+- Milestones shipped: 11 (v1.0 → v2.10.0)
+- v2.10.0 recent: 4 plans, 1 day
+
+**v3.0.0 Milestone (Phases 46-52):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 46-52 | 0/7 | 0 | - |
+
+**Recent Trend:**
+- v2.10.0: 4 plans, 1 day
+- v2.9.0: 12 plans, 2 days
+- v2.8.0: 14 plans, 2 days
+- Trend: Stable velocity
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting v3.0.0:
+
+- v3.0.0 milestone: Remove tmux entirely, window management belongs on host
+- v2.10.0: Gitleaks opt-in (default disabled, --with-gitleaks to enable)
+- v2.9.0: tmux opt-in with plugins (now being removed in v3.0.0)
+- v2.8.0: Foundation/volume split (harness tools in volumes)
 
 ### Pending Todos
 
 2 deferred todos:
-- [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) — from Distrobox investigation
-- [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) — warn when foundation image is outdated
+- [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) - from Distrobox investigation
+- [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) - warn when foundation image is outdated
 
 ### Blockers/Concerns
 
-None.
+None - starting v3.0.0 with clean slate.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Defining v3.0.0 requirements
-Resume file: None
-
-**Next step:** Continue requirements definition and roadmap creation
+Last session: 2026-02-06 (roadmap creation)
+Stopped at: v3.0.0 roadmap created with 7 phases (46-52), 21 requirements mapped
+Resume file: None - ready to plan Phase 46
