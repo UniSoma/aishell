@@ -2,20 +2,18 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-05)
+See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
 
-**Current focus:** Planning next milestone
+**Current focus:** v3.0.0 Docker-native Attach
 
 ## Current Position
 
-Phase: 45 of 45 (v2.10.0 complete)
-Plan: N/A
-Status: Milestone complete, ready for next milestone
-Last activity: 2026-02-05 — v2.10.0 milestone archived
-
-Progress: [██████████] 100% (v2.10.0 shipped)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-06 — Milestone v3.0.0 started
 
 **Shipped Milestones:**
 - v1.0 MVP - Phases 1-8 (shipped 2026-01-18)
@@ -54,8 +52,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-05
-Stopped at: v2.10.0 milestone archived
+Last session: 2026-02-06
+Stopped at: Defining v3.0.0 requirements
 Resume file: None
 
-**Next step:** `/gsd:new-milestone` (start with `/clear` for fresh context)
+**Next step:** Continue requirements definition and roadmap creation

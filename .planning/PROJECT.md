@@ -114,15 +114,19 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — next milestone requirements defined via `/gsd:new-milestone`)
+**v3.0.0 — Docker-native Attach (replacing tmux):**
+- Remove tmux from containers — harnesses and shells run bare as container's main process
+- Simplify attach to `docker exec -it` — `aishell attach <name>` opens bash in running container
+- Remove `--detach` flag — users always enter the container interactively
+- Remove `--with-tmux` build flag and all tmux-related state/config
+- Remove tmux binary from foundation image
+- Clean up entrypoint — remove conditional tmux fork, simplify to `exec gosu`
+- Update all user-facing documentation for v3.0.0 changes
 
 ### Out of Scope
 
 - Persistent containers — ephemeral is the design choice (named containers in v2.7.0 are still ephemeral with --rm)
-- Per-project tmux.conf — global host config only; per-project adds complexity without clear value (validated in v2.9.0)
-- tmux plugin installation in foundation image — version drift, slow rebuilds; harness volume is the right layer (validated in v2.9.0)
-- Runtime plugin installation (via TPM at container start) — slow, unreproducible; build-time is better (v2.9.0)
-- Automatic plugin updates — version drift risk; explicit update via `aishell update` (v2.9.0)
+- tmux inside containers — window management belongs on the host, not in the container (v3.0.0 removes tmux entirely)
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -133,18 +137,11 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v2.10.0 on 2026-02-05
-**Next:** Planning next milestone
+**Next:** v3.0.0 Docker-native Attach
 
 **Codebase:** ~4,483 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in), tmux (opt-in), TPM
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in), tmux (opt-in — being removed in v3.0.0), TPM (being removed in v3.0.0)
 **Documentation:** 5,000+ lines across docs/ and README
-
-**v2.10.0 accomplishments:**
-- Gitleaks flipped from opt-out to opt-in with --with-gitleaks flag
-- Consistent --with-* positive flag pattern across all build options
-- Runtime warnings gated on build-time state (no irrelevant warnings)
-- All user-facing docs updated for opt-in semantics
-- 9 of 9 v2.10.0 requirements shipped
 
 ## Milestone Conventions
 
@@ -289,4 +286,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-05 after v2.10.0 milestone*
+*Last updated: 2026-02-06 after v3.0.0 milestone start*
