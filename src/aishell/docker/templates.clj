@@ -35,12 +35,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     ripgrep \\
     sqlite3 \\
     sudo \\
-    tmux \\
     tree \\
     unzip \\
     vim \\
     watch \\
     && rm -rf /var/lib/apt/lists/*
+
+# Install tmux static binary (Debian bookworm ships 3.3a)
+# Source: https://github.com/tmux/tmux-builds (official tmux org)
+ARG TMUX_VERSION=3.6a
+RUN set -eux; \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch}\" in \\
+        amd64) tmuxArch='x86_64' ;; \\
+        arm64) tmuxArch='arm64' ;; \\
+        *) echo \"unsupported architecture for tmux: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL \"https://github.com/tmux/tmux-builds/releases/download/v${TMUX_VERSION}/tmux-${TMUX_VERSION}-linux-${tmuxArch}.tar.gz\" \\
+    | tar -xz -C /usr/local/bin tmux; \\
+    chmod +x /usr/local/bin/tmux; \\
+    tmux -V
 
 # Install Node.js via multi-stage copy from official image
 COPY --from=node-source /usr/local/bin/node /usr/local/bin/node
