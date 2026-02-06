@@ -96,7 +96,7 @@
   (case (remove-container-if-stopped! container-name)
     :running
     (output/error (str "Container '" container-name "' is already running.\n"
-                      "To attach: aishell attach --name " harness-name "\n"
+                      "To attach: aishell attach " harness-name "\n"
                       "To force stop: docker stop " container-name))
 
     :removed

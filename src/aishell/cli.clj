@@ -17,7 +17,7 @@
             [aishell.attach :as attach]
             [aishell.migration :as migration]))
 
-(def version "2.10.0")
+(def version "3.0.0")
 
 (defn print-version []
   (println (str "aishell " version)))
@@ -72,7 +72,6 @@
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
-   :with-tmux     {:coerce :boolean :desc "Enable tmux multiplexer in container"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show setup help"}})
@@ -139,7 +138,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-tmux :with-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -147,7 +146,6 @@
   (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
-  (println (str "  " output/CYAN "aishell setup --with-claude --with-tmux" output/NC "  Include Claude + tmux"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
@@ -162,7 +160,6 @@
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
           with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
-          with-tmux (boolean (:with-tmux opts))
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
@@ -188,28 +185,16 @@
                      :with-codex (:enabled? codex-config)
                      :with-gemini (:enabled? gemini-config)
                      :with-gitleaks with-gitleaks
-                     :with-tmux with-tmux
-                     :tmux-plugins (when with-tmux
-                                     (let [plugins (vec (or (get-in cfg [:tmux :plugins]) []))
-                                           resurrect-val (get-in cfg [:tmux :resurrect])
-                                           resurrect-cfg (config/parse-resurrect-config resurrect-val)
-                                           needs-resurrect? (:enabled resurrect-cfg)
-                                           has-resurrect? (some #(= % "tmux-plugins/tmux-resurrect") plugins)]
-                                       (if (and needs-resurrect? (not has-resurrect?))
-                                         (conj plugins "tmux-plugins/tmux-resurrect")
-                                         plugins)))
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
-                     :gemini-version (:version gemini-config)
-                     :resurrect-config (when with-tmux
-                                         (config/parse-resurrect-config (get-in cfg [:tmux :resurrect])))}
+                     :gemini-version (:version gemini-config)}
 
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -224,7 +209,7 @@
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                    "aishell.harness.version" "2.8.0"
+                                                    "aishell.harness.version" "3.0.0"
                                                     "aishell.harnesses" harness-list}))
                   (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
@@ -308,8 +293,6 @@
         (println (str "  Codex: " (or (:codex-version state) "latest"))))
       (when (:with-gemini state)
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
-      (when (:with-tmux state)
-        (println "  tmux: enabled"))
 
       ;; Conditionally rebuild foundation image (only with --force)
       (let [project-dir (System/getProperty "user.dir")
@@ -326,7 +309,7 @@
                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
@@ -340,7 +323,7 @@
                   (println "Repopulating harness volume...")
                   (vol/remove-volume volume-name)
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "2.8.0"
+                                                  "aishell.harness.version" "3.0.0"
                                                   "aishell.harnesses" harness-list})
                   (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
@@ -466,11 +449,11 @@
   (let [project-dir (System/getProperty "user.dir")
         containers (naming/list-project-containers project-dir)]
     (if (empty? containers)
-      (println "No containers found for this project.\n\nTo start a container:\n  aishell claude --detach\n  aishell opencode --detach --name my-session\n\nContainers are project-specific (based on current directory).")
+      (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell opencode --name my-session\n\nContainers are project-specific (based on current directory).")
       (do
         (println "Containers for this project:\n")
         (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
-        (println "\nTo attach: aishell attach --name <name>")))))
+        (println "\nTo attach: aishell attach <name>")))))
 
 (def dispatch-table
   [{:cmds ["setup"] :fn handle-setup :spec setup-spec :restrict true}
@@ -498,14 +481,10 @@
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
 
-        ;; Extract --detach/-d flag before pass-through
-        detach? (boolean (some #{"-d" "--detach"} clean-args))
-        clean-args (vec (remove #{"-d" "--detach"} clean-args))
-
-        ;; Extract --name flag (--name VALUE format) for harness commands only
+        ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        harness-commands #{"claude" "opencode" "codex" "gemini" "gitleaks"}
-        should-extract-name? (contains? harness-commands (first clean-args))
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach"}
+        should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
                                     (when (and (>= idx 0) (< (inc idx) (count clean-args)))
@@ -526,62 +505,43 @@
                  (cond
                    (some #{"-h" "--help"} rest-args)
                    (do
-                     (println (str output/BOLD "Usage:" output/NC " aishell attach --name <name> [OPTIONS]"))
+                     (println (str output/BOLD "Usage:" output/NC " aishell attach <name>"))
                      (println)
-                     (println "Attach to a running container's tmux session.")
+                     (println "Attach to a running container (opens bash shell).")
                      (println)
                      (println (str output/BOLD "Options:" output/NC))
-                     (println "  --name <name>        Container name to attach to")
-                     (println "  --session <session>  Tmux session name (default: harness)")
-                     (println "  --shell              Open a bash shell (creates tmux session 'shell')")
-                     (println "  -h, --help           Show this help")
+                     (println "  -h, --help    Show this help")
                      (println)
                      (println (str output/BOLD "Examples:" output/NC))
-                     (println (str "  " output/CYAN "aishell attach --name claude" output/NC))
-                     (println (str "      Attach to the 'claude' container's harness session"))
+                     (println (str "  " output/CYAN "aishell attach claude" output/NC))
+                     (println (str "      Open bash shell in the 'claude' container"))
                      (println)
-                     (println (str "  " output/CYAN "aishell attach --name claude --shell" output/NC))
-                     (println (str "      Open a bash shell in the 'claude' container"))
-                     (println)
-                     (println (str "  " output/CYAN "aishell attach --name experiment --session debug" output/NC))
-                     (println (str "      Attach to specific session in 'experiment' container"))
+                     (println (str "  " output/CYAN "aishell attach shell" output/NC))
+                     (println (str "      Open bash shell in the 'shell' container"))
                      (println)
                      (println (str output/BOLD "Notes:" output/NC))
-                     (println "  --shell and --session are mutually exclusive.")
-                     (println "  Press Ctrl+B then D to detach without stopping the container.")
-                     (println "  Multiple users can attach to the same container simultaneously."))
+                     (println "  Use 'aishell ps' to list running containers.")
+                     (println "  The container must be running. Start one in another terminal: aishell <harness>"))
 
                    (empty? rest-args)
-                   (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
+                   (output/error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers.")
 
                    :else
-                   (let [opts (cli/parse-opts rest-args {:spec {:name {} :session {} :shell {:coerce :boolean}}})]
-                     (cond
-                       (not (:name opts))
-                       (output/error "Container name required.\n\nUsage: aishell attach --name <name>\n\nUse 'aishell ps' to list running containers.")
-
-                       (and (:shell opts) (:session opts))
-                       (output/error "--shell and --session are mutually exclusive.\n\n--shell creates a bash session named 'shell'.\n--session attaches to a specific existing tmux session.")
-
-                       (:shell opts)
-                       (attach/attach-shell (:name opts))
-
-                       :else
-                       (attach/attach-to-session (:name opts) (or (:session opts) "harness"))))))
+                   (attach/attach-to-container (first rest-args))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
-                 {:unsafe unsafe? :container-name container-name-override :detach detach?})
+                 {:unsafe unsafe? :container-name container-name-override})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override :detach detach?})
+                   {:unsafe unsafe? :container-name container-name-override})
       "codex" (run/run-container "codex" (vec (rest clean-args))
-               {:unsafe unsafe? :container-name container-name-override :detach detach?})
+               {:unsafe unsafe? :container-name container-name-override})
       "gemini" (run/run-container "gemini" (vec (rest clean-args))
-                {:unsafe unsafe? :container-name container-name-override :detach detach?})
+                {:unsafe unsafe? :container-name container-name-override})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true :detach detach?})
+                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
       ;; Standard dispatch for other commands (setup, update, help)
-      (if unsafe?
-        ;; --unsafe with no harness command -> shell mode with unsafe
-        (run/run-container nil [] {:unsafe true :container-name container-name-override :detach detach?})
+      (if (or unsafe? container-name-override)
+        ;; --unsafe or --name with no harness command -> shell mode
+        (run/run-container nil [] {:unsafe (boolean unsafe?) :container-name container-name-override})
         ;; Normal dispatch
         (cli/dispatch dispatch-table args {:error-fn handle-error
                                            :restrict true})))))

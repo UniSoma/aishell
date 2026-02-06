@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v2.9.0
+**Last updated:** v3.0.0
 
 ---
 
@@ -58,7 +58,6 @@ graph TB
 4. **Configuration Merge:** Global and project configs combine with defined semantics
 5. **Stateless Containers:** No data persists in container; all work is in mounted project dir
 6. **Security Layers:** Detection (filename patterns) + Gitleaks (opt-in content scanning) before launch
-7. **tmux Opt-in:** tmux multiplexer is optional, enabled via `--with-tmux` build flag
 
 ---
 
@@ -74,7 +73,7 @@ The foundation image contains stable system components that change rarely:
 - Debian bookworm-slim base
 - Node.js 24 runtime
 - Babashka CLI runtime
-- System tools (git, curl, jq, ripgrep, vim, tmux, etc.)
+- System tools (git, curl, jq, ripgrep, vim, etc.)
 - Gitleaks binary (opt-in, via `--with-gitleaks`)
 - Gosu for user switching
 - Entrypoint script and profile configuration
@@ -123,7 +122,7 @@ Mounted read-only so harnesses cannot modify installed tools.
 4. Sets NODE_PATH: `/tools/npm/lib/node_modules`
 
 **Profile.d integration:**
-`/etc/profile.d/aishell.sh` lets tmux new-window sessions inherit PATH configuration.
+`/etc/profile.d/aishell.sh` ensures login shells inherit PATH configuration.
 
 ### Migration
 
@@ -146,114 +145,6 @@ FROM aishell:foundation
 - New fields: `foundation-hash`, `harness-volume-hash`, `harness-volume-name`
 - Deprecated (but still written): `dockerfile-hash` → `foundation-hash`
 - Additive migration: nil values for missing fields, no migration code needed
-
-**From v2.8.0 to v2.9.0:**
-
-**tmux behavior change:**
-- Old: tmux always enabled
-- New: tmux opt-in via `--with-tmux` flag
-- Session name changed from "main" to "harness"
-
-**attach command validation:**
-- Checks `:with-tmux` in state before allowing attach
-- Shows an error with guidance if tmux is disabled
-
-**Migration warning:**
-- One-time warning on first use after upgrade to v2.9.0
-- Explains tmux changes and rebuild requirements
-- Marker file: `~/.aishell/.migration-v2.9-warned`
-
-**State schema additions:**
-- New fields: `:with-tmux`, `:tmux-plugins`, `:resurrect-config`
-- Additive migration: nil values for missing fields
-
----
-
-## tmux Architecture
-
-aishell v2.9.0 adds opt-in tmux support with plugin management and session persistence.
-
-### Opt-in Behavior
-
-tmux is **disabled by default**. Enable it via the `--with-tmux` build flag:
-
-```bash
-aishell setup --with-claude --with-tmux
-```
-
-The `:with-tmux` flag in `state.edn` controls which tmux features are available:
-- Session management (attach/detach)
-- Plugin support (TPM)
-- Session persistence (tmux-resurrect)
-
-### Plugin Management
-
-**Plugin installation location:** `/tools/tmux/plugins/tpm` in harness volume
-
-**Plugin declaration:** Specify plugins in `config.yaml`:
-```yaml
-tmux:
-  plugins:
-    - tmux-plugins/tmux-sensible
-    - tmux-plugins/tmux-yank
-```
-
-**Build-time installation:**
-1. TPM cloned to `/tools/tmux/plugins/tpm` during harness volume population
-2. Plugin repositories cloned to `/tools/tmux/plugins/{plugin-name}`
-3. Format: `owner/repo` (e.g., `tmux-plugins/tmux-sensible`)
-
-**Plugin bridging:**
-- Entrypoint symlinks `/tools/tmux/plugins` to `~/.tmux/plugins`
-- TPM then finds plugins in the volume at runtime
-
-**TPM initialization:**
-- Runtime config at `~/.tmux.conf.runtime` sources TPM
-- User's `~/.tmux.conf` mounted read-only when tmux enabled
-- Entrypoint sources runtime config to initialize TPM
-
-### Resurrect Persistence
-
-tmux-resurrect provides optional session persistence:
-
-```yaml
-tmux:
-  resurrect: true
-  # Or with options:
-  # resurrect:
-  #   restore_processes: true
-```
-
-**State directory:** `~/.aishell/resurrect/{project-hash}/`
-- Per-project isolation
-- Mounted into container
-- Contains session layout, window state, process state
-
-**Auto-injection:**
-- `tmux-resurrect` plugin added to the plugin list automatically when `resurrect: true`
-- Manual plugin declaration unnecessary
-
-**Auto-restore:**
-- Entrypoint runs resurrect auto-restore after TPM initialization, restoring previous session state
-
-### User Config Mounting
-
-When tmux is enabled:
-- User's `~/.tmux.conf` mounted read-only, preventing the container from modifying host config
-- Skipped if user has an explicit `.tmux.conf` in config mounts
-
-### Session Name
-
-Default tmux session name: **`harness`** (changed from `main` in v2.9.0)
-
-This aligns with project naming conventions.
-
-### Migration Note
-
-v2.9.0 changed tmux behavior:
-- **Old:** Always enabled, session name "main"
-- **New:** Opt-in via `--with-tmux`, session name "harness"
-- **Migration:** One-time warning on first use after upgrade
 
 ---
 
@@ -370,12 +261,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 │ 2. Setup home directory                 │
 │ 3. Run pre_start command (if configured)│
 │ 4. Validate TERM (fallback xterm-256color)│
-│ 5. Switch to user (via gosu)            │
-│ 6. Set up plugin bridging (if tmux)    │
-│ 7. Source TPM initialization (if tmux)  │
-│ 8. Auto-restore resurrect state (if enabled)│
-│ 9. Start tmux session 'harness' (if enabled)│
-│ 10. Execute harness command in tmux/directly│
+│ 5. Execute command via gosu             │
 └──────────────────────────────────────────┘
 ```
 
@@ -432,7 +318,7 @@ Each namespace handles one concern:
 | `aishell.state` | Build state persistence | Read/write `~/.aishell/state.edn` |
 | `aishell.output` | Terminal formatting | Colored output, error handling |
 | `aishell.util` | Shared utilities | Path helpers, home directory resolution |
-| `aishell.attach` | Attach command | Reconnect to running containers' tmux sessions |
+| `aishell.attach` | Attach command | Open shell in running containers via docker exec |
 | `aishell.check` | Pre-flight checks | Validate Docker, config, image state |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |
 
@@ -509,13 +395,10 @@ Each namespace handles one concern:
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
- :with-tmux true                         ; boolean: tmux enabled? (NEW in v2.9.0)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
  :codex-version "0.89.0"                 ; string or nil: pinned version
  :gemini-version nil                     ; string or nil: pinned version
- :tmux-plugins ["tmux-plugins/tmux-sensible"] ; vector: tmux plugins (NEW in v2.9.0)
- :resurrect-config {:enabled true :restore_processes false} ; map: resurrect config (NEW in v2.9.0)
  :image-tag "aishell:foundation"         ; string: Docker image tag
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
  :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)

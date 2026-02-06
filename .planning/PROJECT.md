@@ -112,21 +112,24 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Update command redesign: `aishell update` refreshes harness volume, `--force` rebuilds foundation — v2.8.0
 - ✓ Volume management: `aishell volumes` list/prune with orphan detection and safety checks — v2.8.0
 
+**v3.0.0 (2026-02-06) — Docker-native Attach:**
+- ✓ tmux removed from foundation image — harnesses and shells run bare as container's main process — v3.0.0
+- ✓ Attach simplified to `docker exec -it` — `aishell attach <name>` opens bash in running container — v3.0.0
+- ✓ `--detach` flag removed — containers always run foreground-attached — v3.0.0
+- ✓ `--with-tmux` build flag and all tmux-related state/config removed — v3.0.0
+- ✓ tmux binary removed from foundation image — v3.0.0
+- ✓ Entrypoint simplified — conditional tmux fork removed, direct `exec gosu` — v3.0.0
+- ✓ All user-facing documentation updated for v3.0.0 changes — v3.0.0
+
 ### Active
 
-**v3.0.0 — Docker-native Attach (replacing tmux):**
-- Remove tmux from containers — harnesses and shells run bare as container's main process
-- Simplify attach to `docker exec -it` — `aishell attach <name>` opens bash in running container
-- Remove `--detach` flag — users always enter the container interactively
-- Remove `--with-tmux` build flag and all tmux-related state/config
-- Remove tmux binary from foundation image
-- Clean up entrypoint — remove conditional tmux fork, simplify to `exec gosu`
-- Update all user-facing documentation for v3.0.0 changes
+(None — planning next milestone)
 
 ### Out of Scope
 
 - Persistent containers — ephemeral is the design choice (named containers in v2.7.0 are still ephemeral with --rm)
-- tmux inside containers — window management belongs on the host, not in the container (v3.0.0 removes tmux entirely)
+- tmux inside containers — window management belongs on the host, not in the container (removed in v3.0.0)
+- Detached/background mode — always-interactive simplifies the model; use host tools for backgrounding (removed in v3.0.0)
 - Windows host support — Docker on Windows is complex; deferred indefinitely
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
@@ -136,12 +139,12 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v2.10.0 on 2026-02-05
-**Next:** v3.0.0 Docker-native Attach
+**Shipped:** v3.0.0 on 2026-02-06
+**Next:** Planning next milestone
 
-**Codebase:** ~4,483 LOC Clojure (Babashka)
-**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in), tmux (opt-in — being removed in v3.0.0), TPM (being removed in v3.0.0)
-**Documentation:** 5,000+ lines across docs/ and README
+**Codebase:** ~4,050 LOC Clojure (Babashka) — net reduction from tmux removal
+**Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
+**Documentation:** 4,500+ lines across docs/ and README (reduced by tmux doc removal)
 
 ## Milestone Conventions
 
@@ -269,6 +272,18 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Gate staleness warnings on build state | Prevents confusing warnings for users without Gitleaks | Good |
 | Filename detection independent of Gitleaks | Lightweight Babashka-side checks valuable on their own | Good |
 
+**v3.0.0 (Docker-native Attach):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Remove tmux entirely (not just opt-in) | Window management belongs on host; tmux added complexity, code, and image size | Good |
+| Positional argument for attach (`aishell attach <name>`) | Simpler UX than `--name` flag; breaking change justified by major version | Good |
+| Remove --detach flag entirely | Always-foreground model simplifies execution paths; host tools handle backgrounding | Good |
+| Rename skip-tmux to skip-interactive | Parameter now controls all interactive features (harness aliases), not just tmux | Good |
+| Single entrypoint execution path | No conditional branching; direct exec gosu for every container mode | Good |
+| State schema bump to v3.0.0 | Major version reflects removal of :with-tmux, :tmux-plugins, :resurrect-config keys | Good |
+| Pure deletion refactor approach | 7 phases each focused on removing one layer; no new code, only deletions | Good |
+
 **v2.8.0 (Decouple Harness Tools):**
 
 | Decision | Rationale | Outcome |
@@ -286,4 +301,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-06 after v3.0.0 milestone start*
+*Last updated: 2026-02-06 after v3.0.0 milestone*

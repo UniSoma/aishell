@@ -41,21 +41,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     watch \\
     && rm -rf /var/lib/apt/lists/*
 
-# Install tmux static binary (Debian bookworm ships 3.3a)
-# Source: https://github.com/tmux/tmux-builds (official tmux org)
-ARG TMUX_VERSION=3.6a
-RUN set -eux; \\
-    dpkgArch=\"$(dpkg --print-architecture)\"; \\
-    case \"${dpkgArch}\" in \\
-        amd64) tmuxArch='x86_64' ;; \\
-        arm64) tmuxArch='arm64' ;; \\
-        *) echo \"unsupported architecture for tmux: $dpkgArch\"; exit 1 ;; \\
-    esac; \\
-    curl -fsSL \"https://github.com/tmux/tmux-builds/releases/download/v${TMUX_VERSION}/tmux-${TMUX_VERSION}-linux-${tmuxArch}.tar.gz\" \\
-    | tar -xz -C /usr/local/bin tmux; \\
-    chmod +x /usr/local/bin/tmux; \\
-    tmux -V
-
 # Install Node.js via multi-stage copy from official image
 COPY --from=node-source /usr/local/bin/node /usr/local/bin/node
 COPY --from=node-source /usr/local/lib/node_modules /usr/local/lib/node_modules
@@ -98,10 +83,6 @@ RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
         gitleaks version; \\
     fi
 
-# Enable tmux mouse mode for scroll support inside containers
-# Without this, scroll events are interpreted as arrow keys by the inner application
-RUN echo 'set -g mouse on' > /etc/tmux.conf
-
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -109,7 +90,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Copy custom bashrc
 COPY bashrc.aishell /etc/bash.aishell
 
-# Copy profile.d script for login shell environment (tmux new-window compatibility)
+# Copy profile.d script for login shell environment
 COPY profile.d-aishell.sh /etc/profile.d/aishell.sh
 
 ENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]
@@ -224,96 +205,16 @@ if [[ -n \"${PRE_START:-}\" ]]; then
 fi
 
 # Validate TERM has terminfo entry; fallback to xterm-256color if missing
-# Prevents tmux failure with custom terminals (e.g., xterm-ghostty from Ghostty)
 if command -v infocmp >/dev/null 2>&1 && ! infocmp \"$TERM\" >/dev/null 2>&1; then
     export TERM=xterm-256color
 fi
 
-# Set UTF-8 locale before tmux starts so tmux enables Unicode mode
-# Without this, tmux defaults to ASCII and Unicode characters render as dashes
+# Set UTF-8 locale for proper Unicode rendering
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
-# Plugin path bridging: symlink volume plugins to tmux's expected path
-if [ \"$WITH_TMUX\" = \"true\" ] && [ -d \"/tools/tmux/plugins\" ]; then
-    mkdir -p \"$HOME/.tmux\"
-    ln -sfn /tools/tmux/plugins \"$HOME/.tmux/plugins\"
-    if [ ! -d \"$HOME/.tmux/plugins/tpm\" ]; then
-        echo \"Warning: TPM not found at ~/.tmux/plugins/tpm\" >&2
-    fi
-fi
-
-# Config injection: build runtime tmux config with plugin declarations.
-# Host config is staged at /tmp/host-tmux.conf (not at its original path)
-# so it doesn't shadow the XDG location that TPM reads for plugin discovery.
-# The runtime config is written to the XDG path so both tmux and TPM read it.
-if [ \"$WITH_TMUX\" = \"true\" ]; then
-    RUNTIME_TMUX_CONF=\"$HOME/.config/tmux/tmux.conf\"
-    TPM_RUN_LINE=\"run '~/.tmux/plugins/tpm/tpm'\"
-
-    mkdir -p \"$HOME/.config/tmux\"
-
-    # Copy host config from staging path (mounted at /tmp/host-tmux.conf)
-    if [ -f /tmp/host-tmux.conf ]; then
-        cp /tmp/host-tmux.conf \"$RUNTIME_TMUX_CONF\"
-    else
-        : > \"$RUNTIME_TMUX_CONF\"
-    fi
-
-    # Inject plugin declarations from volume manifest
-    if [ -f \"/tools/tmux/plugins.conf\" ]; then
-        if ! grep -qF \"@plugin\" \"$RUNTIME_TMUX_CONF\" 2>/dev/null; then
-            echo \"\" >> \"$RUNTIME_TMUX_CONF\"
-            echo \"# Plugin declarations (from harness volume)\" >> \"$RUNTIME_TMUX_CONF\"
-            cat /tools/tmux/plugins.conf >> \"$RUNTIME_TMUX_CONF\"
-        fi
-    fi
-
-    # Set plugin manager path in tmux config
-    if ! grep -qF \"TMUX_PLUGIN_MANAGER_PATH\" \"$RUNTIME_TMUX_CONF\" 2>/dev/null; then
-        echo \"set-environment -g TMUX_PLUGIN_MANAGER_PATH \\\"$HOME/.tmux/plugins\\\"\" >> \"$RUNTIME_TMUX_CONF\"
-    fi
-
-    # Append TPM initialization
-    if ! grep -qF \"$TPM_RUN_LINE\" \"$RUNTIME_TMUX_CONF\" 2>/dev/null; then
-        echo \"\" >> \"$RUNTIME_TMUX_CONF\"
-        echo \"# TPM initialization (auto-added by aishell)\" >> \"$RUNTIME_TMUX_CONF\"
-        echo \"$TPM_RUN_LINE\" >> \"$RUNTIME_TMUX_CONF\"
-    fi
-fi
-
-# Resurrect configuration: inject tmux-resurrect settings into runtime config
-if [ \"$WITH_TMUX\" = \"true\" ] && [ \"$RESURRECT_ENABLED\" = \"true\" ]; then
-    # Set resurrect save directory (matches volume mount point)
-    echo \"\" >> \"$RUNTIME_TMUX_CONF\"
-    echo \"# tmux-resurrect configuration (auto-added by aishell)\" >> \"$RUNTIME_TMUX_CONF\"
-    echo \"set -g @resurrect-dir '~/.tmux/resurrect'\" >> \"$RUNTIME_TMUX_CONF\"
-
-    # Configure process restoration
-    if [ \"$RESURRECT_RESTORE_PROCESSES\" = \"true\" ]; then
-        echo \"set -g @resurrect-processes ':all:'\" >> \"$RUNTIME_TMUX_CONF\"
-    else
-        echo \"set -g @resurrect-processes 'false'\" >> \"$RUNTIME_TMUX_CONF\"
-    fi
-
-    # Auto-restore: run resurrect restore script on tmux start
-    # This restores the last saved session if state exists, no-ops if no state
-    echo \"run-shell '~/.tmux/plugins/tmux-resurrect/scripts/restore.sh r'\" >> \"$RUNTIME_TMUX_CONF\"
-fi
-
-# Conditional startup: tmux session or direct shell
-# When WITH_TMUX=true: starts tmux with runtime config and plugin support
-# When WITH_TMUX is unset/false: direct shell execution without tmux
-# Session named \\\"harness\\\" for consistency with project naming
-if [ \"$WITH_TMUX\" = \"true\" ]; then
-    if ! command -v tmux >/dev/null 2>&1; then
-        echo \"Error: tmux not found but --with-tmux was specified\" >&2
-        exit 1
-    fi
-    exec gosu \"$USER_ID:$GROUP_ID\" tmux -f \"$RUNTIME_TMUX_CONF\" new-session -A -s harness -c \"$PWD\" \"$@\"
-else
-    exec gosu \"$USER_ID:$GROUP_ID\" \"$@\"
-fi
+# Execute command as developer user
+exec gosu \"$USER_ID:$GROUP_ID\" \"$@\"
 ")
 
 (def bashrc-content
@@ -356,8 +257,12 @@ fi
 
 (def profile-d-script
   "# /etc/profile.d/aishell.sh - Login shell environment for aishell containers
-# Sourced by /etc/profile on login shell startup (new tmux windows, ssh, etc.)
-# Ensures harness tools and shell customizations persist across tmux windows.
+# Sourced by /etc/profile on login shell startup (new shell sessions, ssh, etc.)
+# Ensures harness tools and shell customizations persist across shell sessions.
+# Critical for 'aishell attach' which starts a login shell via docker exec.
+
+# User local bin (native tool installations like Claude Code)
+export PATH=\"$HOME/.local/bin:$PATH\"
 
 # Volume-mounted harness tools PATH configuration
 if [ -d \"/tools/npm/bin\" ]; then
@@ -369,12 +274,15 @@ if [ -d \"/tools/bin\" ]; then
   export PATH=\"/tools/bin:$PATH\"
 fi
 
+# Suppress Claude Code npm vs native installer warning
+export DISABLE_INSTALLATION_CHECKS=1
+
 # Source shell customizations (prompt, aliases, locale)
 if [ -f \"/etc/bash.aishell\" ]; then
   . /etc/bash.aishell
 fi
 
-# Source harness aliases for login shells (tmux new-window)
+# Source harness aliases for login shells
 if [ -f \"$HOME/.bash_aliases\" ]; then
   . \"$HOME/.bash_aliases\"
 fi

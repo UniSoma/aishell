@@ -2,7 +2,7 @@
 
 Find the symptom you are experiencing, then follow the resolution steps.
 
-**Last updated:** v2.9.0
+**Last updated:** v3.0.0
 
 ---
 
@@ -14,8 +14,7 @@ Find the symptom you are experiencing, then follow the resolution steps.
 - [Volume Issues](#volume-issues)
 - [Authentication Issues](#authentication-issues)
 - [Sensitive File Detection](#sensitive-file-detection)
-- [Detached Mode & Attach Issues](#detached-mode--attach-issues)
-- [tmux Issues](#tmux-issues)
+- [Attach Issues](#attach-issues)
 - [Exec Command Issues](#exec-command-issues)
 - [Network Issues](#network-issues)
 - [Getting Help](#getting-help)
@@ -425,39 +424,6 @@ Pruning removes only volumes not referenced by current state. The active volume 
 - Subsequent updates: 20-40 seconds (npm cache helps)
 - Slower on slow networks or with large harness packages
 
-### Symptom: "tmux new-window missing tools" (harness commands not in PATH)
-
-**Cause:** Fixed in v2.8.0 via `/etc/profile.d/aishell.sh`. If the problem persists, rebuild the foundation image.
-
-**Resolution:**
-
-1. **Rebuild foundation image:**
-   ```bash
-   aishell update --force
-   ```
-
-2. **Verify profile.d script exists:**
-   ```bash
-   aishell
-   cat /etc/profile.d/aishell.sh
-   # Should exist and set PATH
-   ```
-
-3. **Test in tmux new-window:**
-   ```bash
-   aishell
-   # Inside container in main tmux session:
-   tmux new-window
-   # In new window:
-   echo $PATH
-   # Should include /tools/npm/bin
-   which claude
-   # Should find /tools/npm/bin/claude
-   ```
-
-**If still broken:**
-File a bug report including your tmux version and `SHELL` variable.
-
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
 **Cause:** v2.8.0 renamed `aishell:base` to `aishell:foundation`. Update your custom `.aishell/Dockerfile`.
@@ -801,11 +767,9 @@ aishell claude  # No warning for allowlisted files
 
 ---
 
-## Detached Mode & Attach Issues
+## Attach Issues
 
-**Note:** `aishell attach` requires tmux, enabled at build time with `--with-tmux`. Without tmux, attach shows an error with rebuild instructions.
-
-### Symptom: "Container name already in use" when starting detached
+### Symptom: "Container name already in use" when starting container
 
 **Cause:** A container with that name is already running.
 
@@ -818,13 +782,13 @@ aishell claude  # No warning for allowlisted files
 
 2. **Attach to existing container:**
    ```bash
-   aishell attach --name claude
+   aishell attach claude
    ```
 
 3. **Stop and restart:**
    ```bash
    docker stop aishell-<hash>-claude
-   aishell claude --detach
+   aishell claude
    ```
 
 **Note:** If the container is stopped, aishell removes it and starts a new one.
@@ -846,35 +810,9 @@ aishell claude  # No warning for allowlisted files
    ```
 
 3. **Common issues:**
-   - Container exited: restart with `aishell claude --detach`
+   - Container exited: restart with `aishell claude`
    - Wrong name: run `aishell ps` to see actual container names
    - Wrong directory: container names are project-scoped
-
-### Symptom: "tmux: open terminal failed: not a terminal"
-
-**Cause:** `aishell attach` was run from a non-interactive context (script, pipe, or CI).
-
-**Resolution:**
-
-Run `aishell attach` from an interactive terminal emulator, not from scripts or pipes.
-
-### Symptom: tmux fails with "open terminal failed: missing or unsuitable terminal"
-
-**Cause:** Your terminal's `TERM` value (e.g., `xterm-ghostty`) lacks a terminfo entry in the container.
-
-**Resolution:**
-
-aishell validates TERM and falls back to `xterm-256color` for unsupported values. If you still see this error:
-
-1. **Rebuild the image** to get the TERM validation fix:
-   ```bash
-   aishell update
-   ```
-
-2. **Manual override:**
-   ```bash
-   TERM=xterm-256color aishell claude
-   ```
 
 ### Symptom: "aishell ps" shows no containers
 
@@ -892,169 +830,9 @@ aishell validates TERM and falls back to `xterm-256color` for unsupported values
 
 3. **Start a container:**
    ```bash
-   aishell claude --detach
+   aishell claude --name background-task
    aishell ps
    ```
-
----
-
-## tmux Issues
-
-### Symptom: "Container does not have tmux enabled" when running attach
-
-**Cause:** The container was built without the `--with-tmux` flag.
-
-**Resolution:**
-
-1. **Rebuild with tmux support:**
-   ```bash
-   aishell setup --with-claude --with-tmux
-   ```
-
-2. **Restart container:**
-   ```bash
-   docker stop aishell-{hash}-{name}
-   aishell claude --detach
-   ```
-
-3. **Attach to container:**
-   ```bash
-   aishell attach --name claude
-   ```
-
-**Note:** `--with-tmux` must be specified at build time. Enabling tmux requires a rebuild.
-
-### Symptom: "attach" works but "main" session not found
-
-**Cause:** v2.9.0 renamed the session from "main" to "harness".
-
-**Resolution:**
-
-**Option 1: Omit --session (recommended)**
-```bash
-aishell attach --name claude
-# Defaults to "harness" session
-```
-
-**Option 2: Use correct session name**
-```bash
-aishell attach --name claude --session harness
-```
-
-**Migration note:** If you upgraded from v2.8.0 and still have containers with "main" sessions, rebuild:
-```bash
-aishell setup --with-claude --with-tmux
-```
-
-### Symptom: tmux plugins not loading
-
-**Cause:** Plugins were installed at build time but TPM was not initialized, or the plugin format is invalid.
-
-**Resolution:**
-
-1. **Check plugin format in config.yaml:**
-   ```yaml
-   tmux:
-     plugins:
-       - tmux-plugins/tmux-sensible  # Correct: owner/repo
-       # - tmux-sensible              # Wrong: missing owner
-   ```
-
-2. **Rebuild with updated config:**
-   ```bash
-   aishell update
-   ```
-
-3. **Verify plugins installed:**
-   ```bash
-   aishell
-   ls -la ~/.tmux/plugins/
-   # Should show symlink to /tools/tmux/plugins
-   ls -la /tools/tmux/plugins/
-   # Should show tpm and plugin directories
-   ```
-
-4. **Check TPM initialization:**
-   ```bash
-   aishell
-   cat ~/.tmux.conf.runtime
-   # Should source TPM run script
-   ```
-
-**Common issues:**
-- Wrong format (missing owner: `tmux-sensible` instead of `tmux-plugins/tmux-sensible`)
-- Private repositories (TPM can't clone during build)
-- Network issues during build (plugin clone fails)
-
-### Symptom: tmux-resurrect not restoring sessions
-
-**Cause:** Resurrect is not configured, the state directory is not mounted, or resurrect is disabled.
-
-**Resolution:**
-
-1. **Enable resurrect in config.yaml:**
-   ```yaml
-   tmux:
-     resurrect: true
-   ```
-
-2. **Rebuild to apply config:**
-   ```bash
-   aishell update
-   ```
-
-3. **Verify state directory exists:**
-   ```bash
-   ls -la ~/.aishell/resurrect/
-   # Should show project-hash subdirectories
-   ```
-
-4. **Check resurrect plugin loaded:**
-   ```bash
-   aishell
-   tmux list-keys | grep resurrect
-   # Should show resurrect key bindings
-   ```
-
-5. **Manual save/restore test:**
-   ```bash
-   # Inside tmux session
-   # Prefix + Ctrl-s  # Save
-   # Prefix + Ctrl-r  # Restore
-   ```
-
-**Notes:**
-- Auto-restore happens on container start
-- State directory: `~/.aishell/resurrect/{project-hash}/`
-- Resurrect config is silently ignored when tmux is not enabled
-
-### Symptom: Migration warning keeps appearing
-
-**Cause:** The marker file is missing or unwritable.
-
-**Resolution:**
-
-1. **Check marker file:**
-   ```bash
-   ls -la ~/.aishell/.migration-v2.9-warned
-   # Should exist after first warning
-   ```
-
-2. **Verify write permissions:**
-   ```bash
-   ls -ld ~/.aishell/
-   # Should be writable by your user
-   ```
-
-3. **Create marker manually (if needed):**
-   ```bash
-   touch ~/.aishell/.migration-v2.9-warned
-   ```
-
-**The warning covers:**
-- tmux is now opt-in, not automatic
-- Session name changed from "main" to "harness"
-- Attach/detach requires a rebuild with `--with-tmux`
 
 ---
 

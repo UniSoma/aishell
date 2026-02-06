@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses that aishell supports.
 
-**Last updated:** v2.9.0
+**Last updated:** v3.0.0
 
 ## What are Harnesses?
 
@@ -512,61 +512,21 @@ harnesses:
 3. **Vertex AI:** Adds enterprise features (audit logs, VPC, quotas)
 4. **Model selection:** Gemini 2.0 Flash balances speed and quality
 
-## Detached Mode & tmux
+## Multi-Container Workflow
 
-tmux is opt-in via the `--with-tmux` build flag. When enabled, each container runs inside a tmux session named `harness`.
+Run multiple named containers simultaneously and reconnect to them.
 
-### Enabling tmux
+### Starting Named Containers
 
-Build with tmux support:
-
-```bash
-# Build with harness and tmux
-aishell setup --with-claude --with-tmux
-```
-
-### Running in Background
-
-Detached mode requires tmux:
+Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `gemini`, `shell`). Override with `--name`:
 
 ```bash
-# Start Claude Code detached
-aishell claude --detach
+# Start Claude (default name: claude)
+aishell claude
 
-# Start with a custom name
-aishell claude --detach --name reviewer
-
-# Short form
-aishell claude -d --name reviewer
+# Start a second Claude with a custom name
+aishell claude --name reviewer
 ```
-
-**Note:** Without `--with-tmux`, `aishell attach` shows an error and prompts you to rebuild.
-
-### Reconnecting
-
-Attach to running containers:
-
-```bash
-# Attach to a running container
-aishell attach --name claude
-
-# Attach to a specific tmux session (default: harness)
-aishell attach --name claude --session harness
-```
-
-**Session name:** Default is `harness` (changed from `main` in v2.9.0)
-
-### Shell Access
-
-Open a plain bash shell inside a running container:
-
-```bash
-aishell attach --name claude --shell
-```
-
-This creates (or reattaches to) a tmux session named `shell` running `/bin/bash`.
-Unlike `--session`, which attaches to an existing tmux session, `--shell` always
-ensures a bash session exists.
 
 ### Listing Containers
 
@@ -575,39 +535,31 @@ ensures a bash session exists.
 aishell ps
 ```
 
-### Detaching
+### Attaching to Running Containers
 
-Inside a container, press `Ctrl+B D` to detach from the tmux session without stopping the container.
+Open a bash shell in a running container:
 
-### Stopping
+```bash
+# Attach to a running container by name
+aishell attach claude
+
+# Attach to a custom-named container
+aishell attach reviewer
+```
+
+`aishell attach` runs `docker exec -it <container> bash`, giving you a new shell session inside the running container. The original harness process continues running.
+
+### Stopping Containers
 
 ```bash
 docker stop aishell-<hash>-claude
 ```
-
-### tmux Plugins
-
-Configure tmux plugins in `.aishell/config.yaml`:
-
-```yaml
-tmux:
-  plugins:
-    - tmux-plugins/tmux-sensible
-    - tmux-plugins/tmux-yank
-  resurrect: true  # Enable session persistence
-```
-
-**Requirements:** Build with `--with-tmux`. Without it, the plugin config is silently ignored.
-
-**Plugin installation:** The build installs plugins to the harness volume; containers load them at runtime.
 
 ### Container Naming
 
 Containers follow the naming pattern `aishell-{project-hash}-{name}`:
 - **project-hash**: First 8 characters of the SHA-256 of your project directory path
 - **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`); override with `--name`
-
-This scheme supports multiple instances per project and isolation across projects.
 
 ## Running Multiple Harnesses
 

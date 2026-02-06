@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-02-06
+
+Remove tmux from containers entirely. Window management belongs on the host.
+Attach simplified to `docker exec`, CLI streamlined with always-foreground containers.
+
+### BREAKING CHANGES
+
+- **tmux removed**: `--with-tmux` build flag, tmux binary, tmux plugins, and tmux-resurrect persistence all removed from containers
+- **Attach rewritten**: `aishell attach <name>` now uses positional argument syntax (was `aishell attach --name <name>`)
+- **`--session` and `--shell` flags removed** from attach command (no tmux sessions to manage)
+- **`--detach`/`-d` flag removed**: Containers always run foreground-attached; use host window management for background execution
+- **`tmux:` config section removed**: `tmux.plugins` and `tmux.resurrect` config keys no longer recognized
+- **State schema v3.0.0**: `:with-tmux`, `:tmux-plugins`, and `:resurrect-config` keys removed from state
+
+### Changed
+- **Entrypoint simplified**: Single execution path via `exec gosu` (no conditional tmux fork), ~80 lines of dead code removed
+- **`--name` flag extended**: `aishell --name foo` now works in shell mode (creates container named "foo" running bash)
+- **Foundation image**: tmux binary and `/etc/tmux.conf` no longer installed, reducing image size
+- **Volume hash**: No longer includes tmux state; volumes keyed solely by harness tools
+- **`skip-tmux` renamed to `skip-interactive`**: Internal parameter now reflects broader purpose (controls harness aliases)
+
+### Removed
+- `--with-tmux` build flag and all tmux-related state tracking
+- `WITH_TMUX` environment variable from container runtime
+- tmux config mounting (`~/.tmux.conf`)
+- TPM and plugin installation from harness volumes
+- Resurrect mounts from docker run
+- tmux conditional logic from entrypoint (~80 lines)
+- tmux Architecture section from ARCHITECTURE.md (~90 lines)
+- tmux Issues section from TROUBLESHOOTING.md (~160 lines)
+- Detached Mode & tmux section from HARNESSES.md (replaced with Multi-Container Workflow)
+
+### Docs
+- README.md updated with docker exec attach semantics and new container naming
+- ARCHITECTURE.md updated: removed tmux section, simplified entrypoint flow (10 steps to 5)
+- CONFIGURATION.md updated: removed tmux config section and `--with-tmux` setup
+- HARNESSES.md updated: replaced tmux section with Multi-Container Workflow
+- TROUBLESHOOTING.md updated: removed tmux Issues section, simplified Attach Issues
+- DEVELOPMENT.md verified clean (no changes needed)
+
 ## [2.10.0] - 2026-02-05
 
 Flip Gitleaks from opt-out to opt-in. Users who want Gitleaks scanning must explicitly request it at build time.

@@ -44,7 +44,7 @@
    Populates lazily if missing or stale (hash mismatch).
    Returns volume name for docker run mounting, or nil if no harnesses enabled."
   [state config]
-  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-tmux])
+  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
     (let [expected-hash (vol/compute-harness-hash state)
           volume-name (or (:harness-volume-name state)
                           (vol/volume-name expected-hash))]
@@ -53,7 +53,7 @@
         (not (vol/volume-exists? volume-name))
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
-                                          "aishell.harness.version" "2.8.0"})
+                                          "aishell.harness.version" "3.0.0"})
           (let [result (vol/populate-volume volume-name state {:config config})]
             (when-not (:success result)
               ;; Remove empty volume so next run retries population
@@ -198,8 +198,7 @@
                            :state state
                            :git-identity git-id
                            :skip-pre-start (:skip-pre-start opts)
-                           :skip-tmux (= cmd "gitleaks")
-                           :detach (:detach opts)
+                           :skip-interactive (= cmd "gitleaks")
                            :container-name container-name-str
                            :harness-volume-name harness-volume-name})
 
@@ -237,30 +236,11 @@
             (when (and scan-completed? is-scan?)
               (scan-state/write-scan-timestamp project-dir))
             (System/exit (:exit result)))
-          ;; For detached mode, use p/shell to capture container ID and print feedback
-          ;; For foreground mode, use p/exec (replaces process)
-          (if (:detach opts)
-            ;; Detached mode: use p/shell so we can print feedback
-            (let [result (apply p/shell {:out :string :err :string :continue true}
-                                (concat docker-args container-cmd))]
-              (if (zero? (:exit result))
-                (let [container-id (clojure.string/trim (:out result))
-                      name-part (or (:container-name opts) cmd "shell")]
-                  (println (str "Container started: " container-name-str))
-                  (println)
-                  (println (str "  Attach:  aishell attach --name " name-part))
-                  (println (str "  Shell:   docker exec -it " container-name-str " /bin/bash"))
-                  (println (str "  Stop:    docker stop " container-name-str))
-                  (println (str "  List:    aishell ps")))
-                (do
-                  (binding [*out* *err*]
-                    (print (:err result)))
-                  (System/exit (:exit result)))))
-            ;; Foreground mode: set window title, then exec (replaces process)
-            (let [project-name (.getName (java.io.File. project-dir))]
-              (print (str "\033]2;[aishell] " project-name "\007"))
-              (flush)
-              (apply p/exec (concat docker-args container-cmd)))))))))
+          ;; Foreground mode: set window title, then exec (replaces process)
+          (let [project-name (.getName (java.io.File. project-dir))]
+            (print (str "\033]2;[aishell] " project-name "\007"))
+            (flush)
+            (apply p/exec (concat docker-args container-cmd))))))))
 
 (defn run-exec
   "Run one-off command in container.

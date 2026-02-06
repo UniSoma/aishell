@@ -1,5 +1,34 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v3.0.0 Docker-native Attach (Shipped: 2026-02-06)
+
+**Delivered:** Removed tmux from containers entirely, simplified attach to docker exec bash, removed detached mode, and streamlined CLI semantics so window management belongs on the host.
+
+**Phases completed:** 46-52 (9 plans total)
+
+**Key accomplishments:**
+
+- Removed tmux binary from foundation Docker image, reducing image size
+- Cleaned all tmux state/config from CLI, state schema, and config validation (~85 lines deleted)
+- Removed all tmux mounts, env vars, and TPM installation from Docker run/volume
+- Simplified entrypoint from ~197 to ~117 lines — single exec gosu path, no tmux conditional logic
+- Rewrote attach command from tmux session management to simple docker exec bash with positional argument syntax
+- Removed --detach flag entirely; containers always run foreground-attached
+- Updated all 6 documentation files to reflect v3.0.0 semantics (removed 500+ lines of tmux/detach docs)
+
+**Stats:**
+
+- 15 source files modified (+122/-1,155 lines)
+- 4,050 lines of Clojure (total codebase)
+- 7 phases, 9 plans
+- 1 day (2026-02-06)
+
+**Git range:** `refactor(46-01)` → `docs(52)` (52 commits)
+
+**What's next:** Podman support, stale foundation image detection, or new harnesses
+
+---
+
 ## v2.10.0 Gitleaks Opt-in (Shipped: 2026-02-05)
 
 **Delivered:** Flipped Gitleaks from opt-out to opt-in, establishing consistent `--with-*` flag pattern across all build options — users who want Gitleaks scanning must now explicitly request it at build time.

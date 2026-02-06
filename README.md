@@ -111,11 +111,9 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
 - **One-off commands** - Run single commands in container with `aishell exec`
-- **Detached mode** - Run harnesses in background with `--detach` flag
 - **Named containers** - Deterministic naming with `--name` override
-- **Attach/detach** - Reconnect to running containers via `aishell attach`
+- **Attach** - Open a shell in a running container via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
-- **tmux integration** - Opt-in tmux support with plugin management and session persistence
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
 
 ## Usage
@@ -131,9 +129,6 @@ aishell setup --with-gemini
 
 # Set up with multiple harnesses
 aishell setup --with-claude --with-opencode --with-codex --with-gemini
-
-# Set up with tmux support
-aishell setup --with-claude --with-tmux
 
 # Set up with specific versions
 aishell setup --with-claude=2.0.22
@@ -172,27 +167,19 @@ cat package.json | aishell exec jq '.scripts'
 
 **Note:** The exec command uses the same mounts and environment from your config.yaml, but skips pre-start hooks and sensitive file detection for fast execution.
 
-### Detached mode & multi-container workflow
+### Multi-container workflow
 
-Run harnesses in the background and reconnect later:
+Run multiple containers and reconnect later:
 
 ```bash
-# Start Claude in detached mode
-aishell claude --detach
-
-# Start with a custom name
-aishell claude --detach --name reviewer
+# Start Claude in a second terminal
+aishell claude --name reviewer
 
 # List running containers for this project
 aishell ps
 
-# Reconnect to a running container
-aishell attach --name claude
-
-# Reconnect to a specific tmux session
-aishell attach --name claude --session harness
-
-# Detach from tmux without stopping: Ctrl+B D
+# Open a shell in a running container
+aishell attach reviewer
 
 # Stop a container (use `aishell ps` to find the container name)
 docker stop <container-name>
@@ -258,12 +245,6 @@ ports:
 docker_args: "--memory=4g --cpus=2"
 
 pre_start: "redis-server --daemonize yes"
-
-# tmux plugin and session persistence (requires --with-tmux)
-tmux:
-  plugins:
-    - tmux-plugins/tmux-sensible
-  resurrect: true
 ```
 
 ### Config inheritance
@@ -432,7 +413,7 @@ Built on `debian:bookworm-slim` with:
 **CLI tools:**
 - git, curl, jq, ripgrep, vim
 - tree, less, file, unzip, watch
-- htop, sqlite3, sudo, tmux
+- htop, sqlite3, sudo
 
 **Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image.
 This allows harness updates without rebuilding the foundation image.
