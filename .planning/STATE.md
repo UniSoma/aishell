@@ -41,9 +41,10 @@ v3.0.0 decisions archived — see milestones/v3.0.0-ROADMAP.md
 
 ### Pending Todos
 
-2 deferred todos:
+3 deferred todos:
 - [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) - from Distrobox investigation
 - [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) - warn when foundation image is outdated
+- [Consider adding pi coding-agent as another harness](./todos/pending/2026-02-06-consider-pi-coding-agent-harness.md) - evaluate badlogic/pi-mono coding-agent
 
 ### Blockers/Concerns
 
