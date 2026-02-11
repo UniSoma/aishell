@@ -115,10 +115,10 @@ See MILESTONES.md for details.
   1. `windows?` predicate available from babashka.fs and used consistently
   2. All Unix-specific code paths (`id` command, `p/exec`, Unix path assumptions) guarded by platform checks
   3. No runtime crashes on Windows when calling Unix-only functions
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 53-01: TBD
+- [ ] 53-01-PLAN.md — Guard Unix-specific code paths with `babashka.fs/windows?` platform detection
 
 #### Phase 54: Path Handling
 
