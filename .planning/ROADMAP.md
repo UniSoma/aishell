@@ -1,0 +1,238 @@
+# Roadmap: Agentic Harness Sandbox
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-8 (shipped 2026-01-18)
+- ✅ **v1.1 Runtime Configuration** - Phases 9-10 (shipped 2026-01-19)
+- ✅ **v1.2 Hardening** - Phases 11-12 (shipped 2026-01-19)
+- ✅ **v2.0 Babashka Rewrite** - Phases 13-18 (shipped 2026-01-21)
+- ✅ **v2.3.0 Safe AI Context** - Phases 18.1-23 (shipped 2026-01-24)
+- ✅ **v2.4.0 Multi-Harness** - Phases 24-27 (shipped 2026-01-25)
+- ✅ **v2.5.0 Optimization** - Phases 28-29 (shipped 2026-01-26)
+- ✅ **v2.7.0 tmux Integration** - Phases 30-34 (shipped 2026-01-31)
+- ✅ **v2.8.0 Decouple Harness Tools** - Phases 35-38 (shipped 2026-02-01)
+- ✅ **v2.9.0 tmux Opt-in** - Phases 39-43 (shipped 2026-02-03)
+- ✅ **v2.10.0 Gitleaks Opt-in** - Phases 44-45 (shipped 2026-02-05)
+- ✅ **v3.0.0 Docker-native Attach** - Phases 46-52 (shipped 2026-02-06)
+- 🚧 **v3.1.0 Native Windows Support** - Phases 53-59 (in progress)
+
+## Phases
+
+<details>
+<summary>✅ v1.0 MVP (Phases 1-8) - SHIPPED 2026-01-18</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v1.1 Runtime Configuration (Phases 9-10) - SHIPPED 2026-01-19</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v1.2 Hardening (Phases 11-12) - SHIPPED 2026-01-19</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.0 Babashka Rewrite (Phases 13-18) - SHIPPED 2026-01-21</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.3.0 Safe AI Context (Phases 18.1-23) - SHIPPED 2026-01-24</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.4.0 Multi-Harness (Phases 24-27) - SHIPPED 2026-01-25</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.5.0 Optimization (Phases 28-29) - SHIPPED 2026-01-26</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.7.0 tmux Integration (Phases 30-34) - SHIPPED 2026-01-31</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.8.0 Decouple Harness Tools (Phases 35-38) - SHIPPED 2026-02-01</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.9.0 tmux Opt-in (Phases 39-43) - SHIPPED 2026-02-03</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v2.10.0 Gitleaks Opt-in (Phases 44-45) - SHIPPED 2026-02-05</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+<details>
+<summary>✅ v3.0.0 Docker-native Attach (Phases 46-52) - SHIPPED 2026-02-06</summary>
+
+See MILESTONES.md for details.
+
+</details>
+
+### 🚧 v3.1.0 Native Windows Support (In Progress)
+
+**Milestone Goal:** Enable aishell to run from Windows cmd.exe/PowerShell with Linux containers via Docker Desktop WSL2 backend — no Dockerfile/entrypoint changes needed, only host-side Babashka platform detection and conditional logic.
+
+#### Phase 53: Platform Detection
+
+**Goal**: Platform detection utility available throughout codebase for conditional Windows/Unix behavior
+**Depends on**: Phase 52 (v3.0.0 complete)
+**Requirements**: PLAT-01, PLAT-02
+**Success Criteria** (what must be TRUE):
+  1. `windows?` predicate available from babashka.fs and used consistently
+  2. All Unix-specific code paths (`id` command, `p/exec`, Unix path assumptions) guarded by platform checks
+  3. No runtime crashes on Windows when calling Unix-only functions
+**Plans**: TBD
+
+Plans:
+- [ ] 53-01: TBD
+
+#### Phase 54: Path Handling
+
+**Goal**: Cross-platform path handling for home directories, state/config locations, and Docker volume mounts
+**Depends on**: Phase 53
+**Requirements**: PATH-01, PATH-02, PATH-03, PATH-04
+**Success Criteria** (what must be TRUE):
+  1. `get-home` returns `USERPROFILE` on Windows, `HOME` on Unix
+  2. `expand-path` handles Windows backslash paths without errors
+  3. State/config directories use `LOCALAPPDATA` on Windows instead of XDG
+  4. Docker volume mount source paths normalized to forward slashes on Windows
+**Plans**: TBD
+
+Plans:
+- [ ] 54-01: TBD
+
+#### Phase 55: Host Identity
+
+**Goal**: Git identity and UID/GID extracted correctly on Windows
+**Depends on**: Phase 54
+**Requirements**: ID-01, ID-02
+**Success Criteria** (what must be TRUE):
+  1. UID/GID default to 1000/1000 on Windows without calling `id -u`/`id -g`
+  2. Git user.name and user.email extracted successfully from Windows git installation
+  3. Containers start with correct ownership regardless of host platform
+**Plans**: TBD
+
+Plans:
+- [ ] 55-01: TBD
+
+#### Phase 56: Process & Execution
+
+**Goal**: Harness execution and attach commands work on Windows
+**Depends on**: Phase 55
+**Requirements**: PROC-01, PROC-02
+**Success Criteria** (what must be TRUE):
+  1. `aishell claude`/`aishell opencode` (all harness commands) start containers successfully on Windows
+  2. `aishell attach <name>` connects to running containers using `p/process` with `:inherit` instead of `p/exec`
+  3. Terminal interaction (stdin/stdout/stderr) works correctly in Windows cmd.exe and PowerShell
+  4. Docker run invocations succeed with all necessary flags and volume mounts
+**Plans**: TBD
+
+Plans:
+- [ ] 56-01: TBD
+
+#### Phase 57: Terminal & Output
+
+**Goal**: ANSI color codes handled gracefully based on terminal capabilities
+**Depends on**: Phase 56
+**Requirements**: TERM-01, TERM-02
+**Success Criteria** (what must be TRUE):
+  1. TERM and COLORTERM environment variables have sensible defaults when unset on Windows
+  2. ANSI color codes auto-detected and stripped when terminal lacks support
+  3. Windows Terminal (`WT_SESSION`) recognized as ANSI-capable
+  4. Legacy cmd.exe without ANSI support gets plain text output
+**Plans**: TBD
+
+Plans:
+- [ ] 57-01: TBD
+
+#### Phase 58: .bat Wrapper
+
+**Goal**: Windows-native launcher script enables running aishell from PATH without bb prefix
+**Depends on**: Phase 57
+**Requirements**: DIST-01
+**Success Criteria** (what must be TRUE):
+  1. `aishell.bat` wrapper script invokes babashka with correct uberscript path
+  2. User can type `aishell <command>` in cmd.exe/PowerShell without `bb` prefix
+  3. Wrapper follows established pattern from neil tool (4-line bat file)
+  4. Wrapper handles arguments correctly for all aishell commands
+**Plans**: TBD
+
+Plans:
+- [ ] 58-01: TBD
+
+#### Phase 59: Documentation
+
+**Goal**: All user-facing documentation reflects Windows support
+**Depends on**: Phase 58
+**Requirements**: DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. README.md updated with Windows installation instructions
+  2. docs/ARCHITECTURE.md documents platform detection patterns
+  3. docs/CONFIGURATION.md includes Windows path examples
+  4. docs/TROUBLESHOOTING.md covers Windows-specific issues
+  5. docs/DEVELOPMENT.md explains how to test on Windows
+**Plans**: TBD
+
+Plans:
+- [ ] 59-01: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 53 → 54 → 55 → 56 → 57 → 58 → 59
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1-8. MVP | v1.0 | All | Complete | 2026-01-18 |
+| 9-10. Runtime Config | v1.1 | All | Complete | 2026-01-19 |
+| 11-12. Hardening | v1.2 | All | Complete | 2026-01-19 |
+| 13-18. Babashka Rewrite | v2.0 | All | Complete | 2026-01-21 |
+| 18.1-23. Safe AI Context | v2.3.0 | All | Complete | 2026-01-24 |
+| 24-27. Multi-Harness | v2.4.0 | All | Complete | 2026-01-25 |
+| 28-29. Optimization | v2.5.0 | All | Complete | 2026-01-26 |
+| 30-34. tmux Integration | v2.7.0 | All | Complete | 2026-01-31 |
+| 35-38. Decouple Harness | v2.8.0 | All | Complete | 2026-02-01 |
+| 39-43. tmux Opt-in | v2.9.0 | All | Complete | 2026-02-03 |
+| 44-45. Gitleaks Opt-in | v2.10.0 | All | Complete | 2026-02-05 |
+| 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
+| 53. Platform Detection | v3.1.0 | 0/? | Not started | - |
+| 54. Path Handling | v3.1.0 | 0/? | Not started | - |
+| 55. Host Identity | v3.1.0 | 0/? | Not started | - |
+| 56. Process & Execution | v3.1.0 | 0/? | Not started | - |
+| 57. Terminal & Output | v3.1.0 | 0/? | Not started | - |
+| 58. .bat Wrapper | v3.1.0 | 0/? | Not started | - |
+| 59. Documentation | v3.1.0 | 0/? | Not started | - |

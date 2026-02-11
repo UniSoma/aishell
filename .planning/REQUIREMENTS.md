@@ -69,26 +69,26 @@ Requirements for native Windows host support (cmd.exe/PowerShell with Linux cont
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAT-01 | — | Pending |
-| PLAT-02 | — | Pending |
-| PROC-01 | — | Pending |
-| PROC-02 | — | Pending |
-| PATH-01 | — | Pending |
-| PATH-02 | — | Pending |
-| PATH-03 | — | Pending |
-| PATH-04 | — | Pending |
-| ID-01 | — | Pending |
-| ID-02 | — | Pending |
-| TERM-01 | — | Pending |
-| TERM-02 | — | Pending |
-| DIST-01 | — | Pending |
-| DOCS-01 | — | Pending |
+| PLAT-01 | Phase 53 | Pending |
+| PLAT-02 | Phase 53 | Pending |
+| PROC-01 | Phase 56 | Pending |
+| PROC-02 | Phase 56 | Pending |
+| PATH-01 | Phase 54 | Pending |
+| PATH-02 | Phase 54 | Pending |
+| PATH-03 | Phase 54 | Pending |
+| PATH-04 | Phase 54 | Pending |
+| ID-01 | Phase 55 | Pending |
+| ID-02 | Phase 55 | Pending |
+| TERM-01 | Phase 57 | Pending |
+| TERM-02 | Phase 57 | Pending |
+| DIST-01 | Phase 58 | Pending |
+| DOCS-01 | Phase 59 | Pending |
 
 **Coverage:**
 - v3.1.0 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14
+- Mapped to phases: 14 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after initial definition*
+*Last updated: 2026-02-11 after roadmap creation*
