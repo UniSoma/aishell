@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-06)
+See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system.
-**Current focus:** Planning next milestone
+**Current focus:** v3.1.0 — Native Windows Support
 
 ## Current Position
 
-Phase: 52 of 52 (Documentation Update)
-Plan: 2 of 2 completed
-Status: v3.0.0 milestone complete - archived
-Last activity: 2026-02-06 - v3.0.0 milestone shipped
-
-Progress: [###############################################] 100% (52/52 phases total)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-11 — Milestone v3.1.0 started
 
 ## Performance Metrics
 
@@ -48,10 +46,10 @@ v3.0.0 decisions archived — see milestones/v3.0.0-ROADMAP.md
 
 ### Blockers/Concerns
 
-None - v3.0.0 milestone complete. Ready for next milestone.
+None.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: v3.0.0 milestone archived
-Resume file: None - start fresh with /gsd:new-milestone
+Last session: 2026-02-11
+Stopped at: v3.1.0 milestone — defining requirements
+Resume file: None

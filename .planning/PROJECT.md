@@ -123,14 +123,23 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(None — planning next milestone)
+**v3.1.0 — Native Windows Support:**
+- Platform detection: aishell runs from Windows cmd.exe/PowerShell with Linux containers via Docker Desktop
+- Process attachment: Windows-compatible terminal attachment (p/exec is no-op on Windows)
+- Path handling: Windows path normalization for Docker volume mounts
+- UID/GID handling: Graceful fallback when Unix `id` command unavailable
+- Environment variables: Case-sensitivity fixes for cross-platform `:extra-env` usage
+- ANSI output: Auto-detect terminal capability and strip color codes when unsupported
+- .bat wrapper: Windows PATH-compatible launcher script
+- Documentation: All user-facing docs updated for Windows support
 
 ### Out of Scope
 
 - Persistent containers — ephemeral is the design choice (named containers in v2.7.0 are still ephemeral with --rm)
 - tmux inside containers — window management belongs on the host, not in the container (removed in v3.0.0)
 - Detached/background mode — always-interactive simplifies the model; use host tools for backgrounding (removed in v3.0.0)
-- Windows host support — Docker on Windows is complex; deferred indefinitely
+- Native Windows containers — Linux containers via Docker Desktop are supported; actual Windows container images deferred indefinitely
+- Windows installer/Scoop package — users install babashka and docker manually; distribution deferred
 - GUI/desktop integration — CLI-focused tool
 - SSH agent forwarding — deferred to future version
 - GPG signing passthrough — deferred to future version
@@ -140,7 +149,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 ## Current State
 
 **Shipped:** v3.0.0 on 2026-02-06
-**Next:** Planning next milestone
+**Current:** v3.1.0 — Native Windows Support
 
 **Codebase:** ~4,050 LOC Clojure (Babashka) — net reduction from tmux removal
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
@@ -154,7 +163,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 - **Docker dependency**: Requires Docker installed on host
 - **Babashka dependency**: Requires Babashka installed (not bundled)
-- **No Windows**: Docker on Windows is complex; deferred indefinitely
+- **Windows**: Requires Docker Desktop with WSL2 backend for Linux containers
 
 ## Key Decisions
 
@@ -301,4 +310,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-06 after v3.0.0 milestone*
+*Last updated: 2026-02-11 after v3.1.0 milestone start*
