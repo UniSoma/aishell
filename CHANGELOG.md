@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-02-12
+
+Native Windows host support. aishell now runs from cmd.exe and PowerShell with
+Linux containers via Docker Desktop WSL2 backend. No Dockerfile or entrypoint
+changes needed.
+
+### Added
+- **Platform detection**: `babashka.fs/windows?` guards all Unix-specific code paths (`id` command, `p/exec`, Unix path assumptions)
+- **Cross-platform path utilities**: `get-home` returns `USERPROFILE` on Windows, `HOME` on Unix; `expand-path` handles backslash paths; state/config uses `LOCALAPPDATA` on Windows
+- **Docker mount normalization**: Windows drive letter support (`C:\path:destination`), automatic forward-slash conversion via `fs/unixify` for Docker Desktop compatibility
+- **Windows UID/GID defaults**: UID/GID default to 1000/1000 on Windows without calling `id -u`/`id -g`
+- **Windows process execution**: `p/process` with `:inherit` on Windows for full I/O inheritance; `System/exit` for exit code propagation to parent shell
+- **ANSI color detection**: Standards-compliant NO_COLOR > FORCE_COLOR > auto-detection priority; Windows Terminal (`WT_SESSION`) and ConEmu (`ConEmuANSI=ON`) recognized as ANSI-capable
+- **Windows .bat wrapper**: `dist/aishell.bat` generated in build pipeline using neil-pattern (4-line minimal wrapper with CRLF endings); included in GitHub Release assets
+
+### Changed
+- `colors-enabled?` in `output.clj` is now public for cross-module use
+- Git identity extraction (`git config user.name/user.email`) works on Windows git installations
+
+### Docs
+- README.md updated with side-by-side Windows installation instructions (Docker Desktop, Babashka via Scoop, .bat wrapper)
+- ARCHITECTURE.md updated with cross-platform design patterns and platform detection ADR
+- CONFIGURATION.md updated with Windows path examples and forward-slash normalization notes
+- TROUBLESHOOTING.md updated with Windows-specific issues section (path normalization, ANSI colors, process execution)
+- DEVELOPMENT.md updated with Windows testing section (5 platform-specific test scenarios)
+
 ## [3.0.0] - 2026-02-06
 
 Remove tmux from containers entirely. Window management belongs on the host.

@@ -54,7 +54,7 @@
         (not (vol/volume-exists? volume-name))
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
-                                          "aishell.harness.version" "3.0.0"})
+                                          "aishell.harness.version" "3.1.0"})
           (let [result (vol/populate-volume volume-name state {:config config})]
             (when-not (:success result)
               ;; Remove empty volume so next run retries population

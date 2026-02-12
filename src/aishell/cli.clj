@@ -17,7 +17,7 @@
             [aishell.attach :as attach]
             [aishell.migration :as migration]))
 
-(def version "3.0.0")
+(def version "3.1.0")
 
 (defn print-version []
   (println (str "aishell " version)))
@@ -209,7 +209,7 @@
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                    "aishell.harness.version" "3.0.0"
+                                                    "aishell.harness.version" "3.1.0"
                                                     "aishell.harnesses" harness-list}))
                   (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
@@ -323,7 +323,7 @@
                   (println "Repopulating harness volume...")
                   (vol/remove-volume volume-name)
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "3.0.0"
+                                                  "aishell.harness.version" "3.1.0"
                                                   "aishell.harnesses" harness-list})
                   (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
