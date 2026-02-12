@@ -67,41 +67,37 @@ aishell setup --with-claude
 aishell claude
 ```
 
+> Babashka is installed automatically if not already present.
+
 ### Windows (PowerShell)
 
 ```powershell
-# 1. Install Babashka via Scoop (if not already installed)
-scoop install babashka
+# 1. Install
+irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 
-# 2. Download aishell and wrapper
-$installDir = "$env:LOCALAPPDATA\Programs\aishell"
-New-Item -ItemType Directory -Force -Path $installDir
-Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell -OutFile "$installDir\aishell"
-Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell.bat -OutFile "$installDir\aishell.bat"
-
-# 3. Add to PATH (restart terminal after this)
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$installDir", [System.EnvironmentVariableTarget]::User)
-
-# 4. In new terminal: Build foundation image and select harnesses (one-time)
+# 2. Restart terminal, then build foundation image and select harnesses (one-time)
 aishell setup --with-claude
 
-# 5. Run
+# 3. Run
 aishell claude
 ```
+
+> Babashka is installed automatically if not already present.
 
 <details>
 <summary>Prerequisites & troubleshooting</summary>
 
 **Requirements:**
 
-- **Linux/macOS:** Docker Engine + [Babashka](https://babashka.org)
-- **Windows:** Docker Desktop with WSL2 backend enabled + [Babashka](https://babashka.org)
+- **Linux/macOS:** Docker Engine (Babashka installed automatically)
+- **Windows:** Docker Desktop with WSL2 backend enabled (Babashka installed automatically)
 
 **Docker:**
 - Linux/macOS: Install [Docker Engine](https://docs.docker.com/engine/install/)
 - Windows: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable WSL2 backend (Settings → General → "Use the WSL 2 based engine")
 
 **Babashka:**
+Babashka is installed automatically by the install scripts. If you prefer to install it manually:
 - Linux/macOS: https://babashka.org
 - Windows: Install via [Scoop](https://scoop.sh) (`scoop install babashka`) or download binary from https://babashka.org
 
