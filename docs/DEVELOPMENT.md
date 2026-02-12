@@ -2,7 +2,7 @@
 
 This guide helps developers extend aishell with new harnesses or core features.
 
-**Last updated:** v2.9.0
+**Last updated:** v3.1.0
 
 ---
 
@@ -12,6 +12,7 @@ This guide helps developers extend aishell with new harnesses or core features.
 - [Project Structure](#project-structure)
 - [Adding a New Harness](#adding-a-new-harness)
 - [Testing Locally](#testing-locally)
+- [Testing on Windows](#testing-on-windows)
 - [Code Style](#code-style)
 - [Submitting Changes](#submitting-changes)
 
@@ -21,11 +22,13 @@ This guide helps developers extend aishell with new harnesses or core features.
 
 ### Prerequisites
 
-- Linux or macOS
-- Docker Engine
-- [Babashka](https://babashka.org) 1.0+
+- Linux, macOS, or Windows 10/11
+- Docker Engine (Linux/macOS) or Docker Desktop with WSL2 backend (Windows)
+- [Babashka](https://babashka.org) 1.0+ (via Scoop on Windows, or manual binary)
 
 ### Clone and Run from Source
+
+**All platforms (Unix/macOS/Linux/Windows):**
 
 ```bash
 # Clone the repository
@@ -40,7 +43,7 @@ bb -m aishell.core claude
 bb -m aishell.core --help
 ```
 
-The `bb -m aishell.core` command runs the main namespace without installing.
+The `bb -m aishell.core` command runs the main namespace without installing. This works identically on all platforms - no platform-specific source changes needed.
 
 ### Symlink for Development
 
@@ -645,6 +648,212 @@ bb -m aishell.core
 # Inside container, verify
 echo $CURSOR_API_KEY  # Should output "test-key-123"
 ```
+
+---
+
+## Testing on Windows
+
+### Prerequisites for Windows Development
+
+- Windows 10/11 with WSL2 enabled
+- Docker Desktop with WSL2 backend enabled
+- Babashka 1.0+ installed (via Scoop or manual binary)
+- PowerShell 7+ recommended (better cross-platform compatibility than PowerShell 5.1)
+
+### Platform-Specific Test Scenarios
+
+When testing Windows support or adding features that may affect cross-platform behavior, verify these five scenarios:
+
+#### 1. Path Handling
+
+**What to test:** Windows path normalization in Docker commands
+
+**How to test:**
+```powershell
+# Test container startup with Windows paths
+bb -m aishell.core claude
+
+# Inside container, verify Unix-style paths
+# (Windows paths should be normalized to forward slashes)
+
+# Test config mount with Windows-style path
+# Create .aishell/config.yaml with:
+#   mounts:
+#     - C:/test-data:/data
+
+bb -m aishell.core claude
+# Inside container: ls /data (should show C:/test-data contents)
+```
+
+**Why it matters:** Docker Desktop accepts Windows paths with forward slashes. aishell normalizes paths using `fs/unixify` at Docker boundaries. This test ensures path handling works correctly.
+
+#### 2. State Directory
+
+**What to test:** Windows uses LOCALAPPDATA for state files
+
+**How to test:**
+```powershell
+# Verify state directory location on Windows
+echo $env:LOCALAPPDATA\aishell
+
+# Run aishell to create state file
+bb -m aishell.core setup --with-claude
+
+# Check state file exists
+Get-ChildItem "$env:LOCALAPPDATA\aishell"
+# Should show state.edn
+
+# Verify content
+Get-Content "$env:LOCALAPPDATA\aishell\state.edn"
+```
+
+**Why it matters:** Windows follows platform conventions (`%LOCALAPPDATA%\aishell` instead of `~/.local/state/aishell`). This test ensures state persistence works on Windows.
+
+#### 3. Process Execution
+
+**What to test:** Attach uses `p/process` (not `p/exec`) on Windows
+
+**How to test:**
+```powershell
+# Start harness in background
+bb -m aishell.core claude
+
+# In another terminal, test attach
+bb -m aishell.core attach claude
+# Should attach successfully without crashing
+
+# Verify I/O inheritance works
+# Type commands in attached session, verify they execute
+```
+
+**Why it matters:** Windows doesn't support `p/exec` process replacement. aishell uses `p/process {:inherit true}` on Windows and `p/exec` on Unix. This test ensures attach works cross-platform.
+
+#### 4. ANSI Color Output
+
+**What to test:** Color detection and environment variable overrides
+
+**How to test:**
+```powershell
+# Test color auto-detection in Windows Terminal
+bb -m aishell.core --help
+# Should show colored output (cyan, green, red)
+
+# Test NO_COLOR override
+$env:NO_COLOR = "1"
+bb -m aishell.core --help
+# Should show no colors
+
+# Test FORCE_COLOR override
+Remove-Item Env:\NO_COLOR
+$env:FORCE_COLOR = "1"
+bb -m aishell.core --help
+# Should show colors even if terminal not detected
+```
+
+**Why it matters:** Windows has varied terminal support (cmd.exe, PowerShell 5.1, PowerShell 7+, Windows Terminal). Priority: `NO_COLOR` > `FORCE_COLOR` > auto-detection.
+
+#### 5. Batch Wrapper Generation
+
+**What to test:** Release build generates aishell.bat with correct format
+
+**How to test:**
+```powershell
+# Generate release build
+bb scripts/build-release.clj
+
+# Verify .bat wrapper exists
+Test-Path dist/aishell.bat
+# Should return True
+
+# Verify content (should be 4 lines)
+Get-Content dist/aishell.bat
+# Expected:
+#   @echo off
+#   setlocal
+#   bb -f "%~dp0aishell" %*
+#   exit /b %ERRORLEVEL%
+
+# Verify CRLF line endings (Windows requirement)
+(Get-Content dist/aishell.bat -Raw) -match "`r`n"
+# Should return True
+```
+
+**Why it matters:** Windows cmd.exe requires `.bat` wrapper with CRLF endings. This test ensures Windows users can run `aishell` from cmd.exe/PowerShell.
+
+### Cross-Platform Development Patterns
+
+When contributing features that touch platform-specific code, follow these patterns:
+
+**1. Use `babashka.fs/windows?` for platform detection**
+
+Don't use manual OS checks:
+```clojure
+;; ✗ Bad - manual OS detection
+(if (str/includes? (System/getProperty "os.name") "Windows")
+  ...)
+
+;; ✓ Good - use babashka.fs
+(if (fs/windows?)
+  ...)
+```
+
+**2. Use `fs/path` for path construction**
+
+Don't use string concatenation with `/`:
+```clojure
+;; ✗ Bad - hardcoded separator
+(str home "/" ".aishell")
+
+;; ✓ Good - use fs/path
+(fs/path home ".aishell")
+```
+
+**3. Use `fs/unixify` at Docker mount boundaries**
+
+Normalize Windows paths to forward slashes for Docker:
+```clojure
+;; When constructing Docker run commands
+(str (fs/unixify source-path) ":" target-path)
+```
+
+**4. Guard `p/exec` calls with platform check**
+
+Use `p/process {:inherit true}` on Windows:
+```clojure
+(if (fs/windows?)
+  ;; Windows - use p/process with I/O inheritance
+  (let [proc (p/process {:inherit true} cmd)]
+    (System/exit (p/exit-code proc)))
+  ;; Unix - use p/exec for clean process replacement
+  (p/exec cmd))
+```
+
+**5. Guard `chmod` calls with platform check**
+
+Windows doesn't have `chmod`:
+```clojure
+(when-not (fs/windows?)
+  (fs/set-posix-file-permissions path "rwxr-xr-x"))
+```
+
+**Reference:** See [ARCHITECTURE.md](ARCHITECTURE.md) for full cross-platform architecture patterns and design rationale.
+
+### Testing Without Windows Machine
+
+**Limitations:** Simulating Windows path behavior on Unix/macOS is limited. Real Windows testing recommended for significant path/process changes.
+
+**What you can test on Unix/macOS:**
+- Forward-slash normalization (Docker Desktop accepts on Windows)
+- Mount path format (Docker Desktop converts Windows paths)
+
+**What you cannot test on Unix/macOS:**
+- Actual Windows syscalls (CreateProcess, etc.)
+- Windows filesystem semantics (case-insensitivity, path length limits)
+- cmd.exe/PowerShell interaction
+- CRLF line ending behavior
+- ANSI color support in various Windows terminals
+
+**CI/CD:** aishell GitHub Actions test on Ubuntu, macOS, and Windows runners. Windows CI uses Docker Desktop with WSL2 backend.
 
 ---
 

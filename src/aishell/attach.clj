@@ -2,6 +2,7 @@
   "Attach to running container via docker exec bash.
    Provides pre-flight validations and terminal takeover via docker exec."
   (:require [babashka.process :as p]
+            [babashka.fs :as fs]
             [aishell.docker.naming :as naming]
             [aishell.output :as output]))
 
@@ -47,8 +48,9 @@
    1. Interactive terminal check
    2. Container exists and is running
 
-   On success, uses p/exec to replace current process with docker exec,
-   opening an interactive bash shell in the container."
+   On success, transfers terminal control to container bash:
+   - Unix: uses p/exec (replaces process, cleaner process tree)
+   - Windows: uses p/process :inherit (child process with I/O inheritance)"
   [name]
   (let [project-dir (System/getProperty "user.dir")
         container-name (naming/container-name project-dir name)]
@@ -59,13 +61,25 @@
     ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
     (let [term (resolve-term container-name)
           colorterm (or (System/getenv "COLORTERM") "truecolor")]
-      ;; All checks passed - exec into bash (replaces current process)
+      ;; All checks passed - exec into bash (transfer terminal control)
       ;; Use --login so /etc/profile sources /etc/profile.d/aishell.sh
       ;; which sets PATH (tools), prompt, aliases — matching normal startup
-      (p/exec "docker" "exec" "-it" "-u" "developer"
-              "-e" (str "TERM=" term)
-              "-e" (str "COLORTERM=" colorterm)
-              "-e" "LANG=C.UTF-8"
-              "-e" "LC_ALL=C.UTF-8"
-              container-name
-              "/bin/bash" "--login"))))
+      (if (fs/windows?)
+        ;; Windows: spawn child process with inherited I/O, wait, propagate exit
+        (let [result @(p/process {:inherit true}
+                                 "docker" "exec" "-it" "-u" "developer"
+                                 "-e" (str "TERM=" term)
+                                 "-e" (str "COLORTERM=" colorterm)
+                                 "-e" "LANG=C.UTF-8"
+                                 "-e" "LC_ALL=C.UTF-8"
+                                 container-name
+                                 "/bin/bash" "--login")]
+          (System/exit (:exit result)))
+        ;; Unix: replace process (cleaner process tree)
+        (p/exec "docker" "exec" "-it" "-u" "developer"
+                "-e" (str "TERM=" term)
+                "-e" (str "COLORTERM=" colorterm)
+                "-e" "LANG=C.UTF-8"
+                "-e" "LC_ALL=C.UTF-8"
+                container-name
+                "/bin/bash" "--login")))))

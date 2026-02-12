@@ -17,7 +17,7 @@
             [aishell.output :as output]
             [aishell.util :as util]))
 
-(def GREEN (if (some? (System/console)) "\u001b[0;32m" ""))
+(def GREEN (if (output/colors-enabled?) "\u001b[0;32m" ""))
 
 (defn- check-mark [] (str GREEN "✓" output/NC))
 (defn- cross-mark [] (str output/RED "✗" output/NC))
@@ -128,7 +128,14 @@
   (when-let [mounts (:mounts cfg)]
     (doseq [mount mounts]
       (let [mount-str (str mount)
-            source (first (str/split mount-str #":" 2))
+            ;; Smart colon parsing: detect drive letter to avoid splitting on it
+            source (if (re-matches #"^[A-Za-z]:[/\\].*" mount-str)
+                     ;; Windows absolute path — extract source (before second colon, or entire string)
+                     (if-let [idx (str/index-of mount-str ":" 2)]
+                       (subs mount-str 0 idx)
+                       mount-str)
+                     ;; Unix path — extract before first colon
+                     (first (str/split mount-str #":" 2)))
             source (util/expand-path source)]
         (if (fs/exists? source)
           (print-status :ok (str "Mount exists: " source))

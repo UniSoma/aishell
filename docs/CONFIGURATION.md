@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options, covering both the global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) config files.
 
-**Last updated:** v3.0.0
+**Last updated:** v3.1.0
 
 ---
 
@@ -39,6 +39,17 @@ aishell reads two configuration files, which can work together or independently:
 1. **Project config exists:** aishell uses the project config (with optional global merge)
 2. **No project config:** aishell falls back to global config
 3. **Neither exists:** aishell uses built-in defaults (minimal mounts only)
+
+**Platform Differences:**
+
+| Aspect | Unix/Linux/macOS | Windows | Notes |
+|--------|------------------|---------|-------|
+| **Config location** | `~/.aishell/config.yaml` | `~/.aishell/config.yaml` | Same on all platforms |
+| **State location** | `~/.local/state/aishell/state.edn` | `%LOCALAPPDATA%\aishell\state.edn` | Windows follows platform convention (AppData) |
+| **Config format** | YAML | YAML | Identical format across platforms |
+| **Path separators** | Native `/` | Forward slashes `/` in config | aishell normalizes Windows paths automatically |
+
+**Note:** While config files live in the same location (`~/.aishell/`), Windows uses a platform-specific state directory (`%LOCALAPPDATA%\aishell`) following Windows conventions for application data storage.
 
 ---
 
@@ -312,6 +323,31 @@ mounts:
 - Container paths must be absolute (start with `/`)
 - Read-only (`:ro`) prevents the container from modifying host files
 - aishell always mounts the project directory at the same host path
+
+**Cross-Platform Path Notes:**
+
+- **Home directory expansion:** `~` expands to `$USERPROFILE` on Windows, `$HOME` on Unix. aishell normalizes all paths to forward slashes for Docker mount commands.
+
+- **Windows paths:** Use forward slashes in config files (e.g., `C:/Users/name/data:/data`), not backslashes. aishell automatically normalizes paths via `babashka.fs/unixify`.
+
+- **Source-only mounts on Windows:** Paths without explicit destinations (e.g., `~/.ssh`) map to the same path inside the container, normalized to forward slashes.
+
+- **Example showing cross-platform mounts:**
+  ```yaml
+  mounts:
+    # Works on all platforms - tilde expansion
+    - ~/.ssh
+    - ~/.gitconfig
+
+    # Windows explicit path (forward slashes)
+    - C:/Users/name/project-data:/data
+
+    # Unix explicit path
+    - /home/name/project-data:/data
+
+    # Cross-platform with home expansion
+    - ~/shared:/shared
+  ```
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 

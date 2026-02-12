@@ -335,3 +335,32 @@
 **What's next:** v1.1 enhancements (SSH agent forwarding, macOS support, credential helpers) or v2.0 with advanced features
 
 ---
+
+## v3.1.0 Native Windows Support (Shipped: 2026-02-12)
+
+**Delivered:** Native Windows host support — aishell runs from cmd.exe/PowerShell with Linux containers via Docker Desktop WSL2 backend, with no Dockerfile or entrypoint changes.
+
+**Phases completed:** 53-59 (9 plans total)
+
+**Key accomplishments:**
+
+- Cross-platform path utilities using USERPROFILE/LOCALAPPDATA on Windows, HOME/XDG on Unix, with fs/unixify for Docker Desktop mount compatibility
+- Windows UID/GID defaults (1000/1000) and Docker mount construction with drive letter support (C:\path normalization)
+- Cross-platform process execution: p/process :inherit on Windows with System/exit propagation, p/exec on Unix
+- Standards-compliant ANSI color detection with NO_COLOR/FORCE_COLOR priority, Windows Terminal and ConEmu support
+- Windows .bat wrapper generation in build pipeline using neil-pattern (4-line minimal wrapper with CRLF endings) included in GitHub Releases
+- Comprehensive Windows documentation across README, ARCHITECTURE, CONFIGURATION, TROUBLESHOOTING, and DEVELOPMENT
+
+**Stats:**
+
+- 46 files changed (+7,579/-114 lines)
+- 4,164 lines of Clojure (total codebase)
+- 7 phases, 9 plans
+- 2 days (2026-02-11 → 2026-02-12)
+
+**Git range:** `feat(53-01)` → `docs(phase-59)` (47 commits)
+
+**What's next:** Scoop packaging, PowerShell installer, Windows CI/CD, Podman support, or new harnesses
+
+---
+

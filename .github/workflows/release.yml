@@ -30,6 +30,7 @@ jobs:
       - name: Verify build artifacts
         run: |
           test -f dist/aishell || { echo "Build failed: dist/aishell not found"; exit 1; }
+          test -f dist/aishell.bat || { echo "Build failed: dist/aishell.bat not found"; exit 1; }
           test -f dist/aishell.sha256 || { echo "Build failed: dist/aishell.sha256 not found"; exit 1; }
           echo "Build artifacts:"
           ls -la dist/

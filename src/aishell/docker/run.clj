@@ -26,32 +26,63 @@
      :email (git-config "user.email")}))
 
 (defn- get-uid []
-  (-> (p/shell {:out :string} "id" "-u") :out str/trim))
+  (if (fs/windows?)
+    "1000"
+    (-> (p/shell {:out :string} "id" "-u") :out str/trim)))
 
 (defn- get-gid []
-  (-> (p/shell {:out :string} "id" "-g") :out str/trim))
+  (if (fs/windows?)
+    "1000"
+    (-> (p/shell {:out :string} "id" "-g") :out str/trim)))
+
+(defn- parse-mount-string
+  "Parse mount string 'source' or 'source:dest'.
+   Smart colon parsing: detect Windows drive letter (X:/) to avoid splitting on it.
+   Returns [source dest] where dest is nil for source-only mounts."
+  [mount-str]
+  (if (re-matches #"^[A-Za-z]:[/\\].*" mount-str)
+    ;; Windows absolute path with drive letter — find colon AFTER drive letter
+    (if-let [idx (str/index-of mount-str ":" 2)]
+      [(subs mount-str 0 idx) (subs mount-str (inc idx))]
+      [mount-str nil])
+    ;; Unix path or relative path — split on first colon
+    (if-let [idx (str/index-of mount-str ":")]
+      [(subs mount-str 0 idx) (subs mount-str (inc idx))]
+      [mount-str nil])))
+
+(defn- normalize-mount-source
+  "Normalize mount source path for Docker Desktop.
+   On Windows: converts backslashes to forward slashes.
+   On Unix: no-op."
+  [source-path]
+  (if (fs/windows?)
+    (fs/unixify source-path)
+    source-path))
 
 (defn- build-mount-args
   "Build -v flags from mounts config.
-
    Supports:
-   - source-only: ~/.ssh (mounts at same path)
-   - source:dest: /host/path:/container/path
-
-   Expands ~ and $HOME in paths. Warns if source doesn't exist."
+   - source-only: ~/.ssh (same path on Unix, /home/developer/<name> on Windows)
+   - source:dest: /host/path:/container/path (trust user's dest)
+   Expands ~ and $HOME in source paths. Warns if source doesn't exist.
+   Normalizes source paths for Docker Desktop on Windows."
   [mounts]
   (when (seq mounts)
     (->> mounts
          (mapcat
            (fn [mount]
              (let [mount-str (str mount)
-                   [source dest] (if (str/includes? mount-str ":")
-                                   (str/split mount-str #":" 2)
-                                   [mount-str mount-str])
+                   [source dest] (parse-mount-string mount-str)
                    source (util/expand-path source)
-                   dest (util/expand-path dest)]
+                   dest (if dest
+                          dest  ; Explicit dest: trust user (container path)
+                          (if (fs/windows?)
+                            ;; Windows source-only: map under container home
+                            (str "/home/developer/" (fs/file-name source))
+                            ;; Unix source-only: same path
+                            source))]
                (if (fs/exists? source)
-                 ["-v" (str source ":" dest)]
+                 ["-v" (str (normalize-mount-source source) ":" dest)]
                  (do
                    (output/warn (str "Mount source does not exist: " source))
                    []))))))))
@@ -174,20 +205,28 @@
 
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
-   Only mounts directories that exist on host."
+   Only mounts directories that exist on host.
+   On Windows: maps destinations under /home/developer (container home).
+   On Unix: mounts at same path as source."
   []
   (let [home (util/get-home)
-        config-paths [[(str home "/.claude") (str home "/.claude")]
-                      [(str home "/.claude.json") (str home "/.claude.json")]
-                      [(str home "/.config/opencode") (str home "/.config/opencode")]
-                      [(str home "/.local/share/opencode") (str home "/.local/share/opencode")]
-                      ;; Codex CLI - uses ~/.codex/ for auth.json and config.toml
-                      [(str home "/.codex") (str home "/.codex")]
-                      ;; Gemini CLI - uses ~/.gemini/ for settings.json
-                      [(str home "/.gemini") (str home "/.gemini")]]]
-    (->> config-paths
+        container-home "/home/developer"
+        config-entries [;; [relative-path-components]
+                        [".claude"]
+                        [".claude.json"]
+                        [".config" "opencode"]
+                        [".local" "share" "opencode"]
+                        [".codex"]
+                        [".gemini"]]]
+    (->> config-entries
+         (map (fn [components]
+                (let [src (str (apply fs/path home components))
+                      dst (if (fs/windows?)
+                            (str (apply fs/path container-home components))
+                            src)]
+                  [src dst])))
          (filter (fn [[src _]] (fs/exists? src)))
-         (mapcat (fn [[src dst]] ["-v" (str src ":" dst)])))))
+         (mapcat (fn [[src dst]] ["-v" (str (normalize-mount-source src) ":" dst)])))))
 
 (def api-key-vars
   "Environment variables to pass through for API access."
@@ -233,16 +272,19 @@
     (-> ["docker" "run" "--rm" "--init"]
         (into tty-flags)
         (cond-> container-name (into ["--name" container-name]))
-        (into [;; Project mount at same path
-               "-v" (str project-dir ":" project-dir)
-               "-w" project-dir
-               ;; User identity for entrypoint
-               "-e" (str "LOCAL_UID=" uid)
-               "-e" (str "LOCAL_GID=" gid)
-               "-e" (str "LOCAL_HOME=" home)
-               ;; Terminal settings
-               "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
-               "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))])
+        (into (let [mount-source (normalize-mount-source project-dir)
+                    mount-dest (if (fs/windows?) "/workspace" project-dir)
+                    container-home (if (fs/windows?) "/home/developer" home)]
+                [;; Project mount
+                 "-v" (str mount-source ":" mount-dest)
+                 "-w" mount-dest
+                 ;; User identity for entrypoint
+                 "-e" (str "LOCAL_UID=" uid)
+                 "-e" (str "LOCAL_GID=" gid)
+                 "-e" (str "LOCAL_HOME=" container-home)
+                 ;; Terminal settings
+                 "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
+                 "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))]))
 
         ;; Git identity
         (cond-> (:name git-identity)

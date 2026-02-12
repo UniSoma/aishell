@@ -5,7 +5,7 @@
             [clojure.string :as str]))
 
 ;; Extended ANSI code for low-severity (dim/muted)
-(def ^:private DIM (if (some? (System/console)) "\u001b[2m" ""))
+(def ^:private DIM (if (output/colors-enabled?) "\u001b[2m" ""))
 
 (def severity-config
   "Configuration for each severity level: label, color, bold emphasis."

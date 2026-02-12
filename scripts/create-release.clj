@@ -8,6 +8,7 @@
 ;;
 ;; Prerequisites:
 ;;   - dist/aishell must exist (run ./scripts/build-release.clj first)
+;;   - dist/aishell.bat must exist
 ;;   - dist/aishell.sha256 must exist
 ;;   - gh CLI must be authenticated
 
@@ -17,6 +18,7 @@
             [clojure.string :as str]))
 
 (def dist-binary "dist/aishell")
+(def dist-bat "dist/aishell.bat")
 (def dist-checksum "dist/aishell.sha256")
 
 (defn exit [code msg]
@@ -27,6 +29,8 @@
 (defn check-files-exist []
   (when-not (.exists (java.io.File. dist-binary))
     (exit 1 (str "Error: " dist-binary " not found. Run ./scripts/build-release.clj first.")))
+  (when-not (.exists (java.io.File. dist-bat))
+    (exit 1 (str "Error: " dist-bat " not found. Run ./scripts/build-release.clj first.")))
   (when-not (.exists (java.io.File. dist-checksum))
     (exit 1 (str "Error: " dist-checksum " not found. Run ./scripts/build-release.clj first."))))
 
@@ -56,6 +60,7 @@
   (try
     (p/shell "gh" "release" "create" tag
              dist-binary
+             dist-bat
              dist-checksum
              "--title" tag
              "--generate-notes")

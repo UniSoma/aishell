@@ -2,32 +2,31 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-11)
+See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** Phase 53 - Platform Detection
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 53 of 59 (Platform Detection)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-11 - v3.1.0 roadmap created, phase 53 ready for planning
+Phase: 59 of 59 — All phases complete
+Plan: All complete
+Status: v3.1.0 shipped — planning next milestone
+Last activity: 2026-02-12 - v3.1.0 milestone archived
 
-Progress: [████████████████████░░░░░] 88% (52/59 phases complete from previous milestones)
+Progress: [██████████████████████████] 100% (59/59 phases complete, 13 milestones shipped)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 117+ across 12 milestones
-- Milestones shipped: 12 (v1.0 → v3.0.0)
-- v3.0.0 recent: 9 plans, 1 day
+- Total plans completed: 131 across 13 milestones
+- Milestones shipped: 13 (v1.0 → v3.1.0)
 
 **Recent Trend:**
+- v3.1.0: 9 plans, 2 days
 - v3.0.0: 9 plans, 1 day
 - v2.10.0: 4 plans, 1 day
 - v2.9.0: 12 plans, 2 days
-- v2.8.0: 14 plans, 2 days
 - Trend: Stable velocity
 
 *Updated after each plan completion*
@@ -36,11 +35,7 @@ Progress: [████████████████████░░░
 
 ### Decisions
 
-Recent decisions affecting v3.1.0 work (full log in PROJECT.md):
-
-- **v3.0.0**: Removed tmux entirely - simplified architecture enables easier Windows support
-- **v2.8.0**: Volume-based harness tools - decoupling simplifies cross-platform testing
-- **v2.0**: Babashka over Bash - native cross-platform support foundation
+See PROJECT.md for full decision log across all milestones.
 
 ### Pending Todos
 
@@ -51,10 +46,10 @@ Recent decisions affecting v3.1.0 work (full log in PROJECT.md):
 
 ### Blockers/Concerns
 
-None (greenfield Windows support).
+None.
 
 ## Session Continuity
 
-Last session: 2026-02-11 20:24
-Stopped at: v3.1.0 roadmap created with 7 phases (53-59), all 14 requirements mapped
-Resume file: None (ready to plan phase 53)
+Last session: 2026-02-12
+Stopped at: v3.1.0 milestone archived
+Resume file: None

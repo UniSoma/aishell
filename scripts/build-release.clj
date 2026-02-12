@@ -5,6 +5,7 @@
 ;;
 ;; Produces:
 ;;   dist/aishell       - Executable uberscript with shebang
+;;   dist/aishell.bat   - Windows CMD wrapper
 ;;   dist/aishell.sha256 - SHA256 checksum file
 ;;
 ;; Version is defined in src/aishell/cli.clj - update there before release.
@@ -15,6 +16,7 @@
 
 (def output-dir "dist")
 (def output-file (str output-dir "/aishell"))
+(def bat-file (str output-file ".bat"))
 
 (defn compute-sha256
   "Compute SHA-256 hash of file, returning 64-character hex string."
@@ -22,6 +24,15 @@
   (let [md (java.security.MessageDigest/getInstance "SHA-256")
         bytes (.digest md (fs/read-all-bytes file-path))]
     (apply str (map #(format "%02x" (bit-and % 0xff)) bytes))))
+
+(defn create-bat-wrapper
+  "Generate Windows .bat wrapper following neil pattern.
+   Uses explicit CRLF line endings for Windows CMD compatibility."
+  [script-name]
+  (spit bat-file (str "@echo off\r\n"
+                      "set ARGS=%*\r\n"
+                      "set SCRIPT=%~dp0" script-name "\r\n"
+                      "bb -f %SCRIPT% %ARGS%\r\n")))
 
 (defn main []
   (println "Building aishell uberscript...")
@@ -31,6 +42,7 @@
 
   ;; Remove existing uberscript (bb uberscript refuses to overwrite)
   (fs/delete-if-exists output-file)
+  (fs/delete-if-exists bat-file)
 
   ;; Build uberscript with main namespace
   ;; This bundles all namespaces reachable via static requires from core.clj
@@ -41,7 +53,11 @@
     (spit output-file (str "#!/usr/bin/env bb\n" content)))
 
   ;; Make executable
-  (p/shell "chmod" "+x" output-file)
+  (when-not (fs/windows?)
+    (p/shell "chmod" "+x" output-file))
+
+  ;; Generate Windows .bat wrapper
+  (create-bat-wrapper "aishell")
 
   ;; Generate checksum using Java MessageDigest
   ;; Format: {hash}  {filename} (two spaces, relative filename)
@@ -54,6 +70,7 @@
   (println)
   (println "Build complete!")
   (println (str "  Binary:   " output-file))
+  (println (str "  Wrapper:  " bat-file))
   (println (str "  Checksum: " output-file ".sha256"))
   (println)
   (print (slurp (str output-file ".sha256"))))

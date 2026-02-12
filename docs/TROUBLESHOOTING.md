@@ -2,7 +2,7 @@
 
 Find the symptom you are experiencing, then follow the resolution steps.
 
-**Last updated:** v3.0.0
+**Last updated:** v3.1.0
 
 ---
 
@@ -17,6 +17,7 @@ Find the symptom you are experiencing, then follow the resolution steps.
 - [Attach Issues](#attach-issues)
 - [Exec Command Issues](#exec-command-issues)
 - [Network Issues](#network-issues)
+- [Windows-Specific Issues](#windows-specific-issues)
 - [Getting Help](#getting-help)
 
 ---
@@ -25,6 +26,7 @@ Find the symptom you are experiencing, then follow the resolution steps.
 
 Before troubleshooting, gather this diagnostic information:
 
+**Unix/macOS/Linux:**
 ```bash
 # Check aishell version
 aishell --version
@@ -42,6 +44,24 @@ cat ~/.aishell/state.edn
 cat .aishell/config.yaml
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Check aishell version
+aishell --version
+
+# Check Docker is running
+docker info
+
+# Check for existing images
+docker images | Select-String "aishell"
+
+# View current state
+Get-Content "$env:LOCALAPPDATA\aishell\state.edn"
+
+# View project config (if in project directory)
+Get-Content .aishell\config.yaml
+```
+
 ---
 
 ## Setup Issues
@@ -55,6 +75,7 @@ cat .aishell/config.yaml
 1. **Install Docker** if not present:
    - Linux: https://docs.docker.com/engine/install/
    - macOS: Install Docker Desktop
+   - Windows: Install Docker Desktop from https://www.docker.com/products/docker-desktop/
 
 2. **Start Docker daemon:**
    ```bash
@@ -954,6 +975,181 @@ aishell claude  # No warning for allowlisted files
 
 5. **VPN conflicts:**
    Some VPNs break Docker networking. Disconnect the VPN temporarily to test.
+
+---
+
+## Windows-Specific Issues
+
+### Symptom: "Docker daemon not running" on Windows
+
+**Cause:** Docker Desktop not started or WSL2 backend not enabled.
+
+**Resolution:**
+
+1. **Verify Docker Desktop is running:**
+   - Check system tray for Docker Desktop icon
+   - Open Docker Desktop if not running
+
+2. **Verify WSL2 backend enabled:**
+   ```powershell
+   docker info | Select-String "OSType"
+   # Should show: OSType: linux
+   ```
+
+3. **Enable WSL2 backend if needed:**
+   - Open Docker Desktop → Settings → General
+   - Check "Use the WSL2 based engine"
+   - Click "Apply & Restart"
+
+4. **Verify WSL2 installation:**
+   ```powershell
+   wsl --list --verbose
+   # Should show WSL2 distribution
+   ```
+
+   If no WSL2 installed:
+   ```powershell
+   wsl --install
+   # Restart computer after installation
+   ```
+
+### Symptom: "No such file or directory" when mounting Windows path
+
+**Cause:** Path format not compatible with Docker on Windows.
+
+**Resolution:**
+
+1. **Use forward slashes in config:**
+   ```yaml
+   # Incorrect - backslashes not supported
+   mounts:
+     - C:\Users\name\.ssh
+
+   # Correct - forward slashes
+   mounts:
+     - C:/Users/name/.ssh
+
+   # Better - use tilde expansion (works on all platforms)
+   mounts:
+     - ~/.ssh
+   ```
+
+2. **Avoid mixed separators:**
+   ```yaml
+   # Incorrect
+   mounts:
+     - C:/Users\name/project
+
+   # Correct
+   mounts:
+     - C:/Users/name/project
+   ```
+
+3. **Test with absolute path:**
+   ```powershell
+   # Verify path exists
+   Test-Path "C:/Users/name/.ssh"
+   ```
+
+4. **Use tilde expansion for portability:**
+   aishell automatically expands `~` to `C:/Users/username` on Windows.
+
+### Symptom: "aishell.bat not recognized" in cmd.exe
+
+**Cause:** aishell.bat not in PATH or has incorrect line endings.
+
+**Resolution:**
+
+1. **Verify PATH includes aishell directory:**
+   ```cmd
+   echo %PATH%
+   # Should include directory containing aishell.bat
+   ```
+
+2. **Test direct invocation:**
+   ```cmd
+   C:\path\to\aishell.bat --version
+   ```
+
+3. **Verify file has CRLF line endings:**
+   aishell.bat requires Windows-style CRLF line endings. If you see "command not recognized" despite being in PATH:
+   ```powershell
+   # Re-download from GitHub Release (ensures correct line endings)
+   Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell.bat -OutFile aishell.bat
+   ```
+
+4. **Add to PATH permanently:**
+   ```powershell
+   $installDir = "C:\path\to\aishell"
+   [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$installDir", [System.EnvironmentVariableTarget]::User)
+   # Restart terminal after PATH update
+   ```
+
+### Symptom: Colors not displaying correctly in PowerShell/cmd.exe
+
+**Cause:** Terminal doesn't support ANSI colors or NO_COLOR environment variable set.
+
+**Resolution:**
+
+1. **Use Windows Terminal (recommended):**
+   - Install from Microsoft Store
+   - Full ANSI color support built-in
+
+2. **Force color output:**
+   ```powershell
+   $env:FORCE_COLOR = "1"
+   aishell claude
+   ```
+
+3. **Disable color output:**
+   ```powershell
+   $env:NO_COLOR = "1"
+   aishell claude
+   ```
+
+4. **Legacy cmd.exe limitations:**
+   cmd.exe has limited ANSI support. Use PowerShell 7+ or Windows Terminal for best experience.
+
+**Environment variable priority:**
+- `NO_COLOR=1` disables colors (highest priority)
+- `FORCE_COLOR=1` enables colors even if terminal not detected
+- Auto-detection (default)
+
+### Symptom: Permission errors when building custom .aishell/Dockerfile on Windows
+
+**Cause:** File permissions not set correctly or Docker buildx path mapping issue.
+
+**Resolution:**
+
+1. **Use WSL2 filesystem for project (recommended):**
+   Move project to WSL2 filesystem for better Docker performance:
+   ```powershell
+   # From PowerShell
+   wsl
+   # From WSL2
+   cd ~
+   git clone <your-repo>
+   cd <your-repo>
+   bb -m aishell.core setup --with-claude
+   ```
+
+2. **Check Docker Desktop file sharing settings:**
+   - Open Docker Desktop → Settings → Resources → File Sharing
+   - Ensure drive containing project is shared
+   - Add drive if missing, click "Apply & Restart"
+
+3. **Verify Dockerfile exists:**
+   ```powershell
+   Test-Path .aishell\Dockerfile
+   # Should return True
+   ```
+
+4. **Check Dockerfile syntax:**
+   ```bash
+   # Inside container or WSL2
+   cat .aishell/Dockerfile
+   # Verify first line: FROM aishell:foundation
+   ```
 
 ---
 

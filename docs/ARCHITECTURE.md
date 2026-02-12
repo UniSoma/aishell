@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v3.0.0
+**Last updated:** v3.1.0
 
 ---
 
@@ -13,6 +13,7 @@ This document covers aishell's internal architecture: data flow from host throug
 - [Namespace Responsibilities](#namespace-responsibilities)
 - [Key Files](#key-files)
 - [Extension System](#extension-system)
+- [Cross-Platform Architecture](#cross-platform-architecture)
 
 ---
 
@@ -479,3 +480,48 @@ See the Dockerfile extension section in the Configuration Reference for details.
 - **Speed vs thoroughness:** Detection runs instantly; Gitleaks (when installed) scans comprehensively
 - **Fail-fast:** Catches obvious mistakes before expensive builds
 - **Non-blocking:** Advisory warnings never block power users
+
+---
+
+## Cross-Platform Architecture
+
+aishell v3.1.0 adds native Windows support using host-side platform detection with Linux containers via Docker Desktop WSL2 backend.
+
+### Design Principles
+
+**1. Host-side platform detection, container-side Linux-only**
+
+aishell uses `babashka.fs/windows?` for conditional logic on the host machine, but containers are always Linux (Debian bookworm-slim). Docker Desktop's WSL2 backend provides Linux containers on Windows, covering 95%+ of Windows Docker users.
+
+**Rationale:** Native Windows containers would require separate Dockerfile and entrypoint scripts. The WSL2 approach provides broad Windows compatibility with a single codebase.
+
+**2. Forward-slash normalization at Docker boundary**
+
+aishell uses OS-native path separators internally (`\` on Windows, `/` on Unix) but normalizes all paths to forward slashes when constructing Docker commands using `babashka.fs/unixify`.
+
+**Rationale:** Docker Desktop on Windows accepts paths with forward slashes (e.g., `C:/Users/name/project`). This normalization prevents cross-platform path bugs while preserving platform-native behavior for non-Docker operations.
+
+**3. Platform-specific process execution**
+
+Unix systems use `babashka.process/exec` (process replacement, clean process tree). Windows systems use `babashka.process/process` with `:inherit` flag (I/O inheritance, same user experience).
+
+**Rationale:** Windows doesn't support Unix-style `exec` system call. The `:inherit` approach provides identical terminal UX while respecting platform constraints.
+
+### Platform-Specific Behaviors
+
+| Aspect | Unix/macOS | Windows | Implementation Phase |
+|--------|------------|---------|---------------------|
+| **Home directory** | `$HOME` | `%USERPROFILE%` | Phase 54 |
+| **State directory** | `~/.local/state/aishell` | `%LOCALAPPDATA%\aishell` | Phase 54 |
+| **Config directory** | `~/.aishell` | `~/.aishell` (same) | Unchanged |
+| **Path separators** | Native `/` | Normalized to `/` at Docker boundary | Phase 54 |
+| **UID/GID** | From `id -u`/`id -g` | Hardcoded `1000:1000` | Phase 55 |
+| **Process exec** | `p/exec` (replaces process) | `p/process` with `:inherit` | Phase 56 |
+| **ANSI colors** | Terminal detection | Respect `NO_COLOR`/`FORCE_COLOR` env vars | Phase 57 |
+| **CLI wrapper** | Bash script (`aishell`) | Batch wrapper (`aishell.bat`) | Phase 58 |
+
+### Container Environment
+
+**Containers are always Linux (Debian bookworm-slim)**, regardless of host platform. aishell does not support Windows containers.
+
+**Why:** Docker Desktop's WSL2 backend provides Linux containers on Windows. This covers the vast majority of Windows Docker users without requiring separate Windows container images, Dockerfiles, or entrypoint scripts.

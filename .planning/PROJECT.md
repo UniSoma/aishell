@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode, OpenAI Codex CLI, Google Gemini CLI) in isolated, ephemeral containers. Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
+A cross-platform Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode, OpenAI Codex CLI, Google Gemini CLI) in isolated, ephemeral containers. Works on Linux, macOS, and Windows (cmd.exe/PowerShell with Docker Desktop). Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
 
 ## Core Value
 
@@ -112,6 +112,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Update command redesign: `aishell update` refreshes harness volume, `--force` rebuilds foundation — v2.8.0
 - ✓ Volume management: `aishell volumes` list/prune with orphan detection and safety checks — v2.8.0
 
+**v3.1.0 (2026-02-12) — Native Windows Support:**
+- ✓ Platform detection — `babashka.fs/windows?` guards all Unix-specific code paths — v3.1.0
+- ✓ Cross-platform paths — USERPROFILE/LOCALAPPDATA on Windows, HOME/XDG on Unix — v3.1.0
+- ✓ Docker mount normalization — drive letter support, forward-slash conversion via fs/unixify — v3.1.0
+- ✓ Windows UID/GID defaults — 1000/1000 without `id -u`/`id -g` — v3.1.0
+- ✓ Process execution — p/process :inherit on Windows, p/exec on Unix — v3.1.0
+- ✓ ANSI color detection — NO_COLOR/FORCE_COLOR standards, Windows Terminal/ConEmu support — v3.1.0
+- ✓ .bat wrapper — neil-pattern launcher in GitHub Releases for cmd.exe/PowerShell — v3.1.0
+- ✓ Documentation — Windows instructions across README, ARCHITECTURE, CONFIGURATION, TROUBLESHOOTING, DEVELOPMENT — v3.1.0
+
 **v3.0.0 (2026-02-06) — Docker-native Attach:**
 - ✓ tmux removed from foundation image — harnesses and shells run bare as container's main process — v3.0.0
 - ✓ Attach simplified to `docker exec -it` — `aishell attach <name>` opens bash in running container — v3.0.0
@@ -123,15 +133,7 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-**v3.1.0 — Native Windows Support:**
-- Platform detection: aishell runs from Windows cmd.exe/PowerShell with Linux containers via Docker Desktop
-- Process attachment: Windows-compatible terminal attachment (p/exec is no-op on Windows)
-- Path handling: Windows path normalization for Docker volume mounts
-- UID/GID handling: Graceful fallback when Unix `id` command unavailable
-- Environment variables: Case-sensitivity fixes for cross-platform `:extra-env` usage
-- ANSI output: Auto-detect terminal capability and strip color codes when unsupported
-- .bat wrapper: Windows PATH-compatible launcher script
-- Documentation: All user-facing docs updated for Windows support
+(No active requirements — define next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -148,12 +150,13 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v3.0.0 on 2026-02-06
-**Current:** v3.1.0 — Native Windows Support
+**Shipped:** v3.1.0 on 2026-02-12
+**Current:** Planning next milestone
 
-**Codebase:** ~4,050 LOC Clojure (Babashka) — net reduction from tmux removal
+**Codebase:** ~4,164 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
-**Documentation:** 4,500+ lines across docs/ and README (reduced by tmux doc removal)
+**Platforms:** Linux, macOS, Windows (cmd.exe/PowerShell with Docker Desktop WSL2)
+**Documentation:** 5,000+ lines across docs/ and README (expanded with Windows support)
 
 ## Milestone Conventions
 
@@ -293,6 +296,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | State schema bump to v3.0.0 | Major version reflects removal of :with-tmux, :tmux-plugins, :resurrect-config keys | Good |
 | Pure deletion refactor approach | 7 phases each focused on removing one layer; no new code, only deletions | Good |
 
+**v3.1.0 (Native Windows Support):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| babashka.fs/windows? for all platform detection | Built-in predicate, consistent single pattern across codebase | Good |
+| USERPROFILE/LOCALAPPDATA on Windows, HOME/XDG on Unix | Standard OS conventions for each platform | Good |
+| UID/GID 1000 defaults on Windows | Standard first non-root user in Debian/Ubuntu containers | Good |
+| p/process :inherit on Windows, p/exec on Unix | Windows p/exec is no-op; :inherit provides full I/O inheritance | Good |
+| System/exit for exit code propagation on Windows | p/process returns control to Babashka, need explicit exit | Good |
+| NO_COLOR > FORCE_COLOR > auto-detection priority | Community standards compliance (no-color.org) | Good |
+| neil-pattern .bat wrapper (4-line minimal) | Proven pattern, CRLF endings, minimal maintenance | Good |
+| Side-by-side platform examples in docs | Reduces doc sprawl, keeps related info together | Good |
+| Source-only mounts map to /home/developer on Windows | No direct path equivalent; consistent container-side location | Good |
+
 **v2.8.0 (Decouple Harness Tools):**
 
 | Decision | Rationale | Outcome |
@@ -310,4 +327,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-11 after v3.1.0 milestone start*
+*Last updated: 2026-02-12 after v3.1.0 milestone*

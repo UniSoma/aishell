@@ -1,13 +1,45 @@
 (ns aishell.output
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [babashka.fs :as fs]))
 
 (def ^:dynamic *verbose* false)
 
-(defn- colors-enabled? []
-  (and (some? (System/console))
-       (nil? (System/getenv "NO_COLOR"))
-       (or (some? (System/getenv "FORCE_COLOR"))
-           (not= "dumb" (System/getenv "TERM")))))
+(defn colors-enabled?
+  "Detect if ANSI colors should be used in output.
+   Priority: NO_COLOR (opt-out) > FORCE_COLOR (opt-in) > auto-detection.
+   Auto-detection checks System/console, COLORTERM, WT_SESSION (Windows Terminal),
+   ConEmuANSI (ConEmu), and TERM (Unix)."
+  []
+  (let [no-color (System/getenv "NO_COLOR")
+        force-color (System/getenv "FORCE_COLOR")]
+    (cond
+      ;; User opt-out (highest priority, non-empty string per spec)
+      (and no-color (not= "" no-color))
+      false
+
+      ;; User opt-in (overrides auto-detection)
+      (and force-color (not= "" force-color))
+      true
+
+      ;; Auto-detection fallback
+      :else
+      (and
+        ;; Must be interactive terminal (null when piped/redirected)
+        (some? (System/console))
+        ;; Terminal must support colors
+        (or
+          ;; Explicit color capability (modern terminals)
+          (some? (System/getenv "COLORTERM"))
+          ;; Windows Terminal (ANSI-capable)
+          (and (fs/windows?)
+               (some? (System/getenv "WT_SESSION")))
+          ;; ConEmu with ANSI enabled
+          (and (fs/windows?)
+               (= "ON" (System/getenv "ConEmuANSI")))
+          ;; Unix with standard TERM variable (not dumb)
+          (and (not (fs/windows?))
+               (let [term (System/getenv "TERM")]
+                 (and term (not= "dumb" term)))))))))
 
 (def RED (if (colors-enabled?) "\u001b[0;31m" ""))
 (def YELLOW (if (colors-enabled?) "\u001b[0;33m" ""))

@@ -54,6 +54,8 @@ You can use both: devcontainers for your development environment, aishell for ru
 
 ## Quick Start
 
+### Unix/macOS/Linux
+
 ```bash
 # 1. Install
 curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
@@ -65,22 +67,67 @@ aishell setup --with-claude
 aishell claude
 ```
 
+### Windows (PowerShell)
+
+```powershell
+# 1. Install Babashka via Scoop (if not already installed)
+scoop install babashka
+
+# 2. Download aishell and wrapper
+$installDir = "$env:LOCALAPPDATA\Programs\aishell"
+New-Item -ItemType Directory -Force -Path $installDir
+Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell -OutFile "$installDir\aishell"
+Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell.bat -OutFile "$installDir\aishell.bat"
+
+# 3. Add to PATH (restart terminal after this)
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$installDir", [System.EnvironmentVariableTarget]::User)
+
+# 4. In new terminal: Build foundation image and select harnesses (one-time)
+aishell setup --with-claude
+
+# 5. Run
+aishell claude
+```
+
 <details>
 <summary>Prerequisites & troubleshooting</summary>
 
-**Requirements:** Linux, macOS, or WSL2 on Windows; Docker; [Babashka](https://babashka.org)
+**Requirements:**
 
-Install Babashka if you haven't already: https://babashka.org
+- **Linux/macOS:** Docker Engine + [Babashka](https://babashka.org)
+- **Windows:** Docker Desktop with WSL2 backend enabled + [Babashka](https://babashka.org)
 
-Add `~/.local/bin` to your PATH if not already present:
+**Docker:**
+- Linux/macOS: Install [Docker Engine](https://docs.docker.com/engine/install/)
+- Windows: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable WSL2 backend (Settings → General → "Use the WSL 2 based engine")
+
+**Babashka:**
+- Linux/macOS: https://babashka.org
+- Windows: Install via [Scoop](https://scoop.sh) (`scoop install babashka`) or download binary from https://babashka.org
+
+**PATH configuration:**
+
+Unix/macOS - Add `~/.local/bin` to PATH if not already present:
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-To update harness tools later:
+Windows - After installation, add the directory containing `aishell.bat` to PATH:
+
+```powershell
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$env:LOCALAPPDATA\Programs\aishell", [System.EnvironmentVariableTarget]::User)
+```
+
+Then restart your terminal.
+
+**Updating harness tools:**
 
 ```bash
+# Unix/macOS/Linux
+aishell update
+
+# Windows (PowerShell or cmd.exe)
 aishell update
 ```
 
