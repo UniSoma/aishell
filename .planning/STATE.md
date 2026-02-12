@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: 59 of 59 — All phases complete
 Plan: All complete
 Status: v3.1.0 shipped — planning next milestone
-Last activity: 2026-02-12 - v3.1.0 milestone archived
+Last activity: 2026-02-12 - Completed quick task 6: Implement auto-install-bb in install.sh + PowerShell equivalent
 
 Progress: [██████████████████████████] 100% (59/59 phases complete, 13 milestones shipped)
 
@@ -47,6 +47,12 @@ See PROJECT.md for full decision log across all milestones.
 ### Blockers/Concerns
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 6 | Implement auto-install-bb in install.sh + PowerShell equivalent | 2026-02-12 | e2dd0eb | [6-implement-auto-install-bb-in-install-sh-](./quick/6-implement-auto-install-bb-in-install-sh-/) |
 
 ## Session Continuity
 
