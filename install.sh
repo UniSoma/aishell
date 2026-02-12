@@ -10,6 +10,43 @@
 
 set -euo pipefail
 
+install_babashka() {
+    local install_dir="$1"
+    local downloader="$2"
+
+    local bb_installer="/tmp/bb-install"
+    local bb_install_url="https://raw.githubusercontent.com/babashka/babashka/master/install"
+
+    info "Downloading Babashka installer..."
+    if [[ "$downloader" == "curl" ]]; then
+        if ! curl -fsSL --retry 3 "$bb_install_url" -o "$bb_installer"; then
+            error "Failed to download Babashka installer"
+            exit 1
+        fi
+    else
+        if ! wget -q --tries=3 -O "$bb_installer" "$bb_install_url"; then
+            error "Failed to download Babashka installer"
+            exit 1
+        fi
+    fi
+
+    info "Installing Babashka to ${install_dir}..."
+    if ! bash "$bb_installer" --dir "$install_dir"; then
+        error "Babashka installation failed"
+        rm -f "$bb_installer"
+        exit 1
+    fi
+
+    # Cleanup
+    rm -f "$bb_installer"
+
+    # Verify installation
+    if [[ ! -f "${install_dir}/bb" ]]; then
+        error "Babashka installation failed - bb not found at ${install_dir}/bb"
+        exit 1
+    fi
+}
+
 install_aishell() {
     # --- Configuration ---
     local repo_url="https://github.com/UniSoma/aishell"
@@ -48,14 +85,7 @@ install_aishell() {
         printf "${yellow}Warning:${nc} %s\n" "$1"
     }
 
-    # --- Dependency Checks ---
-    # Check for Babashka
-    if ! command -v bb &>/dev/null; then
-        error "Babashka required. Install: https://babashka.org"
-        exit 1
-    fi
-
-    # Check for download tool
+    # --- Check for download tool (needed before Babashka check) ---
     local downloader=""
     if command -v curl &>/dev/null; then
         downloader="curl"
@@ -64,6 +94,16 @@ install_aishell() {
     else
         error "Either 'curl' or 'wget' required"
         exit 1
+    fi
+
+    # --- Dependency Checks ---
+    # Check for Babashka
+    if ! command -v bb &>/dev/null; then
+        info "Babashka not found. Installing..."
+        install_babashka "$install_dir" "$downloader"
+        success "Babashka installed to ${install_dir}/bb"
+    else
+        success "Babashka found: $(command -v bb)"
     fi
 
     # --- Create Install Directory ---
