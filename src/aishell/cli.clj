@@ -15,6 +15,7 @@
             [aishell.config :as config]
             [aishell.util :as util]
             [aishell.attach :as attach]
+            [aishell.vscode :as vscode]
             [aishell.migration :as migration]))
 
 (def version "3.2.0")
@@ -104,6 +105,7 @@
   (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
   (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
   (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
+  (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode attached to container"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
     (when (contains? installed "claude")
@@ -483,7 +485,7 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach"}
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "vscode"}
         should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
@@ -528,6 +530,29 @@
 
                    :else
                    (attach/attach-to-container (first rest-args))))
+      "vscode" (let [rest-args (vec (rest clean-args))]
+                 (if (some #{"-h" "--help"} rest-args)
+                   (do
+                     (println (str output/BOLD "Usage:" output/NC " aishell vscode"))
+                     (println)
+                     (println "Open VSCode attached to the aishell container as the developer user.")
+                     (println)
+                     (println (str output/BOLD "Options:" output/NC))
+                     (println "  -h, --help    Show this help")
+                     (println)
+                     (println (str output/BOLD "What this does:" output/NC))
+                     (println "  1. Writes VSCode per-image config (remoteUser: developer)")
+                     (println "  2. Starts the container if not already running")
+                     (println "  3. Opens VSCode attached to the container")
+                     (println)
+                     (println (str output/BOLD "Prerequisites:" output/NC))
+                     (println "  - VSCode with 'code' CLI on PATH")
+                     (println "  - Dev Containers extension installed in VSCode")
+                     (println "  - aishell setup completed")
+                     (println)
+                     (println (str output/BOLD "Examples:" output/NC))
+                     (println (str "  " output/CYAN "aishell vscode" output/NC "    Open VSCode for current project")))
+                   (vscode/open-vscode)))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
