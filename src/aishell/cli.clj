@@ -17,7 +17,7 @@
             [aishell.attach :as attach]
             [aishell.migration :as migration]))
 
-(def version "3.1.0")
+(def version "3.2.0")
 
 (defn print-version []
   (println (str "aishell " version)))

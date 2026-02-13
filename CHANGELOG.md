@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-02-13
+
+Simplified installation and improved Docker Dev Container support.
+
+### Added
+- **Auto-install Babashka**: `install.sh` now automatically downloads and installs Babashka if not present
+- **Windows PowerShell installer**: `install.ps1` for one-command Windows installation with automatic Babashka setup
+- **Windows CMD installer**: `install.bat` for native cmd.exe installation support
+- **Docker build-time user**: Developer user pre-created in Dockerfile for VSCode Dev Container compatibility
+
+### Changed
+- Docker entrypoint adjusts pre-existing developer user UID/GID via `usermod`/`groupmod` instead of creating from scratch at runtime
+- Install script examples updated to use `opencode` as the default AI tool
+
 ## [3.1.0] - 2026-02-12
 
 Native Windows host support. aishell now runs from cmd.exe and PowerShell with
