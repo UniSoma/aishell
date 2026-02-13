@@ -171,11 +171,11 @@ if ($pathNeedsUpdate) {
     Write-Warn "Restart your terminal for PATH changes to take effect."
     Write-Host ""
     Write-Host "Then run:"
-    Write-Host "  aishell setup --with-claude    # Set up Docker image and select harnesses"
-    Write-Host "  aishell claude                 # Run Claude Code"
+    Write-Host "  aishell setup --with-opencode   # Set up Docker image and select harnesses"
+    Write-Host "  aishell opencode                # Run OpenCode"
 } else {
     Write-Host "Quick start:"
-    Write-Host "  aishell setup --with-claude    # Set up Docker image and select harnesses"
-    Write-Host "  aishell claude                 # Run Claude Code"
+    Write-Host "  aishell setup --with-opencode   # Set up Docker image and select harnesses"
+    Write-Host "  aishell opencode                # Run OpenCode"
 }
 Write-Host ""

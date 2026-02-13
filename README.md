@@ -61,28 +61,45 @@ You can use both: devcontainers for your development environment, aishell for ru
 curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
 
 # 2. Build foundation image and select harnesses (one-time)
-aishell setup --with-claude
+aishell setup --with-opencode
 
 # 3. Run
-aishell claude
+aishell opencode
 ```
 
 > Babashka is installed automatically if not already present.
 
-### Windows (PowerShell)
+### Windows
+
+**Recommended:** Use WSL2 and follow the Unix/Linux instructions above — it provides the best experience. Otherwise, use PowerShell. CMD works but has limited error handling and no colored output.
+
+#### PowerShell
 
 ```powershell
 # 1. Install
 irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 
 # 2. Restart terminal, then build foundation image and select harnesses (one-time)
-aishell setup --with-claude
+aishell setup --with-opencode
 
 # 3. Run
-aishell claude
+aishell opencode
 ```
 
 > Babashka is installed automatically if not already present.
+
+#### CMD
+
+```batch
+curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.bat -o install.bat && install.bat
+
+aishell setup --with-opencode
+
+aishell opencode
+```
+
+> Babashka is installed automatically if not already present.
+> Requires Windows 10 version 1803 or later.
 
 <details>
 <summary>Prerequisites & troubleshooting</summary>
