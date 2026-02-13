@@ -56,3 +56,24 @@
   "Get path to project config file (.aishell/config.yaml) relative to given dir."
   [project-dir]
   (str (fs/path project-dir ".aishell" "config.yaml")))
+
+(defn vscode-imageconfigs-dir
+  "Get platform-appropriate path to VSCode Dev Containers imageConfigs directory.
+   Windows: %APPDATA%/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs
+   macOS: ~/Library/Application Support/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs
+   Linux/WSL2: ~/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs"
+  []
+  (let [subpath ["Code" "User" "globalStorage" "ms-vscode-remote.remote-containers" "imageConfigs"]]
+    (cond
+      (fs/windows?)
+      (let [appdata (or (System/getenv "APPDATA")
+                        (str (fs/path (get-home) "AppData" "Roaming")))]
+        (str (apply fs/path appdata subpath)))
+
+      (= "Mac OS X" (System/getProperty "os.name"))
+      (str (apply fs/path (get-home) "Library" "Application Support" subpath))
+
+      :else ;; Linux and WSL2 (WSL2 code CLI reads from Linux paths)
+      (let [config-home (or (System/getenv "XDG_CONFIG_HOME")
+                            (str (fs/path (get-home) ".config")))]
+        (str (apply fs/path config-home subpath))))))
