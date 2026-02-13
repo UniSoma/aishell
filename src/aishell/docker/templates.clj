@@ -83,6 +83,11 @@ RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
         gitleaks version; \\
     fi
 
+# Create developer user at build time (visible in /etc/passwd for VSCode Dev Containers)
+# UID/GID are adjusted at runtime by entrypoint to match host user
+RUN groupadd -g 1000 developer \\
+    && useradd -m -s /bin/bash -u 1000 -g 1000 developer
+
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -99,8 +104,8 @@ CMD [\"/bin/bash\"]
 
 (def entrypoint-script
   "#!/bin/bash
-# entrypoint.sh - Dynamic user creation with gosu
-# Creates a user at container startup that matches the host user's UID/GID
+# entrypoint.sh - User setup with gosu
+# Adjusts the pre-created developer user to match the host user's UID/GID
 
 set -e
 
@@ -110,25 +115,22 @@ GROUP_ID=${LOCAL_GID:-1000}
 USER_HOME=${LOCAL_HOME:-/home/developer}
 USERNAME=developer
 
-# Create group if GID doesn't exist
-if ! getent group \"$GROUP_ID\" > /dev/null 2>&1; then
-    groupadd -g \"$GROUP_ID\" \"$USERNAME\" 2>/dev/null || true
+# Adjust developer group GID to match host (skip if already correct)
+CURRENT_GID=$(id -g $USERNAME)
+if [ \"$CURRENT_GID\" != \"$GROUP_ID\" ]; then
+    groupmod -g \"$GROUP_ID\" developer 2>/dev/null || true
 fi
 
-# Create user if UID doesn't exist
-# Use -d to set home directory to match host path (for config mounts)
-if ! getent passwd \"$USER_ID\" > /dev/null 2>&1; then
-    useradd --shell /bin/bash \\
-        -u \"$USER_ID\" \\
-        -g \"$GROUP_ID\" \\
-        -d \"$USER_HOME\" \\
-        -o \\
-        -c \"Container User\" \\
-        -m \"$USERNAME\" 2>/dev/null || true
+# Adjust developer user UID to match host (skip if already correct)
+CURRENT_UID=$(id -u $USERNAME)
+if [ \"$CURRENT_UID\" != \"$USER_ID\" ]; then
+    usermod -u \"$USER_ID\" developer 2>/dev/null || true
 fi
 
-# Get the username for this UID (might be different if user already existed)
-ACTUAL_USER=$(getent passwd \"$USER_ID\" | cut -d: -f1)
+# Update home directory if different from default
+usermod -d \"$USER_HOME\" developer 2>/dev/null || true
+
+ACTUAL_USER=developer
 # Use LOCAL_HOME if provided, otherwise fall back to passwd entry
 export HOME=${LOCAL_HOME:-$(getent passwd \"$USER_ID\" | cut -d: -f6)}
 
