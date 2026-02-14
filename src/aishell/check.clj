@@ -262,6 +262,17 @@
       (check-gitleaks-freshness project-dir cfg))
 
     (println)
+
+    ;; Tools
+    (println (str output/BOLD "Tools" output/NC))
+    (if (fs/which "code")
+      (print-status :ok "VSCode 'code' CLI available (aishell vscode)")
+      (print-status :warn "VSCode 'code' CLI not found (aishell vscode won't work)"))
+    (if (fs/which "git")
+      (print-status :ok "Git available")
+      (print-status :warn "Git not found (git identity won't be forwarded to container)"))
+
+    (println)
     (println (apply str (repeat 40 "-")))
     (if @critical-fail?
       (do

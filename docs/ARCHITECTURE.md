@@ -36,7 +36,7 @@ graph TB
 
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
-        Harness[AI Harness<br/>claude/opencode/codex/gemini]
+        Harness[AI Harness<br/>claude/opencode/codex/gemini/vscode]
         Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
@@ -320,7 +320,8 @@ Each namespace handles one concern:
 | `aishell.output` | Terminal formatting | Colored output, error handling |
 | `aishell.util` | Shared utilities | Path helpers, home directory resolution |
 | `aishell.attach` | Attach command | Open shell in running containers via docker exec |
-| `aishell.check` | Pre-flight checks | Validate Docker, config, image state |
+| `aishell.vscode` | VSCode integration | Open VSCode attached to container as developer user |
+| `aishell.check` | Pre-flight checks | Validate Docker, config, image state, tool availability |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |
 
 ### Docker Namespaces

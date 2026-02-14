@@ -518,7 +518,7 @@ Run multiple named containers simultaneously and reconnect to them.
 
 ### Starting Named Containers
 
-Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `gemini`, `shell`). Override with `--name`:
+Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `gemini`, `vscode`, `shell`). Override with `--name`:
 
 ```bash
 # Start Claude (default name: claude)
@@ -559,7 +559,7 @@ docker stop aishell-<hash>-claude
 
 Containers follow the naming pattern `aishell-{project-hash}-{name}`:
 - **project-hash**: First 8 characters of the SHA-256 of your project directory path
-- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `shell`); override with `--name`
+- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `vscode`, `shell`); override with `--name`
 
 ## Running Multiple Harnesses
 

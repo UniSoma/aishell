@@ -31,35 +31,112 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
   [s]
   (apply str (map #(format "%02x" (int %)) s)))
 
-(defn ensure-imageconfig!
-  "Write/update VSCode per-image config JSON so remoteUser is developer.
-   Advisory only - warns on failure but does not error (VSCode can still open as root)."
+(defn list-host-extensions
+  "List VSCode extensions installed on the host via 'code --list-extensions'.
+   Returns a vector of extension IDs, or empty vector on failure."
   []
   (try
-    (let [state (state/read-state)
-          image-tag (or (:image-tag state) build/foundation-image-tag)
-          ;; Sanitize image tag for filename (replace : and / with _)
-          filename (str (clojure.string/replace image-tag #"[:/]" "_") ".json")
+    (let [result (p/shell {:out :string :err :string} "code" "--list-extensions")]
+      (->> (clojure.string/split-lines (:out result))
+           (map clojure.string/trim)
+           (remove clojure.string/blank?)
+           vec))
+    (catch Exception _
+      [])))
+
+(defn ensure-imageconfig!
+  "Write/update VSCode per-image config JSON so remoteUser is developer
+   and host extensions are synced to the container.
+   Advisory only - warns on failure but does not error."
+  [image-tag]
+  (try
+    (let [;; URL-encode image tag for filename to match VSCode convention
+          filename (str (.toLowerCase (java.net.URLEncoder/encode image-tag "UTF-8")) ".json")
           config-dir (util/vscode-imageconfigs-dir)
           config-path (str (fs/path config-dir filename))
           ;; Read existing config if present
           existing (when (fs/exists? config-path)
                      (json/parse-string (slurp config-path) true))
-          ;; Merge with remoteUser: developer
-          merged (merge existing {:remoteUser "developer"})]
+          ;; Discover host extensions
+          extensions (list-host-extensions)
+          ;; Build config
+          merged (merge existing
+                        {:remoteUser "developer"}
+                        (when (seq extensions)
+                          {:extensions extensions}))]
       ;; Ensure parent directory exists
       (fs/create-dirs config-dir)
       ;; Write config
-      (spit config-path (json/generate-string merged {:pretty true})))
+      (spit config-path (json/generate-string merged {:pretty true}))
+      (when (seq extensions)
+        (println (str "Syncing " (count extensions) " host extensions to container..."))))
     (catch Exception e
       (output/warn (str "Could not write VSCode image config: " (ex-message e)
                        "\nVSCode may connect as root instead of developer.")))))
 
+(defn- start-container!
+  "Start the vscode container in detached mode if not already running.
+   Returns the container name."
+  [state project-dir image-tag]
+  (let [container-name (naming/container-name project-dir "vscode")]
+    (when-not (naming/container-running? container-name)
+      (let [cfg (config/load-config project-dir)
+            git-id (docker-run/read-git-identity project-dir)
+            harness-volume-name (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+                                 (:harness-volume-name state))
+            docker-args (docker-run/build-docker-args
+                          {:project-dir project-dir
+                           :image-tag image-tag
+                           :config cfg
+                           :state state
+                           :git-identity git-id
+                           :container-name container-name
+                           :harness-volume-name harness-volume-name})
+            docker-args (mapv #(if (= % "-it") "-d" %) docker-args)]
+        (naming/remove-container-if-stopped! container-name)
+        (apply p/shell {:out :string :err :string} (concat docker-args ["sleep" "infinity"]))
+        (Thread/sleep 1500)))
+    container-name))
+
+(defn- stop-container!
+  "Stop and remove the vscode container."
+  [container-name]
+  (when (naming/container-running? container-name)
+    (p/shell {:out :string :err :string} "docker" "stop" container-name)))
+
+(defn stop-vscode
+  "Stop the vscode container for the current project."
+  []
+  (docker/check-docker!)
+  (let [state (state/read-state)
+        project-dir (System/getProperty "user.dir")]
+    (when-not state
+      (output/error-no-setup))
+    (let [container-name (naming/container-name project-dir "vscode")]
+      (if (naming/container-running? container-name)
+        (do
+          (stop-container! container-name)
+          (println (str "Stopped " container-name)))
+        (println "No running vscode container found.")))))
+
+(defn- launch-vscode!
+  "Launch VSCode attached to the container. When wait? is true, blocks until
+   VSCode window is closed."
+  [container-name project-dir wait?]
+  (let [hex-name (hex-encode container-name)
+        workspace-path (if (fs/windows?) "/workspace" project-dir)
+        uri (str "vscode-remote://attached-container+" hex-name workspace-path)]
+    (println "Opening VSCode attached to container...")
+    (if wait?
+      (p/shell {:inherit true} "code" "--folder-uri" uri "--wait")
+      (p/shell {:inherit true} "code" "--folder-uri" uri))))
+
 (defn open-vscode
   "Main entry point for 'aishell vscode' command.
    Opens VSCode attached to the aishell container as developer user.
-   Starts container if not running, reuses if already running."
-  []
+   By default blocks until VSCode closes, then stops the container.
+   With detach?=true, returns immediately and leaves container running."
+  [& [{:keys [detach?]}]]
   ;; 1. Check prerequisites
   (check-vscode!)
   (docker/check-docker!)
@@ -70,46 +147,22 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
     (when-not state
       (output/error-no-setup))
 
-    ;; 3. Write per-image config (advisory, non-blocking)
-    (ensure-imageconfig!)
+    ;; 3. Resolve image tag (handles extensions like aishell claude does)
+    (let [base-tag (or (:image-tag state) build/foundation-image-tag)
+          image-tag (run/resolve-image-tag base-tag project-dir false)]
 
-    ;; 4. Determine container name
-    (let [container-name (naming/container-name project-dir "vscode")]
+      ;; 4. Write per-image config (advisory, non-blocking)
+      (ensure-imageconfig! image-tag)
 
-      ;; 5. Check if container is running
-      (when-not (naming/container-running? container-name)
-        ;; Container not running - start it in detached mode
-        (let [cfg (config/load-config project-dir)
-              git-id (docker-run/read-git-identity project-dir)
-              image-tag (or (:image-tag state) build/foundation-image-tag)
-              ;; Get harness volume if available
-              harness-volume-name (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
-                                   (:harness-volume-name state))
-              ;; Build standard docker args
-              docker-args (docker-run/build-docker-args
-                            {:project-dir project-dir
-                             :image-tag image-tag
-                             :config cfg
-                             :state state
-                             :git-identity git-id
-                             :container-name container-name
-                             :harness-volume-name harness-volume-name})
-              ;; Replace "-it" with "-d" for detached mode
-              docker-args (mapv #(if (= % "-it") "-d" %) docker-args)]
-          ;; Remove stopped container if exists
-          (naming/remove-container-if-stopped! container-name)
-          ;; Start detached with sleep infinity to keep alive
-          (apply p/shell {:out :string :err :string} (concat docker-args ["sleep" "infinity"]))
-          ;; Brief pause for container to be ready
-          (Thread/sleep 1500)))
+      ;; 5. Start container and launch VSCode
+      (let [container-name (start-container! state project-dir image-tag)]
+        (launch-vscode! container-name project-dir (not detach?))
 
-      ;; 6. Build VSCode remote URI and launch
-      (let [hex-name (hex-encode container-name)
-            workspace-path (if (fs/windows?) "/workspace" project-dir)]
-        (println "Opening VSCode attached to container...")
-        (p/shell {:inherit true}
-                 "code" "--folder-uri"
-                 (str "vscode-remote://attached-container+" hex-name workspace-path)))
-
-      ;; 7. Print success message
-      (println "VSCode should open shortly. If the Dev Containers extension is not installed, VSCode will prompt you."))))
+        (if detach?
+          ;; Detached mode: print hint and return
+          (println "VSCode should open shortly. Container will keep running in the background.\nStop it with: aishell vscode --stop")
+          ;; Wait mode: VSCode closed, stop container
+          (do
+            (println "VSCode closed. Stopping container...")
+            (stop-container! container-name)
+            (println (str "Stopped " container-name))))))))

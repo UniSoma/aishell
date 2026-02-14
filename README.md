@@ -172,6 +172,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Named containers** - Deterministic naming with `--name` override
+- **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, host extensions synced automatically
 - **Attach** - Open a shell in a running container via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
@@ -249,6 +250,22 @@ Containers are named `aishell-{project-hash}-{name}`. Use `aishell ps` to discov
 
 **Conflict detection:** Starting a container with a name already in use by a running container shows an error with guidance. Stopped containers with the same name are auto-removed.
 
+### VSCode (Experimental)
+
+Open VSCode attached to the container as the `developer` user — no manual configuration needed:
+
+```bash
+# Open VSCode attached to the container
+aishell vscode
+
+# Stop the container when done
+aishell vscode --stop
+```
+
+Your locally installed VSCode extensions are automatically synced to the container. The container starts in detached mode and persists until explicitly stopped.
+
+**Prerequisites:** VSCode with `code` CLI on PATH and the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed.
+
 ### Update
 
 ```bash
@@ -267,7 +284,7 @@ Run pre-flight checks without launching any container:
 aishell check
 ```
 
-Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, and gitleaks scan freshness (when installed).
+Checks Docker availability, build state, image existence, configuration validity, mount paths, sensitive files, gitleaks scan freshness, and tool availability (git, VSCode `code` CLI).
 
 ## Configuration
 

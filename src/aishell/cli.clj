@@ -531,19 +531,28 @@
                    :else
                    (attach/attach-to-container (first rest-args))))
       "vscode" (let [rest-args (vec (rest clean-args))]
-                 (if (some #{"-h" "--help"} rest-args)
+                 (cond
+                   (some #{"-h" "--help"} rest-args)
                    (do
-                     (println (str output/BOLD "Usage:" output/NC " aishell vscode"))
+                     (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS]"))
                      (println)
                      (println "Open VSCode attached to the aishell container as the developer user.")
+                     (println (str output/YELLOW "(Experimental — API subject to change)" output/NC))
                      (println)
                      (println (str output/BOLD "Options:" output/NC))
-                     (println "  -h, --help    Show this help")
+                     (println "  -h, --help      Show this help")
+                     (println "      --detach    Run in background (don't wait for VSCode to close)")
+                     (println "      --stop      Stop a detached vscode container")
                      (println)
                      (println (str output/BOLD "What this does:" output/NC))
-                     (println "  1. Writes VSCode per-image config (remoteUser: developer)")
+                     (println "  1. Syncs host VSCode extensions to container config")
                      (println "  2. Starts the container if not already running")
                      (println "  3. Opens VSCode attached to the container")
+                     (println "  4. Waits for VSCode to close, then stops the container")
+                     (println)
+                     (println (str output/BOLD "Note:" output/NC))
+                     (println "  Your locally installed VSCode extensions are automatically")
+                     (println "  made available inside the container.")
                      (println)
                      (println (str output/BOLD "Prerequisites:" output/NC))
                      (println "  - VSCode with 'code' CLI on PATH")
@@ -551,7 +560,17 @@
                      (println "  - aishell setup completed")
                      (println)
                      (println (str output/BOLD "Examples:" output/NC))
-                     (println (str "  " output/CYAN "aishell vscode" output/NC "    Open VSCode for current project")))
+                     (println (str "  " output/CYAN "aishell vscode" output/NC "            Open VSCode (blocks until closed)"))
+                     (println (str "  " output/CYAN "aishell vscode --detach" output/NC "   Run in background"))
+                     (println (str "  " output/CYAN "aishell vscode --stop" output/NC "     Stop a detached container")))
+
+                   (some #{"--stop"} rest-args)
+                   (vscode/stop-vscode)
+
+                   (some #{"--detach"} rest-args)
+                   (vscode/open-vscode {:detach? true})
+
+                   :else
                    (vscode/open-vscode)))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override})
