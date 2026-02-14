@@ -1,5 +1,6 @@
 (ns aishell.util
   (:require [babashka.fs :as fs]
+            [babashka.process :as p]
             [clojure.string :as str]))
 
 (defn get-home
@@ -14,6 +15,35 @@
         (str (fs/home)))
     (or (System/getenv "HOME")
         (str (fs/home)))))
+
+(def ^:private wsl2?*
+  (delay
+    (try
+      (and (not (fs/windows?))
+           (fs/exists? "/proc/version")
+           (str/includes? (str/lower-case (slurp "/proc/version")) "microsoft"))
+      (catch Exception _ false))))
+
+(defn wsl2?
+  "Detect if running inside WSL2 by checking /proc/version for 'microsoft'."
+  []
+  @wsl2?*)
+
+(defn- wsl2-windows-appdata
+  "Resolve Windows APPDATA from WSL2 via cmd.exe + wslpath. Returns nil on failure."
+  []
+  (try
+    (let [cmd-result (p/shell {:out :string :err :string :continue true}
+                              "cmd.exe" "/c" "echo" "%APPDATA%")
+          _ (when-not (zero? (:exit cmd-result))
+              (throw (ex-info "cmd.exe failed" {})))
+          win-path (str/trim (:out cmd-result))
+          wsl-result (p/shell {:out :string :err :string :continue true}
+                              "wslpath" "-u" win-path)
+          _ (when-not (zero? (:exit wsl-result))
+              (throw (ex-info "wslpath failed" {})))]
+      (str/trim (:out wsl-result)))
+    (catch Exception _ nil)))
 
 (defn expand-path
   "Expand ~ and $HOME in path string, normalize separators.
@@ -61,7 +91,8 @@
   "Get platform-appropriate path to VSCode Dev Containers imageConfigs directory.
    Windows: %APPDATA%/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs
    macOS: ~/Library/Application Support/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs
-   Linux/WSL2: ~/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs"
+   WSL2: /mnt/c/Users/<name>/AppData/Roaming/Code/... (resolved via cmd.exe + wslpath)
+   Linux: ~/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs"
   []
   (let [subpath ["Code" "User" "globalStorage" "ms-vscode-remote.remote-containers" "imageConfigs"]]
     (cond
@@ -73,7 +104,15 @@
       (= "Mac OS X" (System/getProperty "os.name"))
       (str (apply fs/path (get-home) "Library" "Application Support" subpath))
 
-      :else ;; Linux and WSL2 (WSL2 code CLI reads from Linux paths)
+      (wsl2?)
+      (if-let [appdata (wsl2-windows-appdata)]
+        (str (apply fs/path appdata subpath))
+        ;; Fallback if cmd.exe/wslpath unavailable
+        (let [config-home (or (System/getenv "XDG_CONFIG_HOME")
+                              (str (fs/path (get-home) ".config")))]
+          (str (apply fs/path config-home subpath))))
+
+      :else ;; Native Linux
       (let [config-home (or (System/getenv "XDG_CONFIG_HOME")
                             (str (fs/path (get-home) ".config")))]
         (str (apply fs/path config-home subpath))))))
