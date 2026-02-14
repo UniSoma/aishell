@@ -39,10 +39,11 @@ See PROJECT.md for full decision log across all milestones.
 
 ### Pending Todos
 
-3 deferred todos:
+4 deferred todos:
 - [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) - from Distrobox investigation
 - [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) - warn when foundation image is outdated
 - [Consider adding pi coding-agent as another harness](./todos/pending/2026-02-06-consider-pi-coding-agent-harness.md) - evaluate badlogic/pi-mono coding-agent
+- [Integrate Claude Code, aishell and Emacs](./todos/pending/2026-02-14-integrate-claude-code-aishell-and-emacs.md) - editor plugin integration with containerized Claude Code
 
 ### Blockers/Concerns
 
