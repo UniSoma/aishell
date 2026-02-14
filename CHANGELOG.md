@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-02-13
+
+VSCode integration for opening containers with zero manual configuration.
+
+### Added
+- **`aishell vscode` subcommand**: Open VSCode attached to the container as the `developer` user with automatic per-image config
+- **Host extension sync**: Automatically discovers locally installed VSCode extensions and makes them available inside the container
+- **Wait mode (default)**: `aishell vscode` blocks until VSCode closes, then stops the container
+- **Detach mode**: `aishell vscode --detach` runs the container in the background
+- **Stop command**: `aishell vscode --stop` stops a detached vscode container
+- **Tools check in `aishell check`**: Reports availability of `code` CLI and `git`
+
+### Changed
+- `resolve-image-tag` in `run.clj` is now public so `vscode.clj` can resolve extended images consistently
+
 ## [3.2.0] - 2026-02-13
 
 Simplified installation and improved Docker Dev Container support.
