@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-02-14
+
+### Fixed
+- **WSL2 imageConfigs path**: `aishell vscode` now writes imageConfigs to the Windows filesystem (`%APPDATA%\Code\...`) when running from WSL2, so VSCode correctly picks up the per-image configuration
+
 ## [3.4.0] - 2026-02-14
 
 Self-upgrade command and improved setup diagnostics.
