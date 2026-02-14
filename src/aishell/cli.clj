@@ -16,6 +16,7 @@
             [aishell.util :as util]
             [aishell.attach :as attach]
             [aishell.vscode :as vscode]
+            [aishell.upgrade :as upgrade]
             [aishell.migration :as migration]))
 
 (def version "3.3.0")
@@ -106,6 +107,7 @@
   (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
   (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
   (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode attached to container"))
+  (println (str "  " output/CYAN "upgrade" output/NC "    Upgrade aishell to latest version"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
     (when (contains? installed "claude")
@@ -485,7 +487,7 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "vscode"}
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "vscode" "upgrade"}
         should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
@@ -572,6 +574,30 @@
 
                    :else
                    (vscode/open-vscode)))
+      "upgrade" (let [rest-args (vec (rest clean-args))]
+                  (cond
+                    (some #{"-h" "--help"} rest-args)
+                    (do
+                      (println (str output/BOLD "Usage:" output/NC " aishell upgrade [VERSION]"))
+                      (println)
+                      (println "Upgrade aishell to the latest version (or a specific version).")
+                      (println)
+                      (println (str output/BOLD "Arguments:" output/NC))
+                      (println "  VERSION    Target version (e.g., 3.4.0). Defaults to latest.")
+                      (println)
+                      (println (str output/BOLD "Options:" output/NC))
+                      (println "  -h, --help    Show this help")
+                      (println)
+                      (println (str output/BOLD "Examples:" output/NC))
+                      (println (str "  " output/CYAN "aishell upgrade" output/NC "          Upgrade to latest version"))
+                      (println (str "  " output/CYAN "aishell upgrade 3.4.0" output/NC "   Upgrade to specific version"))
+                      (println (str "  " output/CYAN "aishell upgrade 3.2.0" output/NC "   Downgrade to older version")))
+
+                    :else
+                    (let [target-version (first rest-args)]
+                      (when target-version
+                        (validate-version target-version "aishell"))
+                      (upgrade/do-upgrade version target-version))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                  {:unsafe unsafe? :container-name container-name-override})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
