@@ -4,10 +4,10 @@
 
 aishell runs AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) inside isolated Docker containers. It preserves paths, forwards git identity, manages configuration and mounts, and scans for secrets — replacing long `docker run` commands.
 
-Version: 3.0.0
+Version: 3.4.1
 License: MIT
 Repository: https://github.com/UniSoma/aishell
-Requirements: Linux, macOS, or WSL2; Docker; Babashka (https://babashka.org)
+Requirements: Linux, macOS, Windows, or WSL2; Docker; Babashka (https://babashka.org)
 
 ---
 
@@ -27,10 +27,20 @@ Key design principles:
 
 ## Installation
 
+### Linux / macOS / WSL2
+
 ```
 curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
 export PATH="$HOME/.local/bin:$PATH"
 ```
+
+### Windows (PowerShell)
+
+```
+irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
+```
+
+Both installers auto-install Babashka if not found.
 
 ---
 
@@ -146,6 +156,36 @@ aishell volumes list         # Same as above
 aishell volumes prune        # Remove orphaned volumes (prompts for confirmation)
 aishell volumes prune --yes  # Remove without confirmation
 ```
+
+### vscode
+
+Open VSCode attached to the aishell container as the `developer` user. Experimental — API subject to change.
+
+```
+aishell vscode            # Open VSCode (blocks until closed, then stops container)
+aishell vscode --detach   # Run in background (container persists)
+aishell vscode --stop     # Stop a detached vscode container
+```
+
+What this does:
+1. Syncs host VSCode extensions to the container config.
+2. Starts the container in detached mode if not already running.
+3. Opens VSCode using the `vscode-remote://attached-container+` URI scheme.
+4. By default, waits for VSCode to close, then stops the container.
+
+Prerequisites: VSCode with `code` CLI on PATH, Dev Containers extension installed, `aishell setup` completed.
+
+### upgrade
+
+Self-upgrade aishell to the latest version (or a specific version). Downloads from GitHub releases with SHA-256 checksum verification.
+
+```
+aishell upgrade           # Upgrade to latest version
+aishell upgrade 3.4.0     # Upgrade to specific version
+aishell upgrade 3.2.0     # Downgrade to older version (shows warning)
+```
+
+Requires `curl` or `wget`. On Windows, also updates the `aishell.bat` wrapper.
 
 ### --version
 
