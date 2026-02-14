@@ -266,7 +266,9 @@
     ;; Tools
     (println (str output/BOLD "Tools" output/NC))
     (if (fs/which "code")
-      (print-status :ok "VSCode 'code' CLI available (aishell vscode)")
+      (do
+        (print-status :ok "VSCode 'code' CLI available (aishell vscode)")
+        (print-status :ok (str "VSCode imageConfigs: " (util/vscode-imageconfigs-dir))))
       (print-status :warn "VSCode 'code' CLI not found (aishell vscode won't work)"))
     (if (fs/which "git")
       (print-status :ok "Git available")
