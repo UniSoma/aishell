@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-02-14
+
+Self-upgrade command and improved setup diagnostics.
+
+### Added
+- **`aishell upgrade` command**: Self-upgrade aishell by downloading the latest (or specific) release from GitHub with SHA-256 checksum verification
+- **Version downgrade support**: `aishell upgrade 3.2.0` warns but allows downgrading
+- **VSCode imageConfigs path in `aishell check`**: Shows the directory path for VSCode per-image configuration
+
 ## [3.3.0] - 2026-02-13
 
 VSCode integration for opening containers with zero manual configuration.
