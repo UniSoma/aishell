@@ -176,6 +176,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Attach** - Open a shell in a running container via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
+- **Self-upgrade** - Update aishell itself with `aishell upgrade`, with checksum verification
 
 ## Usage
 
@@ -266,7 +267,17 @@ Your locally installed VSCode extensions are automatically synced to the contain
 
 **Prerequisites:** VSCode with `code` CLI on PATH and the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed.
 
-### Update
+### Upgrade aishell
+
+```bash
+# Upgrade to latest version
+aishell upgrade
+
+# Upgrade to a specific version
+aishell upgrade 3.4.0
+```
+
+### Update harness tools
 
 ```bash
 # Refresh harness tools (volume refresh, fast)
