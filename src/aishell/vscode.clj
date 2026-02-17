@@ -92,7 +92,18 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
                            :git-identity git-id
                            :container-name container-name
                            :harness-volume-name harness-volume-name})
-            docker-args (mapv #(if (= % "-it") "-d" %) docker-args)]
+            docker-args (mapv #(if (= % "-it") "-d" %) docker-args)
+            ;; Mount ~/.vscode-server for server persistence across restarts
+            home (util/get-home)
+            vs-src (str (fs/path home ".vscode-server"))
+            vs-dst (if (fs/windows?)
+                     "/home/developer/.vscode-server"
+                     vs-src)
+            _ (fs/create-dirs vs-src)
+            docker-args (let [img (peek docker-args)]
+                          (-> (pop docker-args)
+                              (into ["-v" (str vs-src ":" vs-dst)])
+                              (conj img)))]
         (naming/remove-container-if-stopped! container-name)
         (apply p/shell {:out :string :err :string} (concat docker-args ["sleep" "infinity"]))
         (Thread/sleep 1500)))
