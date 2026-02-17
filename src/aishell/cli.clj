@@ -19,7 +19,7 @@
             [aishell.upgrade :as upgrade]
             [aishell.migration :as migration]))
 
-(def version "3.4.1")
+(def version "3.4.2")
 
 (defn print-version []
   (println (str "aishell " version)))

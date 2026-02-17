@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-02-17
+
+### Added
+- **VSCode server persistence**: Mount `~/.vscode-server` into container so extensions and cached data survive restarts
+
+### Fixed
+- **VSCode multi-instance**: Multiple `aishell vscode` instances can now run simultaneously, each in a dedicated window
+- **WSL2 backslash mangling**: Use `p/process` instead of `p/shell` for `wslpath` to prevent bash from mangling Windows backslashes in imageConfigs path resolution
+
+### Changed
+- **VSCode imageConfig**: `ensure-imageconfig!` now only defaults `remoteUser` when missing — no longer overwrites user-customized values or syncs host extensions (VSCode handles extension sync natively via Dev Containers)
+
 ## [3.4.1] - 2026-02-14
 
 ### Fixed
