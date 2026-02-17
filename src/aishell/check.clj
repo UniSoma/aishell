@@ -19,8 +19,8 @@
 
 (def GREEN (if (output/colors-enabled?) "\u001b[0;32m" ""))
 
-(defn- check-mark [] (str GREEN "✓" output/NC))
-(defn- cross-mark [] (str output/RED "✗" output/NC))
+(defn- check-mark [] (str GREEN (if (output/utf8-output?) "✓" "+") output/NC))
+(defn- cross-mark [] (str output/RED (if (output/utf8-output?) "✗" "x") output/NC))
 (defn- warn-mark [] (str output/YELLOW "!" output/NC))
 
 (defn- print-status

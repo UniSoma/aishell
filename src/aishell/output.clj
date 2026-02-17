@@ -41,6 +41,21 @@
                (let [term (System/getenv "TERM")]
                  (and term (not= "dumb" term)))))))))
 
+(defn utf8-output?
+  "Detect if the console can display UTF-8 characters.
+   On Windows, checks for Windows Terminal (WT_SESSION) or chcp 65001.
+   On Unix, assumes UTF-8 (standard on modern systems)."
+  []
+  (if (fs/windows?)
+    (or
+      ;; Windows Terminal always supports UTF-8
+      (some? (System/getenv "WT_SESSION"))
+      ;; Check if console codepage is UTF-8 (65001)
+      (let [encoding (str (.getEncoding (java.io.OutputStreamWriter. System/out)))]
+        (str/includes? (str/lower-case encoding) "utf")))
+    ;; Unix/macOS: UTF-8 is standard
+    true))
+
 (def RED (if (colors-enabled?) "\u001b[0;31m" ""))
 (def YELLOW (if (colors-enabled?) "\u001b[0;33m" ""))
 (def CYAN (if (colors-enabled?) "\u001b[0;36m" ""))
