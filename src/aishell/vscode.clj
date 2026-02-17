@@ -31,45 +31,21 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
   [s]
   (apply str (map #(format "%02x" (int %)) s)))
 
-(defn list-host-extensions
-  "List VSCode extensions installed on the host via 'code --list-extensions'.
-   Returns a vector of extension IDs, or empty vector on failure."
-  []
-  (try
-    (let [result (p/shell {:out :string :err :string} "code" "--list-extensions")]
-      (->> (clojure.string/split-lines (:out result))
-           (map clojure.string/trim)
-           (remove clojure.string/blank?)
-           vec))
-    (catch Exception _
-      [])))
-
 (defn ensure-imageconfig!
-  "Write/update VSCode per-image config JSON so remoteUser is developer
-   and host extensions are synced to the container.
+  "Ensure VSCode per-image config exists with a remoteUser default.
+   If the config already has a remoteUser, it is left unchanged.
    Advisory only - warns on failure but does not error."
   [image-tag]
   (try
-    (let [;; URL-encode image tag for filename to match VSCode convention
-          filename (str (.toLowerCase (java.net.URLEncoder/encode image-tag "UTF-8")) ".json")
+    (let [filename (str (.toLowerCase (java.net.URLEncoder/encode image-tag "UTF-8")) ".json")
           config-dir (util/vscode-imageconfigs-dir)
           config-path (str (fs/path config-dir filename))
-          ;; Read existing config if present
           existing (when (fs/exists? config-path)
-                     (json/parse-string (slurp config-path) true))
-          ;; Discover host extensions
-          extensions (list-host-extensions)
-          ;; Build config
-          merged (merge existing
-                        {:remoteUser "developer"}
-                        (when (seq extensions)
-                          {:extensions extensions}))]
-      ;; Ensure parent directory exists
-      (fs/create-dirs config-dir)
-      ;; Write config
-      (spit config-path (json/generate-string merged {:pretty true}))
-      (when (seq extensions)
-        (println (str "Syncing " (count extensions) " host extensions to container..."))))
+                     (json/parse-string (slurp config-path) true))]
+      (when-not (:remoteUser existing)
+        (fs/create-dirs config-dir)
+        (spit config-path (json/generate-string (assoc (or existing {}) :remoteUser "developer")
+                                                {:pretty true}))))
     (catch Exception e
       (output/warn (str "Could not write VSCode image config: " (ex-message e)
                        "\nVSCode may connect as root instead of developer.")))))
