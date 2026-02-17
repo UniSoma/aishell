@@ -38,8 +38,9 @@
           _ (when-not (zero? (:exit cmd-result))
               (throw (ex-info "cmd.exe failed" {})))
           win-path (str/trim (:out cmd-result))
-          wsl-result (p/shell {:out :string :err :string :continue true}
-                              "wslpath" "-u" win-path)
+          ;; Use p/process to avoid bash mangling backslashes in Windows paths
+          wsl-result @(p/process {:out :string :err :string}
+                                 ["wslpath" "-u" win-path])
           _ (when-not (zero? (:exit wsl-result))
               (throw (ex-info "wslpath failed" {})))]
       (str/trim (:out wsl-result)))
