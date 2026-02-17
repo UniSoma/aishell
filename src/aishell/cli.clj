@@ -105,7 +105,7 @@
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
   (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
   (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
-  (println (str "  " output/CYAN "attach" output/NC "     Attach to running container"))
+  (println (str "  " output/CYAN "attach, a" output/NC "  Attach to running container"))
   (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode attached to container"))
   (println (str "  " output/CYAN "upgrade" output/NC "    Upgrade aishell to latest version"))
   ;; Conditionally show harness commands based on installation
@@ -487,7 +487,7 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "vscode" "upgrade"}
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade"}
         should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
@@ -505,7 +505,7 @@
       "exec" (run/run-exec (vec (rest clean-args)))
       "ps" (handle-ps nil)
       "volumes" (handle-volumes (vec (rest clean-args)))
-      "attach" (let [rest-args (vec (rest clean-args))]
+      ("attach" "a") (let [rest-args (vec (rest clean-args))]
                  (cond
                    (some #{"-h" "--help"} rest-args)
                    (do
