@@ -120,21 +120,21 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
         (println "No running vscode container found.")))))
 
 (defn- launch-vscode!
-  "Launch VSCode attached to the container. When wait? is true, blocks until
-   VSCode window is closed."
+  "Launch VSCode attached to the container. When wait? is true, opens a new
+   window and blocks until it is closed."
   [container-name project-dir wait?]
   (let [hex-name (hex-encode container-name)
         workspace-path (if (fs/windows?) "/workspace" project-dir)
         uri (str "vscode-remote://attached-container+" hex-name workspace-path)]
     (println "Opening VSCode attached to container...")
     (if wait?
-      (p/shell {:inherit true} "code" "--folder-uri" uri "--wait")
+      (p/shell {:inherit true} "code" "--new-window" "--folder-uri" uri "--wait")
       (p/shell {:inherit true} "code" "--folder-uri" uri))))
 
 (defn open-vscode
   "Main entry point for 'aishell vscode' command.
    Opens VSCode attached to the aishell container as developer user.
-   By default blocks until VSCode closes, then stops the container.
+   By default blocks until VSCode window closes, then stops the container.
    With detach?=true, returns immediately and leaves container running."
   [& [{:keys [detach?]}]]
   ;; 1. Check prerequisites
@@ -156,13 +156,22 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 
       ;; 5. Start container and launch VSCode
       (let [container-name (start-container! state project-dir image-tag)]
-        (launch-vscode! container-name project-dir (not detach?))
-
         (if detach?
-          ;; Detached mode: print hint and return
-          (println "VSCode should open shortly. Container will keep running in the background.\nStop it with: aishell vscode --stop")
-          ;; Wait mode: VSCode closed, stop container
           (do
-            (println "VSCode closed. Stopping container...")
-            (stop-container! container-name)
-            (println (str "Stopped " container-name))))))))
+            (launch-vscode! container-name project-dir false)
+            (println "VSCode should open shortly. Container will keep running in the background.\nStop it with: aishell vscode --stop"))
+          ;; Wait mode: --new-window ensures each instance gets its own window,
+          ;; so multiple `aishell vscode` processes don't interfere via --wait.
+          (let [stopped? (atom false)
+                cleanup! (fn [from-hook?]
+                           (when (compare-and-set! stopped? false true)
+                             (when from-hook? (println))
+                             (println "VSCode closed. Stopping container...")
+                             (stop-container! container-name)
+                             (println (str "Stopped " container-name))))]
+            (.addShutdownHook (Runtime/getRuntime)
+              (Thread. (fn [] (cleanup! true))))
+            (try
+              (launch-vscode! container-name project-dir true)
+              (catch Exception _))
+            (cleanup! false)))))))
