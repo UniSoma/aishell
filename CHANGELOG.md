@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.3] - 2026-02-16
+
+### Added
+- **Attach alias**: `aishell a` as shorthand for `aishell attach`
+
+### Fixed
+- **PowerShell compatibility**: ASCII fallbacks for Unicode check/cross symbols on legacy PowerShell versions
+
 ## [3.4.2] - 2026-02-17
 
 ### Added
