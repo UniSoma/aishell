@@ -1013,6 +1013,29 @@ aishell claude  # No warning for allowlisted files
    # Restart computer after installation
    ```
 
+### Symptom: VSCode Dev Container can't find Docker on WSL2 (no Docker Desktop)
+
+**Cause:** Docker is installed natively inside WSL2 (e.g. `apt install docker.io`) instead of through Docker Desktop. VSCode's Dev Containers extension defaults to looking for Docker on the Windows side, but there is no Docker Desktop exposing it.
+
+**Resolution:**
+
+1. **Add this to VSCode settings (`settings.json`):**
+   ```json
+   {
+     "dev.containers.executeInWSL": true
+   }
+   ```
+
+   This tells the Dev Containers extension to run Docker commands through WSL2 instead of looking for Docker on Windows.
+
+2. **Verify Docker is accessible from WSL2:**
+   ```bash
+   # Inside WSL2
+   docker info
+   ```
+
+**Note:** This only affects users running a standalone Docker Engine inside WSL2. If you have Docker Desktop installed, it exposes Docker to both Windows and WSL2 automatically — no extra configuration needed.
+
 ### Symptom: "No such file or directory" when mounting Windows path
 
 **Cause:** Path format not compatible with Docker on Windows.

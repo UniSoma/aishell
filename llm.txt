@@ -168,10 +168,11 @@ aishell vscode --stop     # Stop a detached vscode container
 ```
 
 What this does:
-1. Syncs host VSCode extensions to the container config.
+1. Ensures VSCode per-image config exists (defaults `remoteUser` to `developer`).
 2. Starts the container in detached mode if not already running.
-3. Opens VSCode using the `vscode-remote://attached-container+` URI scheme.
-4. By default, waits for VSCode to close, then stops the container.
+3. Mounts `~/.vscode-server` for server persistence across restarts.
+4. Opens VSCode using the `vscode-remote://attached-container+` URI scheme.
+5. By default, waits for VSCode to close, then stops the container. Multiple instances can run simultaneously.
 
 Prerequisites: VSCode with `code` CLI on PATH, Dev Containers extension installed, `aishell setup` completed.
 

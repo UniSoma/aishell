@@ -172,7 +172,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Named containers** - Deterministic naming with `--name` override
-- **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, host extensions synced automatically
+- **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, server state persisted across restarts
 - **Attach** - Open a shell in a running container via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
@@ -256,16 +256,21 @@ Containers are named `aishell-{project-hash}-{name}`. Use `aishell ps` to discov
 Open VSCode attached to the container as the `developer` user — no manual configuration needed:
 
 ```bash
-# Open VSCode attached to the container
+# Open VSCode attached to the container (blocks until window closes, then stops container)
 aishell vscode
 
-# Stop the container when done
+# Detached mode: container keeps running in the background
+aishell vscode --detach
+
+# Stop a detached container when done
 aishell vscode --stop
 ```
 
-Your locally installed VSCode extensions are automatically synced to the container. The container starts in detached mode and persists until explicitly stopped.
+By default, aishell waits for the VSCode window to close, then stops the container automatically. Use `--detach` to leave the container running in the background. Multiple `aishell vscode` instances can run simultaneously — each opens a dedicated window.
 
-**Prerequisites:** VSCode with `code` CLI on PATH and the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed.
+The `~/.vscode-server` directory is mounted into the container, so VSCode server extensions and cached data persist across container restarts.
+
+**Prerequisites:** VSCode with `code` CLI on PATH and the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed. On WSL2 with Docker installed inside the distro (not Docker Desktop), see [Troubleshooting](docs/TROUBLESHOOTING.md#symptom-vscode-dev-container-cant-find-docker-on-wsl2-no-docker-desktop).
 
 ### Upgrade aishell
 
