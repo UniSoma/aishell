@@ -2,7 +2,7 @@
 
 Find the symptom you are experiencing, then follow the resolution steps.
 
-**Last updated:** v3.5.0
+**Last updated:** v3.7.0
 
 ---
 
@@ -166,6 +166,9 @@ sudo aishell setup --with-claude
 
    # For Pi
    npm view @mariozechner/pi-coding-agent versions
+
+   # For OpenSpec
+   npm view @fission-ai/openspec versions
    ```
 
 2. **Use exact version from npm:**
@@ -377,6 +380,13 @@ If you still see warnings:
 
 **If the harness is still missing after a rebuild:**
 Check the build output for npm installation errors.
+
+**OpenSpec users:** OpenSpec is not a harness command. Use `openspec` inside the container (via `aishell` shell or any harness session). Verify with:
+```bash
+aishell
+which openspec
+# Should show /tools/npm/bin/openspec
+```
 
 ### Symptom: "Volume disk usage growing" - many orphaned volumes
 
@@ -1231,6 +1241,7 @@ Before filing an issue, verify:
 - [ ] Environment variables are set on the host before running aishell
 - [ ] You are in the correct directory (if using project-specific config)
 - [ ] Config YAML syntax is valid (use `yamllint` or online validator)
+- [ ] If using OpenSpec, you built with `--with-openspec` (it is not included by default)
 
 ---
 

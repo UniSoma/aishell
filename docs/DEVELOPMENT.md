@@ -2,7 +2,7 @@
 
 This guide helps developers extend aishell with new harnesses or core features.
 
-**Last updated:** v3.5.0
+**Last updated:** v3.7.0
 
 ---
 
@@ -133,7 +133,9 @@ aishell/
  :opencode-version nil  ; treated as "latest"
  :with-codex false
  :with-gemini false
- :with-pi false}
+ :with-pi false
+ :with-openspec true
+ :openspec-version nil}  ; treated as "latest"
 ```
 
 **Algorithm:**
@@ -163,7 +165,7 @@ aishell/
 3. **npm installation:**
    - Sets `NPM_CONFIG_PREFIX=/tools/npm`
    - Runs `npm install -g @anthropic-ai/claude-code@{version}`
-   - Repeats for each enabled npm harness (claude, codex, gemini, pi)
+   - Repeats for each enabled npm harness/tool (claude, codex, gemini, pi, openspec)
 4. **Binary download (OpenCode):**
    - Downloads `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
    - Extracts to `/tools/bin`
@@ -184,6 +186,8 @@ aishell/
 {:foundation-hash "abc123def"                    ; Dockerfile template hash
  :harness-volume-hash "def456ghi"                ; Harness config hash
  :harness-volume-name "aishell-harness-def456ghi" ; Volume name
+ :with-openspec false                    ; OpenSpec tool enabled (not a harness)
+ :openspec-version nil                   ; OpenSpec pinned version
  :dockerfile-hash "abc123def"}                   ; DEPRECATED: alias for foundation-hash
 ```
 
