@@ -113,7 +113,7 @@ See MILESTONES.md for details.
 
 **Milestone Goal:** Add pi coding agent as a first-class harness following the established multi-harness pattern (Codex/Gemini), with fd in foundation image and full CLI integration.
 
-- [ ] **Phase 60: Pi Build Infrastructure** - Foundation image (fd), build flags, npm install, env vars
+- [x] **Phase 60: Pi Build Infrastructure** - Foundation image (fd), build flags, npm install, env vars (completed 2026-02-18)
 - [ ] **Phase 61: Pi CLI Integration** - Run command, config mounting, check, help, pass-through args, entrypoint alias
 - [ ] **Phase 62: Pi Documentation** - All user-facing docs updated for pi harness
 
@@ -183,6 +183,6 @@ Phases execute in numeric order: 60 -> 61 -> 62
 | 44-45. Gitleaks Opt-in | v2.10.0 | All | Complete | 2026-02-05 |
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
-| 60. Pi Build Infrastructure | 1/2 | In Progress|  | - |
+| 60. Pi Build Infrastructure | 2/2 | Complete   | 2026-02-18 | - |
 | 61. Pi CLI Integration | v3.5.0 | 0/? | Not started | - |
 | 62. Pi Documentation | v3.5.0 | 0/? | Not started | - |

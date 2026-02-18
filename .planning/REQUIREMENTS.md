@@ -9,9 +9,9 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 
 ### Harness Integration
 
-- [ ] **HARNESS-01**: User can build with `--with-pi` flag to include pi coding agent
+- [x] **HARNESS-01**: User can build with `--with-pi` flag to include pi coding agent
 - [ ] **HARNESS-02**: User can run `aishell pi` to launch pi coding agent in container
-- [ ] **HARNESS-03**: User can pin pi version with `--with-pi=VERSION` at build time
+- [x] **HARNESS-03**: User can pin pi version with `--with-pi=VERSION` at build time
 - [ ] **HARNESS-04**: Pi config directory (`~/.pi/`) mounted from host to persist auth and settings
 - [x] **HARNESS-05**: Pi installed via npm in harness volume (same pattern as Claude/Codex/Gemini)
 - [ ] **HARNESS-06**: `aishell check` displays pi installation status and version
@@ -26,8 +26,8 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 
 ### Environment
 
-- [ ] **ENV-01**: PI_CODING_AGENT_DIR environment variable passed through to container
-- [ ] **ENV-02**: PI_SKIP_VERSION_CHECK environment variable passed through to container
+- [x] **ENV-01**: PI_CODING_AGENT_DIR environment variable passed through to container
+- [x] **ENV-02**: PI_SKIP_VERSION_CHECK environment variable passed through to container
 
 ### Documentation
 
@@ -54,9 +54,9 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HARNESS-01 | Phase 60 | Pending |
+| HARNESS-01 | Phase 60 | Complete |
 | HARNESS-02 | Phase 61 | Pending |
-| HARNESS-03 | Phase 60 | Pending |
+| HARNESS-03 | Phase 60 | Complete |
 | HARNESS-04 | Phase 61 | Pending |
 | HARNESS-05 | Phase 60 | Complete |
 | HARNESS-06 | Phase 61 | Pending |
@@ -65,8 +65,8 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 | HARNESS-09 | Phase 61 | Pending |
 | FOUND-01 | Phase 60 | Complete |
 | FOUND-02 | Phase 60 | Complete |
-| ENV-01 | Phase 60 | Pending |
-| ENV-02 | Phase 60 | Pending |
+| ENV-01 | Phase 60 | Complete |
+| ENV-02 | Phase 60 | Complete |
 | DOCS-01 | Phase 62 | Pending |
 
 **Coverage:**
