@@ -42,19 +42,19 @@ None currently deferred.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | — | Pending |
-| BUILD-02 | — | Pending |
-| BUILD-03 | — | Pending |
-| VOL-01 | — | Pending |
-| VOL-02 | — | Pending |
-| DOCS-01 | — | Pending |
-| REL-01 | — | Pending |
+| BUILD-01 | Phase 63 | Pending |
+| BUILD-02 | Phase 63 | Pending |
+| BUILD-03 | Phase 63 | Pending |
+| VOL-01 | Phase 63 | Pending |
+| VOL-02 | Phase 63 | Pending |
+| DOCS-01 | Phase 64 | Pending |
+| REL-01 | Phase 65 | Pending |
 
 **Coverage:**
 - v3.7.0 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7
+- Mapped to phases: 7
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*

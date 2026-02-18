@@ -5,19 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.7.0 OpenSpec Support
+**Current focus:** v3.7.0 OpenSpec Support - Phase 63
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-18 — Milestone v3.7.0 started
+Phase: 63 of 65 (Core OpenSpec Integration)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-02-18 — Roadmap created for v3.7.0
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 137 across 14 milestones
+- Total plans completed: 137 across 15 milestones
 - Milestones shipped: 15 (v1.0 -> v3.6.0)
 
 **Recent Trend:**
@@ -34,6 +36,11 @@ Last activity: 2026-02-18 — Milestone v3.7.0 started
 ### Decisions
 
 See PROJECT.md for full decision log across all milestones.
+
+Recent decisions for v3.7.0:
+- OpenSpec is NOT a harness (no `aishell openspec` subcommand, no config mounts, no API key passthrough)
+- Follows `--with-*` / harness volume npm install pattern for build integration
+- Available inside container only via `openspec` command
 
 ### Pending Todos
 
@@ -55,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed v3.5.0 milestone
+Stopped at: Roadmap created for v3.7.0 OpenSpec Support
 Resume file: None

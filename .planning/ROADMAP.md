@@ -16,6 +16,7 @@
 - ✅ **v3.0.0 Docker-native Attach** - Phases 46-52 (shipped 2026-02-06)
 - ✅ **v3.1.0 Native Windows Support** - Phases 53-59 (shipped 2026-02-12)
 - ✅ **v3.5.0 Pi Coding Agent Support** - Phases 60-62 (shipped 2026-02-18)
+- 🚧 **v3.7.0 OpenSpec Support** - Phases 63-65 (in progress)
 
 ## Phases
 
@@ -117,7 +118,62 @@ See MILESTONES.md for details.
 
 </details>
 
+### 🚧 v3.7.0 OpenSpec Support (In Progress)
+
+**Milestone Goal:** Add OpenSpec as an opt-in development workflow tool available inside containers, following the established `--with-*` build flag pattern.
+
+- [ ] **Phase 63: Core OpenSpec Integration** - Build flag, version pinning, volume install, and state tracking
+- [ ] **Phase 64: Documentation** - All 6 user-facing docs updated for OpenSpec
+- [ ] **Phase 65: Release** - Version bump to 3.7.0 and changelog
+
+## Phase Details
+
+### Phase 63: Core OpenSpec Integration
+**Goal**: Users can opt into OpenSpec at build time and use it inside containers
+**Depends on**: Nothing (first phase of milestone)
+**Requirements**: BUILD-01, BUILD-02, BUILD-03, VOL-01, VOL-02
+**Success Criteria** (what must be TRUE):
+  1. User can run `aishell build --with-openspec` and the build completes successfully with OpenSpec enabled
+  2. User can run `aishell build --with-openspec=1.2.3` to pin a specific OpenSpec version
+  3. Running `aishell shell` after building with `--with-openspec` gives access to the `openspec` command inside the container
+  4. Rebuilding without `--with-openspec` after a previous build with it results in OpenSpec no longer being available (state correctly tracks opt-in/out)
+  5. Changing the OpenSpec version or toggling its enabled state triggers volume recreation on next container run (hash invalidation works)
+**Plans**: TBD
+
+Plans:
+- [ ] 63-01: TBD
+- [ ] 63-02: TBD
+
+### Phase 64: Documentation
+**Goal**: All user-facing documentation reflects OpenSpec availability and usage
+**Depends on**: Phase 63
+**Requirements**: DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. README.md mentions OpenSpec as an available tool with `--with-openspec` build flag
+  2. docs/HARNESSES.md (or equivalent section) describes OpenSpec, its purpose, and how to enable it
+  3. docs/CONFIGURATION.md documents the `--with-openspec` and `--with-openspec=VERSION` flags
+  4. docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md are updated where OpenSpec affects their content
+**Plans**: TBD
+
+Plans:
+- [ ] 64-01: TBD
+
+### Phase 65: Release
+**Goal**: v3.7.0 is tagged and ready for users
+**Depends on**: Phase 64
+**Requirements**: REL-01
+**Success Criteria** (what must be TRUE):
+  1. CLI version string reports 3.7.0
+  2. CHANGELOG.md has a v3.7.0 entry summarizing OpenSpec support
+**Plans**: TBD
+
+Plans:
+- [ ] 65-01: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 63 → 64 → 65
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -135,3 +191,6 @@ See MILESTONES.md for details.
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
+| 63. Core OpenSpec Integration | v3.7.0 | 0/? | Not started | - |
+| 64. Documentation | v3.7.0 | 0/? | Not started | - |
+| 65. Release | v3.7.0 | 0/? | Not started | - |
