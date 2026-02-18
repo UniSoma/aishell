@@ -123,7 +123,7 @@ See MILESTONES.md for details.
 **Milestone Goal:** Add OpenSpec as an opt-in development workflow tool available inside containers, following the established `--with-*` build flag pattern.
 
 - [x] **Phase 63: Core OpenSpec Integration** - Build flag, version pinning, volume install, and state tracking (completed 2026-02-18)
-- [ ] **Phase 64: Documentation** - All 6 user-facing docs updated for OpenSpec
+- [x] **Phase 64: Documentation** - All 6 user-facing docs updated for OpenSpec (completed 2026-02-18)
 - [ ] **Phase 65: Release** - Version bump to 3.7.0 and changelog
 
 ## Phase Details
@@ -193,5 +193,5 @@ Phases execute in numeric order: 63 → 64 → 65
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
 | 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
-| 64. Documentation | 1/2 | In Progress|  | - |
+| 64. Documentation | 2/2 | Complete   | 2026-02-18 | - |
 | 65. Release | v3.7.0 | 0/? | Not started | - |

@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 Phase: 64 of 65 (Documentation)
 Plan: 2 of 2 in current phase
-Status: Executing phase 64
-Last activity: 2026-02-18 — Completed 64-02 (Internal Documentation)
+Status: Phase 64 complete
+Last activity: 2026-02-18 — Completed 64-01 (User-Facing Documentation)
 
 Progress: [██████████] 100%
 
@@ -48,6 +48,8 @@ Recent decisions for v3.7.0:
 - [Phase 63]: OpenSpec placed after Pi, before Gitleaks in check display ordering
 - [Phase 64]: OpenSpec documented as non-harness tool across ARCHITECTURE, TROUBLESHOOTING, and DEVELOPMENT docs
 - [Phase 64]: No data mounts added for OpenSpec (no config directory)
+- [Phase 64]: OpenSpec documented under 'Additional Tools' section in HARNESSES.md, not as a harness
+- [Phase 64]: All user-facing doc files version-bumped to v3.7.0
 
 ### Pending Todos
 
@@ -67,10 +69,11 @@ None.
 | 6 | Implement auto-install-bb in install.sh + PowerShell equivalent | 2026-02-12 | e2dd0eb | [6-implement-auto-install-bb-in-install-sh-](./quick/6-implement-auto-install-bb-in-install-sh-/) |
 | Phase 63 P01 | 2min | 2 tasks | 3 files |
 | Phase 63 P02 | 1min | 2 tasks | 2 files |
+| Phase 64 P01 | 2min | 2 tasks | 3 files |
 | Phase 64 P02 | 1min | 2 tasks | 3 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 64-02-PLAN.md
-Resume file: .planning/phases/64-documentation/64-02-SUMMARY.md
+Stopped at: Completed 64-01-PLAN.md (Phase 64 complete)
+Resume file: .planning/phases/64-documentation/64-01-SUMMARY.md
