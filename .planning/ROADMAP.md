@@ -138,11 +138,11 @@ See MILESTONES.md for details.
   3. Running `aishell shell` after building with `--with-openspec` gives access to the `openspec` command inside the container
   4. Rebuilding without `--with-openspec` after a previous build with it results in OpenSpec no longer being available (state correctly tracks opt-in/out)
   5. Changing the OpenSpec version or toggling its enabled state triggers volume recreation on next container run (hash invalidation works)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 63-01: TBD
-- [ ] 63-02: TBD
+- [ ] 63-01-PLAN.md -- Build flag, state persistence, volume registration, setup/update wiring
+- [ ] 63-02-PLAN.md -- Runtime volume trigger, check command status display
 
 ### Phase 64: Documentation
 **Goal**: All user-facing documentation reflects OpenSpec availability and usage
