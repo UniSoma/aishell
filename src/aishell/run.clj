@@ -4,6 +4,7 @@
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [aishell.docker :as docker]
+            [aishell.docker.base :as base]
             [aishell.docker.naming :as naming]
             [aishell.docker.run :as docker-run]
             [aishell.docker.hash :as hash]
@@ -73,23 +74,24 @@
 
 (defn resolve-image-tag
   "Determine which image to use: extended if project has .aishell/Dockerfile, else base.
+   Ensures base image is up to date before extension resolution.
    Auto-builds extension if needed (matches bash behavior)."
-  [base-tag project-dir force?]
+  [_base-tag project-dir force?]
+  ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
+  (base/ensure-base-image {})
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
-    ;; Project has extension
+    ;; Project has extension — builds FROM aishell:base
     (let [extended-tag (ext/compute-extended-tag project-dir)]
-      ;; Validate base tag before attempting build
-      (ext/validate-base-tag project-dir)
-      (when (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
+      (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
         (ext/build-extended-image
           {:project-dir project-dir
-           :foundation-tag base-tag
+           :foundation-tag base/base-image-tag
            :extended-tag extended-tag
            :force force?
            :verbose false}))
       extended-tag)
     ;; No extension, use base
-    base-tag))
+    base/base-image-tag))
 
 (defn run-container
   "Run docker container for shell or harness.
@@ -110,8 +112,11 @@
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
-          base-tag (or (:image-tag state) "aishell:base")
+          base-tag base/base-image-tag
           cfg (config/load-config project-dir)
+
+          ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
+          _ (base/ensure-base-image {})
 
           ;; Resolve container name: --name override or harness name (or "shell" for shell mode)
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
@@ -274,7 +279,10 @@
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
-          base-tag (or (:image-tag state) "aishell:base")]
+          base-tag base/base-image-tag
+
+          ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
+          _ (base/ensure-base-image {})]
 
       ;; Verify BASE image exists (required before extension can build)
       (when-not (docker/image-exists? base-tag)

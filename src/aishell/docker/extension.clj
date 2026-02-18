@@ -1,8 +1,8 @@
 (ns aishell.docker.extension
-  "Per-project Dockerfile extension support with legacy tag validation.
+  "Per-project Dockerfile extension support.
 
-   Projects can extend the foundation image with .aishell/Dockerfile.
-   The extension is auto-rebuilt when foundation image or extension Dockerfile changes."
+   Projects can extend the base image with .aishell/Dockerfile.
+   The extension is auto-rebuilt when base image or extension Dockerfile changes."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as str]
@@ -12,7 +12,7 @@
             [aishell.output :as output]))
 
 ;; Labels for tracking rebuild dependencies
-(def foundation-image-id-label "aishell.foundation.id")
+(def base-image-id-label "aishell.base.id")
 (def extension-hash-label "aishell.extension.hash")
 
 (defn project-dockerfile
@@ -26,31 +26,6 @@
   (let [path (fs/path project-dir ".aishell" "Dockerfile")]
     (when (fs/exists? path)
       (str path))))
-
-(defn validate-base-tag
-  "Validate that project Dockerfile doesn't use legacy 'aishell:base' tag.
-
-   Arguments:
-   - project-dir: Path to project directory
-
-   Returns: nil if validation passes or no Dockerfile exists.
-            Exits with error if legacy FROM aishell:base is found."
-  [project-dir]
-  (when-let [dockerfile-path (project-dockerfile project-dir)]
-    (let [content (slurp dockerfile-path)
-          legacy-pattern #"(?im)^\s*FROM\s+aishell:base\b"]
-      (when (re-find legacy-pattern content)
-        (output/error
-          "Legacy base image tag in .aishell/Dockerfile
-
-Found:    FROM aishell:base
-Expected: FROM aishell:foundation
-
-Why: v2.8.0 splits the base image into a stable foundation layer and
-     volume-mounted harness tools to prevent cascade rebuilds.
-
-Fix: Edit .aishell/Dockerfile and change:
-     FROM aishell:base  ->  FROM aishell:foundation")))))
 
 (defn get-foundation-image-id
   "Get Docker image ID for foundation image.
@@ -94,30 +69,30 @@ Fix: Edit .aishell/Dockerfile and change:
 
    Rebuild is needed when:
    1. Extended image doesn't exist
-   2. Foundation image ID has changed
+   2. Base image ID has changed (base image inherits foundation changes)
    3. Extension Dockerfile content has changed
 
    Arguments:
    - extended-tag: Tag for extended image
-   - foundation-image-tag: Tag for foundation image
+   - base-tag: Tag for base image (aishell:base)
    - project-dir: Path to project directory (optional, for Dockerfile hash check)
 
    Returns: true if rebuild needed, false otherwise"
-  ([extended-tag foundation-image-tag]
-   (needs-extended-rebuild? extended-tag foundation-image-tag nil))
-  ([extended-tag foundation-image-tag project-dir]
+  ([extended-tag base-tag]
+   (needs-extended-rebuild? extended-tag base-tag nil))
+  ([extended-tag base-tag project-dir]
    (cond
      ;; Extended image doesn't exist
      (not (docker/image-exists? extended-tag))
      true
 
-     ;; Check foundation image ID
+     ;; Check base image ID (base-tag is typically "aishell:base")
      :else
-     (let [stored-foundation-id (docker/get-image-label extended-tag foundation-image-id-label)
-           current-foundation-id (get-foundation-image-id foundation-image-tag)]
+     (let [stored-base-id (docker/get-image-label extended-tag base-image-id-label)
+           current-base-id (get-foundation-image-id base-tag)]
        (cond
-         ;; Foundation image changed (or extension has no foundation label - triggers rebuild for migration)
-         (not= stored-foundation-id current-foundation-id)
+         ;; Base image changed (or extension has no base label - triggers rebuild for migration)
+         (not= stored-base-id current-base-id)
          true
 
          ;; Check extension Dockerfile hash if project-dir provided
@@ -134,7 +109,7 @@ Fix: Edit .aishell/Dockerfile and change:
 
    Arguments (map):
    - project-dir: Path to project directory
-   - foundation-tag: Tag for foundation image
+   - foundation-tag: Tag for base image (aishell:base)
    - extended-tag: Tag for extended image
    - force: Force rebuild (--no-cache)
    - verbose: Show detailed build output
@@ -143,11 +118,11 @@ Fix: Edit .aishell/Dockerfile and change:
             exits on error"
   [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
-    (let [foundation-id (get-foundation-image-id foundation-tag)
+    (let [base-id (get-foundation-image-id foundation-tag)
           extension-hash (get-extension-dockerfile-hash project-dir)
           build-args (cond-> ["-f" dockerfile-path
                               "-t" extended-tag
-                              (str "--label=" foundation-image-id-label "=" foundation-id)
+                              (str "--label=" base-image-id-label "=" base-id)
                               (str "--label=" extension-hash-label "=" extension-hash)]
                        force (conj "--no-cache")
                        verbose (conj "--progress=plain"))
