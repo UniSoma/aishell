@@ -5,6 +5,7 @@
   (:require [clojure.string :as str]
             [babashka.fs :as fs]
             [aishell.docker :as docker]
+            [aishell.docker.base :as base]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
@@ -68,6 +69,15 @@
       (do (print-status :fail (str "Base image not found: " tag))
           nil))))
 
+(defn- check-base-image-custom
+  "Check base image customization status."
+  []
+  (if (base/global-dockerfile-exists?)
+    (if (base/needs-base-rebuild?)
+      (print-status :warn "Base image: custom (~/.aishell/Dockerfile) — needs rebuild")
+      (print-status :ok "Base image: custom (~/.aishell/Dockerfile)"))
+    (print-status :ok "Base image: default (foundation alias)")))
+
 (defn- check-dockerfile-staleness
   "Check if embedded Dockerfile changed since build."
   [state]
@@ -99,8 +109,6 @@
   [project-dir base-tag]
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     (let [extended-tag (ext/compute-extended-tag project-dir)]
-      ;; Validate base tag before checking rebuild status
-      (ext/validate-base-tag project-dir)
       (if (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (print-status :warn "Project extension needs rebuild")
         (print-status :ok (str "Project extension is up to date: " extended-tag))))
@@ -232,6 +240,9 @@
 
             ;; Dockerfile staleness
             (check-dockerfile-staleness state)
+
+            ;; Base image customization status
+            (check-base-image-custom)
 
             ;; Extension
             (when base-tag

@@ -403,7 +403,7 @@
         (println "\nTo remove orphaned volumes: aishell volumes prune")))))
 
 (defn handle-volumes-prune
-  "Remove orphaned volumes with confirmation prompt."
+  "Remove orphaned volumes and orphaned base images with confirmation prompt."
   [opts]
   (let [state (state/read-state)
         current-vol (:harness-volume-name state)
@@ -424,7 +424,17 @@
               (do
                 (vol/remove-volume name)
                 (println (str "Removed " name)))))
-          (println "Prune complete."))))))
+          (println "Prune complete."))))
+
+    ;; Check for orphaned custom base image:
+    ;; If aishell:base has custom Dockerfile label but ~/.aishell/Dockerfile no longer exists,
+    ;; the custom base image is orphaned — re-tag foundation as base to reset.
+    (when (and (docker/image-exists? base/base-image-tag)
+              (docker/get-image-label base/base-image-tag "aishell.base.dockerfile.hash")
+              (not (base/global-dockerfile-exists?)))
+      (println "Orphaned custom base image found — resetting to foundation alias.")
+      (base/tag-foundation-as-base)
+      (println "Base image reset to foundation alias."))))
 
 (defn print-volumes-help
   "Print help for volumes command."
