@@ -10,14 +10,14 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 ### Harness Integration
 
 - [x] **HARNESS-01**: User can build with `--with-pi` flag to include pi coding agent
-- [ ] **HARNESS-02**: User can run `aishell pi` to launch pi coding agent in container
+- [x] **HARNESS-02**: User can run `aishell pi` to launch pi coding agent in container
 - [x] **HARNESS-03**: User can pin pi version with `--with-pi=VERSION` at build time
-- [ ] **HARNESS-04**: Pi config directory (`~/.pi/`) mounted from host to persist auth and settings
+- [x] **HARNESS-04**: Pi config directory (`~/.pi/`) mounted from host to persist auth and settings
 - [x] **HARNESS-05**: Pi installed via npm in harness volume (same pattern as Claude/Codex/Gemini)
-- [ ] **HARNESS-06**: `aishell check` displays pi installation status and version
-- [ ] **HARNESS-07**: Pi shown in `aishell --help` when installed
-- [ ] **HARNESS-08**: Pi pass-through args work (e.g., `aishell pi --print "hello"`)
-- [ ] **HARNESS-09**: Entrypoint alias `pi` available inside container shell
+- [x] **HARNESS-06**: `aishell check` displays pi installation status and version
+- [x] **HARNESS-07**: Pi shown in `aishell --help` when installed
+- [x] **HARNESS-08**: Pi pass-through args work (e.g., `aishell pi --print "hello"`)
+- [x] **HARNESS-09**: Entrypoint alias `pi` available inside container shell
 
 ### Foundation Image
 
@@ -55,14 +55,14 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | HARNESS-01 | Phase 60 | Complete |
-| HARNESS-02 | Phase 61 | Pending |
+| HARNESS-02 | Phase 61 | Complete |
 | HARNESS-03 | Phase 60 | Complete |
-| HARNESS-04 | Phase 61 | Pending |
+| HARNESS-04 | Phase 61 | Complete |
 | HARNESS-05 | Phase 60 | Complete |
-| HARNESS-06 | Phase 61 | Pending |
-| HARNESS-07 | Phase 61 | Pending |
-| HARNESS-08 | Phase 61 | Pending |
-| HARNESS-09 | Phase 61 | Pending |
+| HARNESS-06 | Phase 61 | Complete |
+| HARNESS-07 | Phase 61 | Complete |
+| HARNESS-08 | Phase 61 | Complete |
+| HARNESS-09 | Phase 61 | Complete |
 | FOUND-01 | Phase 60 | Complete |
 | FOUND-02 | Phase 60 | Complete |
 | ENV-01 | Phase 60 | Complete |
