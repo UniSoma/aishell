@@ -22,17 +22,19 @@
 (defn write-state
   "Write state to file, creating directory if needed.
 
-   State schema (v3.0.0):
+   State schema (v3.7.0):
    {:with-claude true            ; boolean
     :with-opencode false         ; boolean
     :with-codex false            ; boolean
     :with-gemini false           ; boolean
+    :with-openspec false         ; boolean
     :with-pi false               ; boolean
     :with-gitleaks false         ; boolean (whether Gitleaks installed, default false, opt-in)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
     :codex-version \"0.89.0\"    ; string or nil
     :gemini-version nil          ; string or nil
+    :openspec-version nil        ; string or nil
     :pi-version nil              ; string or nil
     :image-tag \"aishell:foundation\"  ; string
     :build-time \"2026-01-20...\" ; ISO-8601 string
