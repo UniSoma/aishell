@@ -194,4 +194,4 @@ Phases execute in numeric order: 63 → 64 → 65
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
 | 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
 | 64. Documentation | 2/2 | Complete    | 2026-02-18 | - |
-| 65. Release | 1/1 | Complete   | 2026-02-18 | - |
+| 65. Release | 1/1 | Complete    | 2026-02-18 | - |
