@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-02-18
+
+Per-harness security scoping. API keys and config directory mounts are now
+limited to only the harnesses you enable, reducing the blast radius of
+prompt injection attacks.
+
+### Changed
+
+- **Per-harness API key scoping**: Only API keys required by enabled harnesses are passed into the container (e.g., `--with-claude` only passes `ANTHROPIC_API_KEY`, not `OPENAI_API_KEY`)
+- **Per-harness config mount scoping**: Only config directories for enabled harnesses are mounted (e.g., `~/.gemini` is not mounted unless `--with-gemini` is enabled)
+- **GCP credentials mount gated on Gemini**: `GOOGLE_APPLICATION_CREDENTIALS` file mount only active when `--with-gemini` is enabled
+
+### Removed
+
+- **Cross-cutting keys removed from auto-passthrough**: `GITHUB_TOKEN`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_PROFILE` are no longer passed through automatically — add them via `config.yaml` `env:` section if needed
+
 ## [3.5.0] - 2026-02-18
 
 Pi coding agent as a first-class harness. Build with `--with-pi`, run with
