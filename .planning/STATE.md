@@ -62,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Roadmap created for v3.7.0 OpenSpec Support
-Resume file: None
+Stopped at: Phase 63 context gathered
+Resume file: .planning/phases/63-core-openspec-integration/63-CONTEXT.md
