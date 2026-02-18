@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-02-18
+
+OpenSpec as an opt-in development workflow tool. Build with `--with-openspec`
+to make the `openspec` command available inside containers.
+
+### Added
+
+- **OpenSpec support**: Opt-in development workflow tool via `--with-openspec` build flag
+  - `aishell setup --with-openspec` to include OpenSpec in harness volume
+  - Version pinning with `--with-openspec=VERSION`
+  - `openspec` command available inside container when enabled
+  - `aishell check` shows OpenSpec installation status and version
+  - `aishell update` refreshes OpenSpec when enabled
+- **OpenSpec documentation**: All 6 user-facing docs updated (README, ARCHITECTURE, CONFIGURATION, HARNESSES, TROUBLESHOOTING, DEVELOPMENT)
+
 ## [3.6.0] - 2026-02-18
 
 Per-harness security scoping. API keys and config directory mounts are now
