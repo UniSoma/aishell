@@ -128,10 +128,11 @@ See MILESTONES.md for details.
   2. `aishell build --with-pi=1.0.0` pins the pi version in build state and installs that specific version
   3. `fd` command is available inside the container (fd-find package with fd symlink in foundation image)
   4. PI_CODING_AGENT_DIR and PI_SKIP_VERSION_CHECK environment variables from host are passed through to the container
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 60-01: TBD
+- [ ] 60-01-PLAN.md -- Foundation image fd-find + pi npm package in volume infrastructure
+- [ ] 60-02-PLAN.md -- CLI --with-pi flag, state integration, env var passthrough, runtime wiring
 
 ### Phase 61: Pi CLI Integration
 **Goal**: Users can run pi coding agent through aishell with the same UX as Claude/Codex/Gemini
