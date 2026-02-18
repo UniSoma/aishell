@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.7.0 OpenSpec Support - Phase 65
+**Current focus:** Global Base Image Customization - Phase 66
 
 ## Current Position
 
-Phase: 65 of 65 (Release)
-Plan: 1 of 1 in current phase
-Status: Phase 65 complete
-Last activity: 2026-02-18 — Completed 65-01 (Version Bump and CHANGELOG)
+Phase: 66 of 66 (Global Base Image Customization)
+Plan: 2 of 4 in current phase
+Status: Executing phase 66
+Last activity: 2026-02-18 — Completed 66-01 (Core Base Image Module)
 
-Progress: [██████████] 100%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -53,6 +53,11 @@ Recent decisions for v3.7.0:
 - [Phase 64]: All user-facing doc files version-bumped to v3.7.0
 - [Phase 65]: No link references added to CHANGELOG (project convention)
 
+Recent decisions for Phase 66:
+- [Phase 66]: Base image uses label-based staleness detection (same pattern as extension images)
+- [Phase 66]: Tag-alias path (docker tag) used when no global Dockerfile exists
+- [Phase 66]: Hard-stop on build failure via output/error (user explicitly created Dockerfile)
+
 ### Pending Todos
 
 3 deferred todos:
@@ -78,9 +83,10 @@ None.
 | Phase 64 P01 | 2min | 2 tasks | 3 files |
 | Phase 64 P02 | 1min | 2 tasks | 3 files |
 | Phase 65 P01 | 1min | 2 tasks | 2 files |
+| Phase 66 P01 | 2min | 2 tasks | 2 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Phase 66 context gathered
-Resume file: .planning/phases/66-global-base-image-customization/66-CONTEXT.md
+Stopped at: Completed 66-01-PLAN.md
+Resume file: .planning/phases/66-global-base-image-customization/66-01-SUMMARY.md

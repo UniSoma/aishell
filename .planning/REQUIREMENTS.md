@@ -32,12 +32,12 @@ Requirements for Global Base Image Customization milestone. Each maps to roadmap
 
 ### Base Image
 
-- [ ] **BASE-01**: Global `~/.aishell/Dockerfile` is detected and built as `aishell:base` image with Docker labels for cache tracking
-- [ ] **BASE-02**: When no global Dockerfile exists, `aishell:base` is a Docker tag alias for `aishell:foundation`
-- [ ] **BASE-03**: Base image rebuilds automatically when global Dockerfile content changes (content hash comparison)
-- [ ] **BASE-04**: Foundation image change cascades to base image rebuild, which cascades to extension image rebuilds
+- [x] **BASE-01**: Global `~/.aishell/Dockerfile` is detected and built as `aishell:base` image with Docker labels for cache tracking
+- [x] **BASE-02**: When no global Dockerfile exists, `aishell:base` is a Docker tag alias for `aishell:foundation`
+- [x] **BASE-03**: Base image rebuilds automatically when global Dockerfile content changes (content hash comparison)
+- [x] **BASE-04**: Foundation image change cascades to base image rebuild, which cascades to extension image rebuilds
 - [ ] **BASE-05**: `aishell check` shows base image status: "custom (~/.aishell/Dockerfile)" or "default (foundation alias)"
-- [ ] **BASE-06**: `aishell setup --force` rebuilds base image; `aishell update --force` rebuilds base image
+- [x] **BASE-06**: `aishell setup --force` rebuilds base image; `aishell update --force` rebuilds base image
 - [ ] **BASE-07**: `aishell volumes prune` includes orphaned base images in cleanup
 - [ ] **BASE-08**: Project extension Dockerfiles accept `FROM aishell:base` (legacy validation removed)
 
@@ -72,12 +72,12 @@ None currently deferred.
 | VOL-02 | Phase 63 | Complete |
 | DOCS-01 | Phase 64 | Complete |
 | REL-01 | Phase 65 | Complete |
-| BASE-01 | Phase 66 | Pending |
-| BASE-02 | Phase 66 | Pending |
-| BASE-03 | Phase 66 | Pending |
-| BASE-04 | Phase 66 | Pending |
+| BASE-01 | Phase 66 | Complete |
+| BASE-02 | Phase 66 | Complete |
+| BASE-03 | Phase 66 | Complete |
+| BASE-04 | Phase 66 | Complete |
 | BASE-05 | Phase 66 | Pending |
-| BASE-06 | Phase 66 | Pending |
+| BASE-06 | Phase 66 | Complete |
 | BASE-07 | Phase 66 | Pending |
 | BASE-08 | Phase 66 | Pending |
 | BASE-09 | Phase 66 | Pending |
