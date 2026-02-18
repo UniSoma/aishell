@@ -161,6 +161,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 
 ### Customization
 
+- **Global base image** - Customize the base image for all projects via `~/.aishell/Dockerfile` (extra system packages, shell config, dev tools). See [Configuration docs](docs/CONFIGURATION.md#global-base-image-customization) for details.
 - **Per-project customization** - Extend via `.aishell/Dockerfile`
 - **Runtime configuration** - Custom mounts, env vars, ports via `.aishell/config.yaml`
 - **Version pinning** - Lock harness versions for reproducibility

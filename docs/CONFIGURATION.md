@@ -21,6 +21,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [harness_args](#harness_args)
   - [gitleaks_freshness_check](#gitleaks_freshness_check)
   - [detection](#detection)
+- [Global Base Image Customization](#global-base-image-customization)
 - [Common Patterns](#common-patterns)
 
 ---
@@ -862,6 +863,112 @@ detection:
     - path: "test.pem"         # From project
       reason: "Test fixture"
 ```
+
+---
+
+## Global Base Image Customization
+
+Advanced users can customize the base Docker image used by all projects. This adds a layer between the foundation image and per-project extensions, forming a three-tier image chain:
+
+```
+aishell:foundation -> aishell:base -> aishell:ext-{hash}
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md#three-tier-image-chain--harness-volume) for the full image chain diagram.
+
+### Creating a Global Dockerfile
+
+Create `~/.aishell/Dockerfile` to customize the base image:
+
+```dockerfile
+FROM aishell:foundation
+
+# Your global customizations here
+```
+
+The recommended `FROM` line is `FROM aishell:foundation`, but this is not enforced. Changes are detected automatically -- the base image rebuilds on the next `aishell` run.
+
+### Use Case Examples
+
+**1. Extra system packages:**
+
+```dockerfile
+FROM aishell:foundation
+
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    postgresql-client \
+    redis-tools \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**2. Shell configuration:**
+
+```dockerfile
+FROM aishell:foundation
+
+# Global aliases
+RUN echo 'alias ll="ls -la"' >> /etc/bash.bashrc && \
+    echo 'alias gs="git status"' >> /etc/bash.bashrc
+
+# Custom prompt
+RUN echo 'export PS1="\[\033[36m\]\w\[\033[0m\] \$ "' >> /etc/bash.bashrc
+```
+
+**3. Development tools:**
+
+```dockerfile
+FROM aishell:foundation
+
+RUN pip3 install httpie --break-system-packages && \
+    pip3 install pytest --break-system-packages
+```
+
+### How It Works
+
+- **Lazy build:** The base image is built on first container run when `~/.aishell/Dockerfile` is detected, not during `aishell setup`.
+- **Auto-detection:** aishell hashes the Dockerfile content and compares it to the existing base image label. Changes trigger a rebuild.
+- **Cascade rebuilds:** When the base image changes, all per-project extension images rebuild on their next run.
+- **Default behavior:** When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishell:foundation` (zero overhead).
+
+### Project Extension Compatibility
+
+Per-project `.aishell/Dockerfile` files can use either base:
+
+```dockerfile
+# Recommended: inherits global customizations
+FROM aishell:base
+
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+```
+
+```dockerfile
+# Also valid: skips global customizations
+FROM aishell:foundation
+
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+```
+
+Using `FROM aishell:base` is recommended because it inherits any packages, tools, or shell configuration from your global Dockerfile.
+
+### Removing Customizations
+
+To revert to the default base image:
+
+1. Delete `~/.aishell/Dockerfile`
+2. On the next run, `aishell:base` reverts to a foundation alias
+3. Run `aishell volumes prune` to clean up the orphaned custom base image
+
+### Status Check
+
+```bash
+aishell check
+# Shows: "Base image: custom (~/.aishell/Dockerfile)" or "Base image: default (foundation alias)"
+```
+
+### Build Failures
+
+If your global Dockerfile has errors, the build fails with full Docker output. Fix the Dockerfile or delete it to revert. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#base-image-build-failures) for details.
 
 ---
 
