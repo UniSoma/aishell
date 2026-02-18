@@ -133,7 +133,12 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements — define next milestone with `/gsd:new-milestone`)
+<!-- v3.5.0 Pi Coding Agent Support — defining requirements -->
+
+- [ ] Pi coding agent harness integration
+- [ ] fd pre-installed in foundation image for pi
+- [ ] Pi-specific environment variable passthrough
+- [ ] Documentation updates for pi harness
 
 ### Out of Scope
 
@@ -148,10 +153,20 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - Binary install for Claude/Codex — native binaries larger than npm packages (investigated v2.5.0)
 - Conditional Node.js — abandoned with binary install (Node.js still needed for npm harnesses)
 
+## Current Milestone: v3.5.0 Pi Coding Agent Support
+
+**Goal:** Add pi coding agent as a first-class harness with best-in-class container support, following the established multi-harness pattern.
+
+**Target features:**
+- Pi harness integration (CLI, build, run, check — same pattern as Codex/Gemini)
+- fd pre-installed in foundation image (pi's find tool depends on fd)
+- Pi-specific env vars (PI_CODING_AGENT_DIR, PI_SKIP_VERSION_CHECK)
+- Documentation across all user-facing docs
+
 ## Current State
 
-**Shipped:** v3.1.0 on 2026-02-12
-**Current:** Planning next milestone
+**Shipped:** v3.4.3 (patches since v3.1.0)
+**Current:** v3.5.0 Pi Coding Agent Support — defining requirements
 
 **Codebase:** ~4,164 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
@@ -327,4 +342,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-12 after v3.1.0 milestone*
+*Last updated: 2026-02-18 after v3.5.0 milestone start*

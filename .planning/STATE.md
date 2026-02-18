@@ -5,16 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** Planning next milestone
+**Current focus:** v3.5.0 Pi Coding Agent Support
 
 ## Current Position
 
-Phase: 59 of 59 — All phases complete
-Plan: All complete
-Status: v3.1.0 shipped — planning next milestone
-Last activity: 2026-02-12 - Completed quick task 6: Implement auto-install-bb in install.sh + PowerShell equivalent
-
-Progress: [██████████████████████████] 100% (59/59 phases complete, 13 milestones shipped)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-18 — Milestone v3.5.0 started
 
 ## Performance Metrics
 
