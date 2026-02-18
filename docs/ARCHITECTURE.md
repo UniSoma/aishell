@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v3.1.0
+**Last updated:** v3.5.0
 
 ---
 
@@ -36,7 +36,7 @@ graph TB
 
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
-        Harness[AI Harness<br/>claude/opencode/codex/gemini/vscode]
+        Harness[AI Harness<br/>claude/opencode/codex/gemini/pi/vscode]
         Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
@@ -75,6 +75,7 @@ The foundation image contains stable system components that change rarely:
 - Node.js 24 runtime
 - Babashka CLI runtime
 - System tools (git, curl, jq, ripgrep, vim, etc.)
+- fd (fd-find with symlink for pi file discovery)
 - Gitleaks binary (opt-in, via `--with-gitleaks`)
 - Gosu for user switching
 - Entrypoint script and profile configuration
@@ -90,7 +91,7 @@ The foundation image contains stable system components that change rarely:
 Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
-- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli)
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @mariozechner/pi-coding-agent)
 - `/tools/bin` - Go binaries (opencode)
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
@@ -269,7 +270,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 **Data mounts:**
 
 - Project directory → Mounted at same path as host (read-write)
-- Harness config directories → Per-harness (e.g., `~/.claude`, `~/.codex`)
+- Harness config directories -> Per-harness (e.g., `~/.claude`, `~/.codex`, `~/.pi`)
 - Additional mounts from `config.yaml` (e.g., `~/.ssh`, `~/.gitconfig`)
 
 ### Config Merge Strategy
@@ -396,11 +397,13 @@ Each namespace handles one concern:
  :with-opencode false                    ; boolean: OpenCode enabled?
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
+ :with-pi false                         ; boolean: Pi coding agent enabled?
  :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
  :codex-version "0.89.0"                 ; string or nil: pinned version
  :gemini-version nil                     ; string or nil: pinned version
+ :pi-version nil                        ; string or nil: pinned version
  :image-tag "aishell:foundation"         ; string: Docker image tag
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
  :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)
