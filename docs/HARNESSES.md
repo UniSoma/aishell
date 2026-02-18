@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses that aishell supports.
 
-**Last updated:** v3.0.0
+**Last updated:** v3.5.0
 
 ## What are Harnesses?
 
@@ -12,6 +12,7 @@ Harnesses are AI CLI tools that aishell runs in isolated containers. Each harnes
 - **OpenCode** - Multi-provider AI coding agent (Anthropic, OpenAI, Google, etc.)
 - **Codex CLI** - OpenAI's ChatGPT integration for coding
 - **Gemini CLI** - Google's Gemini models for development
+- **Pi** - Mario Zechner's autonomous coding agent
 
 ### How Harnesses Install (v2.8.0+)
 
@@ -39,14 +40,14 @@ aishell volumes prune
 
 ## Harness Comparison
 
-| Feature | Claude Code | OpenCode | Codex CLI | Gemini CLI |
-|---------|-------------|----------|-----------|------------|
-| Provider | Anthropic | Multiple | OpenAI | Google |
-| Auth Methods | OAuth, API Key | Per-provider | OAuth, API Key | OAuth, API Key |
-| Container Auth | Copy-paste URL | Standard | Device code | Auth on host first |
-| Vertex AI | No | Yes | No | Yes |
-| Config Dir | ~/.claude | ~/.config/opencode | ~/.codex | ~/.gemini |
-| Best For | Autonomous coding | Multi-model flexibility | ChatGPT integration | Gemini models |
+| Feature | Claude Code | OpenCode | Codex CLI | Gemini CLI | Pi |
+|---------|-------------|----------|-----------|------------|-----|
+| Provider | Anthropic | Multiple | OpenAI | Google | Mario Zechner |
+| Auth Methods | OAuth, API Key | Per-provider | OAuth, API Key | OAuth, API Key | API Key |
+| Container Auth | Copy-paste URL | Standard | Device code | Auth on host first | Standard |
+| Vertex AI | No | Yes | No | Yes | No |
+| Config Dir | ~/.claude | ~/.config/opencode | ~/.codex | ~/.gemini | ~/.pi |
+| Best For | Autonomous coding | Multi-model flexibility | ChatGPT integration | Gemini models | Autonomous coding |
 
 ## Claude Code
 
@@ -512,13 +513,102 @@ harnesses:
 3. **Vertex AI:** Adds enterprise features (audit logs, VPC, quotas)
 4. **Model selection:** Gemini 2.0 Flash balances speed and quality
 
+## Pi
+
+### Overview
+
+Pi is an autonomous coding agent by Mario Zechner. It uses fd for file discovery and operates as a CLI tool for development tasks.
+
+**Author:** Mario Zechner
+**Package:** @mariozechner/pi-coding-agent
+
+### Installation
+
+```bash
+# Latest version
+aishell setup --with-pi
+
+# Specific version
+aishell setup --with-pi=1.0.0
+```
+
+**Build steps:**
+1. Builds the foundation image (includes fd for pi's file discovery) -- skipped if cached
+2. Creates a harness volume: `aishell-harness-{hash}`
+3. Installs the Pi npm package into the volume: `npm install -g @mariozechner/pi-coding-agent`
+4. Mounts the volume read-only at `/tools` in containers
+
+**Updating Pi:**
+```bash
+aishell update
+```
+
+### Authentication
+
+Pi uses its own authentication mechanism. Configure authentication through pi's config directory.
+
+Set up authentication on your host:
+
+```bash
+# Authenticate on host first, then credentials persist in ~/.pi
+pi auth
+```
+
+Or configure via environment:
+
+The container mounts `~/.pi` automatically.
+
+### Usage
+
+Basic invocation:
+
+```bash
+aishell pi
+```
+
+Pass arguments to Pi:
+
+```bash
+aishell pi --help
+aishell pi --print "hello"
+```
+
+Set default arguments in `config.yaml`:
+
+```yaml
+harnesses:
+  pi:
+    args: ["--print", "hello"]
+```
+
+### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `PI_CODING_AGENT_DIR` | Override pi's working directory | `/custom/path` |
+| `PI_SKIP_VERSION_CHECK` | Skip version check on startup | `true` |
+
+### Configuration Directory
+
+- **Host:** `~/.pi`
+- **Container:** `/root/.pi`
+
+A volume mount preserves config across container restarts.
+
+### Tips & Best Practices
+
+1. **fd dependency:** Pi uses fd for file discovery, which is pre-installed in the foundation image
+2. **Config persistence:** Authenticate on host; credentials mount automatically
+3. **Session handling:** Each `aishell pi` invocation starts a new session
+4. **File operations:** Pi has full filesystem access within the container
+
 ## Multi-Container Workflow
 
 Run multiple named containers simultaneously and reconnect to them.
 
 ### Starting Named Containers
 
-Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `gemini`, `vscode`, `shell`). Override with `--name`:
+Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `gemini`, `pi`, `vscode`, `shell`). Override with `--name`:
 
 ```bash
 # Start Claude (default name: claude)
@@ -559,7 +649,7 @@ docker stop aishell-<hash>-claude
 
 Containers follow the naming pattern `aishell-{project-hash}-{name}`:
 - **project-hash**: First 8 characters of the SHA-256 of your project directory path
-- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `vscode`, `shell`); override with `--name`
+- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `gemini`, `pi`, `vscode`, `shell`); override with `--name`
 
 ## Running Multiple Harnesses
 
@@ -575,7 +665,7 @@ aishell setup --with-claude --with-opencode
 aishell setup --with-claude --with-opencode --with-codex
 
 # All harnesses
-aishell setup --with-claude --with-opencode --with-codex --with-gemini
+aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi
 ```
 
 Each added harness increases image size.
@@ -596,6 +686,9 @@ aishell codex "implement feature Z"
 
 # Use Gemini CLI
 aishell gemini "implement feature W"
+
+# Use Pi
+aishell pi "implement feature V"
 ```
 
 Each invocation runs in its own container.
@@ -632,6 +725,9 @@ harnesses:
 
   gemini:
     args: ["--model", "gemini-2.0-flash-exp"]
+
+  pi:
+    args: ["--print", "hello"]
 ```
 
 ## Authentication Quick Reference
@@ -644,6 +740,7 @@ harnesses:
 | OpenCode | Provider-dependent | ✓ Varies by provider |
 | Codex CLI | Device code flow | ✓ Good with `--device-auth` |
 | Gemini CLI | Host auth required | ✓ Requires host setup |
+| Pi | Config-based | ✓ Standard |
 
 ### API Key Authentication
 
@@ -655,6 +752,7 @@ harnesses:
 | OpenCode (Google) | `GOOGLE_API_KEY` | https://aistudio.google.com/app/apikey |
 | Codex CLI | `OPENAI_API_KEY` (chat) or `CODEX_API_KEY` (exec) | https://platform.openai.com/api-keys |
 | Gemini CLI | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | https://aistudio.google.com/app/apikey |
+| Pi | (config-based auth) | See pi documentation |
 
 ### Vertex AI Authentication
 
