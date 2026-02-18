@@ -153,10 +153,11 @@ Plans:
   2. docs/HARNESSES.md (or equivalent section) describes OpenSpec, its purpose, and how to enable it
   3. docs/CONFIGURATION.md documents the `--with-openspec` and `--with-openspec=VERSION` flags
   4. docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md are updated where OpenSpec affects their content
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 64-01: TBD
+- [ ] 64-01-PLAN.md -- User-facing docs: README.md, HARNESSES.md, CONFIGURATION.md
+- [ ] 64-02-PLAN.md -- Internal/developer docs: ARCHITECTURE.md, TROUBLESHOOTING.md, DEVELOPMENT.md
 
 ### Phase 65: Release
 **Goal**: v3.7.0 is tagged and ready for users
