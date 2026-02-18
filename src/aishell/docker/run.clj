@@ -204,22 +204,27 @@
          (apply concat)
          vec)))
 
+(def harness-config-dirs
+  "Config directories required by each harness.
+   Only directories for enabled harnesses are mounted."
+  {:with-claude   [[".claude"] [".claude.json"]]
+   :with-opencode [[".config" "opencode"] [".local" "share" "opencode"]]
+   :with-codex    [[".codex"]]
+   :with-gemini   [[".gemini"]]
+   :with-pi       [[".pi"]]})
+
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
-   Only mounts directories that exist on host.
+   Only mounts directories for enabled harnesses that exist on host.
    On Windows: maps destinations under /home/developer (container home).
    On Unix: mounts at same path as source."
-  []
+  [state]
   (let [home (util/get-home)
         container-home "/home/developer"
-        config-entries [;; [relative-path-components]
-                        [".claude"]
-                        [".claude.json"]
-                        [".config" "opencode"]
-                        [".local" "share" "opencode"]
-                        [".codex"]
-                        [".gemini"]
-                        [".pi"]]]
+        config-entries (->> harness-config-dirs
+                            (filter (fn [[state-key _]] (get state state-key)))
+                            (mapcat val)
+                            distinct)]
     (->> config-entries
          (map (fn [components]
                 (let [src (str (apply fs/path home components))
@@ -230,42 +235,39 @@
          (filter (fn [[src _]] (fs/exists? src)))
          (mapcat (fn [[src dst]] ["-v" (str (normalize-mount-source src) ":" dst)])))))
 
-(def api-key-vars
-  "Environment variables to pass through for API access."
-  ["ANTHROPIC_API_KEY"
-   "OPENAI_API_KEY"
-   "CODEX_API_KEY"
-   "GEMINI_API_KEY"
-   "GOOGLE_API_KEY"
-   "GROQ_API_KEY"
-   "OPENCODE_API_KEY"
-   "GITHUB_TOKEN"
-   "AWS_ACCESS_KEY_ID"
-   "AWS_SECRET_ACCESS_KEY"
-   "AWS_REGION"
-   "AWS_PROFILE"
-   "AZURE_OPENAI_API_KEY"
-   "AZURE_OPENAI_ENDPOINT"
-   "GOOGLE_CLOUD_PROJECT"
-   "GOOGLE_CLOUD_LOCATION"
-   "GOOGLE_APPLICATION_CREDENTIALS"
-   "PI_CODING_AGENT_DIR"
-   "PI_SKIP_VERSION_CHECK"])
+(def harness-api-keys
+  "API key environment variables required by each harness.
+   Only keys for enabled harnesses are passed into the container.
+   Cross-cutting keys (GITHUB_TOKEN, AWS_*) must be added explicitly
+   via config.yaml env: section."
+  {:with-claude   ["ANTHROPIC_API_KEY"]
+   :with-opencode ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
+                    "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]
+   :with-codex    ["OPENAI_API_KEY" "CODEX_API_KEY"]
+   :with-gemini   ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
+                    "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
+   :with-pi       ["PI_CODING_AGENT_DIR" "PI_SKIP_VERSION_CHECK"]})
 
 (defn- build-api-env-args
-  "Build -e flags for API keys that are set on host."
-  []
-  (->> api-key-vars
-       (filter #(System/getenv %))
-       (mapcat (fn [var] ["-e" (str var "=" (System/getenv var))]))))
+  "Build -e flags for API keys required by enabled harnesses."
+  [state]
+  (let [enabled-keys (->> harness-api-keys
+                          (filter (fn [[state-key _]] (get state state-key)))
+                          (mapcat val)
+                          distinct)]
+    (->> enabled-keys
+         (filter #(System/getenv %))
+         (mapcat (fn [var] ["-e" (str var "=" (System/getenv var))])))))
 
 (defn build-gcp-credentials-mount
-  "Mount GCP service account credentials file if GOOGLE_APPLICATION_CREDENTIALS is set.
+  "Mount GCP service account credentials file if GOOGLE_APPLICATION_CREDENTIALS is set
+   and the Gemini harness is enabled.
    The env var is passed through separately; this mounts the file it references."
-  []
-  (when-let [creds-path (System/getenv "GOOGLE_APPLICATION_CREDENTIALS")]
-    (when (fs/exists? creds-path)
-      ["-v" (str creds-path ":" creds-path ":ro")])))
+  [state]
+  (when (get state :with-gemini)
+    (when-let [creds-path (System/getenv "GOOGLE_APPLICATION_CREDENTIALS")]
+      (when (fs/exists? creds-path)
+        ["-v" (str creds-path ":" creds-path ":ro")]))))
 
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.
@@ -299,14 +301,14 @@
           (into ["-e" (str "GIT_AUTHOR_EMAIL=" (:email git-identity))
                  "-e" (str "GIT_COMMITTER_EMAIL=" (:email git-identity))]))
 
-        ;; Harness config mounts (Claude, OpenCode, Codex, Gemini configs)
-        (into (build-harness-config-mounts))
+        ;; Harness config mounts (only enabled harnesses)
+        (into (build-harness-config-mounts state))
 
-        ;; GCP credentials file mount (for Vertex AI authentication)
-        (into (or (build-gcp-credentials-mount) []))
+        ;; GCP credentials file mount (only when Gemini enabled)
+        (into (or (build-gcp-credentials-mount state) []))
 
-        ;; API keys
-        (into (build-api-env-args))
+        ;; API keys (only enabled harnesses)
+        (into (build-api-env-args state))
 
         ;; Disable autoupdater in container
         (into ["-e" "DISABLE_AUTOUPDATER=1"])
