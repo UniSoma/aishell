@@ -144,10 +144,10 @@ Plans:
   3. Pi config directory (`~/.pi/`) is mounted from host into the container, persisting auth and settings
   4. `aishell check` shows pi installation status and version when pi is installed
   5. `aishell --help` lists the `pi` command when pi is installed, and hides it when not installed
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 61-01: TBD
+- [ ] 61-01-PLAN.md -- Add HARNESS_ALIAS_PI to entrypoint alias loop (completes all pi CLI integration)
 
 ### Phase 62: Pi Documentation
 **Goal**: All user-facing documentation reflects pi as a first-class harness
