@@ -60,6 +60,10 @@ Recent decisions for v3.7.0:
 - [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) - warn when foundation image is outdated
 - [Integrate Claude Code, aishell and Emacs](./todos/pending/2026-02-14-integrate-claude-code-aishell-and-emacs.md) - editor plugin integration with containerized Claude Code
 
+### Roadmap Evolution
+
+- Phase 66 added: Global base image customization
+
 ### Blockers/Concerns
 
 None.
@@ -78,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 65-01-PLAN.md (Phase 65 complete - v3.7.0 milestone done)
-Resume file: .planning/phases/65-release/65-01-SUMMARY.md
+Stopped at: Phase 66 context gathered
+Resume file: .planning/phases/66-global-base-image-customization/66-CONTEXT.md
