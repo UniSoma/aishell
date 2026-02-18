@@ -13,14 +13,15 @@
 
 (def ^:private harness-keys
   "Ordered list of harness names for deterministic sorting."
-  [:claude :codex :gemini :opencode])
+  [:claude :codex :gemini :opencode :pi])
 
 (def ^:private harness-npm-packages
   "Map of harness key to npm package name.
    OpenCode is excluded as it's a Go binary, not an npm package."
   {:claude "@anthropic-ai/claude-code"
    :codex "@openai/codex"
-   :gemini "@google/gemini-cli"})
+   :gemini "@google/gemini-cli"
+   :pi "@mariozechner/pi-coding-agent"})
 
 (defn normalize-harness-config
   "Extract and normalize harness configuration for deterministic hashing.

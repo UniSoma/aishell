@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     bc \\
     ca-certificates \\
     curl \\
+    fd-find \\
     file \\
     git \\
     htop \\
@@ -40,6 +41,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     vim \\
     watch \\
     && rm -rf /var/lib/apt/lists/*
+
+# Create fd symlink (Debian packages fd-find as fdfind, but tools expect fd)
+RUN ln -s /usr/bin/fdfind /usr/bin/fd
 
 # Install Node.js via multi-stage copy from official image
 COPY --from=node-source /usr/local/bin/node /usr/local/bin/node
