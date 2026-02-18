@@ -9,14 +9,14 @@ Requirements for OpenSpec support milestone. Each maps to roadmap phases.
 
 ### Build
 
-- [ ] **BUILD-01**: User can enable OpenSpec with `--with-openspec` build flag
-- [ ] **BUILD-02**: User can pin OpenSpec version with `--with-openspec=VERSION`
-- [ ] **BUILD-03**: OpenSpec enabled/version state persisted in state.edn
+- [x] **BUILD-01**: User can enable OpenSpec with `--with-openspec` build flag
+- [x] **BUILD-02**: User can pin OpenSpec version with `--with-openspec=VERSION`
+- [x] **BUILD-03**: OpenSpec enabled/version state persisted in state.edn
 
 ### Volume
 
-- [ ] **VOL-01**: OpenSpec npm package (`@fission-ai/openspec`) installed in harness volume when enabled
-- [ ] **VOL-02**: Volume hash includes OpenSpec state for proper cache invalidation
+- [x] **VOL-01**: OpenSpec npm package (`@fission-ai/openspec`) installed in harness volume when enabled
+- [x] **VOL-02**: Volume hash includes OpenSpec state for proper cache invalidation
 
 ### Documentation
 
@@ -42,11 +42,11 @@ None currently deferred.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | Phase 63 | Pending |
-| BUILD-02 | Phase 63 | Pending |
-| BUILD-03 | Phase 63 | Pending |
-| VOL-01 | Phase 63 | Pending |
-| VOL-02 | Phase 63 | Pending |
+| BUILD-01 | Phase 63 | Complete |
+| BUILD-02 | Phase 63 | Complete |
+| BUILD-03 | Phase 63 | Complete |
+| VOL-01 | Phase 63 | Complete |
+| VOL-02 | Phase 63 | Complete |
 | DOCS-01 | Phase 64 | Pending |
 | REL-01 | Phase 65 | Pending |
 

@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 63 of 65 (Core OpenSpec Integration)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 — Roadmap created for v3.7.0
+Plan: 1 of 2 in current phase
+Status: Ready to execute
+Last activity: 2026-02-18 — Completed 63-01 (Core OpenSpec Integration)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -41,6 +41,9 @@ Recent decisions for v3.7.0:
 - OpenSpec is NOT a harness (no `aishell openspec` subcommand, no config mounts, no API key passthrough)
 - Follows `--with-*` / harness volume npm install pattern for build integration
 - Available inside container only via `openspec` command
+- OpenSpec follows exact Pi pattern: harness-keys + harness-npm-packages registration, no dispatch entry
+- Non-harness npm tools use same harness-keys/harness-npm-packages pattern but skip dispatch table
+- [Phase 63]: OpenSpec follows exact Pi pattern for registration but is NOT added to dispatch table
 
 ### Pending Todos
 
@@ -58,9 +61,10 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 6 | Implement auto-install-bb in install.sh + PowerShell equivalent | 2026-02-12 | e2dd0eb | [6-implement-auto-install-bb-in-install-sh-](./quick/6-implement-auto-install-bb-in-install-sh-/) |
+| Phase 63 P01 | 2min | 2 tasks | 3 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Phase 63 context gathered
-Resume file: .planning/phases/63-core-openspec-integration/63-CONTEXT.md
+Stopped at: Completed 63-01-PLAN.md
+Resume file: .planning/phases/63-core-openspec-integration/63-01-SUMMARY.md
