@@ -17,6 +17,7 @@
 - ✅ **v3.1.0 Native Windows Support** - Phases 53-59 (shipped 2026-02-12)
 - ✅ **v3.5.0 Pi Coding Agent Support** - Phases 60-62 (shipped 2026-02-18)
 - 🚧 **v3.7.0 OpenSpec Support** - Phases 63-65 (in progress)
+- 🚧 **v3.8.0 Global Base Image Customization** - Phase 66 (in progress)
 
 ## Phases
 
@@ -195,3 +196,40 @@ Phases execute in numeric order: 63 → 64 → 65
 | 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
 | 64. Documentation | 2/2 | Complete    | 2026-02-18 | - |
 | 65. Release | 1/1 | Complete    | 2026-02-18 | - |
+
+### Phase 66: Global base image customization
+
+**Goal:** Introduce `aishell:base` as an intermediate image layer between `aishell:foundation` and project extensions, enabling advanced users to globally customize their base image via `~/.aishell/Dockerfile`
+
+**Design:**
+- `aishell:foundation` is always built by `aishell setup` (unchanged)
+- `aishell:base` is a new intermediate layer:
+  - If `~/.aishell/Dockerfile` exists → build from it, tag as `aishell:base`
+  - If no global Dockerfile → `aishell:base` is an alias (tag) for `aishell:foundation`
+- Project `.aishell/Dockerfile` builds `FROM aishell:base` (not foundation), so project extensions inherit global customizations
+- Image selection at run time: project Dockerfile exists → use project ext image; otherwise → use `aishell:base`
+
+**Three-tier chain:** `aishell:foundation` → `aishell:base` → `aishell:ext-{hash}`
+
+**Rebuild triggers:**
+- Foundation change → rebuild base (if global Dockerfile) → rebuild all ext images
+- `~/.aishell/Dockerfile` content change → rebuild base → rebuild all ext images
+- Track via Docker labels (same pattern as existing extension images)
+
+**Depends on:** Phase 65
+**Requirements:** BASE-01, BASE-02, BASE-03, BASE-04, BASE-05, BASE-06, BASE-07, BASE-08, BASE-09, BASE-10
+**Success Criteria** (what must be TRUE):
+  1. Creating `~/.aishell/Dockerfile` causes `aishell:base` to be built from it on next container run
+  2. Without `~/.aishell/Dockerfile`, `aishell:base` is a tag alias for `aishell:foundation`
+  3. Changing global Dockerfile content triggers base image rebuild, which cascades to extension rebuilds
+  4. `aishell check` shows "Base image: custom" or "Base image: default (foundation alias)"
+  5. `aishell setup --force` and `aishell update --force` rebuild the base image
+  6. Deleting `~/.aishell/Dockerfile` and running `aishell volumes prune` resets base to foundation alias
+  7. Project Dockerfiles can use `FROM aishell:base` (no error)
+**Plans:** 4 plans
+
+Plans:
+- [ ] 66-01-PLAN.md -- Core base image module + setup/update integration
+- [ ] 66-02-PLAN.md -- Run path lazy build + extension + check + volumes prune
+- [ ] 66-03-PLAN.md -- Documentation updates
+- [ ] 66-04-PLAN.md -- Version bump to 3.8.0 and CHANGELOG
