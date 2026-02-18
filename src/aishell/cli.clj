@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [aishell.docker :as docker]
+            [aishell.docker.base :as base]
             [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
             [aishell.docker.naming :as naming]
@@ -193,6 +194,9 @@
                     :verbose (:verbose opts)
                     :force (:force opts)})
 
+          ;; Ensure aishell:base exists (custom build from ~/.aishell/Dockerfile or alias)
+          _ (base/ensure-base-image {:force (:force opts) :verbose (:verbose opts)})
+
           ;; Step 2: Compute harness volume hash
           project-dir (System/getProperty "user.dir")
           cfg (config/load-config project-dir)
@@ -328,6 +332,11 @@
                        {:with-gitleaks (:with-gitleaks state false)
                         :verbose (:verbose opts)
                         :force true}))
+
+            ;; Ensure aishell:base is up to date
+            _ (if (:force opts)
+                (base/ensure-base-image {:force true :verbose (:verbose opts)})
+                (base/ensure-base-image {:verbose (:verbose opts) :quiet true}))
 
             ;; Volume repopulation (unconditional delete + recreate)
             harness-hash (vol/compute-harness-hash state)
