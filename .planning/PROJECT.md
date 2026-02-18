@@ -140,7 +140,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ### Active
 
-(No active requirements — start next milestone with `/gsd:new-milestone`)
+## Current Milestone: v3.7.0 OpenSpec Support
+
+**Goal:** Add OpenSpec as an opt-in development workflow tool available inside containers, following the established `--with-*` build flag pattern.
+
+**Target features:**
+- `--with-openspec` build flag for opt-in installation
+- `--openspec-version` version pinning at build time
+- OpenSpec npm package installed in harness volume
+- State tracking in state.edn
+- Documentation updates across all 6 user-facing docs
 
 ### Out of Scope
 
@@ -157,8 +166,8 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v3.5.0 Pi Coding Agent Support (2026-02-18)
-**Current:** Planning next milestone
+**Shipped:** v3.6.0 Scoped API Keys (2026-02-18)
+**Current:** v3.7.0 OpenSpec Support
 
 **Codebase:** ~4,164 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)

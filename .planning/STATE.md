@@ -5,19 +5,20 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** Planning next milestone
+**Current focus:** v3.7.0 OpenSpec Support
 
 ## Current Position
 
-Phase: Milestone complete
-Status: v3.5.0 shipped
-Last activity: 2026-02-18 -- Completed v3.5.0 Pi Coding Agent Support milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-18 — Milestone v3.7.0 started
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 137 across 14 milestones
-- Milestones shipped: 14 (v1.0 -> v3.5.0)
+- Milestones shipped: 15 (v1.0 -> v3.6.0)
 
 **Recent Trend:**
 - v3.5.0: 5 plans, 1 day
