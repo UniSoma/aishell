@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options, covering both the global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) config files.
 
-**Last updated:** v3.1.0
+**Last updated:** v3.5.0
 
 ---
 
@@ -204,6 +204,9 @@ harness_args:
   gemini:
     - "--model"
     - "gemini-2.0-flash-exp"
+  pi:
+    - "--print"
+    - "hello"
 
 # String shorthand (single arg):
 # harness_args:
@@ -587,7 +590,7 @@ pre_start: "echo 'Step 1' && echo 'Step 2'"
 
 **Type:** Map of harness name to list (or string)
 
-**Harness names:** `claude`, `opencode`, `codex`, `gemini`
+**Harness names:** `claude`, `opencode`, `codex`, `gemini`, `pi`
 
 **Example:**
 
@@ -613,6 +616,11 @@ harness_args:
   gemini:
     - "--model"
     - "gemini-2.0-flash-exp"
+
+  # Pi defaults
+  pi:
+    - "--print"
+    - "hello"
 
 # String shorthand (single arg)
 # harness_args:
@@ -659,6 +667,7 @@ claude --verbose --model sonnet --workspace /workspace
 | OpenCode | `--provider anthropic` | API provider |
 | Codex | `--verbose` | Debug output |
 | Gemini | `--model gemini-2.0-flash-exp` | Specific model |
+| Pi | `--print hello` | Default prompt |
 
 ---
 
@@ -989,6 +998,9 @@ harness_args:
     - "sonnet"
     - "--plugin"
     - "context7"
+  pi:
+    - "--print"
+    - "hello"
 ```
 
 ---
@@ -1005,7 +1017,7 @@ harness_args:
 aishell setup --with-claude
 
 # Multiple harnesses
-aishell setup --with-claude --with-opencode --with-codex
+aishell setup --with-claude --with-opencode --with-codex --with-pi
 
 # With version pinning
 aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501
@@ -1016,6 +1028,7 @@ aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501
 - `--with-opencode` - Multi-provider OpenCode
 - `--with-codex` - OpenAI Codex CLI
 - `--with-gemini` - Google Gemini CLI
+- `--with-pi` - Mario Zechner's Pi coding agent
 
 **Version pinning:**
 Use `=VERSION` syntax to pin specific versions:
