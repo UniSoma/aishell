@@ -2,7 +2,7 @@
 
 This guide helps developers extend aishell with new harnesses or core features.
 
-**Last updated:** v3.1.0
+**Last updated:** v3.5.0
 
 ---
 
@@ -132,7 +132,8 @@ aishell/
  :with-opencode true
  :opencode-version nil  ; treated as "latest"
  :with-codex false
- :with-gemini false}
+ :with-gemini false
+ :with-pi false}
 ```
 
 **Algorithm:**
@@ -162,7 +163,7 @@ aishell/
 3. **npm installation:**
    - Sets `NPM_CONFIG_PREFIX=/tools/npm`
    - Runs `npm install -g @anthropic-ai/claude-code@{version}`
-   - Repeats for each enabled npm harness
+   - Repeats for each enabled npm harness (claude, codex, gemini, pi)
 4. **Binary download (OpenCode):**
    - Downloads `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
    - Extracts to `/tools/bin`
@@ -216,7 +217,7 @@ aishell/
 
 ## Adding a New Harness
 
-Follow this checklist to integrate a new harness (e.g., `cursor`, `aider`).
+Follow this checklist to integrate a new harness (e.g., `cursor`, `aider`). See the Claude, Codex, Gemini, and Pi integrations as reference implementations.
 
 ### Step 1: Dockerfile Template
 
@@ -430,6 +431,7 @@ Add a config directory mount to the `harness-config-mounts` function:
                       [(str home "/.local/share/opencode") (str home "/.local/share/opencode")]
                       [(str home "/.codex") (str home "/.codex")]
                       [(str home "/.gemini") (str home "/.gemini")]
+                      [(str home "/.pi") (str home "/.pi")]
                       ;; ADD YOUR HARNESS HERE:
                       [(str home "/.cursor") (str home "/.cursor")]]]
     ;; ...
@@ -481,6 +483,8 @@ Add the API key environment variable to `env-passthrough-keys`:
    "CODEX_API_KEY"
    "GEMINI_API_KEY"
    "GOOGLE_API_KEY"
+   "PI_CODING_AGENT_DIR"
+   "PI_SKIP_VERSION_CHECK"
    ;; ADD YOUR HARNESS HERE:
    "CURSOR_API_KEY"
    ;; ...
@@ -908,7 +912,7 @@ Use try/catch for recoverable errors:
 
 ### Before Submitting
 
-- [ ] Code follows existing patterns (compare to claude, codex, gemini)
+- [ ] Code follows existing patterns (compare to claude, codex, gemini, pi)
 - [ ] Docstrings added to new functions
 - [ ] Tested locally (build, run, config mount, env passthrough)
 - [ ] Documentation updated (README, HARNESSES, TROUBLESHOOTING)
@@ -1004,6 +1008,6 @@ Check each harness's documentation for the correct version syntax.
 
 ## Questions?
 
-- Review existing integrations (claude, codex, gemini)
+- Review existing integrations (claude, codex, gemini, pi)
 - See [ARCHITECTURE.md](ARCHITECTURE.md) for system design
 - Ask in GitHub Discussions or Issues
