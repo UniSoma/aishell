@@ -183,6 +183,6 @@ Phases execute in numeric order: 60 -> 61 -> 62
 | 44-45. Gitleaks Opt-in | v2.10.0 | All | Complete | 2026-02-05 |
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
-| 60. Pi Build Infrastructure | v3.5.0 | 0/? | Not started | - |
+| 60. Pi Build Infrastructure | 1/2 | In Progress|  | - |
 | 61. Pi CLI Integration | v3.5.0 | 0/? | Not started | - |
 | 62. Pi Documentation | v3.5.0 | 0/? | Not started | - |

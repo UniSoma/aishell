@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 60 of 62 (Pi Build Infrastructure)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 -- Roadmap created for v3.5.0
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-18 -- Completed 60-01 (fd-find + pi harness registration)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [░░░░░░░░░░] 0%
 See PROJECT.md for full decision log across all milestones.
 
 Recent: Pi follows exact same pattern as Codex/Gemini (v2.4.0). npm install, no special launch flags, fd auto-downloaded by pi but we pre-install it in foundation.
+60-01: fd symlink needed because Debian packages fd-find as fdfind. Pi registered in harness-npm-packages following existing pattern.
 
 ### Pending Todos
 
@@ -60,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: v3.5.0 roadmap created (3 phases: 60-62)
+Stopped at: Completed 60-01-PLAN.md
 Resume file: None
