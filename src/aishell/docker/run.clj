@@ -189,7 +189,8 @@
         known [["claude"   :with-claude   true]
                ["opencode" :with-opencode false]
                ["codex"    :with-codex    false]
-               ["gemini"   :with-gemini   false]]]
+               ["gemini"   :with-gemini   false]
+               ["pi"       :with-pi       false]]]
     (->> known
          (keep (fn [[name state-key always?]]
                  (when (get state state-key)
@@ -217,7 +218,8 @@
                         [".config" "opencode"]
                         [".local" "share" "opencode"]
                         [".codex"]
-                        [".gemini"]]]
+                        [".gemini"]
+                        [".pi"]]]
     (->> config-entries
          (map (fn [components]
                 (let [src (str (apply fs/path home components))
@@ -245,7 +247,9 @@
    "AZURE_OPENAI_ENDPOINT"
    "GOOGLE_CLOUD_PROJECT"
    "GOOGLE_CLOUD_LOCATION"
-   "GOOGLE_APPLICATION_CREDENTIALS"])
+   "GOOGLE_APPLICATION_CREDENTIALS"
+   "PI_CODING_AGENT_DIR"
+   "PI_SKIP_VERSION_CHECK"])
 
 (defn- build-api-env-args
   "Build -e flags for API keys that are set on host."

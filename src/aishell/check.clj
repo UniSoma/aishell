@@ -85,6 +85,7 @@
                    ["OpenCode" :with-opencode :opencode-version]
                    ["Codex CLI" :with-codex :codex-version]
                    ["Gemini CLI" :with-gemini :gemini-version]
+                   ["Pi" :with-pi :pi-version]
                    ["Gitleaks" :with-gitleaks nil]]]
     (doseq [[name key version-key] harnesses]
       (if (get state key)

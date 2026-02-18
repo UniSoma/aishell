@@ -27,7 +27,8 @@
              "claude" "Claude Code"
              "opencode" "OpenCode"
              "codex" "Codex CLI"
-             "gemini" "Gemini CLI")
+             "gemini" "Gemini CLI"
+             "pi" "Pi coding agent")
            " not installed. Run: aishell setup --with-"
            harness-name))))
 
@@ -45,7 +46,7 @@
    Populates lazily if missing or stale (hash mismatch).
    Returns volume name for docker run mounting, or nil if no harnesses enabled."
   [state config]
-  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
     (let [expected-hash (vol/compute-harness-hash state)
           volume-name (or (:harness-volume-name state)
                           (vol/volume-name expected-hash))]
@@ -136,6 +137,7 @@
         "opencode" (verify-harness-available "opencode" :with-opencode state)
         "codex" (verify-harness-available "codex" :with-codex state)
         "gemini" (verify-harness-available "gemini" :with-gemini state)
+        "pi" (verify-harness-available "pi" :with-pi state)
         nil)
 
       ;; Resolve final image (may auto-build extension)
@@ -217,6 +219,9 @@
 
                             "gemini"
                             (into ["gemini"] merged-args)
+
+                            "pi"
+                            (into ["pi"] merged-args)
 
                             "gitleaks"
                             (into ["gitleaks"] harness-args)
