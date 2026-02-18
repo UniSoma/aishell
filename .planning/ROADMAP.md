@@ -191,6 +191,6 @@ Phases execute in numeric order: 63 → 64 → 65
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
-| 63. Core OpenSpec Integration | 2/2 | Complete   | 2026-02-18 | - |
+| 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
 | 64. Documentation | v3.7.0 | 0/? | Not started | - |
 | 65. Release | v3.7.0 | 0/? | Not started | - |
