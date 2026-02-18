@@ -2,7 +2,7 @@
 
 This guide covers installation, authentication, and usage for all AI harnesses that aishell supports.
 
-**Last updated:** v3.5.0
+**Last updated:** v3.7.0
 
 ## What are Harnesses?
 
@@ -602,6 +602,64 @@ A volume mount preserves config across container restarts.
 3. **Session handling:** Each `aishell pi` invocation starts a new session
 4. **File operations:** Pi has full filesystem access within the container
 
+## Additional Tools
+
+### OpenSpec
+
+#### Overview
+
+OpenSpec is an opt-in development workflow tool by Fission AI. Unlike harnesses (Claude, OpenCode, Codex, Gemini, Pi), OpenSpec is NOT a standalone aishell command. It installs into the harness volume and is available inside containers via the `openspec` command.
+
+**Package:** @fission-ai/openspec
+
+#### Installation
+
+Enable OpenSpec at build time:
+
+```bash
+# Latest version
+aishell setup --with-claude --with-openspec
+
+# Specific version
+aishell setup --with-claude --with-openspec=1.2.3
+```
+
+**Build steps:**
+1. Builds the foundation image -- skipped if cached
+2. Creates a harness volume: `aishell-harness-{hash}`
+3. Installs the OpenSpec npm package into the volume: `npm install -g @fission-ai/openspec`
+4. Mounts the volume read-only at `/tools` in containers
+
+**Updating OpenSpec:**
+```bash
+aishell update
+```
+
+#### Usage
+
+OpenSpec is available inside any container session when enabled:
+
+```bash
+# Enter shell and use openspec
+aishell
+openspec --help
+
+# Or from any harness session
+aishell claude
+# Inside container: openspec is available on PATH
+```
+
+**Note:** There is no `aishell openspec` command. OpenSpec runs inside the container, not as a harness dispatch target.
+
+#### Status Check
+
+Verify OpenSpec is installed:
+
+```bash
+aishell check
+# Shows OpenSpec installed/not-installed status with version
+```
+
 ## Multi-Container Workflow
 
 Run multiple named containers simultaneously and reconnect to them.
@@ -666,6 +724,9 @@ aishell setup --with-claude --with-opencode --with-codex
 
 # All harnesses
 aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi
+
+# All harnesses with OpenSpec
+aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi --with-openspec
 ```
 
 Each added harness increases image size.

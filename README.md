@@ -1,6 +1,6 @@
 # aishell
 
-Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi) in ephemeral containers.
+Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi) in ephemeral containers, with optional development tools (OpenSpec).
 
 ## Why Docker?
 
@@ -170,6 +170,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
+- **OpenSpec integration** - Opt-in development workflow tool available inside containers (requires `--with-openspec`)
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Named containers** - Deterministic naming with `--name` override
 - **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, server state persisted across restarts
@@ -191,11 +192,15 @@ aishell setup --with-gemini
 aishell setup --with-pi
 
 # Set up with multiple harnesses
-aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi
+aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi --with-openspec
 
 # Set up with specific versions
 aishell setup --with-claude=2.0.22
 aishell setup --with-codex=0.1.2025062501
+
+# Set up with optional development tools
+aishell setup --with-claude --with-openspec
+aishell setup --with-claude --with-openspec=1.2.3
 ```
 
 ### Run harnesses
@@ -524,7 +529,7 @@ Built on `debian:bookworm-slim` with:
 - tree, less, file, unzip, watch
 - htop, sqlite3, sudo
 
-**Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image.
+**Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image. This includes optional tools like OpenSpec when enabled.
 This allows harness updates without rebuilding the foundation image.
 
 ### Git safe.directory
