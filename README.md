@@ -1,6 +1,6 @@
 # aishell
 
-Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) in ephemeral containers.
+Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi) in ephemeral containers.
 
 ## Why Docker?
 
@@ -188,9 +188,10 @@ aishell setup --with-claude
 aishell setup --with-opencode
 aishell setup --with-codex
 aishell setup --with-gemini
+aishell setup --with-pi
 
 # Set up with multiple harnesses
-aishell setup --with-claude --with-opencode --with-codex --with-gemini
+aishell setup --with-claude --with-opencode --with-codex --with-gemini --with-pi
 
 # Set up with specific versions
 aishell setup --with-claude=2.0.22
@@ -208,6 +209,7 @@ aishell claude
 aishell opencode
 aishell codex
 aishell gemini
+aishell pi
 
 # Pass arguments to harness
 aishell claude --help
@@ -391,7 +393,7 @@ For custom detection patterns, allowlists, and freshness configuration, see [Con
 
 ## Authentication
 
-aishell mounts harness configuration directories from your host (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.config/opencode`, `~/.local/share/opencode`), so authentication persists between container sessions.
+aishell mounts harness configuration directories from your host (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.pi`, `~/.config/opencode`, `~/.local/share/opencode`), so authentication persists between container sessions.
 
 ### Claude Code
 
@@ -450,6 +452,17 @@ aishell gemini
 
 **Note:** Gemini CLI does not support device code flow for container authentication. Either authenticate on host first, or use an API key.
 
+### Pi
+
+Pi uses its own configuration-based authentication. Set up authentication on your host:
+
+```bash
+# Authenticate on host first, then credentials persist in ~/.pi
+pi auth
+```
+
+The container mounts `~/.pi` automatically.
+
 ### OpenCode
 
 OpenCode configuration directories (`~/.config/opencode`, `~/.local/share/opencode`) are mounted from your host. Refer to OpenCode's documentation for authentication methods.
@@ -488,6 +501,8 @@ aishell automatically passes these environment variables to containers when set 
 | Variable | Purpose | Notes |
 |----------|---------|-------|
 | `GITHUB_TOKEN` | GitHub API access | For GitHub operations |
+| `PI_CODING_AGENT_DIR` | Pi working directory | Override pi's default directory |
+| `PI_SKIP_VERSION_CHECK` | Pi version check | Set to `true` to skip |
 | `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts |
 
 ## Reference
@@ -504,7 +519,7 @@ Built on `debian:bookworm-slim` with:
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
 
 **CLI tools:**
-- git, curl, jq, ripgrep, vim
+- git, curl, jq, ripgrep, fd, vim
 - tree, less, file, unzip, watch
 - htop, sqlite3, sudo
 
