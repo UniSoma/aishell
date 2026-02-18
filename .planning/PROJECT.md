@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A cross-platform Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode, OpenAI Codex CLI, Google Gemini CLI) in isolated, ephemeral containers. Works on Linux, macOS, and Windows (cmd.exe/PowerShell with Docker Desktop). Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
+A cross-platform Docker-based sandbox environment for running agentic AI harnesses (Claude Code, OpenCode, OpenAI Codex CLI, Google Gemini CLI, Pi) in isolated, ephemeral containers. Works on Linux, macOS, and Windows (cmd.exe/PowerShell with Docker Desktop). Users run `aishell build` once to create their environment, then `aishell` to enter a shell or `aishell claude`/`aishell opencode` to run harnesses directly. The container mounts projects at the exact host path, preserves git identity, and supports per-project customization via `.aishell/Dockerfile` and `.aishell/config.yaml`.
 
 ## Core Value
 
@@ -131,14 +131,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Entrypoint simplified — conditional tmux fork removed, direct `exec gosu` — v3.0.0
 - ✓ All user-facing documentation updated for v3.0.0 changes — v3.0.0
 
+**v3.5.0 (2026-02-18) — Pi Coding Agent Support:**
+- ✓ Pi coding agent harness integration (`--with-pi`, `aishell pi`, version pinning) — v3.5.0
+- ✓ fd pre-installed in foundation image (fd-find with fd symlink) — v3.5.0
+- ✓ Pi-specific environment variable passthrough (PI_CODING_AGENT_DIR, PI_SKIP_VERSION_CHECK) — v3.5.0
+- ✓ Pi config directory (~/.pi/) mounted from host — v3.5.0
+- ✓ Documentation updates across all 6 user-facing docs — v3.5.0
+
 ### Active
 
-<!-- v3.5.0 Pi Coding Agent Support — defining requirements -->
-
-- [ ] Pi coding agent harness integration
-- [ ] fd pre-installed in foundation image for pi
-- [ ] Pi-specific environment variable passthrough
-- [ ] Documentation updates for pi harness
+(No active requirements — start next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -153,25 +155,16 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - Binary install for Claude/Codex — native binaries larger than npm packages (investigated v2.5.0)
 - Conditional Node.js — abandoned with binary install (Node.js still needed for npm harnesses)
 
-## Current Milestone: v3.5.0 Pi Coding Agent Support
-
-**Goal:** Add pi coding agent as a first-class harness with best-in-class container support, following the established multi-harness pattern.
-
-**Target features:**
-- Pi harness integration (CLI, build, run, check — same pattern as Codex/Gemini)
-- fd pre-installed in foundation image (pi's find tool depends on fd)
-- Pi-specific env vars (PI_CODING_AGENT_DIR, PI_SKIP_VERSION_CHECK)
-- Documentation across all user-facing docs
-
 ## Current State
 
-**Shipped:** v3.4.3 (patches since v3.1.0)
-**Current:** v3.5.0 Pi Coding Agent Support — defining requirements
+**Shipped:** v3.5.0 Pi Coding Agent Support (2026-02-18)
+**Current:** Planning next milestone
 
 **Codebase:** ~4,164 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
 **Platforms:** Linux, macOS, Windows (cmd.exe/PowerShell with Docker Desktop WSL2)
-**Documentation:** 5,000+ lines across docs/ and README (expanded with Windows support)
+**Harnesses:** Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi
+**Documentation:** 5,000+ lines across docs/ and README
 
 ## Milestone Conventions
 
@@ -325,6 +318,15 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Side-by-side platform examples in docs | Reduces doc sprawl, keeps related info together | Good |
 | Source-only mounts map to /home/developer on Windows | No direct path equivalent; consistent container-side location | Good |
 
+**v3.5.0 (Pi Coding Agent Support):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Pi follows exact Codex/Gemini pattern | Consistency across harness integrations; proven pattern | Good |
+| fd-find with fd symlink in foundation | Debian packages as fdfind but pi expects fd; symlink bridges the gap | Good |
+| PI_CODING_AGENT_DIR/PI_SKIP_VERSION_CHECK as passthrough env vars | Only forwarded when set on host; matches existing env var pattern | Good |
+| No special Pi auth troubleshooting | Pi has straightforward config-based auth; no complex OAuth flows | Good |
+
 **v2.8.0 (Decouple Harness Tools):**
 
 | Decision | Rationale | Outcome |
@@ -342,4 +344,4 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
 ---
-*Last updated: 2026-02-18 after v3.5.0 milestone start*
+*Last updated: 2026-02-18 after v3.5.0 milestone*

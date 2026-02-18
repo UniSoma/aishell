@@ -5,28 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.5.0 Pi Coding Agent Support - Phase 62
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 62 of 62 (Pi Documentation)
-Plan: 2 of 2 in current phase
-Status: Phase Complete
-Last activity: 2026-02-18 -- Completed 62-02 (Pi documentation in ARCHITECTURE, TROUBLESHOOTING, DEVELOPMENT)
-
-Progress: [██████████] 100%
+Phase: Milestone complete
+Status: v3.5.0 shipped
+Last activity: 2026-02-18 -- Completed v3.5.0 Pi Coding Agent Support milestone
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 134 across 13 milestones
-- Milestones shipped: 13 (v1.0 -> v3.1.0)
+- Total plans completed: 137 across 14 milestones
+- Milestones shipped: 14 (v1.0 -> v3.5.0)
 
 **Recent Trend:**
+- v3.5.0: 5 plans, 1 day
 - v3.1.0: 9 plans, 2 days
 - v3.0.0: 9 plans, 1 day
 - v2.10.0: 4 plans, 1 day
-- v2.9.0: 12 plans, 2 days
 - Trend: Stable velocity
 
 *Updated after each plan completion*
@@ -37,19 +34,11 @@ Progress: [██████████] 100%
 
 See PROJECT.md for full decision log across all milestones.
 
-Recent: Pi follows exact same pattern as Codex/Gemini (v2.4.0). npm install, no special launch flags, fd auto-downloaded by pi but we pre-install it in foundation.
-60-01: fd symlink needed because Debian packages fd-find as fdfind. Pi registered in harness-npm-packages following existing pattern.
-60-02: Pi follows identical --with-X flag pattern as Codex/Gemini. PI_CODING_AGENT_DIR/PI_SKIP_VERSION_CHECK as passthrough env vars.
-61-01: Single-line fix -- added HARNESS_ALIAS_PI to entrypoint for-loop, completing pi container shell alias.
-62-01: Pi documented in README.md, HARNESSES.md, CONFIGURATION.md as fifth harness. Version tags bumped to v3.5.0.
-62-02: Pi added to ARCHITECTURE.md (diagram, volume, state schema, fd), TROUBLESHOOTING.md (version checks, credentials), DEVELOPMENT.md (integration guide, env vars).
-
 ### Pending Todos
 
-4 deferred todos:
+3 deferred todos:
 - [Consider Podman support as alternative container runtime](./todos/pending/2026-02-02-consider-podman-support.md) - from Distrobox investigation
 - [Detect stale foundation image](./todos/pending/2026-02-02-detect-stale-foundation-image.md) - warn when foundation image is outdated
-- [Consider adding pi coding-agent as another harness](./todos/pending/2026-02-06-consider-pi-coding-agent-harness.md) - being addressed by v3.5.0
 - [Integrate Claude Code, aishell and Emacs](./todos/pending/2026-02-14-integrate-claude-code-aishell-and-emacs.md) - editor plugin integration with containerized Claude Code
 
 ### Blockers/Concerns
@@ -65,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 62-02-PLAN.md (Phase 62 complete)
+Stopped at: Completed v3.5.0 milestone
 Resume file: None

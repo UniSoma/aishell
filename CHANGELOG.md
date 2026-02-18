@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-02-18
+
+Pi coding agent as a first-class harness. Build with `--with-pi`, run with
+`aishell pi`, same UX as Claude/Codex/Gemini.
+
+### Added
+
+- **Pi coding agent support**: Run Mario Zechner's Pi coding agent in the sandbox
+  - `aishell setup --with-pi` to include Pi in harness volume
+  - `aishell pi [args]` to run Pi directly (e.g., `aishell pi --print "hello"`)
+  - Version pinning with `--with-pi=VERSION`
+  - `~/.pi/` config directory mounted automatically for auth persistence
+  - `PI_CODING_AGENT_DIR` and `PI_SKIP_VERSION_CHECK` environment variables passed through
+  - `pi` shell alias available inside container
+  - `aishell check` shows Pi installation status and version
+  - `aishell --help` lists `pi` command when installed
+- **fd in foundation image**: `fd-find` package with `fd` symlink pre-installed for Pi's file discovery
+
+### Docs
+- README.md updated with Pi in harness list, setup/run examples, authentication, and env vars
+- HARNESSES.md updated with complete Pi section (overview, install, auth, usage, env vars, config, tips) and comparison table
+- CONFIGURATION.md updated with `--with-pi` flag and `harness_args.pi` examples
+- ARCHITECTURE.md updated with Pi in system diagram, volume contents, state schema, and fd in foundation
+- TROUBLESHOOTING.md updated with Pi version checks and credential persistence
+- DEVELOPMENT.md updated with Pi as reference implementation in harness integration guide
+
 ## [3.4.3] - 2026-02-16
 
 ### Added

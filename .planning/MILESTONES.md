@@ -364,3 +364,31 @@
 
 ---
 
+
+## v3.5.0 Pi Coding Agent Support (Shipped: 2026-02-18)
+
+**Delivered:** Pi coding agent added as fifth first-class harness following the established multi-harness pattern, with fd in foundation image, full CLI integration, and comprehensive documentation across all 6 user-facing docs.
+
+**Phases completed:** 60-62 (5 plans total)
+
+**Key accomplishments:**
+
+- Added fd-find to foundation Docker image with fd symlink for pi's file discovery
+- Registered pi as npm harness in volume infrastructure following Claude/Codex/Gemini pattern
+- Implemented --with-pi CLI flag with version pinning, env var passthrough (PI_CODING_AGENT_DIR, PI_SKIP_VERSION_CHECK), config mounts (~/.pi/), and full runtime dispatch
+- Added HARNESS_ALIAS_PI to entrypoint for-loop for container shell alias
+- Updated all 6 user-facing documentation files with pi as first-class harness (README, HARNESSES, CONFIGURATION, ARCHITECTURE, TROUBLESHOOTING, DEVELOPMENT)
+
+**Stats:**
+
+- 26 files changed (+1,644/-93 lines)
+- ~4,164 lines of Clojure (total codebase)
+- 3 phases, 5 plans, 10 tasks
+- 1 day (2026-02-18)
+
+**Git range:** `feat(60-01)` → `docs(62-02)` (16 commits)
+
+**What's next:** Pi extensions/skills mounting, Pi RPC mode, Podman support, or new harnesses
+
+---
+
