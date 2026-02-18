@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 66 of 66 (Global Base Image Customization)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: Executing phase 66
-Last activity: 2026-02-18 — Completed 66-01 (Core Base Image Module)
+Last activity: 2026-02-18 — Completed 66-02 (Base Image Integration)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -57,6 +57,9 @@ Recent decisions for Phase 66:
 - [Phase 66]: Base image uses label-based staleness detection (same pattern as extension images)
 - [Phase 66]: Tag-alias path (docker tag) used when no global Dockerfile exists
 - [Phase 66]: Hard-stop on build failure via output/error (user explicitly created Dockerfile)
+- [Phase 66]: Circular dependency avoided by passing base tag as parameter (not requiring base.clj in extension.clj)
+- [Phase 66]: Extension rebuild tracking uses base image ID label instead of foundation ID
+- [Phase 66]: Orphaned base image detected via dockerfile hash label presence without global Dockerfile
 
 ### Pending Todos
 
@@ -84,9 +87,10 @@ None.
 | Phase 64 P02 | 1min | 2 tasks | 3 files |
 | Phase 65 P01 | 1min | 2 tasks | 2 files |
 | Phase 66 P01 | 2min | 2 tasks | 2 files |
+| Phase 66 P02 | 4min | 2 tasks | 4 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 66-01-PLAN.md
-Resume file: .planning/phases/66-global-base-image-customization/66-01-SUMMARY.md
+Stopped at: Completed 66-02-PLAN.md
+Resume file: .planning/phases/66-global-base-image-customization/66-02-SUMMARY.md
