@@ -31,7 +31,7 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, docs/ARCHITECTURE.md, docs/CONFIGURATION.md, docs/HARNESSES.md, docs/TROUBLESHOOTING.md, docs/DEVELOPMENT.md)
+- [x] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, docs/ARCHITECTURE.md, docs/CONFIGURATION.md, docs/HARNESSES.md, docs/TROUBLESHOOTING.md, docs/DEVELOPMENT.md)
 
 ## Future Requirements
 
@@ -67,7 +67,7 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 | FOUND-02 | Phase 60 | Complete |
 | ENV-01 | Phase 60 | Complete |
 | ENV-02 | Phase 60 | Complete |
-| DOCS-01 | Phase 62 | Pending |
+| DOCS-01 | Phase 62 | Complete |
 
 **Coverage:**
 - v3.5.0 requirements: 14 total

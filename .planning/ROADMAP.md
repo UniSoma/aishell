@@ -115,7 +115,7 @@ See MILESTONES.md for details.
 
 - [x] **Phase 60: Pi Build Infrastructure** - Foundation image (fd), build flags, npm install, env vars (completed 2026-02-18)
 - [x] **Phase 61: Pi CLI Integration** - Run command, config mounting, check, help, pass-through args, entrypoint alias (completed 2026-02-18)
-- [ ] **Phase 62: Pi Documentation** - All user-facing docs updated for pi harness
+- [x] **Phase 62: Pi Documentation** - All user-facing docs updated for pi harness (completed 2026-02-18)
 
 ## Phase Details
 
@@ -161,8 +161,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 62-01-PLAN.md -- Update README.md, HARNESSES.md, CONFIGURATION.md with pi harness
-- [ ] 62-02-PLAN.md -- Update ARCHITECTURE.md, TROUBLESHOOTING.md, DEVELOPMENT.md with pi references
+- [x] 62-01-PLAN.md -- Update README.md, HARNESSES.md, CONFIGURATION.md with pi harness
+- [x] 62-02-PLAN.md -- Update ARCHITECTURE.md, TROUBLESHOOTING.md, DEVELOPMENT.md with pi references
 
 ## Progress
 
@@ -186,4 +186,4 @@ Phases execute in numeric order: 60 -> 61 -> 62
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60. Pi Build Infrastructure | 2/2 | Complete    | 2026-02-18 | - |
 | 61. Pi CLI Integration | 1/1 | Complete    | 2026-02-18 | - |
-| 62. Pi Documentation | v3.5.0 | 0/? | Not started | - |
+| 62. Pi Documentation | 2/2 | Complete   | 2026-02-18 | - |

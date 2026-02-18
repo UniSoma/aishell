@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.5.0 Pi Coding Agent Support - Phase 61
+**Current focus:** v3.5.0 Pi Coding Agent Support - Phase 62
 
 ## Current Position
 
-Phase: 61 of 62 (Pi CLI Integration)
-Plan: 1 of 1 in current phase
+Phase: 62 of 62 (Pi Documentation)
+Plan: 2 of 2 in current phase
 Status: Phase Complete
-Last activity: 2026-02-18 -- Completed 61-01 (HARNESS_ALIAS_PI in entrypoint alias loop)
+Last activity: 2026-02-18 -- Completed 62-02 (Pi documentation in ARCHITECTURE, TROUBLESHOOTING, DEVELOPMENT)
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 132 across 13 milestones
+- Total plans completed: 134 across 13 milestones
 - Milestones shipped: 13 (v1.0 -> v3.1.0)
 
 **Recent Trend:**
@@ -41,6 +41,8 @@ Recent: Pi follows exact same pattern as Codex/Gemini (v2.4.0). npm install, no 
 60-01: fd symlink needed because Debian packages fd-find as fdfind. Pi registered in harness-npm-packages following existing pattern.
 60-02: Pi follows identical --with-X flag pattern as Codex/Gemini. PI_CODING_AGENT_DIR/PI_SKIP_VERSION_CHECK as passthrough env vars.
 61-01: Single-line fix -- added HARNESS_ALIAS_PI to entrypoint for-loop, completing pi container shell alias.
+62-01: Pi documented in README.md, HARNESSES.md, CONFIGURATION.md as fifth harness. Version tags bumped to v3.5.0.
+62-02: Pi added to ARCHITECTURE.md (diagram, volume, state schema, fd), TROUBLESHOOTING.md (version checks, credentials), DEVELOPMENT.md (integration guide, env vars).
 
 ### Pending Todos
 
@@ -63,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 61-01-PLAN.md (Phase 61 complete)
+Stopped at: Completed 62-02-PLAN.md (Phase 62 complete)
 Resume file: None
