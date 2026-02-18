@@ -27,11 +27,13 @@
     :with-opencode false         ; boolean
     :with-codex false            ; boolean
     :with-gemini false           ; boolean
+    :with-pi false               ; boolean
     :with-gitleaks false         ; boolean (whether Gitleaks installed, default false, opt-in)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
     :codex-version \"0.89.0\"    ; string or nil
     :gemini-version nil          ; string or nil
+    :pi-version nil              ; string or nil
     :image-tag \"aishell:foundation\"  ; string
     :build-time \"2026-01-20...\" ; ISO-8601 string
     :foundation-hash \"abc123def456\"  ; 12-char SHA-256 of foundation Dockerfile template

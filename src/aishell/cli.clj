@@ -73,6 +73,7 @@
    :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
+   :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
@@ -89,9 +90,10 @@
       (:with-opencode state) (conj "opencode")
       (:with-codex state) (conj "codex")
       (:with-gemini state) (conj "gemini")
+      (:with-pi state) (conj "pi")
       (:with-gitleaks state false) (conj "gitleaks"))
     ;; No state = no build yet, show all for discoverability
-    #{"claude" "opencode" "codex" "gemini" "gitleaks"}))
+    #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))
 
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
@@ -118,6 +120,8 @@
       (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI")))
     (when (contains? installed "gemini")
       (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI")))
+    (when (contains? installed "pi")
+      (println (str "  " output/CYAN "pi" output/NC "         Run Pi coding agent")))
     (when (contains? installed "gitleaks")
       (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
@@ -142,7 +146,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -150,6 +154,7 @@
   (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
+  (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
@@ -163,6 +168,7 @@
           opencode-config (parse-with-flag (:with-opencode opts))
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
+          pi-config (parse-with-flag (:with-pi opts))
           with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
 
           ;; Validate versions before build
@@ -170,6 +176,7 @@
           _ (validate-version (:version opencode-config) "OpenCode")
           _ (validate-version (:version codex-config) "Codex")
           _ (validate-version (:version gemini-config) "Gemini")
+          _ (validate-version (:version pi-config) "Pi")
 
           ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/foundation-image-tag)
@@ -188,17 +195,19 @@
                      :with-opencode (:enabled? opencode-config)
                      :with-codex (:enabled? codex-config)
                      :with-gemini (:enabled? gemini-config)
+                     :with-pi (:enabled? pi-config)
                      :with-gitleaks with-gitleaks
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
-                     :gemini-version (:version gemini-config)}
+                     :gemini-version (:version gemini-config)
+                     :pi-version (:version pi-config)}
 
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -209,7 +218,8 @@
                                                      {:claude (:with-claude state-map)
                                                       :opencode (:with-opencode state-map)
                                                       :codex (:with-codex state-map)
-                                                      :gemini (:with-gemini state-map)}))]
+                                                      :gemini (:with-gemini state-map)
+                                                      :pi (:with-pi state-map)}))]
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
@@ -297,6 +307,8 @@
         (println (str "  Codex: " (or (:codex-version state) "latest"))))
       (when (:with-gemini state)
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
+      (when (:with-pi state)
+        (println (str "  Pi: " (or (:pi-version state) "latest"))))
 
       ;; Conditionally rebuild foundation image (only with --force)
       (let [project-dir (System/getProperty "user.dir")
@@ -313,7 +325,7 @@
                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
@@ -323,7 +335,8 @@
                                                        {:claude (:with-claude state)
                                                         :opencode (:with-opencode state)
                                                         :codex (:with-codex state)
-                                                        :gemini (:with-gemini state)}))]
+                                                        :gemini (:with-gemini state)
+                                                        :pi (:with-pi state)}))]
                   (println "Repopulating harness volume...")
                   (vol/remove-volume volume-name)
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
@@ -606,6 +619,8 @@
                {:unsafe unsafe? :container-name container-name-override})
       "gemini" (run/run-container "gemini" (vec (rest clean-args))
                 {:unsafe unsafe? :container-name container-name-override})
+      "pi" (run/run-container "pi" (vec (rest clean-args))
+             {:unsafe unsafe? :container-name container-name-override})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
                    {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
       ;; Standard dispatch for other commands (setup, update, help)
