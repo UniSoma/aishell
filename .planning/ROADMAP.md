@@ -109,7 +109,63 @@ See MILESTONES.md for details.
 
 </details>
 
+### v3.5.0 Pi Coding Agent Support (In Progress)
+
+**Milestone Goal:** Add pi coding agent as a first-class harness following the established multi-harness pattern (Codex/Gemini), with fd in foundation image and full CLI integration.
+
+- [ ] **Phase 60: Pi Build Infrastructure** - Foundation image (fd), build flags, npm install, env vars
+- [ ] **Phase 61: Pi CLI Integration** - Run command, config mounting, check, help, pass-through args, entrypoint alias
+- [ ] **Phase 62: Pi Documentation** - All user-facing docs updated for pi harness
+
+## Phase Details
+
+### Phase 60: Pi Build Infrastructure
+**Goal**: Pi coding agent can be built into the harness volume and the foundation image includes fd
+**Depends on**: Nothing (first phase of v3.5.0)
+**Requirements**: FOUND-01, FOUND-02, HARNESS-01, HARNESS-03, HARNESS-05, ENV-01, ENV-02
+**Success Criteria** (what must be TRUE):
+  1. `aishell build --with-pi` succeeds and installs @mariozechner/pi-coding-agent via npm in the harness volume
+  2. `aishell build --with-pi=1.0.0` pins the pi version in build state and installs that specific version
+  3. `fd` command is available inside the container (fd-find package with fd symlink in foundation image)
+  4. PI_CODING_AGENT_DIR and PI_SKIP_VERSION_CHECK environment variables from host are passed through to the container
+**Plans**: TBD
+
+Plans:
+- [ ] 60-01: TBD
+
+### Phase 61: Pi CLI Integration
+**Goal**: Users can run pi coding agent through aishell with the same UX as Claude/Codex/Gemini
+**Depends on**: Phase 60
+**Requirements**: HARNESS-02, HARNESS-04, HARNESS-06, HARNESS-07, HARNESS-08, HARNESS-09
+**Success Criteria** (what must be TRUE):
+  1. `aishell pi` launches pi coding agent inside the container in the mounted project directory
+  2. `aishell pi --print "hello"` passes arguments through to pi correctly
+  3. Pi config directory (`~/.pi/`) is mounted from host into the container, persisting auth and settings
+  4. `aishell check` shows pi installation status and version when pi is installed
+  5. `aishell --help` lists the `pi` command when pi is installed, and hides it when not installed
+**Plans**: TBD
+
+Plans:
+- [ ] 61-01: TBD
+
+### Phase 62: Pi Documentation
+**Goal**: All user-facing documentation reflects pi as a first-class harness
+**Depends on**: Phase 61
+**Requirements**: DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. README.md includes pi in harness list, build examples, and quickstart
+  2. docs/HARNESSES.md has a complete pi section with auth, config, and usage
+  3. docs/CONFIGURATION.md documents --with-pi build flag and PI_* env vars
+  4. docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md updated with pi references
+**Plans**: TBD
+
+Plans:
+- [ ] 62-01: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 60 -> 61 -> 62
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -126,3 +182,6 @@ See MILESTONES.md for details.
 | 44-45. Gitleaks Opt-in | v2.10.0 | All | Complete | 2026-02-05 |
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
+| 60. Pi Build Infrastructure | v3.5.0 | 0/? | Not started | - |
+| 61. Pi CLI Integration | v3.5.0 | 0/? | Not started | - |
+| 62. Pi Documentation | v3.5.0 | 0/? | Not started | - |

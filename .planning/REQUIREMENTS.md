@@ -54,26 +54,26 @@ Requirements for pi coding agent support. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HARNESS-01 | — | Pending |
-| HARNESS-02 | — | Pending |
-| HARNESS-03 | — | Pending |
-| HARNESS-04 | — | Pending |
-| HARNESS-05 | — | Pending |
-| HARNESS-06 | — | Pending |
-| HARNESS-07 | — | Pending |
-| HARNESS-08 | — | Pending |
-| HARNESS-09 | — | Pending |
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| ENV-01 | — | Pending |
-| ENV-02 | — | Pending |
-| DOCS-01 | — | Pending |
+| HARNESS-01 | Phase 60 | Pending |
+| HARNESS-02 | Phase 61 | Pending |
+| HARNESS-03 | Phase 60 | Pending |
+| HARNESS-04 | Phase 61 | Pending |
+| HARNESS-05 | Phase 60 | Pending |
+| HARNESS-06 | Phase 61 | Pending |
+| HARNESS-07 | Phase 61 | Pending |
+| HARNESS-08 | Phase 61 | Pending |
+| HARNESS-09 | Phase 61 | Pending |
+| FOUND-01 | Phase 60 | Pending |
+| FOUND-02 | Phase 60 | Pending |
+| ENV-01 | Phase 60 | Pending |
+| ENV-02 | Phase 60 | Pending |
+| DOCS-01 | Phase 62 | Pending |
 
 **Coverage:**
 - v3.5.0 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*
