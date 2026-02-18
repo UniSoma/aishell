@@ -186,4 +186,4 @@ Phases execute in numeric order: 60 -> 61 -> 62
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60. Pi Build Infrastructure | 2/2 | Complete    | 2026-02-18 | - |
 | 61. Pi CLI Integration | 1/1 | Complete    | 2026-02-18 | - |
-| 62. Pi Documentation | 2/2 | Complete   | 2026-02-18 | - |
+| 62. Pi Documentation | 2/2 | Complete    | 2026-02-18 | - |
