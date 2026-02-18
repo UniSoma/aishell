@@ -20,7 +20,7 @@ Requirements for OpenSpec support milestone. Each maps to roadmap phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, ARCHITECTURE.md, CONFIGURATION.md, HARNESSES.md, TROUBLESHOOTING.md, DEVELOPMENT.md)
+- [x] **DOCS-01**: All user-facing CLI changes reflected in docs/ (README.md, ARCHITECTURE.md, CONFIGURATION.md, HARNESSES.md, TROUBLESHOOTING.md, DEVELOPMENT.md)
 
 ### Release
 
@@ -47,7 +47,7 @@ None currently deferred.
 | BUILD-03 | Phase 63 | Complete |
 | VOL-01 | Phase 63 | Complete |
 | VOL-02 | Phase 63 | Complete |
-| DOCS-01 | Phase 64 | Pending |
+| DOCS-01 | Phase 64 | Complete |
 | REL-01 | Phase 65 | Pending |
 
 **Coverage:**

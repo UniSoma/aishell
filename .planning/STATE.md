@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.7.0 OpenSpec Support - Phase 63
+**Current focus:** v3.7.0 OpenSpec Support - Phase 64
 
 ## Current Position
 
-Phase: 63 of 65 (Core OpenSpec Integration)
+Phase: 64 of 65 (Documentation)
 Plan: 2 of 2 in current phase
-Status: Phase 63 complete
-Last activity: 2026-02-18 — Completed 63-02 (Runtime OpenSpec Integration)
+Status: Executing phase 64
+Last activity: 2026-02-18 — Completed 64-02 (Internal Documentation)
 
 Progress: [██████████] 100%
 
@@ -46,6 +46,8 @@ Recent decisions for v3.7.0:
 - [Phase 63]: OpenSpec follows exact Pi pattern for registration but is NOT added to dispatch table
 - [Phase 63]: OpenSpec added to volume trigger only (not verify-harness-available, not docker/run.clj)
 - [Phase 63]: OpenSpec placed after Pi, before Gitleaks in check display ordering
+- [Phase 64]: OpenSpec documented as non-harness tool across ARCHITECTURE, TROUBLESHOOTING, and DEVELOPMENT docs
+- [Phase 64]: No data mounts added for OpenSpec (no config directory)
 
 ### Pending Todos
 
@@ -65,9 +67,10 @@ None.
 | 6 | Implement auto-install-bb in install.sh + PowerShell equivalent | 2026-02-12 | e2dd0eb | [6-implement-auto-install-bb-in-install-sh-](./quick/6-implement-auto-install-bb-in-install-sh-/) |
 | Phase 63 P01 | 2min | 2 tasks | 3 files |
 | Phase 63 P02 | 1min | 2 tasks | 2 files |
+| Phase 64 P02 | 1min | 2 tasks | 3 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 63-02-PLAN.md (Phase 63 complete)
-Resume file: .planning/phases/63-core-openspec-integration/63-02-SUMMARY.md
+Stopped at: Completed 64-02-PLAN.md
+Resume file: .planning/phases/64-documentation/64-02-SUMMARY.md
