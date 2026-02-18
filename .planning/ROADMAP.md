@@ -158,10 +158,11 @@ Plans:
   2. docs/HARNESSES.md has a complete pi section with auth, config, and usage
   3. docs/CONFIGURATION.md documents --with-pi build flag and PI_* env vars
   4. docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md updated with pi references
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 62-01: TBD
+- [ ] 62-01-PLAN.md -- Update README.md, HARNESSES.md, CONFIGURATION.md with pi harness
+- [ ] 62-02-PLAN.md -- Update ARCHITECTURE.md, TROUBLESHOOTING.md, DEVELOPMENT.md with pi references
 
 ## Progress
 
