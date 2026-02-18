@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v3.5.0
+**Last updated:** v3.7.0
 
 ---
 
@@ -36,7 +36,7 @@ graph TB
 
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
-        Harness[AI Harness<br/>claude/opencode/codex/gemini/pi/vscode]
+        Harness[AI Harness/Tools<br/>claude/opencode/codex/gemini/pi/vscode/openspec]
         Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
@@ -91,11 +91,12 @@ The foundation image contains stable system components that change rarely:
 Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
-- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @mariozechner/pi-coding-agent)
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @mariozechner/pi-coding-agent, @fission-ai/openspec)
 - `/tools/bin` - Go binaries (opencode)
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
 - Enabled harnesses (which flags passed to build)
+- Enabled tools (e.g., OpenSpec)
 - Harness versions (pinned or 'latest')
 - Alphabetically sorted for order-independence
 
@@ -398,6 +399,8 @@ Each namespace handles one concern:
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-pi false                         ; boolean: Pi coding agent enabled?
+ :with-openspec false                   ; boolean: OpenSpec tool enabled? (opt-in, not a harness)
+ :openspec-version nil                  ; string or nil: pinned version
  :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
