@@ -74,6 +74,7 @@
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
+   :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
@@ -91,6 +92,7 @@
       (:with-codex state) (conj "codex")
       (:with-gemini state) (conj "gemini")
       (:with-pi state) (conj "pi")
+      (:with-openspec state) (conj "openspec")
       (:with-gitleaks state false) (conj "gitleaks"))
     ;; No state = no build yet, show all for discoverability
     #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))
@@ -146,7 +148,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -155,6 +157,7 @@
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
+  (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
@@ -169,6 +172,7 @@
           codex-config (parse-with-flag (:with-codex opts))
           gemini-config (parse-with-flag (:with-gemini opts))
           pi-config (parse-with-flag (:with-pi opts))
+          openspec-config (parse-with-flag (:with-openspec opts))
           with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
 
           ;; Validate versions before build
@@ -177,6 +181,7 @@
           _ (validate-version (:version codex-config) "Codex")
           _ (validate-version (:version gemini-config) "Gemini")
           _ (validate-version (:version pi-config) "Pi")
+          _ (validate-version (:version openspec-config) "OpenSpec")
 
           ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/foundation-image-tag)
@@ -196,18 +201,20 @@
                      :with-codex (:enabled? codex-config)
                      :with-gemini (:enabled? gemini-config)
                      :with-pi (:enabled? pi-config)
+                     :with-openspec (:enabled? openspec-config)
                      :with-gitleaks with-gitleaks
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
                      :gemini-version (:version gemini-config)
-                     :pi-version (:version pi-config)}
+                     :pi-version (:version pi-config)
+                     :openspec-version (:version openspec-config)}
 
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -219,6 +226,7 @@
                                                       :opencode (:with-opencode state-map)
                                                       :codex (:with-codex state-map)
                                                       :gemini (:with-gemini state-map)
+                                                      :openspec (:with-openspec state-map)
                                                       :pi (:with-pi state-map)}))]
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
@@ -309,6 +317,8 @@
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
       (when (:with-pi state)
         (println (str "  Pi: " (or (:pi-version state) "latest"))))
+      (when (:with-openspec state)
+        (println (str "  OpenSpec: " (or (:openspec-version state) "latest"))))
 
       ;; Conditionally rebuild foundation image (only with --force)
       (let [project-dir (System/getProperty "user.dir")
@@ -325,7 +335,7 @@
                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
@@ -336,6 +346,7 @@
                                                         :opencode (:with-opencode state)
                                                         :codex (:with-codex state)
                                                         :gemini (:with-gemini state)
+                                                        :openspec (:with-openspec state)
                                                         :pi (:with-pi state)}))]
                   (println "Repopulating harness volume...")
                   (vol/remove-volume volume-name)
