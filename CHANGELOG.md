@@ -24,6 +24,7 @@ Pi coding agent as a first-class harness. Build with `--with-pi`, run with
   - `aishell check` shows Pi installation status and version
   - `aishell --help` lists `pi` command when installed
 - **fd in foundation image**: `fd-find` package with `fd` symlink pre-installed for Pi's file discovery
+- **OPENCODE_API_KEY passthrough**: OpenCode Zen model router API key passed through to container
 
 ### Docs
 - README.md updated with Pi in harness list, setup/run examples, authentication, and env vars

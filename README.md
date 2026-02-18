@@ -481,6 +481,7 @@ aishell automatically passes these environment variables to containers when set 
 | `GEMINI_API_KEY` | Gemini CLI API access | From Google AI Studio |
 | `GOOGLE_API_KEY` | Gemini/Vertex AI access | Alternative to GEMINI_API_KEY |
 | `GROQ_API_KEY` | Groq API access | For Groq-hosted models |
+| `OPENCODE_API_KEY` | OpenCode Zen model router | For Pi or other tools using Zen |
 
 ### Cloud Provider Credentials
 
