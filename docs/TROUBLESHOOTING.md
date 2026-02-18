@@ -2,7 +2,7 @@
 
 Find the symptom you are experiencing, then follow the resolution steps.
 
-**Last updated:** v3.1.0
+**Last updated:** v3.5.0
 
 ---
 
@@ -163,6 +163,9 @@ sudo aishell setup --with-claude
 
    # For Gemini CLI
    npm view @google/gemini-cli versions
+
+   # For Pi
+   npm view @mariozechner/pi-coding-agent versions
    ```
 
 2. **Use exact version from npm:**
@@ -362,7 +365,7 @@ If you still see warnings:
    # Should include /tools/npm/bin and /tools/bin
 
    ls -la /tools/npm/bin
-   # Should show harness binaries (claude, codex, gemini)
+   # Should show harness binaries (claude, codex, gemini, pi)
    ```
 
 5. **Check volume mount:**
@@ -589,6 +592,7 @@ ls -la ~/.gemini/
    - Claude Code: `~/.claude`
    - Codex CLI: `~/.codex`
    - Gemini CLI: `~/.gemini`
+   - Pi: `~/.pi`
    - OpenCode: `~/.config/opencode`, `~/.local/share/opencode`
 
 2. **Verify directories exist on host:**
@@ -596,12 +600,13 @@ ls -la ~/.gemini/
    ls -la ~/.claude
    ls -la ~/.codex
    ls -la ~/.gemini
+   ls -la ~/.pi
    ```
 
 3. **Check they are mounted:**
    ```bash
    aishell
-   mount | grep -E '\.claude|\.codex|\.gemini'
+   mount | grep -E '\.claude|\.codex|\.gemini|\.pi'
    ```
 
 4. **If not mounted, check for conflicts:**
