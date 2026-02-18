@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 63 of 65 (Core OpenSpec Integration)
-Plan: 1 of 2 in current phase
-Status: Ready to execute
-Last activity: 2026-02-18 — Completed 63-01 (Core OpenSpec Integration)
+Plan: 2 of 2 in current phase
+Status: Phase 63 complete
+Last activity: 2026-02-18 — Completed 63-02 (Runtime OpenSpec Integration)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -44,6 +44,8 @@ Recent decisions for v3.7.0:
 - OpenSpec follows exact Pi pattern: harness-keys + harness-npm-packages registration, no dispatch entry
 - Non-harness npm tools use same harness-keys/harness-npm-packages pattern but skip dispatch table
 - [Phase 63]: OpenSpec follows exact Pi pattern for registration but is NOT added to dispatch table
+- [Phase 63]: OpenSpec added to volume trigger only (not verify-harness-available, not docker/run.clj)
+- [Phase 63]: OpenSpec placed after Pi, before Gitleaks in check display ordering
 
 ### Pending Todos
 
@@ -62,9 +64,10 @@ None.
 |---|-------------|------|--------|-----------|
 | 6 | Implement auto-install-bb in install.sh + PowerShell equivalent | 2026-02-12 | e2dd0eb | [6-implement-auto-install-bb-in-install-sh-](./quick/6-implement-auto-install-bb-in-install-sh-/) |
 | Phase 63 P01 | 2min | 2 tasks | 3 files |
+| Phase 63 P02 | 1min | 2 tasks | 2 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 63-01-PLAN.md
-Resume file: .planning/phases/63-core-openspec-integration/63-01-SUMMARY.md
+Stopped at: Completed 63-02-PLAN.md (Phase 63 complete)
+Resume file: .planning/phases/63-core-openspec-integration/63-02-SUMMARY.md
