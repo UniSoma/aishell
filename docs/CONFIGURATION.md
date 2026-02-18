@@ -2,7 +2,7 @@
 
 Complete reference for aishell configuration options, covering both the global (`~/.aishell/config.yaml`) and project-specific (`.aishell/config.yaml`) config files.
 
-**Last updated:** v3.5.0
+**Last updated:** v3.7.0
 
 ---
 
@@ -1030,11 +1030,15 @@ aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501
 - `--with-gemini` - Google Gemini CLI
 - `--with-pi` - Mario Zechner's Pi coding agent
 
+**Available tools (non-harness):**
+- `--with-openspec` - Fission AI OpenSpec development workflow tool
+
 **Version pinning:**
 Use `=VERSION` syntax to pin specific versions:
 ```bash
 --with-claude=2.0.22
 --with-codex=0.1.2025062501
+--with-openspec=1.2.3
 ```
 
 Omit version for latest:
@@ -1043,7 +1047,7 @@ Omit version for latest:
 ```
 
 **State tracking:**
-aishell saves harness selection in `~/.aishell/state.edn` and preserves it across updates.
+aishell saves harness selection and tool configuration in `~/.aishell/state.edn` and preserves it across updates.
 
 ---
 
@@ -1137,6 +1141,7 @@ aishell update --force
 - Enabled harnesses (`--with-claude`, etc.)
 - Harness version pins
 - Gitleaks installation status (`--with-gitleaks` opt-in)
+- OpenSpec installation status (`--with-openspec` opt-in)
 
 **Cannot change harness selection.**
 To add or remove harnesses, use `aishell setup`:
