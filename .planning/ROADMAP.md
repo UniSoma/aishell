@@ -166,10 +166,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. CLI version string reports 3.7.0
   2. CHANGELOG.md has a v3.7.0 entry summarizing OpenSpec support
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 65-01: TBD
+- [ ] 65-01-PLAN.md -- Version bump to 3.7.0 and CHANGELOG entry
 
 ## Progress
 
