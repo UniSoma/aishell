@@ -124,7 +124,7 @@ See MILESTONES.md for details.
 
 - [x] **Phase 63: Core OpenSpec Integration** - Build flag, version pinning, volume install, and state tracking (completed 2026-02-18)
 - [x] **Phase 64: Documentation** - All 6 user-facing docs updated for OpenSpec (completed 2026-02-18)
-- [ ] **Phase 65: Release** - Version bump to 3.7.0 and changelog
+- [x] **Phase 65: Release** - Version bump to 3.7.0 and changelog (completed 2026-02-18)
 
 ## Phase Details
 
@@ -194,4 +194,4 @@ Phases execute in numeric order: 63 → 64 → 65
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
 | 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
 | 64. Documentation | 2/2 | Complete    | 2026-02-18 | - |
-| 65. Release | v3.7.0 | 0/? | Not started | - |
+| 65. Release | 1/1 | Complete   | 2026-02-18 | - |

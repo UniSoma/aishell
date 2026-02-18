@@ -24,7 +24,7 @@ Requirements for OpenSpec support milestone. Each maps to roadmap phases.
 
 ### Release
 
-- [ ] **REL-01**: Version bumped to 3.7.0 and CHANGELOG.md updated
+- [x] **REL-01**: Version bumped to 3.7.0 and CHANGELOG.md updated
 
 ## Future Requirements
 
@@ -48,7 +48,7 @@ None currently deferred.
 | VOL-01 | Phase 63 | Complete |
 | VOL-02 | Phase 63 | Complete |
 | DOCS-01 | Phase 64 | Complete |
-| REL-01 | Phase 65 | Pending |
+| REL-01 | Phase 65 | Complete |
 
 **Coverage:**
 - v3.7.0 requirements: 7 total

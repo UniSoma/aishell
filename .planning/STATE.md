@@ -5,24 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Run agentic AI harnesses in isolated, reproducible environments without polluting the host system
-**Current focus:** v3.7.0 OpenSpec Support - Phase 64
+**Current focus:** v3.7.0 OpenSpec Support - Phase 65
 
 ## Current Position
 
-Phase: 64 of 65 (Documentation)
-Plan: 2 of 2 in current phase
-Status: Phase 64 complete
-Last activity: 2026-02-18 — Completed 64-01 (User-Facing Documentation)
+Phase: 65 of 65 (Release)
+Plan: 1 of 1 in current phase
+Status: Phase 65 complete
+Last activity: 2026-02-18 — Completed 65-01 (Version Bump and CHANGELOG)
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 137 across 15 milestones
-- Milestones shipped: 15 (v1.0 -> v3.6.0)
+- Total plans completed: 138 across 16 milestones
+- Milestones shipped: 16 (v1.0 -> v3.7.0)
 
 **Recent Trend:**
+- v3.7.0: 5 plans, 1 day
 - v3.5.0: 5 plans, 1 day
 - v3.1.0: 9 plans, 2 days
 - v3.0.0: 9 plans, 1 day
@@ -50,6 +51,7 @@ Recent decisions for v3.7.0:
 - [Phase 64]: No data mounts added for OpenSpec (no config directory)
 - [Phase 64]: OpenSpec documented under 'Additional Tools' section in HARNESSES.md, not as a harness
 - [Phase 64]: All user-facing doc files version-bumped to v3.7.0
+- [Phase 65]: No link references added to CHANGELOG (project convention)
 
 ### Pending Todos
 
@@ -71,9 +73,10 @@ None.
 | Phase 63 P02 | 1min | 2 tasks | 2 files |
 | Phase 64 P01 | 2min | 2 tasks | 3 files |
 | Phase 64 P02 | 1min | 2 tasks | 3 files |
+| Phase 65 P01 | 1min | 2 tasks | 2 files |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 64-01-PLAN.md (Phase 64 complete)
-Resume file: .planning/phases/64-documentation/64-01-SUMMARY.md
+Stopped at: Completed 65-01-PLAN.md (Phase 65 complete - v3.7.0 milestone done)
+Resume file: .planning/phases/65-release/65-01-SUMMARY.md
