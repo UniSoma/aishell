@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-02-19
+
 ### Added
 
 - **VSCode argument passthrough**: Extra arguments to `aishell vscode` are now passed through to the `code` CLI (e.g., `aishell vscode --profile Work`). Supports `harness_args.vscode` config for persistent defaults.
+- **`aishell info --foundation`**: Print the embedded foundation Dockerfile
+
+### Fixed
+
+- **`aishell update` foundation staleness check**: Now always checks whether the foundation image is stale, not just when `--force` is passed
 
 ## [3.8.1] - 2026-02-19
 
