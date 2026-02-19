@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **VSCode argument passthrough**: Extra arguments to `aishell vscode` are now passed through to the `code` CLI (e.g., `aishell vscode --profile Work`). Supports `harness_args.vscode` config for persistent defaults.
+
 ## [3.8.1] - 2026-02-19
 
 ### Fixed

@@ -578,11 +578,13 @@
 
                    :else
                    (attach/attach-to-container (first rest-args))))
-      "vscode" (let [rest-args (vec (rest clean-args))]
+      "vscode" (let [rest-args (vec (rest clean-args))
+                     own-flags #{"--detach" "--stop" "-h" "--help"}
+                     code-args (vec (remove own-flags rest-args))]
                  (cond
                    (some #{"-h" "--help"} rest-args)
                    (do
-                     (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS]"))
+                     (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS] [-- CODE_ARGS...]"))
                      (println)
                      (println "Open VSCode attached to the aishell container as the developer user.")
                      (println (str output/YELLOW "(Experimental — API subject to change)" output/NC))
@@ -591,6 +593,10 @@
                      (println "  -h, --help      Show this help")
                      (println "      --detach    Run in background (don't wait for VSCode to close)")
                      (println "      --stop      Stop a detached vscode container")
+                     (println)
+                     (println (str output/BOLD "Extra arguments:" output/NC))
+                     (println "  Any arguments not listed above are passed through to the 'code' CLI.")
+                     (println "  Default args can be set via harness_args.vscode in .aishell/config.yaml.")
                      (println)
                      (println (str output/BOLD "What this does:" output/NC))
                      (println "  1. Syncs host VSCode extensions to container config")
@@ -608,18 +614,19 @@
                      (println "  - aishell setup completed")
                      (println)
                      (println (str output/BOLD "Examples:" output/NC))
-                     (println (str "  " output/CYAN "aishell vscode" output/NC "            Open VSCode (blocks until closed)"))
-                     (println (str "  " output/CYAN "aishell vscode --detach" output/NC "   Run in background"))
-                     (println (str "  " output/CYAN "aishell vscode --stop" output/NC "     Stop a detached container")))
+                     (println (str "  " output/CYAN "aishell vscode" output/NC "                         Open VSCode (blocks until closed)"))
+                     (println (str "  " output/CYAN "aishell vscode --detach" output/NC "                Run in background"))
+                     (println (str "  " output/CYAN "aishell vscode --stop" output/NC "                  Stop a detached container"))
+                     (println (str "  " output/CYAN "aishell vscode --disable-gpu" output/NC "           Pass --disable-gpu to code"))
+                     (println (str "  " output/CYAN "aishell vscode --detach --profile Work" output/NC " Detach with a code profile")))
 
                    (some #{"--stop"} rest-args)
                    (vscode/stop-vscode)
 
-                   (some #{"--detach"} rest-args)
-                   (vscode/open-vscode {:detach? true})
-
                    :else
-                   (vscode/open-vscode)))
+                   (let [detach? (some #{"--detach"} rest-args)]
+                     (vscode/open-vscode {:detach? (boolean detach?)
+                                          :code-args code-args}))))
       "upgrade" (let [rest-args (vec (rest clean-args))]
                   (cond
                     (some #{"-h" "--help"} rest-args)

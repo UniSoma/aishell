@@ -273,9 +273,15 @@ aishell vscode --detach
 
 # Stop a detached container when done
 aishell vscode --stop
+
+# Pass extra arguments through to the 'code' CLI
+aishell vscode --profile Work
+aishell vscode --detach --disable-gpu
 ```
 
 By default, aishell waits for the VSCode window to close, then stops the container automatically. Use `--detach` to leave the container running in the background. Multiple `aishell vscode` instances can run simultaneously — each opens a dedicated window.
+
+Any arguments not recognized by aishell (`--detach`, `--stop`, `--help`) are passed through to the `code` CLI. You can also set persistent defaults via `harness_args.vscode` in your [config](docs/CONFIGURATION.md#harness_args).
 
 The `~/.vscode-server` directory is mounted into the container, so VSCode server extensions and cached data persist across container restarts.
 

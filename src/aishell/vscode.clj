@@ -108,22 +108,26 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 
 (defn- launch-vscode!
   "Launch VSCode attached to the container. When wait? is true, opens a new
-   window and blocks until it is closed."
-  [container-name project-dir wait?]
+   window and blocks until it is closed. Extra args are passed through to code."
+  [container-name project-dir wait? extra-args]
   (let [hex-name (hex-encode container-name)
         workspace-path (if (fs/windows?) "/workspace" project-dir)
-        uri (str "vscode-remote://attached-container+" hex-name workspace-path)]
+        uri (str "vscode-remote://attached-container+" hex-name workspace-path)
+        base-args (if wait?
+                    ["code" "--new-window" "--folder-uri" uri "--wait"]
+                    ["code" "--folder-uri" uri])
+        all-args (into base-args extra-args)]
     (println "Opening VSCode attached to container...")
-    (if wait?
-      (p/shell {:inherit true} "code" "--new-window" "--folder-uri" uri "--wait")
-      (p/shell {:inherit true} "code" "--folder-uri" uri))))
+    (apply p/shell {:inherit true} all-args)))
 
 (defn open-vscode
   "Main entry point for 'aishell vscode' command.
    Opens VSCode attached to the aishell container as developer user.
    By default blocks until VSCode window closes, then stops the container.
-   With detach?=true, returns immediately and leaves container running."
-  [& [{:keys [detach?]}]]
+   With detach?=true, returns immediately and leaves container running.
+   Extra code-args are passed through to the 'code' CLI, merged after
+   harness_args.vscode defaults from config."
+  [& [{:keys [detach? code-args]}]]
   ;; 1. Check prerequisites
   (check-vscode!)
   (docker/check-docker!)
@@ -136,16 +140,25 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 
     ;; 3. Resolve image tag (handles extensions like aishell claude does)
     (let [base-tag (or (:image-tag state) build/foundation-image-tag)
-          image-tag (run/resolve-image-tag base-tag project-dir false)]
+          image-tag (run/resolve-image-tag base-tag project-dir false)
+          cfg (config/load-config project-dir)
 
-      ;; 4. Write per-image config (advisory, non-blocking)
+          ;; 4. Merge harness_args.vscode defaults with CLI args
+          defaults (vec (or (get-in cfg [:harness_args :vscode]) []))
+          extra-args (vec (concat defaults (or code-args [])))
+          _ (when (seq defaults)
+              (output/verbose (str "harness_args.vscode defaults: " (pr-str defaults))))
+          _ (when (seq extra-args)
+              (output/verbose (str "Passing to code CLI: " (pr-str extra-args))))]
+
+      ;; 5. Write per-image config (advisory, non-blocking)
       (ensure-imageconfig! image-tag)
 
-      ;; 5. Start container and launch VSCode
+      ;; 6. Start container and launch VSCode
       (let [container-name (start-container! state project-dir image-tag)]
         (if detach?
           (do
-            (launch-vscode! container-name project-dir false)
+            (launch-vscode! container-name project-dir false extra-args)
             (println "VSCode should open shortly. Container will keep running in the background.\nStop it with: aishell vscode --stop"))
           ;; Wait mode: --new-window ensures each instance gets its own window,
           ;; so multiple `aishell vscode` processes don't interfere via --wait.
@@ -159,6 +172,6 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
             (.addShutdownHook (Runtime/getRuntime)
               (Thread. (fn [] (cleanup! true))))
             (try
-              (launch-vscode! container-name project-dir true)
+              (launch-vscode! container-name project-dir true extra-args)
               (catch Exception _))
             (cleanup! false)))))))

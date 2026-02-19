@@ -208,6 +208,9 @@ harness_args:
   pi:
     - "--print"
     - "hello"
+  vscode:
+    - "--profile"
+    - "Work"
 
 # String shorthand (single arg):
 # harness_args:
@@ -591,7 +594,7 @@ pre_start: "echo 'Step 1' && echo 'Step 2'"
 
 **Type:** Map of harness name to list (or string)
 
-**Harness names:** `claude`, `opencode`, `codex`, `gemini`, `pi`
+**Harness names:** `claude`, `opencode`, `codex`, `gemini`, `pi`, `vscode`
 
 **Example:**
 
@@ -622,6 +625,11 @@ harness_args:
   pi:
     - "--print"
     - "hello"
+
+  # VSCode defaults (passed to 'code' CLI)
+  vscode:
+    - "--profile"
+    - "Work"
 
 # String shorthand (single arg)
 # harness_args:
