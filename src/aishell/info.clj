@@ -79,12 +79,20 @@
   "Print structured summary of the aishell image stack."
   [args]
   (when (some #{"-h" "--help"} args)
-    (println (str output/BOLD "Usage:" output/NC " aishell info"))
+    (println (str output/BOLD "Usage:" output/NC " aishell info [--foundation]"))
     (println)
     (println "Display information about the aishell image stack.")
     (println)
+    (println "Options:")
+    (println "  --foundation  Print the embedded foundation Dockerfile")
+    (println)
     (println "Shows foundation contents, base customization status,")
     (println "project extension status, and installed harnesses.")
+    (System/exit 0))
+
+  (when (some #{"--foundation"} args)
+    (print templates/base-dockerfile)
+    (flush)
     (System/exit 0))
 
   (let [dockerfile templates/base-dockerfile
