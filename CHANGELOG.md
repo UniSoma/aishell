@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-02-19
+
+Global Base Image Customization. Users can customize the base image globally
+by creating `~/.aishell/Dockerfile`, enabling a three-tier image chain that
+cascades rebuilds automatically.
+
+### Added
+
+- **Three-tier image chain**: `aishell:foundation` -> `aishell:base` -> `aishell:ext-{hash}` architecture
+- **Global base image customization**: Create `~/.aishell/Dockerfile` to customize the base image for all projects
+- **Lazy base image builds**: Base image builds automatically on first container run when global Dockerfile is detected
+- **Cascade rebuilds**: Foundation change triggers base rebuild, which triggers extension rebuilds
+- **`aishell check` base image status**: Shows whether base image is custom or default alias
+- **`aishell setup --force` and `aishell update --force`**: Rebuild the base image alongside foundation
+- **`aishell volumes prune`**: Cleans up orphaned custom base images
+- **`FROM aishell:base` in project Dockerfiles**: Now recommended (inherits global customizations); `FROM aishell:foundation` also valid
+
+### Changed
+
+- Extension Dockerfiles now build on `aishell:base` (which may be customized) instead of directly on `aishell:foundation`
+- Removed legacy `FROM aishell:base` validation error (it is now the recommended FROM line)
+
+### Docs
+
+- README.md updated with global base image feature mention
+- ARCHITECTURE.md updated with three-tier image chain, Docker labels, rebuild triggers, and cascade behavior
+- CONFIGURATION.md updated with Global Base Image Customization section and 3 use case examples
+- HARNESSES.md updated with base image customization note
+- TROUBLESHOOTING.md updated with base image build failures and reset procedure
+- DEVELOPMENT.md updated with docker/base.clj module documentation
+
 ## [3.7.0] - 2026-02-18
 
 OpenSpec as an opt-in development workflow tool. Build with `--with-openspec`
