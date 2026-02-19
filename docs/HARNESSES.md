@@ -842,7 +842,7 @@ harnesses:
 ### Configuration Persistence
 
 **Config not persisting:**
-- Verify volume mounts with `aishell info`
+- Check image stack and installed harnesses with `aishell info`
 - Check config directory permissions in the container
 - Confirm `~/.aishell/config.yaml` mounts correctly
 

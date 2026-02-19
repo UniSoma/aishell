@@ -89,6 +89,7 @@ aishell/
 │   │   └── warnings.clj      # Gitleaks reminder warnings
 │   ├── attach.clj            # Attach command (reconnect to containers)
 │   ├── check.clj             # Pre-flight validation command
+│   ├── info.clj              # Image stack info display
 │   ├── validation.clj        # Argument validation
 │   ├── migration.clj         # Version migration warnings (v2.9.0+)
 │   ├── output.clj            # Terminal output utilities
@@ -105,6 +106,7 @@ aishell/
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
 - **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning
+- **info.clj:** Display image stack info (foundation contents, base/extension status, harnesses)
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
 - **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)

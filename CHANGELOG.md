@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`aishell info` command**: Display image stack summary — foundation contents, base customization status, project extension status, and installed harnesses
+
 ## [3.8.0] - 2026-02-19
 
 Global Base Image Customization. Users can customize the base image globally

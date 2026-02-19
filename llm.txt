@@ -188,6 +188,20 @@ aishell upgrade 3.2.0     # Downgrade to older version (shows warning)
 
 Requires `curl` or `wget`. On Windows, also updates the `aishell.bat` wrapper.
 
+### info
+
+Display information about the aishell image stack. Shows foundation contents, base customization status, project extension status, and installed harnesses. Works without Docker running — reads from embedded templates and saved state.
+
+```
+aishell info
+```
+
+Output includes:
+- Foundation image contents (base OS, system packages, runtimes)
+- Base image status (default alias or custom `~/.aishell/Dockerfile`)
+- Project extension status (whether `.aishell/Dockerfile` exists)
+- Installed harnesses with versions (from `~/.aishell/state.edn`)
+
 ### --version
 
 ```

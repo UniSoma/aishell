@@ -178,6 +178,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Attach** - Open a shell in a running container via `aishell attach`
 - **Container discovery** - List project containers with `aishell ps`
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
+- **Image info** - Show image stack and installed tools with `aishell info`
 - **Self-upgrade** - Update aishell itself with `aishell upgrade`, with checksum verification
 
 ## Usage
