@@ -70,6 +70,7 @@ aishell/
 │   ├── config.clj            # Configuration loading and merging
 │   ├── state.clj             # State persistence (state.edn)
 │   ├── docker/
+│   │   ├── base.clj          # Global base image customization (three-tier chain)
 │   │   ├── build.clj         # Foundation image build orchestration
 │   │   ├── run.clj           # Docker run argument construction
 │   │   ├── templates.clj     # Dockerfile template generation
@@ -99,6 +100,7 @@ aishell/
 
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
+- **docker/base.clj:** Global base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `global-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
 - **docker/build.clj:** Orchestrate foundation image build, manage state
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
@@ -204,18 +206,19 @@ aishell/
 
 **Source:** `docker/extension/build-project-extension`
 
-**v2.7.0 behavior:**
-- Used the base image ID to invalidate cache
-- A harness version change rebuilt the base image, which invalidated the extension cache
+**Three-tier model (current):**
+- Extensions track the base image ID via `aishell.base.id` label
+- When `aishell:base` changes (global Dockerfile modified or foundation updated), extensions auto-rebuild
+- The `docker/base.clj` module handles the base layer; callers pass `base/base-image-tag` to extension functions to avoid circular dependencies
 
-**v2.8.0 behavior:**
-- Uses the foundation image ID to invalidate cache
+**Previous behavior (v2.8.0):**
+- Used the foundation image ID directly to invalidate cache
 - Foundation image label: `aishell.foundation.id={image-id}`
-- Harness updates leave the foundation ID unchanged, so the cache persists
 
-**Migration detection:**
-- If label `aishell.foundation.id` is nil, the extension is old; trigger a rebuild
-- Prints: "Rebuilding extension (foundation image updated)"
+**Lazy build pattern:**
+- `ensure-base-image` is called at multiple entry points (run-container, run-exec, resolve-image-tag) for defense-in-depth
+- The base image builds lazily on first container run, not during `aishell setup`
+- This pattern ensures the base image exists before any extension build or container launch
 
 ---
 

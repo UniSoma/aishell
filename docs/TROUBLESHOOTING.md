@@ -10,6 +10,7 @@ Find the symptom you are experiencing, then follow the resolution steps.
 
 - [Quick Diagnostics](#quick-diagnostics)
 - [Setup Issues](#setup-issues)
+- [Base Image Issues](#base-image-issues)
 - [Container Issues](#container-issues)
 - [Volume Issues](#volume-issues)
 - [Authentication Issues](#authentication-issues)
@@ -180,6 +181,62 @@ sudo aishell setup --with-claude
    ```bash
    aishell setup --with-claude
    ```
+
+---
+
+## Base Image Issues
+
+### Base Image Build Failures
+
+**Symptom:** Base image build fails with Docker error output when running `aishell claude` (or any harness).
+
+**Cause:** Syntax error or invalid command in `~/.aishell/Dockerfile`.
+
+**Resolution:**
+
+1. **Read the build output:** aishell shows the full Docker build error output when the base image build fails (hard-stop behavior).
+
+2. **Fix the Dockerfile:**
+   ```bash
+   # Edit the global Dockerfile
+   vim ~/.aishell/Dockerfile
+   ```
+
+3. **Common issues:**
+   - Invalid package names in `apt-get install`
+   - Missing backslashes in multi-line `RUN` commands
+   - Commands that require interactive input (use `-y` flag with apt-get)
+   - Referencing files that don't exist in the build context
+
+4. **Test manually:**
+   ```bash
+   docker build -f ~/.aishell/Dockerfile -t test-base ~/.aishell/
+   ```
+
+5. **Revert to default:** Delete the file to skip the custom base image entirely:
+   ```bash
+   rm ~/.aishell/Dockerfile
+   ```
+
+### Reset Global Base Image
+
+**Symptom:** You want to remove global base image customizations and revert to the default.
+
+**Resolution:**
+
+1. **Delete the global Dockerfile:**
+   ```bash
+   rm ~/.aishell/Dockerfile
+   ```
+
+2. **On the next `aishell` run**, `aishell:base` automatically reverts to a tag alias for `aishell:foundation`.
+
+3. **Clean up orphaned base image:**
+   ```bash
+   aishell volumes prune
+   ```
+
+**Note:** You do not need to rebuild or run `aishell setup` after deleting the file. The reset happens automatically on the next run.
 
 ---
 
@@ -460,29 +517,13 @@ Pruning removes only volumes not referenced by current state. The active volume 
 
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
-**Cause:** v2.8.0 renamed `aishell:base` to `aishell:foundation`. Update your custom `.aishell/Dockerfile`.
+**Note:** As of the global base image customization feature, `FROM aishell:base` is now valid and recommended for project `.aishell/Dockerfile` files. The `aishell:base` tag always exists -- either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
 
-**Resolution:**
+If you see this error on an older version of aishell, update aishell to the latest version:
 
-1. **Edit `.aishell/Dockerfile`:**
-   ```dockerfile
-   # Change this:
-   FROM aishell:base
-
-   # To this:
-   FROM aishell:foundation
-   ```
-
-2. **Rebuild:**
-   ```bash
-   aishell setup --with-claude
-   ```
-
-**Migration detection:**
-aishell detects `FROM aishell:base` and shows an error with migration instructions.
-
-**Backward compatibility:**
-Only the tag name changed. Functionality is identical.
+```bash
+aishell upgrade
+```
 
 ---
 
