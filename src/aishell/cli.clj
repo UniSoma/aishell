@@ -18,7 +18,8 @@
             [aishell.attach :as attach]
             [aishell.vscode :as vscode]
             [aishell.upgrade :as upgrade]
-            [aishell.migration :as migration]))
+            [aishell.migration :as migration]
+            [aishell.info :as info]))
 
 (def version "3.8.0")
 
@@ -112,6 +113,7 @@
   (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
   (println (str "  " output/CYAN "attach, a" output/NC "  Attach to running container"))
   (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode attached to container"))
+  (println (str "  " output/CYAN "info" output/NC "       Show image stack and installed tools"))
   (println (str "  " output/CYAN "upgrade" output/NC "    Upgrade aishell to latest version"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
@@ -530,7 +532,7 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade"}
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade" "info"}
         should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
@@ -544,6 +546,7 @@
     ;; Handle pass-through commands before standard dispatch
     ;; This ensures all args (including --help, --version) go to the harness
     (case (first clean-args)
+      "info" (info/run-info (vec (rest clean-args)))
       "check" (check/run-check)
       "exec" (run/run-exec (vec (rest clean-args)))
       "ps" (handle-ps nil)

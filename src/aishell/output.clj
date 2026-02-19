@@ -65,7 +65,7 @@
 ;; Known commands for suggestion matching
 (def known-commands #{"setup" "update" "check" "exec" "attach" "ps" "volumes"
                       "claude" "opencode" "codex" "gemini" "gitleaks" "vscode"
-                      "upgrade"})
+                      "upgrade" "info"})
 
 (defn- levenshtein-distance
   "Calculate edit distance between two strings."
