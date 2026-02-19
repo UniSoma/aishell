@@ -16,8 +16,7 @@
 - ✅ **v3.0.0 Docker-native Attach** - Phases 46-52 (shipped 2026-02-06)
 - ✅ **v3.1.0 Native Windows Support** - Phases 53-59 (shipped 2026-02-12)
 - ✅ **v3.5.0 Pi Coding Agent Support** - Phases 60-62 (shipped 2026-02-18)
-- 🚧 **v3.7.0 OpenSpec Support** - Phases 63-65 (in progress)
-- 🚧 **v3.8.0 Global Base Image Customization** - Phase 66 (in progress)
+- ✅ **v3.8.0 OpenSpec Support & Global Base Image Customization** - Phases 63-66 (shipped 2026-02-19)
 
 ## Phases
 
@@ -119,63 +118,14 @@ See MILESTONES.md for details.
 
 </details>
 
-### 🚧 v3.7.0 OpenSpec Support (In Progress)
+<details>
+<summary>✅ v3.8.0 OpenSpec Support & Global Base Image Customization (Phases 63-66) - SHIPPED 2026-02-19</summary>
 
-**Milestone Goal:** Add OpenSpec as an opt-in development workflow tool available inside containers, following the established `--with-*` build flag pattern.
+See MILESTONES.md for details.
 
-- [x] **Phase 63: Core OpenSpec Integration** - Build flag, version pinning, volume install, and state tracking (completed 2026-02-18)
-- [x] **Phase 64: Documentation** - All 6 user-facing docs updated for OpenSpec (completed 2026-02-18)
-- [x] **Phase 65: Release** - Version bump to 3.7.0 and changelog (completed 2026-02-18)
-
-## Phase Details
-
-### Phase 63: Core OpenSpec Integration
-**Goal**: Users can opt into OpenSpec at build time and use it inside containers
-**Depends on**: Nothing (first phase of milestone)
-**Requirements**: BUILD-01, BUILD-02, BUILD-03, VOL-01, VOL-02
-**Success Criteria** (what must be TRUE):
-  1. User can run `aishell build --with-openspec` and the build completes successfully with OpenSpec enabled
-  2. User can run `aishell build --with-openspec=1.2.3` to pin a specific OpenSpec version
-  3. Running `aishell shell` after building with `--with-openspec` gives access to the `openspec` command inside the container
-  4. Rebuilding without `--with-openspec` after a previous build with it results in OpenSpec no longer being available (state correctly tracks opt-in/out)
-  5. Changing the OpenSpec version or toggling its enabled state triggers volume recreation on next container run (hash invalidation works)
-**Plans**: 2 plans
-
-Plans:
-- [ ] 63-01-PLAN.md -- Build flag, state persistence, volume registration, setup/update wiring
-- [ ] 63-02-PLAN.md -- Runtime volume trigger, check command status display
-
-### Phase 64: Documentation
-**Goal**: All user-facing documentation reflects OpenSpec availability and usage
-**Depends on**: Phase 63
-**Requirements**: DOCS-01
-**Success Criteria** (what must be TRUE):
-  1. README.md mentions OpenSpec as an available tool with `--with-openspec` build flag
-  2. docs/HARNESSES.md (or equivalent section) describes OpenSpec, its purpose, and how to enable it
-  3. docs/CONFIGURATION.md documents the `--with-openspec` and `--with-openspec=VERSION` flags
-  4. docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, and docs/DEVELOPMENT.md are updated where OpenSpec affects their content
-**Plans**: 2 plans
-
-Plans:
-- [ ] 64-01-PLAN.md -- User-facing docs: README.md, HARNESSES.md, CONFIGURATION.md
-- [ ] 64-02-PLAN.md -- Internal/developer docs: ARCHITECTURE.md, TROUBLESHOOTING.md, DEVELOPMENT.md
-
-### Phase 65: Release
-**Goal**: v3.7.0 is tagged and ready for users
-**Depends on**: Phase 64
-**Requirements**: REL-01
-**Success Criteria** (what must be TRUE):
-  1. CLI version string reports 3.7.0
-  2. CHANGELOG.md has a v3.7.0 entry summarizing OpenSpec support
-**Plans**: 1 plan
-
-Plans:
-- [ ] 65-01-PLAN.md -- Version bump to 3.7.0 and CHANGELOG entry
+</details>
 
 ## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 63 → 64 → 65
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -193,43 +143,4 @@ Phases execute in numeric order: 63 → 64 → 65
 | 46-52. Docker-native Attach | v3.0.0 | All | Complete | 2026-02-06 |
 | 53-59. Native Windows Support | v3.1.0 | All | Complete | 2026-02-12 |
 | 60-62. Pi Coding Agent | v3.5.0 | All | Complete | 2026-02-18 |
-| 63. Core OpenSpec Integration | 2/2 | Complete    | 2026-02-18 | - |
-| 64. Documentation | 2/2 | Complete    | 2026-02-18 | - |
-| 65. Release | 1/1 | Complete    | 2026-02-18 | - |
-
-### Phase 66: Global base image customization
-
-**Goal:** Introduce `aishell:base` as an intermediate image layer between `aishell:foundation` and project extensions, enabling advanced users to globally customize their base image via `~/.aishell/Dockerfile`
-
-**Design:**
-- `aishell:foundation` is always built by `aishell setup` (unchanged)
-- `aishell:base` is a new intermediate layer:
-  - If `~/.aishell/Dockerfile` exists → build from it, tag as `aishell:base`
-  - If no global Dockerfile → `aishell:base` is an alias (tag) for `aishell:foundation`
-- Project `.aishell/Dockerfile` builds `FROM aishell:base` (not foundation), so project extensions inherit global customizations
-- Image selection at run time: project Dockerfile exists → use project ext image; otherwise → use `aishell:base`
-
-**Three-tier chain:** `aishell:foundation` → `aishell:base` → `aishell:ext-{hash}`
-
-**Rebuild triggers:**
-- Foundation change → rebuild base (if global Dockerfile) → rebuild all ext images
-- `~/.aishell/Dockerfile` content change → rebuild base → rebuild all ext images
-- Track via Docker labels (same pattern as existing extension images)
-
-**Depends on:** Phase 65
-**Requirements:** BASE-01, BASE-02, BASE-03, BASE-04, BASE-05, BASE-06, BASE-07, BASE-08, BASE-09, BASE-10
-**Success Criteria** (what must be TRUE):
-  1. Creating `~/.aishell/Dockerfile` causes `aishell:base` to be built from it on next container run
-  2. Without `~/.aishell/Dockerfile`, `aishell:base` is a tag alias for `aishell:foundation`
-  3. Changing global Dockerfile content triggers base image rebuild, which cascades to extension rebuilds
-  4. `aishell check` shows "Base image: custom" or "Base image: default (foundation alias)"
-  5. `aishell setup --force` and `aishell update --force` rebuild the base image
-  6. Deleting `~/.aishell/Dockerfile` and running `aishell volumes prune` resets base to foundation alias
-  7. Project Dockerfiles can use `FROM aishell:base` (no error)
-**Plans:** 4/4 plans complete
-
-Plans:
-- [ ] 66-01-PLAN.md -- Core base image module + setup/update integration
-- [ ] 66-02-PLAN.md -- Run path lazy build + extension + check + volumes prune
-- [ ] 66-03-PLAN.md -- Documentation updates
-- [ ] 66-04-PLAN.md -- Version bump to 3.8.0 and CHANGELOG
+| 63-66. OpenSpec & Base Image | v3.8.0 | All | Complete | 2026-02-19 |

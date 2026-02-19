@@ -138,18 +138,18 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 - ✓ Pi config directory (~/.pi/) mounted from host — v3.5.0
 - ✓ Documentation updates across all 6 user-facing docs — v3.5.0
 
+**v3.8.0 (2026-02-19) — OpenSpec Support & Global Base Image Customization:**
+- ✓ OpenSpec opt-in via `--with-openspec` build flag with version pinning — v3.8.0
+- ✓ OpenSpec npm package installed in harness volume with state tracking — v3.8.0
+- ✓ Three-tier image chain: `aishell:foundation` -> `aishell:base` -> `aishell:ext-{hash}` — v3.8.0
+- ✓ Global Dockerfile customization via `~/.aishell/Dockerfile` — v3.8.0
+- ✓ Label-based base image staleness detection with cascade rebuild triggers — v3.8.0
+- ✓ `aishell info` command for image stack summary — v3.8.0
+- ✓ Documentation updates across all 6 user-facing docs — v3.8.0
+
 ### Active
 
-## Current Milestone: v3.7.0 OpenSpec Support
-
-**Goal:** Add OpenSpec as an opt-in development workflow tool available inside containers, following the established `--with-*` build flag pattern.
-
-**Target features:**
-- `--with-openspec` build flag for opt-in installation
-- `--openspec-version` version pinning at build time
-- OpenSpec npm package installed in harness volume
-- State tracking in state.edn
-- Documentation updates across all 6 user-facing docs
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -166,13 +166,15 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 
 ## Current State
 
-**Shipped:** v3.6.0 Scoped API Keys (2026-02-18)
-**Current:** v3.7.0 OpenSpec Support
+**Shipped:** v3.8.0 OpenSpec Support & Global Base Image Customization (2026-02-19)
+**Current:** Planning next milestone
 
-**Codebase:** ~4,164 LOC Clojure (Babashka)
+**Codebase:** ~5,063 LOC Clojure (Babashka)
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
 **Platforms:** Linux, macOS, Windows (cmd.exe/PowerShell with Docker Desktop WSL2)
 **Harnesses:** Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi
+**Additional tools:** OpenSpec (opt-in)
+**Image architecture:** Three-tier (foundation -> base -> extension)
 **Documentation:** 5,000+ lines across docs/ and README
 
 ## Milestone Conventions
@@ -352,5 +354,18 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 | Profile.d script for login shell environment | Fixes tmux new-window PATH loss; POSIX compatible | Good |
 | Unconditional delete + recreate for volume update | Simpler than staleness check; guarantees clean slate | Good |
 
+**v3.8.0 (OpenSpec Support & Global Base Image Customization):**
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| OpenSpec is NOT a harness | No dispatch entry, no config mounts, no API key passthrough; just an npm tool | Good |
+| Non-harness tools use harness-keys/harness-npm-packages pattern | Consistent registration without dispatch table entry | Good |
+| Three-tier image chain (foundation -> base -> extension) | Global customization layer without breaking existing extension mechanism | Good |
+| Tag-alias when no global Dockerfile | Zero overhead when feature unused; `docker tag` is instant | Good |
+| Label-based staleness for base images | Same proven pattern as extension images; consistent codebase | Good |
+| Hard-stop on base build failure | User explicitly created Dockerfile, so failures should be visible | Good |
+| Base tag passed as parameter to extension | Avoids circular dependency between base.clj and extension.clj | Good |
+| Extension rebuild tracks base image ID (not foundation) | Three-tier chain: base change cascades to extensions automatically | Good |
+
 ---
-*Last updated: 2026-02-18 after v3.5.0 milestone*
+*Last updated: 2026-02-19 after v3.8.0 milestone*

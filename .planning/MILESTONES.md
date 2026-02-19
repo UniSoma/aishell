@@ -1,5 +1,35 @@
 # Project Milestones: Agentic Harness Sandbox
 
+## v3.8.0 OpenSpec Support & Global Base Image Customization (Shipped: 2026-02-19)
+
+**Delivered:** Added OpenSpec as opt-in development workflow tool and introduced three-tier image architecture (foundation -> base -> extension) enabling global Dockerfile customization via `~/.aishell/Dockerfile`.
+
+**Phases completed:** 63-66 (9 plans total)
+
+**Key accomplishments:**
+
+- OpenSpec registered as opt-in npm tool with `--with-openspec` build flag, version pinning, volume install, and state tracking
+- Three-tier image chain: `aishell:foundation` -> `aishell:base` -> `aishell:ext-{hash}` with cascade rebuild triggers
+- Global Dockerfile customization via `~/.aishell/Dockerfile` — base image built from it or aliased to foundation when absent
+- Label-based staleness detection for base images (same pattern as extension images)
+- `aishell info` command for image stack summary
+- `aishell check` shows base image status (custom vs default)
+- Orphaned base image cleanup via `aishell volumes prune`
+- Documentation updates across all 6 user-facing docs and version bump to 3.8.0
+
+**Stats:**
+
+- 66 files changed (+6,703/-242 lines)
+- 5,063 lines of Clojure (total codebase)
+- 4 phases, 9 plans
+- 2 days (2026-02-18 -> 2026-02-19)
+
+**Git range:** `feat(63-01)` -> `docs(phase-66)` (35 commits)
+
+**What's next:** Podman support, stale foundation image detection, editor integration, or new harnesses
+
+---
+
 ## v3.0.0 Docker-native Attach (Shipped: 2026-02-06)
 
 **Delivered:** Removed tmux from containers entirely, simplified attach to docker exec bash, removed detached mode, and streamlined CLI semantics so window management belongs on the host.
@@ -389,6 +419,16 @@
 **Git range:** `feat(60-01)` → `docs(62-02)` (16 commits)
 
 **What's next:** Pi extensions/skills mounting, Pi RPC mode, Podman support, or new harnesses
+
+---
+
+
+## v3.8.0 OpenSpec Support & Global Base Image Customization (Shipped: 2026-02-19)
+
+**Phases completed:** 67 phases, 133 plans, 23 tasks
+
+**Key accomplishments:**
+- (none recorded)
 
 ---
 
