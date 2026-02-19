@@ -56,6 +56,14 @@
   []
   (some? (docker/get-image-label base-image-tag base-dockerfile-hash-label)))
 
+(defn- base-matches-foundation?
+  "Check if base image is the same image as foundation (alias is current).
+   Compares actual Docker image IDs."
+  []
+  (let [base-id (ext/get-foundation-image-id base-image-tag)
+        foundation-id (ext/get-foundation-image-id "aishell:foundation")]
+    (and base-id foundation-id (= base-id foundation-id))))
+
 (defn needs-base-rebuild?
   "Check if custom base image needs rebuilding.
 
@@ -156,7 +164,9 @@
           (println "Base image aishell:base is up to date"))
         {:success true :image base-image-tag :cached true}))
     ;; No Dockerfile — alias path
+    ;; Re-tag if: base missing, was custom-built, or base image ID != foundation ID
     (if (or (not (docker/image-exists? base-image-tag))
-            (has-custom-base-label?))
+            (has-custom-base-label?)
+            (not (base-matches-foundation?)))
       (tag-foundation-as-base)
       {:success true :image base-image-tag :alias true})))
