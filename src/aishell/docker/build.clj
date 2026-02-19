@@ -70,16 +70,16 @@
   [build-dir tag args verbose? force?]
   (let [cmd (vec (concat ["docker" "build" "-t" tag]
                          (when force? ["--no-cache"])
-                         (when verbose? ["--progress=plain"])
                          args
                          ["."]))]
     (if verbose?
-      ;; Verbose: inherit output streams
-      (let [{:keys [exit]} (apply p/process {:dir (str build-dir)
-                                             :out :inherit
-                                             :err :inherit}
-                                            cmd)]
-        (zero? @exit))
+      ;; Verbose: inherit output streams (blocking)
+      (let [{:keys [exit]} (apply p/shell {:dir (str build-dir)
+                                           :out :inherit
+                                           :err :inherit
+                                           :continue true}
+                                          cmd)]
+        (zero? exit))
       ;; Silent: capture output
       (let [{:keys [exit out err]} (apply p/shell {:dir (str build-dir)
                                                    :out :string

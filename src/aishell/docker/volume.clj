@@ -308,11 +308,12 @@
              "sh" "-c" install-commands]]
     (try
       (if verbose?
-        ;; Verbose: inherit output streams
-        (let [{:keys [exit]} (apply p/process {:out :inherit
-                                               :err :inherit}
-                                    cmd)]
-          {:success (zero? @exit) :volume volume-name})
+        ;; Verbose: inherit output streams (blocking)
+        (let [{:keys [exit]} (apply p/shell {:out :inherit
+                                             :err :inherit
+                                             :continue true}
+                                   cmd)]
+          {:success (zero? exit) :volume volume-name})
         ;; Silent: wrap in spinner
         (let [result (spinner/with-spinner "Populating harness volume"
                                            #(let [{:keys [exit err]} (apply p/shell {:out :string

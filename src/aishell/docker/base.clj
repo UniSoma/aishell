@@ -107,8 +107,7 @@
                             "-t" base-image-tag
                             (str "--label=" base-dockerfile-hash-label "=" df-hash)
                             (str "--label=" base-foundation-id-label "=" foundation-id)]
-                     force (conj "--no-cache")
-                     verbose (conj "--progress=plain"))
+                     force (conj "--no-cache"))
         build-fn (fn []
                    (let [{:keys [exit out err]}
                          (apply p/shell {:out :string :err :string :continue true :dir build-dir}
