@@ -326,14 +326,14 @@
       (when (:with-openspec state)
         (println (str "  OpenSpec: " (or (:openspec-version state) "latest"))))
 
-      ;; Conditionally rebuild foundation image (only with --force)
+      ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
             cfg (config/load-config project-dir)
-            result (when (:force opts)
-                     (build/build-foundation-image
-                       {:with-gitleaks (:with-gitleaks state false)
-                        :verbose (:verbose opts)
-                        :force true}))
+            result (build/build-foundation-image
+                     {:with-gitleaks (:with-gitleaks state false)
+                      :verbose (:verbose opts)
+                      :force (:force opts)
+                      :quiet (not (:force opts))})
 
             ;; Ensure aishell:base is up to date
             _ (if (:force opts)
@@ -371,13 +371,13 @@
                 ;; No harnesses enabled
                 (println "No harnesses enabled. Nothing to update."))]
 
-        ;; Update state with new build-time (and foundation-hash if --force was used)
+        ;; Update state with new build-time and current hashes
         (state/write-state
           (cond-> state
-            true (assoc :build-time (str (java.time.Instant/now)))
-            result (assoc :image-tag (:image result)
-                         :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
-                         :foundation-hash (hash/compute-hash templates/base-dockerfile))))))))
+            true (assoc :build-time (str (java.time.Instant/now))
+                        :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
+                        :foundation-hash (hash/compute-hash templates/base-dockerfile))
+            result (assoc :image-tag (:image result))))))))
 
 (defn- prompt-yn
   "Prompt user for yes/no confirmation."
