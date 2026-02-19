@@ -43,7 +43,7 @@ Requirements for Global Base Image Customization milestone. Each maps to roadmap
 
 ### Documentation
 
-- [ ] **BASE-09**: All user-facing documentation updated for base image customization feature
+- [x] **BASE-09**: All user-facing documentation updated for base image customization feature
 
 ### Release
 
@@ -80,7 +80,7 @@ None currently deferred.
 | BASE-06 | Phase 66 | Complete |
 | BASE-07 | Phase 66 | Complete |
 | BASE-08 | Phase 66 | Complete |
-| BASE-09 | Phase 66 | Pending |
+| BASE-09 | Phase 66 | Complete |
 | BASE-10 | Phase 66 | Pending |
 
 **Coverage:**

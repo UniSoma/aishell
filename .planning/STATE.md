@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 66 of 66 (Global Base Image Customization)
-Plan: 3 of 4 in current phase
+Plan: 4 of 4 in current phase
 Status: Executing phase 66
-Last activity: 2026-02-18 — Completed 66-02 (Base Image Integration)
+Last activity: 2026-02-19 — Completed 66-03 (Documentation Update)
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 138 across 16 milestones
+- Total plans completed: 139 across 16 milestones
 - Milestones shipped: 16 (v1.0 -> v3.7.0)
 
 **Recent Trend:**
@@ -60,6 +60,8 @@ Recent decisions for Phase 66:
 - [Phase 66]: Circular dependency avoided by passing base tag as parameter (not requiring base.clj in extension.clj)
 - [Phase 66]: Extension rebuild tracking uses base image ID label instead of foundation ID
 - [Phase 66]: Orphaned base image detected via dockerfile hash label presence without global Dockerfile
+- [Phase 66]: FROM aishell:base documented as recommended for project Dockerfiles (inherits global customizations)
+- [Phase 66]: Legacy FROM aishell:base error section updated to reflect it is now valid
 
 ### Pending Todos
 
@@ -88,9 +90,10 @@ None.
 | Phase 65 P01 | 1min | 2 tasks | 2 files |
 | Phase 66 P01 | 2min | 2 tasks | 2 files |
 | Phase 66 P02 | 4min | 2 tasks | 4 files |
+| Phase 66 P03 | 4min | 2 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Completed 66-02-PLAN.md
-Resume file: .planning/phases/66-global-base-image-customization/66-02-SUMMARY.md
+Last session: 2026-02-19
+Stopped at: Completed 66-03-PLAN.md
+Resume file: .planning/phases/66-global-base-image-customization/66-03-SUMMARY.md
