@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.1] - 2026-02-19
+
+### Fixed
+
+- **`--verbose` flag crashing `setup` and `update`**: Replaced non-blocking `p/process` with blocking `p/shell` in verbose code paths — volume population reported failure before the install process finished
+- **Docker CLI v29 panic with `--progress=plain`**: Removed the flag from verbose Docker builds to avoid a BuildKit crash on certain Docker versions
+
 ## [3.8.0] - 2026-02-19
 
 Global Base Image Customization. Users can customize the base image globally
