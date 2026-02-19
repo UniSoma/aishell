@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **`aishell info` command**: Display image stack summary — foundation contents, base customization status, project extension status, and installed harnesses
-
 ## [3.8.0] - 2026-02-19
 
 Global Base Image Customization. Users can customize the base image globally
@@ -19,6 +15,7 @@ cascades rebuilds automatically.
 
 ### Added
 
+- **`aishell info` command**: Display image stack summary — foundation contents, base customization status, project extension status, and installed harnesses
 - **Three-tier image chain**: `aishell:foundation` -> `aishell:base` -> `aishell:ext-{hash}` architecture
 - **Global base image customization**: Create `~/.aishell/Dockerfile` to customize the base image for all projects
 - **Lazy base image builds**: Base image builds automatically on first container run when global Dockerfile is detected
