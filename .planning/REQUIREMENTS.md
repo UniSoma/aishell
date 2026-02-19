@@ -47,7 +47,7 @@ Requirements for Global Base Image Customization milestone. Each maps to roadmap
 
 ### Release
 
-- [ ] **BASE-10**: Version bumped and CHANGELOG.md updated
+- [x] **BASE-10**: Version bumped and CHANGELOG.md updated
 
 ## Future Requirements
 
@@ -81,7 +81,7 @@ None currently deferred.
 | BASE-07 | Phase 66 | Complete |
 | BASE-08 | Phase 66 | Complete |
 | BASE-09 | Phase 66 | Complete |
-| BASE-10 | Phase 66 | Pending |
+| BASE-10 | Phase 66 | Complete |
 
 **Coverage:**
 - v3.7.0 requirements: 7 total, 7 mapped, 0 unmapped

@@ -226,7 +226,7 @@ Phases execute in numeric order: 63 → 64 → 65
   5. `aishell setup --force` and `aishell update --force` rebuild the base image
   6. Deleting `~/.aishell/Dockerfile` and running `aishell volumes prune` resets base to foundation alias
   7. Project Dockerfiles can use `FROM aishell:base` (no error)
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 66-01-PLAN.md -- Core base image module + setup/update integration
