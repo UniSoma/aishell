@@ -2,7 +2,7 @@
 
 This guide helps developers extend aishell with new harnesses or core features.
 
-**Last updated:** v3.7.0
+**Last updated:** v3.8.0
 
 ---
 

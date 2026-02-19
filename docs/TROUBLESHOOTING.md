@@ -2,7 +2,7 @@
 
 Find the symptom you are experiencing, then follow the resolution steps.
 
-**Last updated:** v3.7.0
+**Last updated:** v3.8.0
 
 ---
 

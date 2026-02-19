@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v3.7.0
+**Last updated:** v3.8.0
 
 ---
 
