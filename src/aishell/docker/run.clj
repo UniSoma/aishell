@@ -178,7 +178,8 @@
    the environment is correct even for non-bash entry points."
   [volume-name]
   (if volume-name
-    ["-e" "HARNESS_VOLUME=true"]
+    ["-e" "HARNESS_VOLUME=true"
+     "-e" "NPM_CONFIG_PREFIX=/tools/npm"]
     []))
 
 (defn- build-harness-alias-env-args

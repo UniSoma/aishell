@@ -20,6 +20,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [pre_start](#pre_start)
   - [harness_args](#harness_args)
   - [gitleaks_freshness_check](#gitleaks_freshness_check)
+  - [pi_packages](#pi_packages)
   - [detection](#detection)
 - [Global Base Image Customization](#global-base-image-customization)
 - [Common Patterns](#common-patterns)
@@ -714,6 +715,41 @@ gitleaks_freshness_check: false
 - **CI/CD environments:** Automated systems need no reminders
 - **Trusted projects:** Internal code with no sensitive data
 - **Separate scanning:** You run Gitleaks outside aishell
+
+---
+
+### pi_packages
+
+**Purpose:** Automatically install Pi plugins before entering the container.
+
+**Type:** List of strings
+
+**Scope:** Global config only (`~/.aishell/config.yaml`). Ignored in project configs with a warning.
+
+**Requires:** `--with-pi` (Pi must be installed via `aishell setup --with-pi`)
+
+**Example:**
+
+```yaml
+pi_packages:
+  - "npm:pi-mcp-adapter"
+  - "npm:pi-web-search"
+```
+
+**Behavior:**
+
+1. Before entering the main container, aishell runs `pi install <pkg>` for each package in a short-lived Docker container
+2. Installed packages are stored in `~/.pi/` on the host (persistent across runs)
+3. aishell computes a hash of the package list and stores it at `~/.aishell/.pi-packages-hash`
+4. On subsequent runs, if the hash matches, installation is skipped entirely (fast path)
+5. If installation fails, aishell warns but does not block container entry; the next run retries
+
+**Notes:**
+- Only runs for `aishell shell`, `aishell claude`, etc. — not for `aishell exec` (one-off commands)
+- Silently skipped when Pi is not installed (`--with-pi` not used during setup)
+- Changing the package list triggers re-installation on the next run
+
+**Merge behavior:** Global-only setting. Project `pi_packages` entries are ignored (with warning).
 
 ---
 

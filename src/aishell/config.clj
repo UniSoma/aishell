@@ -3,16 +3,17 @@
    Supports .aishell/config.yaml in project dir with global fallback."
   (:require [clj-yaml.core :as yaml]
             [babashka.fs :as fs]
+            [clojure.string :as cstr]
             [aishell.util :as util]
             [aishell.output :as output]))
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection :pi_packages})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
-  #{"claude" "opencode" "codex" "gemini" "vscode"})
+  #{"claude" "opencode" "codex" "gemini" "vscode" "pi" "openspec"})
 
 (defn project-config-path
   "Path to project config: PROJECT_DIR/.aishell/config.yaml"
@@ -92,6 +93,27 @@
                            " allowlist entry for path: " (:path entry)))))))
   detection-config)
 
+(defn validate-pi-packages
+  "Validate pi_packages config. Warns if in project config (global-only).
+   Validates entries are non-empty strings. Returns config unchanged."
+  [pi-packages source-path]
+  (when pi-packages
+    ;; Warn if in project config (not global)
+    (when (not= source-path (global-config-path))
+      (output/warn (str "pi_packages in " source-path " will be ignored.\n"
+                        "pi_packages is a global-only setting. Move it to: "
+                        (global-config-path))))
+    ;; Validate: must be sequential
+    (when-not (sequential? pi-packages)
+      (output/warn (str "pi_packages in " source-path " must be a list of strings")))
+    ;; Validate entries are non-empty strings
+    (when (sequential? pi-packages)
+      (doseq [entry pi-packages]
+        (when (or (not (string? entry)) (clojure.string/blank? entry))
+          (output/warn (str "Invalid pi_packages entry in " source-path
+                           ": must be a non-empty string, got: " (pr-str entry)))))))
+  pi-packages)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -101,11 +123,13 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, detection, pi_packages"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
-      (validate-detection-config detection source-path)))
+      (validate-detection-config detection source-path))
+    (when-let [pi-packages (:pi_packages config)]
+      (validate-pi-packages pi-packages source-path)))
   config)
 
 (defn merge-harness-args
@@ -139,6 +163,22 @@
       (seq patterns) (assoc :custom_patterns patterns)
       (seq allowlist) (assoc :allowlist allowlist))))
 
+(defn- normalize-env-to-map
+  "Normalize env config to map format for merging.
+   Array format [\"FOO=bar\" \"BAR\"] becomes {:FOO \"bar\" :BAR nil}.
+   Map format passes through unchanged."
+  [env]
+  (if (map? env)
+    env
+    (into {}
+      (map (fn [entry]
+             (let [s (str entry)
+                   idx (cstr/index-of s "=")]
+               (if idx
+                 [(keyword (subs s 0 idx)) (subs s (inc idx))]
+                 [(keyword s) nil])))
+           env))))
+
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
    - Lists (mounts, ports, docker_args): concatenate (global + project)
@@ -148,7 +188,7 @@
    - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
-  (let [list-keys #{:mounts :ports :docker_args}
+  (let [list-keys #{:mounts :ports :docker_args :pi_packages}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
         scalar-keys #{:pre_start :gitleaks_freshness_check}
@@ -169,12 +209,13 @@
                         (assoc acc k (vec (concat (or global-val []) (or project-val []))))
                         acc))
 
-                    ;; Map keys - shallow merge
+                    ;; Map keys - normalize to map then shallow merge
                     (contains? map-keys k)
                     (let [global-val (get global-config k)
                           project-val (get project-config k)]
                       (if (or global-val project-val)
-                        (assoc acc k (merge (or global-val {}) (or project-val {})))
+                        (assoc acc k (merge (normalize-env-to-map (or global-val {}))
+                                            (normalize-env-to-map (or project-val {}))))
                         acc))
 
                     ;; Map-of-lists keys - merge keys, concatenate lists
@@ -209,10 +250,14 @@
   [path]
   (when (fs/exists? path)
     (try
-      (-> (slurp path)
-          yaml/parse-string
-          (validate-config path)
-          (update :pre_start normalize-pre-start))
+      (let [parsed (-> (slurp path)
+                       yaml/parse-string
+                       (validate-config path))
+            ;; Global-only keys must not come from project config.
+            parsed (if (= path (global-config-path))
+                     parsed
+                     (dissoc parsed :pi_packages))]
+        (update parsed :pre_start normalize-pre-start))
       (catch Exception e
         (output/error (str "Invalid YAML in " path ": " (.getMessage e)))))))
 

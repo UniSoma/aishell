@@ -202,10 +202,10 @@
             1. Sets NPM_CONFIG_PREFIX to /tools/npm
             2. Installs enabled npm-based harnesses
             3. Installs OpenCode binary if enabled
-            4. Sets world-readable permissions with chmod
+            4. Sets world-writable permissions with chmod
 
    Example output:
-   \"export NPM_CONFIG_PREFIX=/tools/npm && npm install -g @anthropic-ai/claude-code@2.0.22 && mkdir -p /tools/bin && curl -fsSL {URL} | tar -xz -C /tools/bin && chmod -R a+rX /tools\"
+   \"export NPM_CONFIG_PREFIX=/tools/npm && npm install -g @anthropic-ai/claude-code@2.0.22 && mkdir -p /tools/bin && curl -fsSL {URL} | tar -xz -C /tools/bin && chmod -R a+rwX /tools\"
 
    Notes:
    - OpenCode is a Go binary, installed separately from npm packages
@@ -228,7 +228,7 @@
     (str "export NPM_CONFIG_PREFIX=/tools/npm"
          (when npm-install (str " && " npm-install))
          (when opencode-install (str " && " opencode-install))
-         " && chmod -R a+rX /tools")))
+         " && chmod -R a+rwX /tools")))
 
 (defn list-harness-volumes
   "List all aishell harness volumes with metadata.

@@ -17,7 +17,8 @@
             [aishell.validation :as validation]
             [aishell.detection.core :as detection]
             [aishell.gitleaks.warnings :as gitleaks-warnings]
-            [aishell.gitleaks.scan-state :as scan-state]))
+            [aishell.gitleaks.scan-state :as scan-state]
+            [aishell.pi :as pi]))
 
 (defn- verify-harness-available
   "Check that harness was included in setup. Exit with error if not."
@@ -78,7 +79,7 @@
    Auto-builds extension if needed (matches bash behavior)."
   [_base-tag project-dir force?]
   ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
-  (base/ensure-base-image {})
+  (base/ensure-base-image {:quiet true})
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     ;; Project has extension — builds FROM aishell:base
     (let [extended-tag (ext/compute-extended-tag project-dir)]
@@ -115,9 +116,6 @@
           base-tag base/base-image-tag
           cfg (config/load-config project-dir)
 
-          ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
-          _ (base/ensure-base-image {})
-
           ;; Resolve container name: --name override or harness name (or "shell" for shell mode)
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
                                (naming/container-name project-dir name-part))
@@ -129,12 +127,10 @@
           _ (output/verbose (str "Container name: " container-name-str))
 
           ;; Ensure harness volume ready (lazy population)
-          harness-volume-name (ensure-harness-volume state cfg)]
+          harness-volume-name (ensure-harness-volume state cfg)
 
-      ;; Verify BASE image exists (required before extension can build)
-      (when-not (docker/image-exists? base-tag)
-        (output/error (str "Image not found: " base-tag
-                          "\nRun: aishell setup")))
+          ;; Install Pi packages if configured (global config only)
+          _ (pi/ensure-pi-packages! cfg state harness-volume-name)]
 
       ;; Verify harness if requested
       (case cmd
@@ -279,17 +275,9 @@
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
-          base-tag base/base-image-tag
+          base-tag base/base-image-tag]
 
-          ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
-          _ (base/ensure-base-image {})]
-
-      ;; Verify BASE image exists (required before extension can build)
-      (when-not (docker/image-exists? base-tag)
-        (output/error (str "Image not found: " base-tag
-                          "\nRun: aishell setup")))
-
-      ;; Resolve final image (may auto-build extension)
+      ;; Resolve final image (may auto-build extension, ensures base image up to date)
       (let [image-tag (resolve-image-tag base-tag project-dir false)
             cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
