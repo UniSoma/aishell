@@ -25,6 +25,40 @@
     {:name (git-config "user.name")
      :email (git-config "user.email")}))
 
+(defn- detect-worktree-git-dir
+  "Detect if project-dir is inside a git worktree.
+   Returns the git common directory path that needs mounting, or nil
+   if not a worktree, not a git repository, or on Windows.
+
+   In a worktree, .git is a file pointing to <main>/.git/worktrees/<name>.
+   Git needs access to the main repo's .git directory for objects, refs, etc.
+   We use 'git rev-parse --git-common-dir' to reliably find the shared .git path."
+  [project-dir]
+  ;; Windows worktrees in Linux containers have fundamental path incompatibilities
+  (when-not (fs/windows?)
+    (try
+      (let [{:keys [exit out]}
+            (p/shell {:out :string :err :string :continue true :dir project-dir}
+                     "git" "rev-parse" "--git-common-dir")]
+        (when (zero? exit)
+          (let [common-dir (str/trim out)
+                ;; Make absolute without resolving symlinks (for mounting)
+                common-dir-abs (str (fs/normalize
+                                      (if (fs/relative? common-dir)
+                                        (fs/path project-dir common-dir)
+                                        common-dir)))
+                ;; Canonicalize both for accurate comparison only
+                common-dir-real (str (fs/canonicalize common-dir-abs))
+                project-dir-real (str (fs/canonicalize project-dir))]
+            ;; Path-segment-aware check: is the git common dir outside the project mount?
+            ;; fs/starts-with? delegates to java.nio.file.Path#startsWith (segment-aware),
+            ;; so /repo2 does NOT match /repo — unlike string prefix checks.
+            (when-not (fs/starts-with? common-dir-real project-dir-real)
+              ;; Return the non-canonical absolute path for mounting.
+              ;; This preserves symlinks so git's gitdir pointer resolves correctly.
+              common-dir-abs))))
+      (catch Exception _ nil))))
+
 (defn- get-uid []
   (if (fs/windows?)
     "1000"
@@ -294,6 +328,12 @@
                  ;; Terminal settings
                  "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
                  "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))]))
+
+        ;; Git worktree support: mount the shared .git directory if in a worktree
+        ;; Without this, git inside the container can't follow the gitdir pointer
+        (into (if-let [git-common-dir (detect-worktree-git-dir project-dir)]
+                ["-v" (str (normalize-mount-source git-common-dir) ":" git-common-dir)]
+                []))
 
         ;; Git identity
         (cond-> (:name git-identity)
