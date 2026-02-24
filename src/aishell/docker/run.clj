@@ -164,11 +164,11 @@
 
 (defn- build-harness-volume-args
   "Build -v flag for harness volume mount.
-   Mounts volume read-write at /tools (harness tools may write caches at runtime).
+   Mounts volume read-only at /tools (immutable toolchain).
    Returns empty vector if volume-name is nil."
   [volume-name]
   (if volume-name
-    ["-v" (str volume-name ":/tools")]
+    ["-v" (str volume-name ":/tools:ro")]
     []))
 
 (defn- build-harness-env-args

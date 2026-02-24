@@ -21,7 +21,7 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 **Volume layout:**
 - npm packages install to `/tools/npm`
 - Go binaries download to `/tools/bin`
-- Containers mount the volume read-write at `/tools` (tools may write runtime caches)
+- Containers mount the volume read-only at `/tools` (immutable toolchain)
 - PATH includes `/tools/npm/bin` and `/tools/bin`
 
 **Benefits:**
