@@ -54,7 +54,7 @@ graph TB
 **Architectural principles:**
 
 1. **Three-Tier Image Chain:** Foundation image (stable system tools) -> Base image (optional global customization) -> Extension image (per-project)
-2. **Volume-Based Harness Tools:** npm packages and binaries mounted read-only at `/tools`
+2. **Volume-Based Harness Tools:** npm packages and binaries mounted at `/tools` (read-write; tools may write runtime caches)
 3. **Global Base Customization:** Optional `~/.aishell/Dockerfile` customizes the base image for all projects
 4. **Project Extension:** Optional per-project `.aishell/Dockerfile` extends the base image
 5. **Configuration Merge:** Global and project configs combine with defined semantics
@@ -154,10 +154,10 @@ Docker volumes store harness tools and mount them into containers:
 
 **Volume mount:**
 ```bash
--v aishell-harness-abc123:/tools:ro
+-v aishell-harness-abc123:/tools
 ```
 
-Mounted read-only so harnesses cannot modify installed tools.
+Mounted read-write because some harness tools write runtime caches (e.g., npm cache, model config).
 
 **PATH setup:**
 1. Entrypoint sets `HARNESS_VOLUME` env var as a signal

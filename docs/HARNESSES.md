@@ -21,7 +21,7 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 **Volume layout:**
 - npm packages install to `/tools/npm`
 - Go binaries download to `/tools/bin`
-- Containers mount the volume read-only at `/tools`
+- Containers mount the volume read-write at `/tools` (tools may write runtime caches)
 - PATH includes `/tools/npm/bin` and `/tools/bin`
 
 **Benefits:**
@@ -79,7 +79,7 @@ Pin versions for reproducible environments.
 1. Builds the foundation image (Debian, Node.js, system tools) -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
 3. Installs the Claude Code npm package into the volume: `npm install -g @anthropic-ai/claude-code`
-4. Mounts the volume read-only at `/tools` in containers
+4. Mounts the volume at `/tools` in containers
 
 **Updating Claude Code:**
 ```bash
@@ -539,7 +539,7 @@ aishell setup --with-pi=1.0.0
 1. Builds the foundation image (includes fd for pi's file discovery) -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
 3. Installs the Pi npm package into the volume: `npm install -g @mariozechner/pi-coding-agent`
-4. Mounts the volume read-only at `/tools` in containers
+4. Mounts the volume at `/tools` in containers
 
 **Updating Pi:**
 ```bash
@@ -631,7 +631,7 @@ aishell setup --with-claude --with-openspec=1.2.3
 1. Builds the foundation image -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
 3. Installs the OpenSpec npm package into the volume: `npm install -g @fission-ai/openspec`
-4. Mounts the volume read-only at `/tools` in containers
+4. Mounts the volume at `/tools` in containers
 
 **Updating OpenSpec:**
 ```bash

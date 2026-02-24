@@ -30,7 +30,8 @@
              "opencode" "OpenCode"
              "codex" "Codex CLI"
              "gemini" "Gemini CLI"
-             "pi" "Pi coding agent")
+             "pi" "Pi coding agent"
+             "gitleaks" "Gitleaks")
            " not installed. Run: aishell setup --with-"
            harness-name))))
 
@@ -139,6 +140,7 @@
         "codex" (verify-harness-available "codex" :with-codex state)
         "gemini" (verify-harness-available "gemini" :with-gemini state)
         "pi" (verify-harness-available "pi" :with-pi state)
+        "gitleaks" (verify-harness-available "gitleaks" :with-gitleaks state)
         nil)
 
       ;; Resolve final image (may auto-build extension)
@@ -207,9 +209,13 @@
                            :harness-volume-name harness-volume-name})
 
             ;; Determine command to run in container
+            skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
+
             container-cmd (case cmd
                             "claude"
-                            (into ["claude" "--dangerously-skip-permissions"]
+                            (into (if skip-perms?
+                                    ["claude" "--dangerously-skip-permissions"]
+                                    ["claude"])
                                   merged-args)
 
                             "opencode"

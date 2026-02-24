@@ -9,7 +9,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :detection :pi_packages})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
@@ -36,6 +36,17 @@
     (let [filtered (filter (comp not clojure.string/blank?) (map str pre-start-value))]
       (when (seq filtered)
         (clojure.string/join " && " filtered)))
+    :else nil))
+
+(defn normalize-docker-args
+  "Normalize docker_args to a vector at load time.
+   String splits on whitespace, vector passes through, nil stays nil."
+  [docker-args]
+  (cond
+    (nil? docker-args) nil
+    (sequential? docker-args) (vec docker-args)
+    (string? docker-args) (when-not (cstr/blank? docker-args)
+                            (cstr/split (cstr/trim docker-args) #"\s+"))
     :else nil))
 
 (defn normalize-harness-arg
@@ -123,7 +134,7 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, detection, pi_packages"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
@@ -257,7 +268,9 @@
             parsed (if (= path (global-config-path))
                      parsed
                      (dissoc parsed :pi_packages))]
-        (update parsed :pre_start normalize-pre-start))
+        (cond-> parsed
+          (contains? parsed :pre_start) (update :pre_start normalize-pre-start)
+          (contains? parsed :docker_args) (update :docker_args normalize-docker-args)))
       (catch Exception e
         (output/error (str "Invalid YAML in " path ": " (.getMessage e)))))))
 

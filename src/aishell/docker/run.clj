@@ -196,7 +196,8 @@
          (keep (fn [[name state-key always?]]
                  (when (get state state-key)
                    (let [args (get harness-args (keyword name) [])
-                         full-args (if (= name "claude")
+                         skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
+                         full-args (if (and (= name "claude") skip-perms?)
                                      (into ["--dangerously-skip-permissions"] args)
                                      (vec args))]
                      (when (or always? (seq full-args))

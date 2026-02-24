@@ -25,7 +25,7 @@
 (defn- in-excluded-dir?
   "Check if a path is within an excluded directory."
   [path]
-  (let [path-str (str path)]
+  (let [path-str (fs/unixify (str path))]
     (some #(str/includes? path-str (str "/" % "/")) excluded-dirs)))
 
 (defn- path-matches-glob?

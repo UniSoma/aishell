@@ -195,9 +195,10 @@
                   (println (str "      " (formatters/format-finding-line finding))))))))))))
 
 (defn- check-gitleaks-freshness
-  "Check gitleaks scan freshness."
-  [project-dir cfg]
-  (when (not= false (:gitleaks_freshness_check cfg))
+  "Check gitleaks scan freshness. Only runs when gitleaks is installed."
+  [project-dir cfg state]
+  (when (and (:with-gitleaks state)
+             (not= false (:gitleaks_freshness_check cfg)))
     (let [days (scan-state/days-since-scan project-dir)
           threshold (or (:gitleaks_freshness_threshold cfg) 7)]
       (cond
@@ -272,7 +273,7 @@
       (println (str output/BOLD "Security" output/NC))
       (check-security cfg)
       (check-sensitive-files project-dir cfg)
-      (check-gitleaks-freshness project-dir cfg))
+      (check-gitleaks-freshness project-dir cfg (state/read-state)))
 
     (println)
 

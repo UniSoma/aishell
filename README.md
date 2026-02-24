@@ -482,42 +482,53 @@ OpenCode configuration directories (`~/.config/opencode`, `~/.local/share/openco
 
 ## Environment Variables
 
-aishell automatically passes these environment variables to containers when set on your host:
+aishell automatically passes harness-specific API keys to containers when the corresponding harness is enabled and the variable is set on your host. Other variables (AWS, GitHub, etc.) must be passed explicitly via the `env:` section in `config.yaml`.
 
-### Harness-Specific Keys
+### Auto-Passed (per enabled harness)
 
-| Variable | Purpose | Notes |
+| Variable | Harness | Notes |
 |----------|---------|-------|
-| `ANTHROPIC_API_KEY` | Claude Code API access | Required for API key auth |
-| `OPENAI_API_KEY` | Codex login, OpenCode | Used by multiple harnesses |
-| `CODEX_API_KEY` | Codex CLI API access | Only works with `codex exec` mode |
-| `GEMINI_API_KEY` | Gemini CLI API access | From Google AI Studio |
-| `GOOGLE_API_KEY` | Gemini/Vertex AI access | Alternative to GEMINI_API_KEY |
-| `GROQ_API_KEY` | Groq API access | For Groq-hosted models |
-| `OPENCODE_API_KEY` | OpenCode Zen model router | For Pi or other tools using Zen |
+| `ANTHROPIC_API_KEY` | Claude, OpenCode | Required for API key auth |
+| `OPENAI_API_KEY` | Codex, OpenCode | Used by multiple harnesses |
+| `CODEX_API_KEY` | Codex | Only works with `codex exec` mode |
+| `GEMINI_API_KEY` | Gemini | From Google AI Studio |
+| `GOOGLE_API_KEY` | Gemini | Alternative to GEMINI_API_KEY |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Gemini | Path to JSON key file (Vertex AI) |
+| `GOOGLE_CLOUD_PROJECT` | Gemini | Required for Vertex AI |
+| `GOOGLE_CLOUD_LOCATION` | Gemini | Required for Vertex AI |
+| `GROQ_API_KEY` | OpenCode | For Groq-hosted models |
+| `OPENCODE_API_KEY` | OpenCode | OpenCode Zen model router |
+| `AZURE_OPENAI_API_KEY` | OpenCode | For Azure-hosted models |
+| `AZURE_OPENAI_ENDPOINT` | OpenCode | For Azure-hosted models |
+| `PI_CODING_AGENT_DIR` | Pi | Override pi's working directory |
+| `PI_SKIP_VERSION_CHECK` | Pi | Set to `true` to skip |
 
-### Cloud Provider Credentials
+### Require Explicit config.yaml `env:` Section
 
-| Variable | Purpose | Notes |
-|----------|---------|-------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Vertex AI service account | Path to JSON key file |
-| `GOOGLE_CLOUD_PROJECT` | GCP project ID | Required for Vertex AI |
-| `GOOGLE_CLOUD_LOCATION` | GCP region | Required for Vertex AI |
-| `AWS_ACCESS_KEY_ID` | AWS access | For harnesses using AWS |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret | For harnesses using AWS |
-| `AWS_REGION` | AWS region | For harnesses using AWS |
-| `AWS_PROFILE` | AWS profile | Named profile support |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI | For Azure-hosted models |
-| `AZURE_OPENAI_ENDPOINT` | Azure endpoint | For Azure-hosted models |
+These variables are **not** auto-passed. Add them to your `config.yaml` to forward them into containers:
 
-### Other
+```yaml
+env:
+  GITHUB_TOKEN: passthrough
+  AWS_ACCESS_KEY_ID: passthrough
+  AWS_SECRET_ACCESS_KEY: passthrough
+  AWS_REGION: passthrough
+  AWS_PROFILE: passthrough
+```
 
 | Variable | Purpose | Notes |
 |----------|---------|-------|
 | `GITHUB_TOKEN` | GitHub API access | For GitHub operations |
-| `PI_CODING_AGENT_DIR` | Pi working directory | Override pi's default directory |
-| `PI_SKIP_VERSION_CHECK` | Pi version check | Set to `true` to skip |
-| `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts |
+| `AWS_ACCESS_KEY_ID` | AWS access | Not auto-passed |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret | Not auto-passed |
+| `AWS_REGION` | AWS region | Not auto-passed |
+| `AWS_PROFILE` | AWS profile | Named profile support |
+
+### Host-Side Variables
+
+| Variable | Purpose | Notes |
+|----------|---------|-------|
+| `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts (read on host, not passed to container) |
 
 ## Reference
 

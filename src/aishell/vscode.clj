@@ -58,8 +58,9 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
     (when-not (naming/container-running? container-name)
       (let [cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
-            harness-volume-name (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini])
-                                 (:harness-volume-name state))
+            harness-volume-name (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
+                                 (or (:harness-volume-name state)
+                                     (vol/volume-name (vol/compute-harness-hash state))))
             docker-args (docker-run/build-docker-args
                           {:project-dir project-dir
                            :image-tag image-tag
