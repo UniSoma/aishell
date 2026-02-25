@@ -19,7 +19,8 @@
             [aishell.vscode :as vscode]
             [aishell.upgrade :as upgrade]
             [aishell.migration :as migration]
-            [aishell.info :as info]))
+            [aishell.info :as info]
+            [aishell.pi :as pi]))
 
 (def version "3.10.0")
 
@@ -367,7 +368,9 @@
                   (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
                       (vol/remove-volume volume-name)
-                      (output/error "Failed to populate harness volume"))))
+                      (output/error "Failed to populate harness volume")))
+                  ;; Clear Pi packages hash so they get reinstalled on next run
+                  (pi/clear-hash!))
                 ;; No harnesses enabled
                 (println "No harnesses enabled. Nothing to update."))]
 

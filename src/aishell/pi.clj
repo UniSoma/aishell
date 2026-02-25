@@ -30,6 +30,13 @@
     (util/ensure-dir (str (fs/parent path)))
     (spit path hash-str)))
 
+(defn clear-hash!
+  "Delete stored Pi packages hash, forcing re-install on next run."
+  []
+  (let [path (pi-packages-hash-path)]
+    (when (fs/exists? path)
+      (fs/delete path))))
+
 (defn- compute-packages-hash
   "Compute hash of Pi packages list (sorted, deterministic)."
   [packages]

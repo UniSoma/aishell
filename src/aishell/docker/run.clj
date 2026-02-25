@@ -198,11 +198,14 @@
 
 (defn- build-harness-volume-args
   "Build -v flag for harness volume mount.
-   Mounts volume read-only at /tools (immutable toolchain).
+   Mounts volume read-only at /tools (immutable toolchain) unless pi_packages
+   are configured, in which case RW is needed for pi's runtime package manager.
    Returns empty vector if volume-name is nil."
-  [volume-name]
+  [volume-name config]
   (if volume-name
-    ["-v" (str volume-name ":/tools:ro")]
+    (let [has-pi-packages? (seq (:pi_packages config))
+          suffix (if has-pi-packages? "" ":ro")]
+      ["-v" (str volume-name ":/tools" suffix)])
     []))
 
 (defn- build-harness-env-args
@@ -356,7 +359,7 @@
         (into ["-e" "DISABLE_AUTOUPDATER=1"])
 
         ;; Harness volume mount (volume-mounted harness tools)
-        (into (build-harness-volume-args harness-volume-name))
+        (into (build-harness-volume-args harness-volume-name config))
         (into (build-harness-env-args harness-volume-name))
 
         ;; Harness aliases for interactive shell use
