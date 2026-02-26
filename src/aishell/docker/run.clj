@@ -226,7 +226,7 @@
   (let [harness-args (get config :harness_args {})
         known [["claude"   :with-claude   true]
                ["opencode" :with-opencode false]
-               ["codex"    :with-codex    false]
+               ["codex"    :with-codex    true]
                ["gemini"   :with-gemini   false]
                ["pi"       :with-pi       false]]]
     (->> known
@@ -234,8 +234,14 @@
                  (when (get state state-key)
                    (let [args (get harness-args (keyword name) [])
                          skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
-                         full-args (if (and (= name "claude") skip-perms?)
+                         full-args (cond
+                                     (and (= name "claude") skip-perms?)
                                      (into ["--dangerously-skip-permissions"] args)
+
+                                     (= name "codex")
+                                     (into ["-c" "check_for_update_on_startup=false"] args)
+
+                                     :else
                                      (vec args))]
                      (when (or always? (seq full-args))
                        ["-e" (str "HARNESS_ALIAS_" (str/upper-case name)

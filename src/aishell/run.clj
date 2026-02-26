@@ -222,7 +222,7 @@
                             (into ["opencode"] merged-args)
 
                             "codex"
-                            (into ["codex"] merged-args)
+                            (into ["codex" "-c" "check_for_update_on_startup=false"] merged-args)
 
                             "gemini"
                             (into ["gemini"] merged-args)
