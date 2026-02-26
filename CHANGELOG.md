@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-02-26
+
+### Fixed
+
+- **Codex startup**: Disable version check on startup to prevent EROFS errors on read-only filesystem
+
 ## [3.10.1] - 2026-02-26
 
 ### Fixed
