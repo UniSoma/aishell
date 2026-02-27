@@ -258,6 +258,20 @@
    :with-gemini   [[".gemini"]]
    :with-pi       [[".pi"]]})
 
+(def ^:private harness-config-files
+  "Entries in harness-config-dirs that are files, not directories.
+   These are not auto-created on the host."
+  #{[".claude.json"]})
+
+(defn- ensure-harness-config-dirs!
+  "Create harness config directories on host if they don't exist.
+   Ensures bind mounts work for first-time harness users.
+   Skips file entries (e.g. .claude.json) — only creates directories."
+  [config-entries home]
+  (doseq [components config-entries]
+    (when-not (harness-config-files components)
+      (util/ensure-dir (str (apply fs/path home components))))))
+
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
    Only mounts directories for enabled harnesses that exist on host.
@@ -270,6 +284,7 @@
                             (filter (fn [[state-key _]] (get state state-key)))
                             (mapcat val)
                             distinct)]
+    (ensure-harness-config-dirs! config-entries home)
     (->> config-entries
          (map (fn [components]
                 (let [src (str (apply fs/path home components))
