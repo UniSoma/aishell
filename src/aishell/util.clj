@@ -46,17 +46,50 @@
       (str/trim (:out wsl-result)))
     (catch Exception _ nil)))
 
+(defn- get-uid []
+  (if (fs/windows?)
+    "1000"
+    (-> (p/shell {:out :string} "id" "-u") :out str/trim)))
+
+(defn- get-gid []
+  (if (fs/windows?)
+    "1000"
+    (-> (p/shell {:out :string} "id" "-g") :out str/trim)))
+
+(defn- get-user []
+  (or (System/getenv "USER")
+      (System/getenv "USERNAME")
+      (try (-> (p/shell {:out :string} "id" "-un") :out str/trim)
+           (catch Exception _ "unknown"))))
+
+(defn expand-vars
+  "Expand known variables in a string.
+   Supports $VAR and ${VAR} syntax for: HOME, UID, GID, USER."
+  [s]
+  (when s
+    (let [home (get-home)
+          uid (get-uid)
+          gid (get-gid)
+          user (get-user)]
+      (-> s
+          (str/replace #"\$\{HOME\}" home)
+          (str/replace #"\$HOME(?![A-Za-z0-9_])" home)
+          (str/replace #"\$\{UID\}" uid)
+          (str/replace #"\$UID(?![A-Za-z0-9_])" uid)
+          (str/replace #"\$\{GID\}" gid)
+          (str/replace #"\$GID(?![A-Za-z0-9_])" gid)
+          (str/replace #"\$\{USER\}" user)
+          (str/replace #"\$USER(?![A-Za-z0-9_])" user)))))
+
 (defn expand-path
   "Expand ~ and $HOME in path string, normalize separators.
    Works on both Windows and Unix."
   [path]
   (when path
-    (let [home (get-home)]
-      (str (fs/path
-             (-> path
-                 (str/replace #"^~(?=[/\\]|$)" home)
-                 (str/replace #"\$HOME(?=[/\\]|$)" home)
-                 (str/replace #"\$\{HOME\}(?=[/\\]|$)" home)))))))
+    (str (fs/path
+           (-> path
+               (str/replace #"^~(?=[/\\]|$)" (get-home))
+               expand-vars)))))
 
 (defn config-dir
   "Get aishell config directory path (~/.aishell)."

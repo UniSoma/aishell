@@ -161,8 +161,8 @@
                    (do
                      (output/warn (str "Skipping unset host variable: " key-name))
                      []))
-                 ;; Literal value
-                 ["-e" (str key-name "=" value)])))))))
+                 ;; Literal value (expand $HOME, $UID, $GID, $USER)
+                 ["-e" (str key-name "=" (util/expand-vars value))])))))))
 
 (def port-pattern
   "Valid port format: [IP:]HOST:CONTAINER[/PROTOCOL]"
@@ -412,7 +412,7 @@
 
         ;; Config: docker_args (must be before image)
         (cond-> (:docker_args config)
-          (into (tokenize-docker-args (:docker_args config))))
+          (into (mapv util/expand-vars (tokenize-docker-args (:docker_args config)))))
 
         ;; Image tag (must be last before command)
         (conj image-tag))))
