@@ -290,7 +290,7 @@
          (map (fn [components]
                 (let [src (str (apply fs/path home components))
                       dst (if (fs/windows?)
-                            (str (apply fs/path container-home components))
+                            (fs/unixify (str (apply fs/path container-home components)))
                             src)]
                   [src dst])))
          (filter (fn [[src _]] (fs/exists? src)))
@@ -357,7 +357,8 @@
         ;; Git worktree support: mount the shared .git directory if in a worktree
         ;; Without this, git inside the container can't follow the gitdir pointer
         (into (if-let [git-common-dir (detect-worktree-git-dir project-dir)]
-                ["-v" (str (normalize-mount-source git-common-dir) ":" git-common-dir)]
+                ["-v" (str (normalize-mount-source git-common-dir) ":"
+                          (if (fs/windows?) (fs/unixify git-common-dir) git-common-dir))]
                 []))
 
         ;; Git identity
