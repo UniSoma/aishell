@@ -23,7 +23,7 @@
             [aishell.pi :as pi]
             [aishell.update-check :as update-check]))
 
-(def version "3.11.2")
+(def version "3.12.0")
 
 (defn print-version []
   (println (str "aishell " version)))

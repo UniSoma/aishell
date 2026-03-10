@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-03-10
+
+### Added
+
+- **Update check**: Time-based update check with configurable interval — notifies when a new version is available
+
+### Fixed
+
+- **Windows CLI flags**: Prevent Babashka from consuming CLI flags (e.g., `--version`, `--help`) on Windows — the `.bat` wrapper now uses `--` to separate `bb` flags from script arguments
+
 ## [3.11.2] - 2026-03-10
 
 ### Fixed
