@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.1] - 2026-03-10
+
+### Fixed
+
+- **Windows mount paths**: Normalize container mount destinations to forward slashes on Windows — backslash paths made harness config mounts (Claude, OpenCode, Codex, etc.) invisible inside the container, preventing auth and config persistence across sessions
+
 ## [3.11.0] - 2026-03-10
 
 ### Added
