@@ -32,7 +32,7 @@
   (spit bat-file (str "@echo off\r\n"
                       "set ARGS=%*\r\n"
                       "set SCRIPT=%~dp0" script-name "\r\n"
-                      "bb -f %SCRIPT% %ARGS%\r\n")))
+                      "bb -f %SCRIPT% -- %ARGS%\r\n")))
 
 (defn main []
   (println "Building aishell uberscript...")
