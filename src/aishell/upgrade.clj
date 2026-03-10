@@ -32,8 +32,9 @@
     (try
       (case downloader
         :curl
-        (let [result (p/shell {:out :string :err :string :continue true}
-                              "curl" "-fsSLI" "-o" "/dev/null"
+        (let [null-dev (if (fs/windows?) "NUL" "/dev/null")
+              result (p/shell {:out :string :err :string :continue true}
+                              "curl" "-fsSLI" "-o" null-dev
                               "-w" "%{url_effective}" url)
               effective-url (str/trim (:out result))]
           (when (and (zero? (:exit result))
