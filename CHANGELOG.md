@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-03-10
+
+### Added
+
+- **OpenSpec support**: Mount `.config/openspec` directory for OpenSpec configuration persistence
+- **OpenSpec telemetry**: Disable OpenSpec telemetry in container (`OPENSPEC_TELEMETRY=0`)
+- **Config variable expansion**: Expand `$HOME`, `$UID`, `$GID`, `$USER` variables in config values
+
 ## [3.10.3] - 2026-02-27
 
 ### Fixed
