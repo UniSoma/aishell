@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.2] - 2026-03-10
+
+### Fixed
+
+- **Windows upgrade**: Use platform-appropriate null device (`NUL` on Windows, `/dev/null` on Unix) when checking latest version via curl — `aishell upgrade` was failing on PowerShell because `/dev/null` doesn't exist on Windows
+
 ## [3.11.1] - 2026-03-10
 
 ### Fixed
