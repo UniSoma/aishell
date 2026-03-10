@@ -9,7 +9,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
@@ -134,13 +134,18 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                          (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages"))))
+                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
       (validate-detection-config detection source-path))
     (when-let [pi-packages (:pi_packages config)]
-      (validate-pi-packages pi-packages source-path)))
+      (validate-pi-packages pi-packages source-path))
+    (when (and (contains? config :update_check)
+               (not= source-path (global-config-path)))
+      (output/warn (str "update_check in " source-path " will be ignored.\n"
+                        "update_check is a global-only setting. Move it to: "
+                        (global-config-path)))))
   config)
 
 (defn merge-harness-args
@@ -267,7 +272,7 @@
             ;; Global-only keys must not come from project config.
             parsed (if (= path (global-config-path))
                      parsed
-                     (dissoc parsed :pi_packages))]
+                     (dissoc parsed :pi_packages :update_check))]
         (cond-> parsed
           (contains? parsed :pre_start) (update :pre_start normalize-pre-start)
           (contains? parsed :docker_args) (update :docker_args normalize-docker-args)))

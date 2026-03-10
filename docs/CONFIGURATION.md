@@ -21,6 +21,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [harness_args](#harness_args)
   - [gitleaks_freshness_check](#gitleaks_freshness_check)
   - [pi_packages](#pi_packages)
+  - [update_check](#update_check)
   - [detection](#detection)
 - [Global Base Image Customization](#global-base-image-customization)
 - [Common Patterns](#common-patterns)
@@ -82,6 +83,7 @@ With `extends: global` (the default), aishell merges configs by data type:
 | **Map-of-lists** | `harness_args` | Merge keys, concatenate per-harness lists | Global: `{claude: ["--verbose"]}`<br/>Project: `{claude: ["--model", "sonnet"]}`<br/>Result: `{claude: ["--verbose", "--model", "sonnet"]}` |
 | **Scalars** | `pre_start`, `gitleaks_freshness_check` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
 | **Custom** | `detection` | Custom merge (see [detection](#detection)) | Enabled: project wins<br/>Patterns: map merge<br/>Allowlist: concatenate |
+| **Global-only** | `pi_packages`, `update_check` | Not merged (global config only) | Project values ignored with warning |
 
 ### When to use `extends: none`
 
@@ -233,6 +235,22 @@ gitleaks_freshness_check: true
 
 # To disable:
 # gitleaks_freshness_check: false
+
+# =============================================================================
+# UPDATE_CHECK - Automatic update notification (global-only)
+# =============================================================================
+# Periodically checks GitHub for newer aishell versions and prints a
+# one-line warning on stderr. Advisory only — does not auto-update.
+# When a check is due, may add up to 5 seconds of startup latency.
+# Skipped for --help, --version, and upgrade commands.
+
+update_check:
+  enabled: true        # Set to false to disable (default: true)
+  interval_days: 1     # How often to check, in days (default: 1)
+
+# To disable:
+# update_check:
+#   enabled: false
 
 # =============================================================================
 # DETECTION - Sensitive file detection configuration
@@ -750,6 +768,53 @@ pi_packages:
 - Changing the package list triggers re-installation on the next run
 
 **Merge behavior:** Global-only setting. Project `pi_packages` entries are ignored (with warning).
+
+---
+
+### update_check
+
+**Purpose:** Control automatic update notifications when a newer aishell version is available.
+
+**Type:** Map with two keys: `enabled`, `interval_days`
+
+**Scope:** Global config only (`~/.aishell/config.yaml`). Ignored in project configs with a warning.
+
+**Default:** Enabled, checks once per day.
+
+**Example:**
+
+```yaml
+# Check every 7 days
+update_check:
+  enabled: true
+  interval_days: 7
+
+# Disable entirely
+update_check:
+  enabled: false
+```
+
+**Keys:**
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | Boolean | `true` | Enable or disable update checks |
+| `interval_days` | Integer | `1` | Minimum days between checks |
+
+**Behavior:**
+
+- On each CLI invocation (except `--help`, `--version`, `upgrade`), aishell checks whether the configured interval has elapsed since the last check
+- If due, it follows GitHub's `/releases/latest` redirect to discover the newest version
+- If a newer version exists, prints a one-line warning to stderr
+- The check timestamp is persisted in `~/.local/state/aishell/update-check.edn`, so failed checks (offline, DNS issues) still advance the timer and don't retry on every invocation
+- Advisory only — never auto-updates. When a check is due, the network lookup is bounded by a 5-second timeout; all other invocations skip instantly
+
+**Notes:**
+- Uses the same GitHub mechanism as `aishell upgrade` (follows redirect, no API token required)
+- The check result is cached: once checked, subsequent invocations within the interval return immediately with no network call
+- Errors are silently ignored — a broken network connection never affects CLI behavior
+
+**Merge behavior:** Global-only setting. Project `update_check` entries are ignored (with warning).
 
 ---
 

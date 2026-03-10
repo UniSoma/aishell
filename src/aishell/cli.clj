@@ -20,7 +20,8 @@
             [aishell.upgrade :as upgrade]
             [aishell.migration :as migration]
             [aishell.info :as info]
-            [aishell.pi :as pi]))
+            [aishell.pi :as pi]
+            [aishell.update-check :as update-check]))
 
 (def version "3.11.2")
 
@@ -546,6 +547,18 @@
                        (into (subvec (vec clean-args) 0 idx)
                              (subvec (vec clean-args) (+ idx 2))))
                      clean-args)]
+    ;; Check for newer version (skip for help/version/upgrade to avoid startup delay).
+    ;; -v/--version is ambiguous: top-level it means version, but on subcommands
+    ;; (setup -v, update -v) it means verbose. Only skip the update check when
+    ;; there's no subcommand — i.e. the args will route to handle-default.
+    (let [first-arg (first clean-args)
+          has-subcommand? (contains? known-subcommands first-arg)
+          skip? (or (some #{"--help" "-h"} clean-args)
+                    (and (not has-subcommand?)
+                         (some #{"-v" "--version"} clean-args))
+                    (= "upgrade" first-arg))]
+      (when-not skip?
+        (update-check/maybe-check-for-update version)))
     ;; Handle pass-through commands before standard dispatch
     ;; This ensures all args (including --help, --version) go to the harness
     (case (first clean-args)

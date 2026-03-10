@@ -361,6 +361,7 @@ Each namespace handles one concern:
 | `aishell.vscode` | VSCode integration | Open VSCode attached to container as developer user |
 | `aishell.info` | Image stack info | Display foundation contents, base/extension status, harnesses |
 | `aishell.check` | Pre-flight checks | Validate Docker, config, image state, tool availability |
+| `aishell.update-check` | Update notifications | Time-based version check against GitHub releases |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |
 
 ### Docker Namespaces
@@ -416,6 +417,7 @@ Each namespace handles one concern:
 | `~/.aishell/state.edn` | Build state (harnesses, versions, hash) | EDN | Persistent |
 | `~/.aishell/config.yaml` | Global config defaults | YAML | Persistent |
 | `~/.aishell/Dockerfile` | Optional global base image customization | Dockerfile | Persistent |
+| `~/.local/state/aishell/update-check.edn` | Update check timestamp and latest version | EDN | Persistent |
 | `~/.aishell/gitleaks-scan.edn` | Per-project Gitleaks scan timestamps | EDN | Persistent |
 | `.aishell/config.yaml` | Project-specific config | YAML | Persistent (in project) |
 | `.aishell/Dockerfile` | Optional project extension | Dockerfile | Persistent (in project) |
