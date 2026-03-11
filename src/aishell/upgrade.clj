@@ -83,13 +83,21 @@
   (compare (parse-semver a) (parse-semver b)))
 
 (defn find-aishell-path
-  "Find the installed aishell script path."
+  "Find the installed aishell script path.
+   On Windows, fs/which returns the .bat launcher (e.g. aishell.bat);
+   we strip the extension to get the actual script path."
   []
-  (or (fs/which "aishell")
-      (let [home (System/getProperty "user.home")
-            fallback (str home "/.local/bin/aishell")]
-        (when (fs/exists? fallback)
-          fallback))))
+  (let [path (or (fs/which "aishell")
+                 (let [home (System/getProperty "user.home")
+                       fallback (str home "/.local/bin/aishell")]
+                   (when (fs/exists? fallback)
+                     fallback)))]
+    (when path
+      (let [path-str (str path)]
+        (if (and (fs/windows?)
+                 (str/ends-with? (str/lower-case path-str) ".bat"))
+          (subs path-str 0 (- (count path-str) 4))
+          path-str)))))
 
 (defn do-upgrade
   "Main upgrade entry point.
