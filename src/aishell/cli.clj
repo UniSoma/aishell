@@ -1,5 +1,7 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
+            [babashka.fs :as fs]
+            [cheshire.core :as json]
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [aishell.docker :as docker]
@@ -52,7 +54,7 @@
 
       (not (re-matches semver-pattern version))
       (output/error (str "Invalid " harness-name " version format: " version
-                        "\nExpected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)")))))
+                         "\nExpected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)")))))
 
 (defn parse-with-flag
   "Parse --with-X flag value.
@@ -68,6 +70,49 @@
     (= value "latest") {:enabled? true}
     :else {:enabled? true :version (str value)}))
 
+(def unisoma-models
+  "Hard-coded whitelist of model names for UniSoma OpenCode provider."
+  ["gpt-5.2"
+   "gpt-5.3-codex"
+   "gpt-5.4"
+   "claude-haiku-4-5"
+   "claude-sonnet-4-6"
+   "claude-opus-4-6"
+   "gemini-3-flash"
+   "gemini-3.1-pro"])
+
+(defn- opencode-config-path
+  "Path to OpenCode config: ~/.config/opencode/opencode.json"
+  []
+  (str (fs/path (fs/home) ".config" "opencode" "opencode.json")))
+
+(defn- manage-opencode-whitelist!
+  "Manage the OpenCode model whitelist for UniSoma users.
+   - If :unisoma is true in new-state: upsert provider.opencode.whitelist
+   - If :unisoma was true in prev-state but false in new-state: remove whitelist
+   - Otherwise: no-op"
+  [new-state prev-state]
+  (let [new-unisoma? (:unisoma new-state false)
+        prev-unisoma? (:unisoma prev-state false)
+        config-path (opencode-config-path)]
+    (cond
+      ;; Upsert whitelist
+      new-unisoma?
+      (let [config-dir (str (fs/parent config-path))
+            existing (when (fs/exists? config-path)
+                       (json/parse-string (slurp config-path)))
+            config (assoc-in (or existing {"$schema" "https://opencode.ai/config.json"})
+                             ["provider" "opencode" "whitelist"] unisoma-models)]
+        (fs/create-dirs config-dir)
+        (spit config-path (json/generate-string config {:pretty true})))
+
+      ;; Remove whitelist (was UniSoma, now isn't)
+      (and prev-unisoma? (not new-unisoma?))
+      (when (fs/exists? config-path)
+        (let [config (json/parse-string (slurp config-path))
+              config (update-in config ["provider" "opencode"] dissoc "whitelist")]
+          (spit config-path (json/generate-string config {:pretty true})))))))
+
 ;; Setup subcommand spec
 ;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
 ;; returns boolean true for flags without values, which can't be coerced to string.
@@ -80,6 +125,7 @@
    :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
    :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
+   :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show setup help"}})
@@ -153,7 +199,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -164,6 +210,7 @@
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
   (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
+  (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
 (defn handle-setup [{:keys [opts]}]
@@ -179,6 +226,11 @@
           pi-config (parse-with-flag (:with-pi opts))
           openspec-config (parse-with-flag (:with-openspec opts))
           with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
+          with-unisoma (boolean (:unisoma opts))
+
+          ;; Validate --unisoma requires --with-opencode
+          _ (when (and with-unisoma (not (:enabled? opencode-config)))
+              (output/error "--unisoma requires --with-opencode"))
 
           ;; Validate versions before build
           _ (validate-version (:version claude-config) "Claude Code")
@@ -194,9 +246,9 @@
 
           ;; Build foundation image (harness tools will be volume-mounted in Phase 36)
           result (build/build-foundation-image
-                   {:with-gitleaks with-gitleaks
-                    :verbose (:verbose opts)
-                    :force (:force opts)})
+                  {:with-gitleaks with-gitleaks
+                   :verbose (:verbose opts)
+                   :force (:force opts)})
 
           ;; Ensure aishell:base exists (custom build from ~/.aishell/Dockerfile or alias)
           _ (base/ensure-base-image {:force (:force opts) :verbose (:verbose opts)})
@@ -204,6 +256,8 @@
           ;; Step 2: Compute harness volume hash
           project-dir (System/getProperty "user.dir")
           cfg (config/load-config project-dir)
+          prev-state (state/read-state)
+
           state-map {:with-claude (:enabled? claude-config)
                      :with-opencode (:enabled? opencode-config)
                      :with-codex (:enabled? codex-config)
@@ -211,6 +265,7 @@
                      :with-pi (:enabled? pi-config)
                      :with-openspec (:enabled? openspec-config)
                      :with-gitleaks with-gitleaks
+                     :unisoma with-unisoma
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
                      :codex-version (:version codex-config)
@@ -225,8 +280,8 @@
           _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
-                                   (not= (vol/get-volume-label volume-name "aishell.harness.hash")
-                                         harness-hash))
+                                    (not= (vol/get-volume-label volume-name "aishell.harness.hash")
+                                          harness-hash))
                     ;; Compute harness list for label
                     harness-list (str/join "," (keep (fn [[k v]]
                                                        (when v (name k)))
@@ -246,15 +301,18 @@
                       (when vol-missing? (vol/remove-volume volume-name))
                       (output/error "Failed to populate harness volume"))))))]
 
+      ;; Manage OpenCode whitelist for UniSoma
+      (manage-opencode-whitelist! state-map prev-state)
+
       ;; Persist state (always, even on failure this won't run due to error exit)
       (state/write-state
-        (assoc state-map
-               :image-tag (:image result)
-               :build-time (str (java.time.Instant/now))
-               :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
-               :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
-               :harness-volume-hash harness-hash                               ; NEW
-               :harness-volume-name volume-name)))))                           ; NEW
+       (assoc state-map
+              :image-tag (:image result)
+              :build-time (str (java.time.Instant/now))
+              :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
+              :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
+              :harness-volume-hash harness-hash                               ; NEW
+              :harness-volume-name volume-name)))))                           ; NEW
 
 (defn handle-default [{:keys [opts args]}]
   (cond
@@ -319,6 +377,8 @@
         (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
       (when (:with-opencode state)
         (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
+      (when (:unisoma state)
+        (println "  UniSoma: enabled"))
       (when (:with-codex state)
         (println (str "  Codex: " (or (:codex-version state) "latest"))))
       (when (:with-gemini state)
@@ -332,10 +392,10 @@
       (let [project-dir (System/getProperty "user.dir")
             cfg (config/load-config project-dir)
             result (build/build-foundation-image
-                     {:with-gitleaks (:with-gitleaks state false)
-                      :verbose (:verbose opts)
-                      :force (:force opts)
-                      :quiet (not (:force opts))})
+                    {:with-gitleaks (:with-gitleaks state false)
+                     :verbose (:verbose opts)
+                     :force (:force opts)
+                     :quiet (not (:force opts))})
 
             ;; Ensure aishell:base is up to date
             _ (if (:force opts)
@@ -345,7 +405,7 @@
             ;; Volume repopulation (unconditional delete + recreate)
             harness-hash (vol/compute-harness-hash state)
             volume-name (or (:harness-volume-name state)
-                           (vol/volume-name harness-hash))
+                            (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
             harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
@@ -375,13 +435,16 @@
                 ;; No harnesses enabled
                 (println "No harnesses enabled. Nothing to update."))]
 
+        ;; Refresh OpenCode whitelist for UniSoma (upsert only on update)
+        (manage-opencode-whitelist! state state)
+
         ;; Update state with new build-time and current hashes
         (state/write-state
-          (cond-> state
-            true (assoc :build-time (str (java.time.Instant/now))
-                        :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
-                        :foundation-hash (hash/compute-hash templates/base-dockerfile))
-            result (assoc :image-tag (:image result))))))))
+         (cond-> state
+           true (assoc :build-time (str (java.time.Instant/now))
+                       :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
+                       :foundation-hash (hash/compute-hash templates/base-dockerfile))
+           result (assoc :image-tag (:image result))))))))
 
 (defn- prompt-yn
   "Prompt user for yes/no confirmation."
@@ -400,12 +463,12 @@
       (println "No harness volumes found.\n\nVolumes are created automatically during 'aishell setup' when harnesses are enabled.")
       (do
         (pp/print-table [:NAME :STATUS :SIZE :HARNESSES]
-                       (map (fn [{:keys [name harnesses]}]
-                              {:NAME name
-                               :STATUS (if (= name current-vol) "active" "orphaned")
-                               :SIZE (vol/get-volume-size name)
-                               :HARNESSES (or harnesses "unknown")})
-                            volumes))
+                        (map (fn [{:keys [name harnesses]}]
+                               {:NAME name
+                                :STATUS (if (= name current-vol) "active" "orphaned")
+                                :SIZE (vol/get-volume-size name)
+                                :HARNESSES (or harnesses "unknown")})
+                             volumes))
         (println "\nTo remove orphaned volumes: aishell volumes prune")))))
 
 (defn handle-volumes-prune
@@ -415,8 +478,8 @@
         current-vol (:harness-volume-name state)
         all-volumes (vol/list-harness-volumes)
         orphaned (filter #(and (not= (:name %) current-vol)
-                              (str/starts-with? (:name %) "aishell-harness-"))
-                        all-volumes)]
+                               (str/starts-with? (:name %) "aishell-harness-"))
+                         all-volumes)]
     (if (empty? orphaned)
       (println "No orphaned volumes to prune.")
       (do
@@ -436,8 +499,8 @@
     ;; If aishell:base has custom Dockerfile label but ~/.aishell/Dockerfile no longer exists,
     ;; the custom base image is orphaned — re-tag foundation as base to reset.
     (when (and (docker/image-exists? base/base-image-tag)
-              (docker/get-image-label base/base-image-tag "aishell.base.dockerfile.hash")
-              (not (base/global-dockerfile-exists?)))
+               (docker/get-image-label base/base-image-tag "aishell.base.dockerfile.hash")
+               (not (base/global-dockerfile-exists?)))
       (println "Orphaned custom base image found — resetting to foundation alias.")
       (base/tag-foundation-as-base)
       (println "Base image reset to foundation alias."))))
@@ -480,8 +543,8 @@
 
       :else
       (output/error (str "Unknown volumes subcommand: " subcommand
-                        "\n\nValid subcommands: list, prune"
-                        "\n\nTry: aishell volumes --help")))))
+                         "\n\nValid subcommands: list, prune"
+                         "\n\nTry: aishell volumes --help")))))
 
 (defn- extract-short-name
   "Extract user-friendly name from full container name.
@@ -568,32 +631,32 @@
       "ps" (handle-ps nil)
       "volumes" (handle-volumes (vec (rest clean-args)))
       ("attach" "a") (let [rest-args (vec (rest clean-args))]
-                 (cond
-                   (some #{"-h" "--help"} rest-args)
-                   (do
-                     (println (str output/BOLD "Usage:" output/NC " aishell attach <name>"))
-                     (println)
-                     (println "Attach to a running container (opens bash shell).")
-                     (println)
-                     (println (str output/BOLD "Options:" output/NC))
-                     (println "  -h, --help    Show this help")
-                     (println)
-                     (println (str output/BOLD "Examples:" output/NC))
-                     (println (str "  " output/CYAN "aishell attach claude" output/NC))
-                     (println (str "      Open bash shell in the 'claude' container"))
-                     (println)
-                     (println (str "  " output/CYAN "aishell attach shell" output/NC))
-                     (println (str "      Open bash shell in the 'shell' container"))
-                     (println)
-                     (println (str output/BOLD "Notes:" output/NC))
-                     (println "  Use 'aishell ps' to list running containers.")
-                     (println "  The container must be running. Start one in another terminal: aishell <harness>"))
+                       (cond
+                         (some #{"-h" "--help"} rest-args)
+                         (do
+                           (println (str output/BOLD "Usage:" output/NC " aishell attach <name>"))
+                           (println)
+                           (println "Attach to a running container (opens bash shell).")
+                           (println)
+                           (println (str output/BOLD "Options:" output/NC))
+                           (println "  -h, --help    Show this help")
+                           (println)
+                           (println (str output/BOLD "Examples:" output/NC))
+                           (println (str "  " output/CYAN "aishell attach claude" output/NC))
+                           (println (str "      Open bash shell in the 'claude' container"))
+                           (println)
+                           (println (str "  " output/CYAN "aishell attach shell" output/NC))
+                           (println (str "      Open bash shell in the 'shell' container"))
+                           (println)
+                           (println (str output/BOLD "Notes:" output/NC))
+                           (println "  Use 'aishell ps' to list running containers.")
+                           (println "  The container must be running. Start one in another terminal: aishell <harness>"))
 
-                   (empty? rest-args)
-                   (output/error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers.")
+                         (empty? rest-args)
+                         (output/error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers.")
 
-                   :else
-                   (attach/attach-to-container (first rest-args))))
+                         :else
+                         (attach/attach-to-container (first rest-args))))
       "vscode" (let [rest-args (vec (rest clean-args))
                      own-flags #{"--detach" "--stop" "-h" "--help"}
                      code-args (vec (remove own-flags rest-args))]
@@ -668,17 +731,17 @@
                         (validate-version target-version "aishell"))
                       (upgrade/do-upgrade version target-version))))
       "claude" (run/run-container "claude" (vec (rest clean-args))
-                 {:unsafe unsafe? :container-name container-name-override})
+                                  {:unsafe unsafe? :container-name container-name-override})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override})
+                                    {:unsafe unsafe? :container-name container-name-override})
       "codex" (run/run-container "codex" (vec (rest clean-args))
-               {:unsafe unsafe? :container-name container-name-override})
+                                 {:unsafe unsafe? :container-name container-name-override})
       "gemini" (run/run-container "gemini" (vec (rest clean-args))
-                {:unsafe unsafe? :container-name container-name-override})
+                                  {:unsafe unsafe? :container-name container-name-override})
       "pi" (run/run-container "pi" (vec (rest clean-args))
-             {:unsafe unsafe? :container-name container-name-override})
+                              {:unsafe unsafe? :container-name container-name-override})
       "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
-                   {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
+                                    {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
       ;; Standard dispatch for other commands (setup, update, help)
       (if (or unsafe? container-name-override)
         ;; --unsafe or --name with no harness command -> shell mode

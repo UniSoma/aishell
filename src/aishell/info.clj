@@ -145,6 +145,10 @@
     (println (str output/BOLD "Harnesses" output/NC " (volume-mounted)"))
     (println "--------------------------------------")
     (if state
-      (doseq [line (format-harnesses state)]
-        (println line))
+      (do
+        (doseq [line (format-harnesses state)]
+          (println line))
+        (when (:unisoma state)
+          (println)
+          (println "  UniSoma: enabled (OpenCode model whitelist)")))
       (println "  No setup found"))))
