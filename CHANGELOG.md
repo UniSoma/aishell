@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-03-16
+
+### Added
+
+- **Host config paths in `aishell info`**: New section showing the exact host directories mounted into the container for each enabled harness — helps users locate where tool configuration is persisted on their machine
+
 ## [3.13.0] - 2026-03-16
 
 ### Added
