@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-03-16
+
+### Added
+
+- **UniSoma OpenCode provider**: New `--unisoma` flag on `aishell setup` that manages an OpenCode model whitelist for UniSoma users — automatically writes approved models to `~/.config/opencode/opencode.json`, refreshes on `aishell update`, and removes the whitelist when disabled
+
 ## [3.12.1] - 2026-03-11
 
 ### Fixed
