@@ -5,11 +5,14 @@
    running Docker commands, so `aishell info` works even when Docker
    isn't running."
   (:require [clojure.string :as str]
+            [babashka.fs :as fs]
             [aishell.docker.templates :as templates]
             [aishell.docker.base :as base]
             [aishell.docker.extension :as ext]
+            [aishell.docker.run :as run]
             [aishell.output :as output]
-            [aishell.state :as state]))
+            [aishell.state :as state]
+            [aishell.util :as util]))
 
 (defn- parse-packages
   "Extract apt-get install packages from the Dockerfile template."
@@ -74,6 +77,32 @@
               (let [version (get state version-key)]
                 (str "  " name ": " (or version "latest"))))
             enabled))))
+
+(def ^:private harness-labels
+  "Map harness state keys to display names."
+  {:with-claude   "Claude Code"
+   :with-opencode "OpenCode"
+   :with-codex    "Codex CLI"
+   :with-gemini   "Gemini CLI"
+   :with-openspec "OpenSpec"
+   :with-pi       "Pi"})
+
+(defn- format-config-paths
+  "Format host config paths for enabled harnesses."
+  [state]
+  (let [home (util/get-home)
+        enabled (->> run/harness-config-dirs
+                     (filter (fn [[state-key _]] (get state state-key)))
+                     (sort-by first))]
+    (if (empty? enabled)
+      ["  None"]
+      (mapcat (fn [[state-key paths]]
+                (let [label (get harness-labels state-key (name state-key))]
+                  (into [(str "  " label ":")]
+                        (map (fn [components]
+                               (str "    " (str (apply fs/path home components))))
+                             paths))))
+              enabled))))
 
 (defn run-info
   "Print structured summary of the aishell image stack."
@@ -151,4 +180,14 @@
         (when (:unisoma state)
           (println)
           (println "  UniSoma: enabled (OpenCode model whitelist)")))
-      (println "  No setup found"))))
+      (println "  No setup found"))
+
+    ;; Host Config Paths section (only when harnesses are enabled)
+    (when state
+      (let [enabled-harnesses (some (fn [[k _]] (get state k)) run/harness-config-dirs)]
+        (when enabled-harnesses
+          (println)
+          (println (str output/BOLD "Host Config Paths" output/NC " (mounted to container)"))
+          (println "--------------------------------------")
+          (doseq [line (format-config-paths state)]
+            (println line)))))))
