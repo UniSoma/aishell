@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **OCkit integration**: Install and manage OpenCode plugins (agents, commands, skills) via `aishell ockit`
+  - `aishell setup --with-ockit` clones the ockit repo to `~/.aishell/ockit/`
+  - `aishell ockit` launches an ephemeral container running the ockit plugin wizard
+  - `aishell ockit --upgrade` pulls the latest repo before running the wizard
+  - Git operations run on the host (SSH keys stay on host); wizard runs in container
+  - `~/.aishell/ockit/` mounted read-only at `/ockit`; `~/.config/opencode/` mounted read-write for plugin installation
+
 ## [3.14.0] - 2026-03-16
 
 ### Added

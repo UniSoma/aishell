@@ -30,6 +30,7 @@
     :with-openspec false         ; boolean
     :with-pi false               ; boolean
     :with-gitleaks false         ; boolean (whether Gitleaks installed, default false, opt-in)
+    :with-ockit false            ; boolean (whether ockit repo cloned to ~/.aishell/ockit/)
     :unisoma false               ; boolean (UniSoma OpenCode provider whitelist, default false)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil

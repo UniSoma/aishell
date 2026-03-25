@@ -1,6 +1,6 @@
 # aishell
 
-Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi) in ephemeral containers, with optional development tools (OpenSpec).
+Docker sandbox for running AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi) in ephemeral containers, with optional development tools (OpenSpec, OCkit).
 
 ## Why Docker?
 
@@ -172,6 +172,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **Sensitive file detection** - Warnings before AI agents access secrets, keys, or credentials
 - **Gitleaks integration** - Opt-in deep content-based secret scanning with `aishell gitleaks` (requires `--with-gitleaks`)
 - **OpenSpec integration** - Opt-in development workflow tool available inside containers (requires `--with-openspec`)
+- **OCkit integration** - Install and manage OpenCode plugins via `aishell ockit` (requires `--with-ockit`)
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Named containers** - Deterministic naming with `--name` override
 - **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, server state persisted across restarts
@@ -204,6 +205,9 @@ aishell setup --with-codex=0.1.2025062501
 # Set up with optional development tools
 aishell setup --with-claude --with-openspec
 aishell setup --with-claude --with-openspec=1.2.3
+
+# Set up with OCkit (OpenCode plugin manager)
+aishell setup --with-ockit
 ```
 
 ### Run harnesses
@@ -222,6 +226,23 @@ aishell pi
 # Pass arguments to harness
 aishell claude --help
 ```
+
+### OCkit (OpenCode plugins)
+
+Install and manage OpenCode plugins (agents, commands, skills) via the ockit wizard:
+
+```bash
+# First-time setup: clone the ockit repo
+aishell setup --with-ockit
+
+# Run the plugin wizard (select plugins to install)
+aishell ockit
+
+# Pull latest plugins and re-run wizard
+aishell ockit --upgrade
+```
+
+Git clone/pull runs on the host (where SSH keys live). The wizard runs in an ephemeral container with the repo mounted read-only and `~/.config/opencode/` mounted read-write. After installation, restart OpenCode to detect new plugins.
 
 ### One-off commands
 

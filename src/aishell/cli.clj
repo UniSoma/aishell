@@ -1,6 +1,7 @@
 (ns aishell.cli
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
+            [babashka.process :as p]
             [cheshire.core :as json]
             [clojure.string :as str]
             [clojure.pprint :as pp]
@@ -113,6 +114,41 @@
               config (update-in config ["provider" "opencode"] dissoc "whitelist")]
           (spit config-path (json/generate-string config {:pretty true})))))))
 
+;; Ockit constants
+(def ockit-repo-url "git@bitbucket.org:unisoma/unisoma.genai.ockit.git")
+
+(defn ockit-dir
+  "Path to ockit repo cache: ~/.aishell/ockit/"
+  []
+  (str (fs/path (util/config-dir) "ockit")))
+
+(defn- setup-ockit!
+  "Clone or pull the ockit repo into ~/.aishell/ockit/.
+   Returns true on success. Calls output/error (exits) on failure."
+  []
+  (let [target (ockit-dir)]
+    (if (fs/exists? (str (fs/path target ".git")))
+      ;; Already cloned — pull latest
+      (do
+        (println "Updating ockit repository...")
+        (let [result (p/shell {:continue true :out :inherit :err :inherit}
+                                 "git" "-C" target "pull")]
+          (when (not= 0 (:exit result))
+            (output/error (str "Failed to update ockit repository (git pull failed in " target ")")))))
+      ;; Fresh clone
+      (do
+        (println "Cloning ockit repository...")
+        (let [result (p/shell {:continue true :out :inherit :err :inherit}
+                                 "git" "clone" ockit-repo-url target)]
+          (when (not= 0 (:exit result))
+            ;; Clean up partial clone on failure
+            (when (fs/exists? target)
+              (fs/delete-tree target))
+            (output/error (str "Failed to clone ockit repository.\n"
+                               "Make sure you have SSH access to: " ockit-repo-url "\n"
+                               "Check your SSH key configuration and try again."))))))
+    true))
+
 ;; Setup subcommand spec
 ;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
 ;; returns boolean true for flags without values, which can't be coerced to string.
@@ -124,6 +160,7 @@
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
    :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
+   :with-ockit    {:coerce :boolean :desc "Include ockit (clone/pull OpenCode plugins repo)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
@@ -143,7 +180,8 @@
       (:with-gemini state) (conj "gemini")
       (:with-pi state) (conj "pi")
       (:with-openspec state) (conj "openspec")
-      (:with-gitleaks state false) (conj "gitleaks"))
+      (:with-gitleaks state false) (conj "gitleaks")
+      (:with-ockit state) (conj "ockit"))
     ;; No state = no build yet, show all for discoverability
     #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))
 
@@ -176,7 +214,9 @@
     (when (contains? installed "pi")
       (println (str "  " output/CYAN "pi" output/NC "         Run Pi coding agent")))
     (when (contains? installed "gitleaks")
-      (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))))
+      (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner")))
+    (when (contains? installed "ockit")
+      (println (str "  " output/CYAN "ockit" output/NC "      Run ockit plugin wizard"))))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
@@ -199,7 +239,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-ockit :with-gitleaks :unisoma :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -209,6 +249,7 @@
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
   (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
+  (println (str "  " output/CYAN "aishell setup --with-ockit" output/NC "             Clone/pull ockit plugins repo"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
@@ -226,6 +267,7 @@
           pi-config (parse-with-flag (:with-pi opts))
           openspec-config (parse-with-flag (:with-openspec opts))
           with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
+          with-ockit (boolean (:with-ockit opts))
           with-unisoma (boolean (:unisoma opts))
 
           ;; Validate --unisoma requires --with-opencode
@@ -239,6 +281,10 @@
           _ (validate-version (:version gemini-config) "Gemini")
           _ (validate-version (:version pi-config) "Pi")
           _ (validate-version (:version openspec-config) "OpenSpec")
+
+          ;; Clone/pull ockit repo if requested (host-side, before Docker build)
+          _ (when with-ockit
+              (setup-ockit!))
 
           ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/foundation-image-tag)
@@ -265,6 +311,7 @@
                      :with-pi (:enabled? pi-config)
                      :with-openspec (:enabled? openspec-config)
                      :with-gitleaks with-gitleaks
+                     :with-ockit with-ockit
                      :unisoma with-unisoma
                      :claude-version (:version claude-config)
                      :opencode-version (:version opencode-config)
@@ -387,6 +434,10 @@
         (println (str "  Pi: " (or (:pi-version state) "latest"))))
       (when (:with-openspec state)
         (println (str "  OpenSpec: " (or (:openspec-version state) "latest"))))
+      (when (:with-ockit state)
+        (println "  Ockit: enabled")
+        ;; Pull latest ockit repo on update
+        (setup-ockit!))
 
       ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
@@ -571,6 +622,103 @@
         (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
         (println "\nTo attach: aishell attach <name>")))))
 
+(defn handle-ockit
+  "Run the ockit wizard in an ephemeral container.
+   Lighter than harness runs: no harness volume, no API keys, no detection.
+
+   Mounts:
+   - ~/.aishell/ockit/ → /ockit (read-only, plugin sources)
+   - ~/.config/opencode/ → ~/.config/opencode/ (read-write, installed plugins)
+
+   Options:
+   --upgrade  Git pull latest before running wizard
+   --help     Show help"
+  [args]
+  (let [rest-args (vec args)]
+    (cond
+      ;; Help
+      (some #{"-h" "--help"} rest-args)
+      (do
+        (println (str output/BOLD "Usage:" output/NC " aishell ockit [OPTIONS]"))
+        (println)
+        (println "Run the ockit wizard to install/select OpenCode plugins.")
+        (println)
+        (println (str output/BOLD "Options:" output/NC))
+        (println "  --upgrade    Pull latest ockit repo before running wizard")
+        (println "  -h, --help   Show this help")
+        (println)
+        (println (str output/BOLD "Examples:" output/NC))
+        (println (str "  " output/CYAN "aishell ockit" output/NC "              Run plugin wizard"))
+        (println (str "  " output/CYAN "aishell ockit --upgrade" output/NC "    Update repo, then run wizard"))
+        (println)
+        (println (str output/BOLD "Notes:" output/NC))
+        (println "  Requires: aishell setup --with-ockit (to clone the repo first)")
+        (println "  Plugins are installed to ~/.config/opencode/"))
+
+      :else
+      (let [upgrade? (some #{"--upgrade"} rest-args)
+            ockit-path (ockit-dir)]
+        ;; Verify ockit repo exists
+        (when-not (fs/exists? (str (fs/path ockit-path ".git")))
+          (output/error "Ockit repository not found.\n\nRun: aishell setup --with-ockit"))
+
+        ;; Pull latest if --upgrade
+        (when upgrade?
+          (setup-ockit!))
+
+        ;; Check Docker available
+        (docker/check-docker!)
+
+        ;; Verify build exists
+        (let [state (state/read-state)]
+          (when-not state
+            (output/error-no-setup))
+
+          ;; Resolve image (use base, ensure it's up to date)
+          (let [project-dir (System/getProperty "user.dir")
+                image-tag (run/resolve-image-tag base/base-image-tag project-dir false)
+                home (util/get-home)
+                uid (if (fs/windows?) "1000" (-> (p/shell {:out :string} "id" "-u") :out str/trim))
+                gid (if (fs/windows?) "1000" (-> (p/shell {:out :string} "id" "-g") :out str/trim))
+                container-home (if (fs/windows?) "/home/developer" home)
+                opencode-config-dir (str (fs/path home ".config" "opencode"))
+                ;; For local installs: mount project dir so .opencode can be written
+                mount-dest (if (fs/windows?) "/workspace" project-dir)
+
+                ;; Ensure opencode config dir exists on host
+                _ (util/ensure-dir opencode-config-dir)
+
+                docker-args ["docker" "run" "--rm" "-it"
+                             ;; Mount ockit repo read-only
+                             "-v" (str ockit-path ":/ockit:ro")
+                             ;; Mount project directory (for local .opencode installs)
+                             "-v" (str project-dir ":" mount-dest)
+                             "-w" mount-dest
+                             ;; Mount opencode config read-write (for global installs)
+                             "-v" (str opencode-config-dir ":" opencode-config-dir)
+                             ;; User identity for entrypoint
+                             "-e" (str "LOCAL_UID=" uid)
+                             "-e" (str "LOCAL_GID=" gid)
+                             "-e" (str "LOCAL_HOME=" container-home)
+                             ;; Tell ockit where the repo is
+                             "-e" "OCKIT_REPO_ROOT=/ockit"
+                             ;; Tell ockit the caller's project dir (for local installs)
+                             "-e" (str "OCKIT_CALLER_PWD=" mount-dest)
+                             ;; Terminal settings
+                             "-e" (str "TERM=" (or (System/getenv "TERM") "xterm-256color"))
+                             "-e" (str "COLORTERM=" (or (System/getenv "COLORTERM") "truecolor"))
+                             ;; Skip pre_start hooks
+                             "-e" "PRE_START="
+                             ;; Image
+                             image-tag]
+                container-cmd ["bb" "--config" "/ockit/bb.edn" "init"]]
+            ;; Exec into the container
+            (if (fs/windows?)
+              (let [result @(apply p/process {:inherit true}
+                                   (concat docker-args container-cmd))]
+                (System/exit (:exit result)))
+              (apply p/exec (concat docker-args container-cmd)))))))))
+
 (def dispatch-table
   [{:cmds ["setup"] :fn handle-setup :spec setup-spec :restrict true}
    {:cmds ["update"] :fn handle-update :spec update-spec :restrict true}
@@ -599,7 +747,7 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade" "info"}
+        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade" "info" "ockit"}
         should-extract-name? (not (contains? known-subcommands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
@@ -730,6 +878,7 @@
                       (when target-version
                         (validate-version target-version "aishell"))
                       (upgrade/do-upgrade version target-version))))
+      "ockit" (handle-ockit (vec (rest clean-args)))
       "claude" (run/run-container "claude" (vec (rest clean-args))
                                   {:unsafe unsafe? :container-name container-name-override})
       "opencode" (run/run-container "opencode" (vec (rest clean-args))
