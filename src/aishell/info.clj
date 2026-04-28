@@ -9,6 +9,7 @@
             [aishell.docker.templates :as templates]
             [aishell.docker.base :as base]
             [aishell.docker.extension :as ext]
+            [aishell.docker.naming :as naming]
             [aishell.docker.run :as run]
             [aishell.output :as output]
             [aishell.state :as state]
@@ -104,6 +105,29 @@
                              paths))))
               enabled))))
 
+(defn- project-image-tag
+  "Compute the resolved image tag for a project without calling Docker.
+
+   Returns the extended tag (aishell:ext-XXXXXXXXXXXX) when a project
+   extension Dockerfile exists, otherwise the base tag (aishell:base)."
+  [project-dir]
+  (if (ext/project-dockerfile project-dir)
+    (ext/compute-extended-tag project-dir)
+    base/base-image-tag))
+
+(defn- format-project-section
+  "Format the Project section body as a vector of indented label/value lines.
+
+   Labels are padded so values align in a single column (longest label is
+   `Container prefix:`)."
+  [project-dir]
+  (let [directory (str (fs/canonicalize project-dir))
+        hash (naming/project-hash project-dir)
+        prefix (str "aishell-" hash "-")]
+    [(str "  Directory:        " directory)
+     (str "  Hash:             " hash)
+     (str "  Container prefix: " prefix)]))
+
 (defn run-info
   "Print structured summary of the aishell image stack."
   [args]
@@ -131,6 +155,13 @@
         gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
+
+    ;; Project section
+    (println (str output/BOLD "Project" output/NC " (" (project-image-tag project-dir) ")"))
+    (println "--------------------------------------")
+    (doseq [line (format-project-section project-dir)]
+      (println line))
+    (println)
 
     ;; Foundation section
     (println (str output/BOLD "Foundation Image" output/NC " (aishell:foundation)"))
