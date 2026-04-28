@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-04-28
+
+### Added
+
+- **Project section in `aishell info`**: New section showing the project directory, hash, container prefix, and resolved image tag (extended when a project Dockerfile exists, otherwise the base tag) — printed above the Foundation section
+
 ## [3.14.0] - 2026-03-16
 
 ### Added
