@@ -17,11 +17,13 @@ FROM debian:bookworm-slim
 
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.214
+ARG BBIN_VERSION=0.2.5
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages in single layer
+# openjdk-17-jre-headless: required by bbin for tools.deps dep resolution
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     bash \\
     bc \\
@@ -33,7 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     htop \\
     jq \\
     less \\
+    openjdk-17-jre-headless \\
     ripgrep \\
+    rlwrap \\
     sqlite3 \\
     sudo \\
     tree \\
@@ -59,6 +63,69 @@ RUN set -eux; \\
     | tar -xz -C /usr/local/bin bb; \\
     chmod +x /usr/local/bin/bb; \\
     bb --version
+
+# Install bbin (Babashka script installer)
+RUN set -eux; \\
+    curl -fsSL \"https://raw.githubusercontent.com/babashka/bbin/v${BBIN_VERSION}/bbin\" -o /usr/local/bin/bbin; \\
+    chmod +x /usr/local/bin/bbin
+
+# Shared bbin install dir (executables on PATH for everyone).
+# We deliberately do NOT set BABASHKA_BBIN_DIR — that puts bbin in legacy
+# single-dir mode and triggers a 'bbin migrate' warning on every invocation.
+ENV BABASHKA_BBIN_BIN_DIR=/usr/local/share/bbin/bin
+
+# Put the bbin install dir on PATH for build-time RUN layers in extending
+# images. Runtime shells already get it via /etc/profile.d/aishell.sh and
+# /etc/bash.aishell, but Dockerfile RUN spawns a non-interactive non-login
+# bash that sources neither — so wrappers produced by `bbin install` would
+# otherwise be unreachable from a downstream `RUN clj-mytool --help` step.
+ENV PATH=${BABASHKA_BBIN_BIN_DIR}:${PATH}
+
+# Shared Clojure tools jar location (honored by deps.clj — the babashka
+# emulator of the clojure CLI used by babashka.deps/add-deps).
+ENV DEPS_CLJ_TOOLS_DIR=/usr/local/share/deps.clj/ClojureTools
+
+# Shared tools.deps git-libs cache. `bbin install <git-url> --git/sha …`
+# from an extending Dockerfile runs as root and clones into ~/.gitlibs;
+# bbin's wrapper then sets that path as the cwd when it shells out to
+# java, so the developer user (UID 1000) needs to be able to traverse it.
+# tools.deps honors GITLIBS directly (unlike :mvn/local-repo, which -Srepro
+# strips), so a single env var redirects both build-time and runtime writes.
+ENV GITLIBS=/usr/local/share/gitlibs
+
+# Shared Clojure CLI config dir. `clojure -Ttools install :as <name>` writes
+# the tool registry to $CLJ_CONFIG/tools/<name>.edn, defaulting to per-user
+# $HOME/.clojure — so a build-time install as root would land in /root/.clojure
+# and be invisible to the developer user at runtime (\"Unknown tool: <name>\").
+# Setting CLJ_CONFIG to a shared dir makes both contexts read/write the same
+# registry. Per-user customization is still possible by overriding CLJ_CONFIG
+# in a developer's shell session.
+ENV CLJ_CONFIG=/usr/local/share/clojure-config
+
+# Shared Maven cache. babashka.deps/add-deps invokes deps.clj with -Srepro,
+# which ignores user/project deps.edn — so :mvn/local-repo cannot be set via
+# config and the only reliable way to redirect downloads is to symlink the
+# default ~/.m2/repository path. Build-time pre-warming (root) and runtime
+# installs (developer) both write to /usr/local/share/m2 via this symlink.
+RUN mkdir -p /usr/local/share/bbin/bin \\
+             /usr/local/share/m2 \\
+             /usr/local/share/gitlibs \\
+             /usr/local/share/clojure-config/tools \\
+             /usr/local/share/deps.clj/ClojureTools \\
+             /root/.m2 \\
+    && ln -sfn /usr/local/share/m2 /root/.m2/repository \\
+    && chown -R 1000:1000 /usr/local/share/bbin \\
+                          /usr/local/share/m2 \\
+                          /usr/local/share/gitlibs \\
+                          /usr/local/share/clojure-config \\
+                          /usr/local/share/deps.clj
+
+# Pre-warm bbin's tools.deps cache: downloads clojure-tools jar to
+# DEPS_CLJ_TOOLS_DIR and Maven deps to the shared /usr/local/share/m2
+# (via the /root/.m2/repository symlink). The developer user picks up the
+# warm cache through an equivalent symlink created in the entrypoint.
+RUN bbin version \\
+    && test -d /usr/local/share/m2/org/clojure
 
 # Install gosu 1.19 for proper user switching
 # Source: https://github.com/tianon/gosu
@@ -146,6 +213,30 @@ chown \"$USER_ID:$GROUP_ID\" \"$HOME\"
 mkdir -p \"$HOME/.local/state\" \"$HOME/.local/share\" \"$HOME/.local/bin\"
 chown -R \"$USER_ID:$GROUP_ID\" \"$HOME/.local\"
 
+# Sync shared bbin + Maven caches to the host UID so the developer user
+# can install/remove packages at runtime (build-time runs as root).
+for dir in /usr/local/share/bbin \\
+           /usr/local/share/m2 \\
+           /usr/local/share/gitlibs \\
+           /usr/local/share/clojure-config \\
+           /usr/local/share/deps.clj; do
+    if [ -d \"$dir\" ]; then
+        chown -R \"$USER_ID:$GROUP_ID\" \"$dir\"
+    fi
+done
+
+# Symlink ~/.m2/repository to the shared Maven cache so bbin (which calls
+# tools.deps with -Srepro and writes to the default ~/.m2/repository) finds
+# the pre-warmed deps. Only do this when $HOME/.m2 does NOT already exist
+# — this preserves any user-supplied bind mount (host ~/.m2 → container)
+# and avoids leaking a container-only symlink onto the host filesystem.
+if [ ! -e \"$HOME/.m2\" ]; then
+    mkdir -p \"$HOME/.m2\"
+    chown \"$USER_ID:$GROUP_ID\" \"$HOME/.m2\"
+    ln -sfn /usr/local/share/m2 \"$HOME/.m2/repository\"
+    chown -h \"$USER_ID:$GROUP_ID\" \"$HOME/.m2/repository\"
+fi
+
 # Configure git safe.directory to trust the mounted project path (GIT-02)
 # PWD is set by docker run -w flag
 # Must run after home directory exists (git config --global needs $HOME/.gitconfig writable)
@@ -186,7 +277,7 @@ if ! grep -q \".bash_aliases\" \"$HOME/.bashrc\" 2>/dev/null; then
 fi
 
 # Add harness bin directories to PATH if they exist
-export PATH=\"$HOME/.local/bin:/usr/local/bin:$PATH\"
+export PATH=\"$HOME/.local/bin:${BABASHKA_BBIN_BIN_DIR:-/usr/local/share/bbin/bin}:/usr/local/bin:$PATH\"
 
 # Volume-mounted harness tools PATH configuration
 if [ -d \"/tools/npm/bin\" ]; then
@@ -269,6 +360,9 @@ fi
 
 # User local bin (native tool installations like Claude Code)
 export PATH=\"$HOME/.local/bin:$PATH\"
+
+# Shared bbin install dir (build-time and runtime installs land here)
+export PATH=\"${BABASHKA_BBIN_BIN_DIR:-/usr/local/share/bbin/bin}:$PATH\"
 
 # Volume-mounted harness tools PATH configuration
 if [ -d \"/tools/npm/bin\" ]; then

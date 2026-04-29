@@ -38,6 +38,11 @@
   [dockerfile]
   (second (re-find #"ARG BABASHKA_VERSION=(\S+)" dockerfile)))
 
+(defn- parse-bbin-version
+  "Extract bbin version from ARG BBIN_VERSION=X.Y.Z."
+  [dockerfile]
+  (second (re-find #"ARG BBIN_VERSION=(\S+)" dockerfile)))
+
 (defn- parse-gitleaks-version
   "Extract Gitleaks version from ARG GITLEAKS_VERSION=X.Y.Z."
   [dockerfile]
@@ -152,6 +157,7 @@
         packages (parse-packages dockerfile)
         node-version (parse-node-version dockerfile)
         bb-version (parse-babashka-version dockerfile)
+        bbin-version (parse-bbin-version dockerfile)
         gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
@@ -177,6 +183,8 @@
       (println (str "    Node.js " node-version " (from node:" node-version "-bookworm-slim)")))
     (when bb-version
       (println (str "    Babashka " bb-version)))
+    (when bbin-version
+      (println (str "    bbin " bbin-version)))
     (println "    gosu 1.19")
     (println)
     (println (str "  Gitleaks: "

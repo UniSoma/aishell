@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **bbin in foundation image**: `bbin` (Babashka script installer) is now installed alongside `bb`. `BABASHKA_BBIN_BIN_DIR` is set to a shared `/usr/local/share/bbin/bin` so installs from an extending Dockerfile (root) and from the running container (developer user) land in the same place; the dir is on PATH for both interactive and exec'd shells, and the entrypoint chowns it to the host UID at runtime
+- **Pre-warmed bbin caches**: the foundation image bakes in `clojure-tools.jar` (via `DEPS_CLJ_TOOLS_DIR=/usr/local/share/deps.clj/ClojureTools`) and bbin's Maven deps in `/usr/local/share/m2`, so the developer user no longer pays the cold-start dep download on first `bbin` invocation. Because `babashka.deps/add-deps` invokes deps.clj with `-Srepro` (which ignores user/project `deps.edn`), `:mvn/local-repo` cannot be set via config — instead `~/.m2/repository` is symlinked to the shared cache for both root (at build) and the developer user (in the entrypoint)
+- **OpenJDK 17 JRE (headless)**: required by bbin for `tools.deps` dep resolution (`babashka.deps/add-deps`). Adds ~150–200MB to the foundation image but is necessary for `bbin install <pkg>` to work
+- **rlwrap**: readline wrapper for line-editing in CLIs that don't ship readline support themselves (notably the Clojure `clj` REPL wrapper)
+
 ## [3.15.0] - 2026-04-28
 
 ### Added

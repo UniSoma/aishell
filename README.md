@@ -540,6 +540,8 @@ Built on `debian:bookworm-slim` with:
 **Runtimes:**
 - Node.js 24 (with npm, npx)
 - Babashka
+- bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
+- OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
 
 **Security tools:**
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
@@ -547,7 +549,7 @@ Built on `debian:bookworm-slim` with:
 **CLI tools:**
 - git, curl, jq, ripgrep, fd, vim
 - tree, less, file, unzip, watch
-- htop, sqlite3, sudo
+- htop, sqlite3, sudo, rlwrap
 
 **Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image. This includes optional tools like OpenSpec when enabled.
 This allows harness updates without rebuilding the foundation image.
