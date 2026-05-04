@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.0] - 2026-05-04
+
+### Added
+
+- **CUE 0.16.1 in foundation image**: `cue` is now installed in the base image for data validation, configuration, and code generation. The version is surfaced in `aishell info` and listed among the image's installed tools in the README
+
+### Fixed
+
+- **PATH overrides in login shells**: Replace Debian's `/etc/profile` with a variant that only sets a default `PATH` when `PATH` is unset. The stock file unconditionally clobbers `PATH` for non-root login shells, silently discarding `ENV PATH` overrides from extending images — so a downstream `ENV PATH=/opt/jdk/bin:$PATH` worked in the entrypoint-launched shell but not in `aishell attach`
+
 ## [3.16.0] - 2026-04-29
 
 ### Added
