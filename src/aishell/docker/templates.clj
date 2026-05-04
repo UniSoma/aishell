@@ -169,6 +169,13 @@ COPY bashrc.aishell /etc/bash.aishell
 # Copy profile.d script for login shell environment
 COPY profile.d-aishell.sh /etc/profile.d/aishell.sh
 
+# Replace Debian's /etc/profile with a version whose PATH default is gated on
+# PATH being unset. The stock file unconditionally clobbers PATH for non-root
+# login shells, which wipes ENV PATH overrides set by extending images
+# (e.g. a downstream JDK install). In a container PATH is always provided by
+# image metadata, so the fallback never triggers in practice.
+COPY etc-profile /etc/profile
+
 ENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]
 CMD [\"/bin/bash\"]
 ")
@@ -385,5 +392,50 @@ fi
 # Source harness aliases for login shells
 if [ -f \"$HOME/.bash_aliases\" ]; then
   . \"$HOME/.bash_aliases\"
+fi
+")
+
+(def etc-profile-content
+  "# /etc/profile: system-wide .profile file for the Bourne shell (sh(1))
+# and Bourne compatible shells (bash(1), ksh(1), ash(1), ...).
+#
+# Customized for aishell. Upstream Debian unconditionally resets PATH for
+# non-root login shells, which silently discards any ENV PATH overrides set
+# by images extending aishell:foundation (e.g. a downstream JDK install).
+# We only apply the default when PATH is empty, which in a container only
+# happens if something explicitly unsets it.
+
+if [ -z \"${PATH:-}\" ]; then
+  if [ \"$(id -u)\" -eq 0 ]; then
+    PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
+  else
+    PATH=\"/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games\"
+  fi
+  export PATH
+fi
+
+if [ \"${PS1-}\" ]; then
+  if [ \"${BASH-}\" ] && [ \"$BASH\" != \"/bin/sh\" ]; then
+    # The file bash.bashrc already sets the default PS1.
+    # PS1='\\h:\\w\\$ '
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+  else
+    if [ \"$(id -u)\" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
+
+if [ -d /etc/profile.d ]; then
+  for i in /etc/profile.d/*.sh; do
+    if [ -r $i ]; then
+      . $i
+    fi
+  done
+  unset i
 fi
 ")
