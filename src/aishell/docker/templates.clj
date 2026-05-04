@@ -18,6 +18,7 @@ FROM debian:bookworm-slim
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.214
 ARG BBIN_VERSION=0.2.5
+ARG CUE_VERSION=0.16.1
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -135,6 +136,20 @@ RUN set -eux; \\
     chmod +x /usr/local/bin/gosu; \\
     gosu --version; \\
     gosu nobody true
+
+# Install CUE for data validation, configuration, and code generation
+# Source: https://github.com/cue-lang/cue
+RUN set -eux; \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch}\" in \\
+        amd64) cueArch='amd64' ;; \\
+        arm64) cueArch='arm64' ;; \\
+        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL \"https://github.com/cue-lang/cue/releases/download/v${CUE_VERSION}/cue_v${CUE_VERSION}_linux_${cueArch}.tar.gz\" \\
+    | tar -xz -C /usr/local/bin cue; \\
+    chmod +x /usr/local/bin/cue; \\
+    cue version
 
 # Install Gitleaks for secret scanning (conditional, opt-in)
 ARG WITH_GITLEAKS=false

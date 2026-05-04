@@ -542,6 +542,7 @@ Built on `debian:bookworm-slim` with:
 - Babashka
 - bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
 - OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
+- CUE v0.16.1 — data validation, configuration, and code generation
 
 **Security tools:**
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)

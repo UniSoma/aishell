@@ -43,6 +43,11 @@
   [dockerfile]
   (second (re-find #"ARG BBIN_VERSION=(\S+)" dockerfile)))
 
+(defn- parse-cue-version
+  "Extract CUE version from ARG CUE_VERSION=X.Y.Z."
+  [dockerfile]
+  (second (re-find #"ARG CUE_VERSION=(\S+)" dockerfile)))
+
 (defn- parse-gitleaks-version
   "Extract Gitleaks version from ARG GITLEAKS_VERSION=X.Y.Z."
   [dockerfile]
@@ -158,6 +163,7 @@
         node-version (parse-node-version dockerfile)
         bb-version (parse-babashka-version dockerfile)
         bbin-version (parse-bbin-version dockerfile)
+        cue-version (parse-cue-version dockerfile)
         gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
@@ -185,6 +191,8 @@
       (println (str "    Babashka " bb-version)))
     (when bbin-version
       (println (str "    bbin " bbin-version)))
+    (when cue-version
+      (println (str "    CUE " cue-version)))
     (println "    gosu 1.19")
     (println)
     (println (str "  Gitleaks: "
