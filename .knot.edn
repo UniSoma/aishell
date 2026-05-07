@@ -1,0 +1,60 @@
+;; Knot project config. All keys are optional; sensible defaults apply.
+;; See the project README for the full schema.
+{
+ ;; Where ticket files live, relative to this file.
+ :tickets-dir ".tickets"
+
+ ;; Project shortcode prefixed onto every generated ticket id.
+ :prefix "aix"           ; auto-derived from project dir name when omitted
+
+ ;; Optional human-readable project name shown in `knot prime`.
+ :project-name "AIShell"
+
+ ;; Default assignee on `knot create`. When this key is set here,
+ ;; it wins over git config user.name. Set to nil to opt out of
+ ;; auto-assignment entirely (no assignee unless --assignee is passed).
+ :default-assignee nil
+
+ ;; Default ticket type on `knot create` (must be in :types below).
+ :default-type "task"
+
+ ;; Default priority on `knot create` — integer 0..4 (0 = highest).
+ :default-priority 2
+
+ ;; Status workflow, in display order. Edit to add e.g. "review".
+ ;; List-table colors are role-driven: terminal statuses render dim,
+ ;; the active lane renders yellow, and the first entry below that is
+ ;; neither active nor terminal renders cyan as the intake lane; any
+ ;; remaining entries render uncolored.
+ :statuses ["open" "in_progress" "closed"]
+
+ ;; Statuses that are terminal — files of tickets in these statuses
+ ;; auto-move to <tickets-dir>/archive/.
+ :terminal-statuses #{"closed"}
+
+ ;; The active lane: status `knot start` transitions to, and the one
+ ;; the prime ## In Progress section filters by. Must be a member of
+ ;; :statuses and not in :terminal-statuses. Update this when you
+ ;; edit :statuses to a list that does not include "in_progress".
+ :active-status "in_progress"
+
+ ;; Allowed values for the :type field on each ticket.
+ :types ["bug" "feature" "task" "epic" "chore"]
+
+ ;; Allowed values for the :mode field — `afk` is agent-runnable,
+ ;; `hitl` requires a human. Set the mode on `knot create` with
+ ;; --mode <value> always; do not add per-mode shortcut flags
+ ;; (--<mode-name>) — they bake the values of `:modes` into CLI
+ ;; parsing and break projects that customize this list.
+ :modes ["afk" "hitl"]
+
+ ;; Default mode on `knot create` (must be in :modes above).
+ :default-mode "hitl"
+
+ ;; Names which entry in :modes denotes the autonomous-agent role.
+ ;; Drives the `knot prime` agent preamble: when --mode matches this
+ ;; value, prime emits the autonomous-flow directive instead of the
+ ;; human-oriented intent table. Set to nil to disable the agent
+ ;; preamble entirely. Must be a member of :modes (or nil).
+ :afk-mode "afk"
+}
