@@ -18,6 +18,7 @@
             [aishell.config :as config]
             [aishell.util :as util]
             [aishell.attach :as attach]
+            [aishell.attach.parse :as attach-parse]
             [aishell.vscode :as vscode]
             [aishell.upgrade :as upgrade]
             [aishell.migration :as migration]
@@ -634,29 +635,37 @@
                        (cond
                          (some #{"-h" "--help"} rest-args)
                          (do
-                           (println (str output/BOLD "Usage:" output/NC " aishell attach <name>"))
+                           (println (str output/BOLD "Usage:" output/NC " aishell attach <name> [-- <command> [args...]]"))
                            (println)
                            (println "Attach to a running container (opens bash shell).")
+                           (println "If a command follows '--', it runs first; on exit you drop into the container shell.")
                            (println)
                            (println (str output/BOLD "Options:" output/NC))
                            (println "  -h, --help    Show this help")
                            (println)
                            (println (str output/BOLD "Examples:" output/NC))
                            (println (str "  " output/CYAN "aishell attach claude" output/NC))
-                           (println (str "      Open bash shell in the 'claude' container"))
+                           (println "      Open bash shell in the 'claude' container")
                            (println)
                            (println (str "  " output/CYAN "aishell attach shell" output/NC))
-                           (println (str "      Open bash shell in the 'shell' container"))
+                           (println "      Open bash shell in the 'shell' container")
+                           (println)
+                           (println (str "  " output/CYAN "aishell attach session -- btm" output/NC))
+                           (println "      Run 'btm' first; on exit, drop into the container shell")
+                           (println)
+                           (println (str "  " output/CYAN "aishell attach session -- bash -c \"btm | tee log\"" output/NC))
+                           (println "      Use bash -c to opt into shell pipelines")
                            (println)
                            (println (str output/BOLD "Notes:" output/NC))
                            (println "  Use 'aishell ps' to list running containers.")
                            (println "  The container must be running. Start one in another terminal: aishell <harness>"))
 
-                         (empty? rest-args)
-                         (output/error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers.")
-
                          :else
-                         (attach/attach-to-container (first rest-args))))
+                         (let [parsed (attach-parse/parse-attach-args rest-args)]
+                           (if-let [err (:error parsed)]
+                             (output/error err)
+                             (attach/attach-to-container (:name parsed)
+                                                         :command-argv (:command-argv parsed))))))
       "vscode" (let [rest-args (vec (rest clean-args))
                      own-flags #{"--detach" "--stop" "-h" "--help"}
                      code-args (vec (remove own-flags rest-args))]

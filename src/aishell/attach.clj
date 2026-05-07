@@ -3,6 +3,7 @@
    Provides pre-flight validations and terminal takeover via docker exec."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
+            [aishell.attach.invocation :as invocation]
             [aishell.docker.naming :as naming]
             [aishell.output :as output]))
 
@@ -33,13 +34,13 @@
   ;; Check container exists
   (when-not (naming/container-exists? container-name)
     (output/error (str "Container '" short-name "' not found.\n\n"
-                      "Use 'aishell ps' to list containers.\n"
-                      "To start: aishell " short-name)))
+                       "Use 'aishell ps' to list containers.\n"
+                       "To start: aishell " short-name)))
   ;; Check container is running
   (when-not (naming/container-running? container-name)
     (output/error (str "Container '" short-name "' is not running.\n\n"
-                      "To start: aishell " short-name "\n"
-                      "Or use: docker start " container-name))))
+                       "To start: aishell " short-name "\n"
+                       "Or use: docker start " container-name))))
 
 (defn attach-to-container
   "Attach to a running container by opening a bash shell.
@@ -48,10 +49,14 @@
    1. Interactive terminal check
    2. Container exists and is running
 
+   With :command-argv, runs that command first via a bash login shell, then
+   drops the user into a fresh interactive login shell — same shape as if
+   they had attached and typed the command manually.
+
    On success, transfers terminal control to container bash:
    - Unix: uses p/exec (replaces process, cleaner process tree)
    - Windows: uses p/process :inherit (child process with I/O inheritance)"
-  [name]
+  [name & {:keys [command-argv]}]
   (let [project-dir (System/getProperty "user.dir")
         container-name (naming/container-name project-dir name)]
     ;; Run all validations
@@ -60,26 +65,17 @@
 
     ;; Resolve TERM valid inside the container (host TERM may lack terminfo)
     (let [term (resolve-term container-name)
-          colorterm (or (System/getenv "COLORTERM") "truecolor")]
+          colorterm (or (System/getenv "COLORTERM") "truecolor")
+          argv (invocation/build-docker-exec-argv {:container container-name
+                                                   :term term
+                                                   :colorterm colorterm
+                                                   :command-argv command-argv})]
       ;; All checks passed - exec into bash (transfer terminal control)
       ;; Use --login so /etc/profile sources /etc/profile.d/aishell.sh
       ;; which sets PATH (tools), prompt, aliases — matching normal startup
       (if (fs/windows?)
         ;; Windows: spawn child process with inherited I/O, wait, propagate exit
-        (let [result @(p/process {:inherit true}
-                                 "docker" "exec" "-it" "-u" "developer"
-                                 "-e" (str "TERM=" term)
-                                 "-e" (str "COLORTERM=" colorterm)
-                                 "-e" "LANG=C.UTF-8"
-                                 "-e" "LC_ALL=C.UTF-8"
-                                 container-name
-                                 "/bin/bash" "--login")]
+        (let [result @(apply p/process {:inherit true} argv)]
           (System/exit (:exit result)))
         ;; Unix: replace process (cleaner process tree)
-        (p/exec "docker" "exec" "-it" "-u" "developer"
-                "-e" (str "TERM=" term)
-                "-e" (str "COLORTERM=" colorterm)
-                "-e" "LANG=C.UTF-8"
-                "-e" "LC_ALL=C.UTF-8"
-                container-name
-                "/bin/bash" "--login")))))
+        (apply p/exec argv)))))
