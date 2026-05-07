@@ -21,7 +21,6 @@
             [aishell.attach.parse :as attach-parse]
             [aishell.vscode :as vscode]
             [aishell.upgrade :as upgrade]
-            [aishell.migration :as migration]
             [aishell.info :as info]
             [aishell.pi :as pi]
             [aishell.update-check :as update-check]))
@@ -213,8 +212,6 @@
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
 
 (defn handle-setup [{:keys [opts]}]
-  ;; Show migration warning on first touch for upgraders
-  (migration/show-v2.9-migration-warning!)
   (if (:help opts)
     (print-setup-help)
     (let [;; Parse flags
@@ -654,9 +651,6 @@
     (str "--json is not supported for: " (first args))))
 
 (defn- do-dispatch [args]
-  ;; Migration warning is currently a no-op, but keep the call inside the
-  ;; JSON-mode binding so a future revival can't bleed text onto stdout/stderr.
-  (migration/show-v2.9-migration-warning!)
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))

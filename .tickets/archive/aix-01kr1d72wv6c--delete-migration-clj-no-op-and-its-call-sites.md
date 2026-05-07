@@ -1,12 +1,13 @@
 ---
 id: aix-01kr1d72wv6c
 title: Delete migration.clj no-op and its call sites
-status: open
+status: closed
 type: chore
 priority: 2
 mode: afk
 created: '2026-05-07T14:24:38.811180526Z'
-updated: '2026-05-07T14:24:38.811180526Z'
+updated: '2026-05-07T19:52:58.677774419Z'
+closed: '2026-05-07T19:52:58.677774419Z'
 tags:
 - needs-triage
 ---
@@ -30,3 +31,9 @@ Sanity-check that `aishell --help` still works after the delete — that was the
 ## Blocked by
 
 None.
+
+## Notes
+
+**2026-05-07T19:52:58.677774419Z**
+
+Deleted src/aishell/migration.clj and three call sites in src/aishell/cli.clj (handle-setup, do-dispatch, and the require). aishell --help, --version, ps --json verified post-delete.

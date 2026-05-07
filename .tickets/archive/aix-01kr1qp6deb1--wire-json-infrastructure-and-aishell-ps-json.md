@@ -1,12 +1,13 @@
 ---
 id: aix-01kr1qp6deb1
 title: Wire --json infrastructure and aishell ps --json
-status: in_progress
+status: closed
 type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:27:39.694143701Z'
-updated: '2026-05-07T19:20:48.901661195Z'
+updated: '2026-05-07T19:52:02.016109065Z'
+closed: '2026-05-07T19:52:02.016109065Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -65,3 +66,9 @@ Out of scope (handled in follow-up slices): volumes list, info, check JSON paths
 ## Blocked by
 
 None - can start immediately.
+
+## Notes
+
+**2026-05-07T19:52:02.016109065Z**
+
+Shipped in cbfa9ce. ps is the only Group A command wired today; volumes list / info / check follow in aix-01kr1qpwqxg9 / aix-01kr1qqhakrv / aix-01kr1qr59100.
