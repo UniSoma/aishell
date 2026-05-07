@@ -1,41 +1,41 @@
 ---
 id: aix-01kr1qp6deb1
 title: Wire --json infrastructure and aishell ps --json
-status: open
+status: in_progress
 type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:27:39.694143701Z'
-updated: '2026-05-07T17:27:39.694143701Z'
+updated: '2026-05-07T19:20:48.901661195Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: aishell ps --json emits a compact JSON array with name, fullName, status, created keys; trailing newline; no human banners
-  done: false
+  done: true
 - title: aishell ps --json emits [] when no containers exist for the project
-  done: false
+  done: true
 - title: aishell --json ps and aishell ps --json behave identically
-  done: false
+  done: true
 - title: aishell --version --json continues to emit {"name":"aishell","version":"…"} via the shared emitter (no hand-rolled JSON left in cli.clj)
-  done: false
+  done: true
 - title: aishell setup --json (and any other non-Group-A command with --json) prints {"error":{"message":"…","code":"unsupported_json"}} to stderr and exits 1
-  done: false
+  done: true
 - title: aishell --json with no subcommand prints unsupported_json error and exits 1
-  done: false
+  done: true
 - title: aishell foobar --json prints unknown_command (not unsupported_json) and exits 1
-  done: false
+  done: true
 - title: aishell --help (with or without --json) prints the human help text; the --json description in Global Options is qualified to list supported commands
-  done: false
+  done: true
 - title: aishell claude --json continues to forward --json to Claude (post-position pass-through preserved for non-Group-A)
-  done: false
+  done: true
 - title: Migration warning, daily update-check, output/warn, and output/verbose are silent on stdout and stderr in JSON mode
-  done: false
+  done: true
 - title: Colors are force-disabled in JSON mode regardless of TTY (no ANSI in error message strings)
-  done: false
+  done: true
 - title: Pure-fn clojure.test coverage for the ps data builder, the dispatch JSON-support classifier, output/emit-json, and output/emit-error-json
-  done: false
+  done: true
 - title: bb test passes; clojure -M:clj-kondo --lint src test passes
-  done: false
+  done: true
 ---
 
 ## Description

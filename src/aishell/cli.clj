@@ -31,13 +31,11 @@
 (defn print-version []
   (println (str "aishell " version)))
 
-(defn print-version-json []
-  (println (str "{\"name\":\"aishell\",\"version\":\"" version "\"}")))
-
 (def global-spec
   {:help    {:alias :h :coerce :boolean :desc "Show help"}
    :version {:alias :v :coerce :boolean :desc "Show version"}
-   :json    {:coerce :boolean :desc "Output in JSON format"}})
+   :json    {:coerce :boolean
+             :desc "Emit JSON for: ps, --version"}})
 
 ;; Version validation patterns
 (def semver-pattern
@@ -318,8 +316,8 @@
 (defn handle-default [{:keys [opts args]}]
   (cond
     (:version opts)
-    (if (:json opts)
-      (print-version-json)
+    (if output/*json-output*
+      (output/emit-json {:name "aishell" :version version})
       (print-version))
 
     (:help opts)
@@ -553,24 +551,79 @@
   [container-name]
   (last (str/split container-name #"-" 3)))
 
-(defn- format-container
-  "Format container map for display with uppercase column headers."
+(defn- ps-row
+  "Pure: build the canonical row for one docker container.
+   Used by both the JSON path (`format-ps-data`) and the human table
+   (`format-container`) so the two stay in lockstep."
   [c]
-  {:NAME (extract-short-name (:name c))
-   :STATUS (:status c)
-   :CREATED (:created c)})
+  {:name (extract-short-name (:name c))
+   :fullName (:name c)
+   :status (:status c)
+   :created (:created c)})
+
+(defn- format-container
+  "Format a container row for the human table (uppercase column headers)."
+  [c]
+  (let [{:keys [name status created]} (ps-row c)]
+    {:NAME name :STATUS status :CREATED created}))
+
+(defn format-ps-data
+  "Build the JSON-shaped data for `aishell ps`.
+   Pure: takes the docker container list (vector of maps with
+   :name/:status/:created) and returns a vector of maps with
+   :name/:fullName/:status/:created keys. Empty input yields []."
+  [containers]
+  (mapv ps-row containers))
 
 (defn handle-ps
-  "List all containers for the current project."
+  "List all containers for the current project.
+   In JSON mode, emits a compact JSON array of {name,fullName,status,created}."
   [_]
   (let [project-dir (System/getProperty "user.dir")
         containers (naming/list-project-containers project-dir)]
-    (if (empty? containers)
-      (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell opencode --name my-session\n\nContainers are project-specific (based on current directory).")
-      (do
-        (println "Containers for this project:\n")
-        (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
-        (println "\nTo attach: aishell attach <name>")))))
+    (if output/*json-output*
+      (output/emit-json (format-ps-data containers))
+      (if (empty? containers)
+        (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell opencode --name my-session\n\nContainers are project-specific (based on current directory).")
+        (do
+          (println "Containers for this project:\n")
+          (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
+          (println "\nTo attach: aishell attach <name>"))))))
+
+(def json-supported-subcommands
+  "Subcommands whose JSON path is wired today. Add to this set as
+   `volumes list`, `info`, and `check` JSON paths land in their
+   respective follow-up tickets (aix-01kr1qpwqxg9, aix-01kr1qqhakrv,
+   aix-01kr1qr59100), and update the --json description in `global-spec`
+   in lockstep."
+  #{"ps"})
+
+(def known-subcommands
+  "All recognised aishell subcommands. Used for unknown_command detection."
+  #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a"
+    "vscode" "upgrade" "info" "claude" "opencode" "codex" "gemini"
+    "pi" "gitleaks"})
+
+(defn classify-json-command
+  "Classify the cleaned argv (after --json stripping) for JSON-mode dispatch.
+
+   Returns one of:
+     :help        — args contain --help/-h (human help wins over --json)
+     :supported   — first token is in Group A, or args request --version
+     :unsupported — recognised but non-Group-A command, or no subcommand
+     :unknown     — first token is not a known subcommand or flag
+
+   :unknown wins over :unsupported when both could apply."
+  [args]
+  (let [args (vec args)
+        first-arg (first args)]
+    (cond
+      (some #{"--help" "-h"} args) :help
+      (some #{"--version" "-v"} args) :supported
+      (nil? first-arg) :unsupported
+      (contains? json-supported-subcommands first-arg) :supported
+      (contains? known-subcommands first-arg) :unsupported
+      :else :unknown)))
 
 (def dispatch-table
   [{:cmds ["setup"] :fn handle-setup :spec setup-spec :restrict true}
@@ -591,8 +644,18 @@
     ;; Default
     (output/error msg)))
 
-(defn dispatch [args]
-  ;; Show migration warning on run commands for upgraders
+(def pass-through-harnesses
+  "Harness subcommands whose argv (including --json) is forwarded verbatim."
+  #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"})
+
+(defn- json-error-message [args]
+  (if (empty? args)
+    "--json requires a supported command (ps, volumes list, info, check, --version)"
+    (str "--json is not supported for: " (first args))))
+
+(defn- do-dispatch [args]
+  ;; Migration warning is currently a no-op, but keep the call inside the
+  ;; JSON-mode binding so a future revival can't bleed text onto stdout/stderr.
   (migration/show-v2.9-migration-warning!)
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
@@ -621,7 +684,7 @@
                     (and (not has-subcommand?)
                          (some #{"-v" "--version"} clean-args))
                     (= "upgrade" first-arg))]
-      (when-not skip?
+      (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
     ;; Handle pass-through commands before standard dispatch
     ;; This ensures all args (including --help, --version) go to the harness
@@ -758,3 +821,51 @@
         ;; Normal dispatch
         (cli/dispatch dispatch-table args {:error-fn handle-error
                                            :restrict true})))))
+
+(defn- subcommand-of
+  "Return the first non-flag token in args, or nil. Used to decide whether
+   --json should be consumed at the top level or forwarded to a harness."
+  [args]
+  (first (remove (fn [a] (str/starts-with? a "-")) args)))
+
+(defn dispatch
+  "Public dispatch entry. Handles --json gating before delegating to do-dispatch.
+
+   --json semantics:
+   - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded
+     verbatim, never consumed.
+   - Otherwise --json is stripped here, and the command is classified:
+       :unknown     -> emit unknown_command error and exit 1
+       :unsupported -> emit unsupported_json error and exit 1
+       :help        -> normal flow with colors (--help wins)
+       :supported   -> bind *json-output* and zero out ANSI vars, normal flow"
+  [args]
+  (let [args (vec args)
+        sub (subcommand-of args)
+        json-pass-through? (contains? pass-through-harnesses sub)
+        ;; When --json is pre-position and the subcommand is a pass-through harness,
+        ;; hoist the harness to the front so the case-dispatch in do-dispatch keys
+        ;; on the harness name rather than "--json". This preserves the
+        ;; "claude --json forwards to Claude" contract regardless of flag order.
+        args (if (and json-pass-through? (not= sub (first args)))
+               (into [sub] (remove #{sub} args))
+               args)
+        json-mode? (and (not json-pass-through?) (boolean (some #{"--json"} args)))
+        args (if json-mode? (vec (remove #{"--json"} args)) args)]
+    (if json-mode?
+      (case (classify-json-command args)
+        :unknown     (output/emit-error-json
+                      (str "Unknown command: " (first args))
+                      "unknown_command")
+        :unsupported (output/emit-error-json
+                      (json-error-message args)
+                      "unsupported_json")
+        :help        (do-dispatch args)
+        :supported   (binding [output/*json-output* true
+                               output/RED ""
+                               output/YELLOW ""
+                               output/CYAN ""
+                               output/BOLD ""
+                               output/NC ""]
+                       (do-dispatch args)))
+      (do-dispatch args))))
