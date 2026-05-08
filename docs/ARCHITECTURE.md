@@ -132,7 +132,7 @@ The base image is the intermediate layer between foundation and project extensio
 Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
-- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @mariozechner/pi-coding-agent, @fission-ai/openspec)
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @earendil-works/pi-coding-agent, @fission-ai/openspec)
 - `/tools/bin` - Go binaries (opencode)
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:

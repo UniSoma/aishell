@@ -523,7 +523,7 @@ harnesses:
 Pi is an autonomous coding agent by Mario Zechner. It uses fd for file discovery and operates as a CLI tool for development tasks.
 
 **Author:** Mario Zechner
-**Package:** @mariozechner/pi-coding-agent
+**Package:** @earendil-works/pi-coding-agent
 
 ### Installation
 
@@ -538,7 +538,7 @@ aishell setup --with-pi=1.0.0
 **Build steps:**
 1. Builds the foundation image (includes fd for pi's file discovery) -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
-3. Installs the Pi npm package into the volume: `npm install -g @mariozechner/pi-coding-agent`
+3. Installs the Pi npm package into the volume: `npm install -g @earendil-works/pi-coding-agent`
 4. Mounts the volume at `/tools` in containers
 
 **Updating Pi:**

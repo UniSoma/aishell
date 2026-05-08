@@ -166,7 +166,7 @@ sudo aishell setup --with-claude
    npm view @google/gemini-cli versions
 
    # For Pi
-   npm view @mariozechner/pi-coding-agent versions
+   npm view @earendil-works/pi-coding-agent versions
 
    # For OpenSpec
    npm view @fission-ai/openspec versions
