@@ -162,12 +162,22 @@
     volume-name))
 
 (defn remove-volume
-  "Remove Docker volume by name. Silently ignores errors (volume may not exist)."
+  "Remove Docker volume by name.
+   Returns {:removed? true} on success or when the volume does not exist.
+   Returns {:removed? false :reason :in-use|:error :stderr <str>} on failure
+   (e.g. a container has the volume mounted)."
   [volume-name]
-  (try
-    (p/shell {:out :string :err :string :continue true}
-             "docker" "volume" "rm" volume-name)
-    (catch Exception _ nil)))
+  (let [{:keys [exit err]} (try
+                             (p/shell {:out :string :err :string :continue true}
+                                      "docker" "volume" "rm" volume-name)
+                             (catch Exception e {:exit -1 :err (.getMessage e)}))
+        err-str (or err "")
+        lower (str/lower-case err-str)]
+    (cond
+      (zero? exit) {:removed? true}
+      (str/includes? lower "no such volume") {:removed? true}
+      (str/includes? lower "volume is in use") {:removed? false :reason :in-use :stderr (str/trim err-str)}
+      :else {:removed? false :reason :error :stderr (str/trim err-str)})))
 
 (defn- build-opencode-install-command
   "Build shell command for installing OpenCode binary if enabled.
@@ -248,16 +258,23 @@
                 names)))
     (catch Exception _ [])))
 
-(defn volume-in-use?
-  "Check if volume is mounted by any running or stopped container."
+(defn containers-using-volume
+  "Return seq of container names (running or stopped) mounting the given volume,
+   or nil if the volume has no containers or the docker query fails."
   [volume-name]
   (try
     (let [{:keys [exit out]} (p/shell {:continue true :out :string :err :string}
                                       "docker" "ps" "-a"
                                       "--filter" (str "volume=" volume-name)
                                       "--format" "{{.Names}}")]
-      (and (zero? exit) (not (str/blank? out))))
-    (catch Exception _ false)))
+      (when (zero? exit)
+        (seq (remove str/blank? (str/split-lines out)))))
+    (catch Exception _ nil)))
+
+(defn volume-in-use?
+  "Check if volume is mounted by any running or stopped container."
+  [volume-name]
+  (boolean (containers-using-volume volume-name)))
 
 (defn get-volume-size
   "Get size of Docker volume. Returns formatted string or 'N/A'."
@@ -312,18 +329,18 @@
         (let [{:keys [exit]} (apply p/shell {:out :inherit
                                              :err :inherit
                                              :continue true}
-                                   cmd)]
+                                    cmd)]
           {:success (zero? exit) :volume volume-name})
         ;; Silent: wrap in spinner
         (let [result (spinner/with-spinner "Populating harness volume"
-                                           #(let [{:keys [exit err]} (apply p/shell {:out :string
-                                                                                     :err :string
-                                                                                     :continue true}
-                                                                            cmd)]
-                                              (when-not (zero? exit)
-                                                (binding [*out* *err*]
-                                                  (println err)))
-                                              (zero? exit)))]
+                       #(let [{:keys [exit err]} (apply p/shell {:out :string
+                                                                 :err :string
+                                                                 :continue true}
+                                                        cmd)]
+                          (when-not (zero? exit)
+                            (binding [*out* *err*]
+                              (println err)))
+                          (zero? exit)))]
           {:success result :volume volume-name}))
       (catch Exception e
         (binding [*out* *err*]

@@ -418,7 +418,16 @@
                                                         :openspec (:with-openspec state)
                                                         :pi (:with-pi state)}))]
                   (println "Repopulating harness volume...")
-                  (vol/remove-volume volume-name)
+                  (let [rm-result (vol/remove-volume volume-name)]
+                    (when-not (:removed? rm-result)
+                      (output/error
+                       (case (:reason rm-result)
+                         :in-use (str "Cannot repopulate harness volume " volume-name
+                                      " — it is in use by container(s): "
+                                      (str/join ", " (vol/containers-using-volume volume-name))
+                                      ". Stop and remove them, then re-run 'aishell update'.")
+                         (str "Failed to remove harness volume " volume-name
+                              ": " (:stderr rm-result))))))
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
                                                   "aishell.harness.version" "3.1.0"
                                                   "aishell.harnesses" harness-list})
