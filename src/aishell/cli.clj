@@ -6,6 +6,7 @@
             [clojure.pprint :as pp]
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
+            [aishell.docker.bootstrap :as bootstrap]
             [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
             [aishell.docker.naming :as naming]
@@ -305,8 +306,8 @@
        (assoc state-map
               :image-tag (:image result)
               :build-time (str (java.time.Instant/now))
-              :dockerfile-hash (hash/compute-hash templates/base-dockerfile)  ; Kept for v2.7.0 compat
-              :foundation-hash (hash/compute-hash templates/base-dockerfile)  ; NEW: same as dockerfile-hash for now
+              :dockerfile-hash (hash/compute-hash templates/foundation-content)  ; Kept for v2.7.0 compat
+              :foundation-hash (hash/compute-hash templates/foundation-content)  ; NEW: same as dockerfile-hash for now
               :harness-volume-hash harness-hash                               ; NEW
               :harness-volume-name volume-name)))))                           ; NEW
 
@@ -447,8 +448,8 @@
         (state/write-state
          (cond-> state
            true (assoc :build-time (str (java.time.Instant/now))
-                       :dockerfile-hash (hash/compute-hash templates/base-dockerfile)
-                       :foundation-hash (hash/compute-hash templates/base-dockerfile))
+                       :dockerfile-hash (hash/compute-hash templates/foundation-content)
+                       :foundation-hash (hash/compute-hash templates/foundation-content))
            result (assoc :image-tag (:image result))))))))
 
 (defn- prompt-yn
@@ -560,18 +561,34 @@
 (defn- ps-row
   "Pure: build the canonical row for one docker container.
    Used by both the JSON path (`format-ps-data`) and the human table
-   (`format-container`) so the two stay in lockstep."
+   (`format-container`) so the two stay in lockstep.
+
+   `:bootstrap` is attached upstream by `bootstrap/attach-bootstrap!`
+   (one of `:none :pending :ready :failed`); a missing key surfaces as
+   `:none` so the JSON shape stays stable when the upstream attach is
+   skipped."
   [c]
   {:name (extract-short-name (:name c))
    :fullName (:name c)
    :status (:status c)
-   :created (:created c)})
+   :created (:created c)
+   :bootstrap (or (:bootstrap c) :none)})
+
+(defn- bootstrap-cell
+  "Render the BOOTSTRAP cell for one human-table row.
+   Bare `name` for `:none|:pending|:ready`; capitalized FAILED for emphasis.
+   No ANSI color (would break clojure.pprint/print-table width math)."
+  [bootstrap]
+  (case bootstrap
+    :failed "FAILED"
+    (name (or bootstrap :none))))
 
 (defn- format-container
   "Format a container row for the human table (uppercase column headers)."
   [c]
-  (let [{:keys [name status created]} (ps-row c)]
-    {:NAME name :STATUS status :CREATED created}))
+  (let [{:keys [name status created bootstrap]} (ps-row c)]
+    {:NAME name :STATUS status :CREATED created
+     :BOOTSTRAP (bootstrap-cell bootstrap)}))
 
 (defn format-ps-data
   "Build the JSON-shaped data for `aishell ps`.
@@ -583,17 +600,22 @@
 
 (defn handle-ps
   "List all containers for the current project.
-   In JSON mode, emits a compact JSON array of {name,fullName,status,created}."
+   In JSON mode, emits a compact JSON array of
+   {name,fullName,status,created,bootstrap}."
   [_]
   (let [project-dir (System/getProperty "user.dir")
-        containers (naming/list-project-containers project-dir)]
+        containers (-> (naming/list-project-containers project-dir)
+                       bootstrap/attach-bootstrap!)]
     (if output/*json-output*
       (output/emit-json (format-ps-data containers))
       (if (empty? containers)
         (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell opencode --name my-session\n\nContainers are project-specific (based on current directory).")
         (do
           (println "Containers for this project:\n")
-          (pp/print-table [:NAME :STATUS :CREATED] (map format-container containers))
+          (pp/print-table [:NAME :STATUS :CREATED :BOOTSTRAP]
+                          (map format-container containers))
+          (when (some #(= :failed (:bootstrap %)) containers)
+            (println "\nOne or more containers failed pre_start. Run aishell exec <name> cat /tmp/pre-start.log for details."))
           (println "\nTo attach: aishell attach <name>"))))))
 
 (def json-supported-subcommands

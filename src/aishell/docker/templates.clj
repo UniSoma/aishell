@@ -314,13 +314,37 @@ fi
 # Suppress Claude Code npm vs native installer warning (npm install still works)
 export DISABLE_INSTALLATION_CHECKS=1
 
+# Bootstrap readiness sentinels for `aishell ps` (see docker/bootstrap.clj).
+# /tmp lives on the writable layer (not tmpfs), so sentinels persist across
+# docker stop/start. Removing them here ensures a config change from
+# pre_start to no-pre_start surfaces as bootstrap=none on the next start
+# instead of a stale done/failed.
+rm -f /tmp/pre-start.done /tmp/pre-start.failed
+
 # Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
 # Runs as developer user so caches (.m2, .npm, etc.) go to the right place
 # Use sudo in pre_start if root is needed for specific commands
 if [[ -n \"${PRE_START:-}\" ]]; then
-    # Run in background as developer user, redirect all output to log file
-    # Using sh -c ensures proper argument handling for complex commands
-    gosu \"$USER_ID:$GROUP_ID\" sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1 &
+    # Subshell, backgrounded with &, captures pre_start exit code and writes
+    # the corresponding sentinel. The subshell survives the entrypoint's
+    # `exec` below: the launching shell is replaced by the foreground
+    # command, the subshell is re-parented to PID 1, and continues running
+    # until pre_start finishes.
+    #
+    # `set +e` is mandatory here. The entrypoint declares `set -e` at the
+    # top of the script, which is inherited by the subshell — without
+    # disabling it, a non-zero gosu exit would abort the subshell *before*
+    # the if/else runs, and no failed sentinel would ever be written.
+    (
+      set +e
+      gosu \"$USER_ID:$GROUP_ID\" sh -c \"$PRE_START\" > /tmp/pre-start.log 2>&1
+      ec=$?
+      if [ $ec -eq 0 ]; then
+        touch /tmp/pre-start.done
+      else
+        echo \"$ec\" > /tmp/pre-start.failed
+      fi
+    ) &
 fi
 
 # Validate TERM has terminfo entry; fallback to xterm-256color if missing
@@ -454,3 +478,17 @@ if [ -d /etc/profile.d ]; then
   unset i
 fi
 ")
+
+(def foundation-content
+  "Concatenation of every file baked into the foundation image at build
+   time — the Dockerfile plus all files COPY'd in by `write-build-files`.
+
+   Hashing this (rather than just `base-dockerfile`) is what lets cache
+   invalidation pick up an entrypoint or bashrc edit. If you add a new
+   COPY in the Dockerfile, append the corresponding template here in the
+   same order so the hash stays stable."
+  (str base-dockerfile
+       entrypoint-script
+       bashrc-content
+       profile-d-script
+       etc-profile-content))

@@ -20,9 +20,14 @@
 (def base-image-tag foundation-image-tag)
 
 (defn get-dockerfile-hash
-  "Compute hash of embedded Dockerfile content for cache comparison."
+  "Compute hash of every file baked into the foundation image — the
+   Dockerfile plus all files COPY'd in (entrypoint.sh, bashrc.aishell,
+   profile.d-aishell.sh, etc-profile). The image label is named
+   `aishell.dockerfile.hash` for backwards compatibility, but the hash
+   covers the full COPY surface so an entrypoint-only edit still
+   invalidates the cache."
   []
-  (hash/compute-hash templates/base-dockerfile))
+  (hash/compute-hash templates/foundation-content))
 
 (defn needs-rebuild?
   "Check if image needs rebuilding.
@@ -36,7 +41,6 @@
       (not (docker/image-exists? image-tag))
       (not= (get-dockerfile-hash)
             (docker/get-image-label image-tag dockerfile-hash-label))))
-
 
 (defn write-build-files
   "Write embedded template files to build directory."
@@ -65,7 +69,6 @@
             remaining-secs (mod secs 60)]
         (format "%dm %.0fs" mins remaining-secs)))))
 
-
 (defn- run-build
   "Execute docker build command. Returns true on success."
   [build-dir tag args verbose? force?]
@@ -79,14 +82,14 @@
                                            :out :inherit
                                            :err :inherit
                                            :continue true}
-                                          cmd)]
+                                  cmd)]
         (zero? exit))
       ;; Silent: capture output
       (let [{:keys [exit out err]} (apply p/shell {:dir (str build-dir)
                                                    :out :string
                                                    :err :string
                                                    :continue true}
-                                                  cmd)]
+                                          cmd)]
         (when-not (zero? exit)
           (binding [*out* *err*]
             (println err)))
@@ -135,7 +138,7 @@
 
                          :else
                          (spinner/with-spinner "Building image"
-                                               #(run-build build-dir foundation-image-tag docker-args false force)))]
+                           #(run-build build-dir foundation-image-tag docker-args false force)))]
           (if success?
             (let [duration (- (System/currentTimeMillis) start-time)
                   size (docker/get-image-size foundation-image-tag)]

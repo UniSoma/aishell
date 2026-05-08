@@ -49,19 +49,50 @@
     (is (= :help (cli/classify-json-command ["foobar" "--help"])))))
 
 (deftest format-ps-data-extracts-short-name-and-keys
-  (testing "each container produces {:name :fullName :status :created} with short name"
+  (testing "each container produces {:name :fullName :status :created :bootstrap}"
     (is (= [{:name "claude"
              :fullName "aishell-a1b2c3d4-claude"
              :status "Up 3 minutes"
-             :created "2026-05-07 14:00:00 +0000 UTC"}
+             :created "2026-05-07 14:00:00 +0000 UTC"
+             :bootstrap :ready}
             {:name "shell"
              :fullName "aishell-a1b2c3d4-shell"
              :status "Exited (0) 2 hours ago"
-             :created "2026-05-07 12:00:00 +0000 UTC"}]
+             :created "2026-05-07 12:00:00 +0000 UTC"
+             :bootstrap :none}
+            {:name "boot"
+             :fullName "aishell-a1b2c3d4-boot"
+             :status "Up 5 seconds"
+             :created "2026-05-07 14:05:00 +0000 UTC"
+             :bootstrap :pending}
+            {:name "broken"
+             :fullName "aishell-a1b2c3d4-broken"
+             :status "Up 1 minute"
+             :created "2026-05-07 14:04:00 +0000 UTC"
+             :bootstrap :failed}
+            {:name "bare"
+             :fullName "aishell-a1b2c3d4-bare"
+             :status "Up 2 minutes"
+             :created "2026-05-07 14:03:00 +0000 UTC"
+             :bootstrap :none}]
            (cli/format-ps-data
             [{:name "aishell-a1b2c3d4-claude"
               :status "Up 3 minutes"
-              :created "2026-05-07 14:00:00 +0000 UTC"}
+              :created "2026-05-07 14:00:00 +0000 UTC"
+              :bootstrap :ready}
              {:name "aishell-a1b2c3d4-shell"
               :status "Exited (0) 2 hours ago"
-              :created "2026-05-07 12:00:00 +0000 UTC"}])))))
+              :created "2026-05-07 12:00:00 +0000 UTC"
+              :bootstrap :none}
+             {:name "aishell-a1b2c3d4-boot"
+              :status "Up 5 seconds"
+              :created "2026-05-07 14:05:00 +0000 UTC"
+              :bootstrap :pending}
+             {:name "aishell-a1b2c3d4-broken"
+              :status "Up 1 minute"
+              :created "2026-05-07 14:04:00 +0000 UTC"
+              :bootstrap :failed}
+             {:name "aishell-a1b2c3d4-bare"
+              :status "Up 2 minutes"
+              :created "2026-05-07 14:03:00 +0000 UTC"
+              :bootstrap :none}])))))

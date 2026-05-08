@@ -25,22 +25,23 @@
   [harness-name state-key state]
   (when-not (get state state-key)
     (output/error
-      (str (case harness-name
-             "claude" "Claude Code"
-             "opencode" "OpenCode"
-             "codex" "Codex CLI"
-             "gemini" "Gemini CLI"
-             "pi" "Pi coding agent"
-             "gitleaks" "Gitleaks")
-           " not installed. Run: aishell setup --with-"
-           harness-name))))
+     (str (case harness-name
+            "claude" "Claude Code"
+            "opencode" "OpenCode"
+            "codex" "Codex CLI"
+            "gemini" "Gemini CLI"
+            "pi" "Pi coding agent"
+            "gitleaks" "Gitleaks")
+          " not installed. Run: aishell setup --with-"
+          harness-name))))
 
 (defn- check-dockerfile-stale
-  "Check if embedded Dockerfile changed since build, warn if so.
-   Advisory only - does not block execution."
+  "Check if any baked-in foundation content (Dockerfile or any COPY'd
+   file) changed since build, warn if so. Advisory only — does not
+   block execution."
   [state]
   (when-let [stored-hash (:dockerfile-hash state)]
-    (let [current-hash (hash/compute-hash templates/base-dockerfile)]
+    (let [current-hash (hash/compute-hash templates/foundation-content)]
       (when (not= stored-hash current-hash)
         (output/warn "Image may be stale. Run 'aishell update' to rebuild.")))))
 
@@ -86,11 +87,11 @@
     (let [extended-tag (ext/compute-extended-tag project-dir)]
       (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
         (ext/build-extended-image
-          {:project-dir project-dir
-           :foundation-tag base/base-image-tag
-           :extended-tag extended-tag
-           :force force?
-           :verbose false}))
+         {:project-dir project-dir
+          :foundation-tag base/base-image-tag
+          :extended-tag extended-tag
+          :force force?
+          :verbose false}))
       extended-tag)
     ;; No extension, use base
     base/base-image-tag))
@@ -160,13 +161,13 @@
             ;; Verbose output (when we add --verbose support)
             _ (when cfg
                 (output/verbose (str "Loaded config from: "
-                                    (name (config/config-source project-dir)))))
+                                     (name (config/config-source project-dir)))))
             _ (when (and (:name git-id) (:email git-id))
                 (output/verbose (str "Git identity: " (:name git-id)
-                                    " <" (:email git-id) ">")))
+                                     " <" (:email git-id) ">")))
             _ (when (seq defaults-vec)
                 (output/verbose (str "Applying " cmd " defaults: "
-                                    (clojure.string/join " " defaults-vec))))
+                                     (clojure.string/join " " defaults-vec))))
 
             ;; Check for stale image (advisory warning)
             _ (check-dockerfile-stale state)
@@ -198,15 +199,15 @@
 
             ;; Build docker args
             docker-args (docker-run/build-docker-args
-                          {:project-dir project-dir
-                           :image-tag image-tag
-                           :config cfg
-                           :state state
-                           :git-identity git-id
-                           :skip-pre-start (:skip-pre-start opts)
-                           :skip-interactive (= cmd "gitleaks")
-                           :container-name container-name-str
-                           :harness-volume-name harness-volume-name})
+                         {:project-dir project-dir
+                          :image-tag image-tag
+                          :config cfg
+                          :state state
+                          :git-identity git-id
+                          :skip-pre-start (:skip-pre-start opts)
+                          :skip-interactive (= cmd "gitleaks")
+                          :container-name container-name-str
+                          :harness-volume-name harness-volume-name})
 
             ;; Determine command to run in container
             skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
@@ -296,13 +297,13 @@
 
             ;; Build docker args for exec (conditional TTY, skip pre_start)
             docker-args (docker-run/build-docker-args-for-exec
-                          {:project-dir project-dir
-                           :image-tag image-tag
-                           :config cfg
-                           :state state
-                           :git-identity git-id
-                           :tty? tty?
-                           :harness-volume-name harness-volume-name})
+                         {:project-dir project-dir
+                          :image-tag image-tag
+                          :config cfg
+                          :state state
+                          :git-identity git-id
+                          :tty? tty?
+                          :harness-volume-name harness-volume-name})
 
             ;; Command to run in container (user's command)
             container-cmd cmd-args]

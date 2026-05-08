@@ -54,7 +54,7 @@
   []
   (if-let [s (state/read-state)]
     (do (print-status :ok (str "Setup state found (built: "
-                                (or (:build-time s) "unknown") ")"))
+                               (or (:build-time s) "unknown") ")"))
         s)
     (do (print-status :fail (str "No setup found. Run: " output/CYAN "aishell setup" output/NC))
         nil)))
@@ -79,10 +79,11 @@
     (print-status :ok "Base image: default (foundation alias)")))
 
 (defn- check-dockerfile-staleness
-  "Check if embedded Dockerfile changed since build."
+  "Check if any baked-in foundation content (Dockerfile or any COPY'd
+   file) changed since build."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
-    (let [current-hash (hash/compute-hash templates/base-dockerfile)]
+    (let [current-hash (hash/compute-hash templates/foundation-content)]
       (if (= stored-hash current-hash)
         (print-status :ok "Base Dockerfile is up to date")
         (print-status :warn (str "Image may be stale. Run " output/CYAN "aishell update" output/NC " to rebuild"))))
