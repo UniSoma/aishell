@@ -22,7 +22,7 @@
    :codex "@openai/codex"
    :gemini "@google/gemini-cli"
    :openspec "@fission-ai/openspec"
-   :pi "@mariozechner/pi-coding-agent"})
+   :pi "@earendil-works/pi-coding-agent"})
 
 (defn normalize-harness-config
   "Extract and normalize harness configuration for deterministic hashing.
