@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.0] - 2026-05-11
+
+### Added
+
+- **`aishell attach <name> [-- <cmd>]`**: Run a command in the container, then drop into the shell — equivalent to attaching and typing the command manually. Argv is passed through verbatim via a bash `"$@"` wrapper, and the post-command shell launches whether the command succeeded or failed
+- **`--json` output infrastructure**: Cross-cutting JSON wiring with `aishell ps --json` as the first supported command. JSON mode suppresses ANSI colors and silences interactive output (update check, migration warnings); per-command opt-in via `json-supported-subcommands`
+- **`:bootstrap` field on `aishell ps`**: Per-container readiness state (`none` | `pending` | `ready` | `failed`) derived from `/tmp/pre-start.done` / `/tmp/pre-start.failed` sentinels written by the entrypoint. Non-running containers short-circuit to `:none`; failed rows surface a banner under the human table pointing at `/tmp/pre-start.log` (JSON mode stays banner-free)
+- **Clojure agent toolchain in foundation image**: JDK 25, Clojure 1.12, clojure-lsp, clj-kondo, clojure-mcp-light, clj-surgeon, and the `knot` CLI
+
+### Changed
+
+- **Pi npm package renamed**: `@mariozechner/pi-coding-agent` → `@earendil-works/pi-coding-agent` following Pi's transfer to Earendil Works (announced at <https://pi.dev/news/2026/5/7/pi-has-a-new-home>). 0.73.1 was the final release on the old scope; 0.74.0 is the first on the new one. The `pi` CLI binary name is unchanged
+- **Foundation image cache key**: Hash now covers every file `COPY`'d into the image (entrypoint, bashrc, profile.d, etc-profile) instead of only the Dockerfile, so entrypoint-only edits correctly invalidate the cache without needing `--force`
+
+### Fixed
+
+- **`aishell update` surfaces harness-volume removal failures**: `remove-volume` previously swallowed all Docker errors, so update would print "Repopulating harness volume" while reusing stale state — causing `npm install -g` to abort with EEXIST after package renames. Now distinguishes "no such volume" (fine) from "in use" / other errors (loud), naming the offending containers
+
+### Removed
+
+- **`src/aishell/migration.clj`**: Stub since v3.0.0 (when tmux support was dropped, retiring the v2.9 migration warning) — file and its three call sites in `cli.clj` deleted
+
 ## [3.17.0] - 2026-05-04
 
 ### Added
