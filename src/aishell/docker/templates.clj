@@ -16,7 +16,7 @@ FROM node:24-bookworm-slim AS node-source
 FROM debian:bookworm-slim
 
 # Build arguments for developer tools
-ARG BABASHKA_VERSION=1.12.214
+ARG BABASHKA_VERSION=1.12.218
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.16.1
 
@@ -153,7 +153,7 @@ RUN set -eux; \\
 
 # Install Gitleaks for secret scanning (conditional, opt-in)
 ARG WITH_GITLEAKS=false
-ARG GITLEAKS_VERSION=8.30.0
+ARG GITLEAKS_VERSION=8.30.1
 RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
         set -eux; \\
         dpkgArch=\"$(dpkg --print-architecture)\"; \\
