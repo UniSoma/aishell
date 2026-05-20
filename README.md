@@ -204,6 +204,11 @@ aishell setup --with-codex=0.1.2025062501
 # Set up with optional development tools
 aishell setup --with-claude --with-openspec
 aishell setup --with-claude --with-openspec=1.2.3
+
+# Reuse the last saved setup config, overriding only what you specify
+aishell setup --reuse-config
+aishell setup --reuse-config --with-opencode       # reset OpenCode to latest
+aishell setup --reuse-config --with-opencode=1.2.3 # override inherited version
 ```
 
 ### Run harnesses
@@ -305,7 +310,12 @@ aishell upgrade 3.4.0
 aishell update
 
 # Refresh harness tools AND rebuild foundation image
+# (also recreates the harness volume)
 aishell update --force
+
+# Rebuild setup layers from the saved setup config,
+# without update's unconditional volume repopulation
+aishell setup --reuse-config --force
 ```
 
 ### Validate setup

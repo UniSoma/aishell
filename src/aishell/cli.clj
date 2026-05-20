@@ -17,7 +17,6 @@
             [aishell.check :as check]
             [aishell.state :as state]
             [aishell.config :as config]
-            [aishell.util :as util]
             [aishell.attach :as attach]
             [aishell.attach.parse :as attach-parse]
             [aishell.vscode :as vscode]
@@ -43,17 +42,23 @@
 
 (def dangerous-chars #"[;&|`$(){}\[\]<>!\\]")
 
-(defn validate-version
-  "Validate version string. Returns nil on success, exits with error on failure."
+(defn version-error-message
+  "Return a version validation error string, or nil when valid."
   [version harness-name]
   (when (and version (not= version "true") (not= version "latest"))
     (cond
       (re-find dangerous-chars version)
-      (output/error (str "Invalid " harness-name " version: contains shell metacharacters"))
+      (str "Invalid " harness-name " version: contains shell metacharacters")
 
       (not (re-matches semver-pattern version))
-      (output/error (str "Invalid " harness-name " version format: " version
-                         "\nExpected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)")))))
+      (str "Invalid " harness-name " version format: " version
+           "\nExpected: X.Y.Z or X.Y.Z-prerelease (e.g., 2.0.22, 1.0.0-beta.1)"))))
+
+(defn validate-version
+  "Validate version string. Returns nil on success, exits with error on failure."
+  [version harness-name]
+  (when-let [msg (version-error-message version harness-name)]
+    (output/error msg)))
 
 (defn parse-with-flag
   "Parse --with-X flag value.
@@ -125,9 +130,171 @@
    :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
+   :reuse-config  {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
    :help          {:alias :h :coerce :boolean :desc "Show setup help"}})
+
+(def setup-harness-options
+  [{:opt :with-claude :state :with-claude :version :claude-version :label "Claude Code"}
+   {:opt :with-opencode :state :with-opencode :version :opencode-version :label "OpenCode"}
+   {:opt :with-codex :state :with-codex :version :codex-version :label "Codex"}
+   {:opt :with-gemini :state :with-gemini :version :gemini-version :label "Gemini"}
+   {:opt :with-pi :state :with-pi :version :pi-version :label "Pi"}
+   {:opt :with-openspec :state :with-openspec :version :openspec-version :label "OpenSpec"}])
+
+(def setup-boolean-options
+  [{:opt :with-gitleaks :state :with-gitleaks}
+   {:opt :unisoma :state :unisoma}])
+
+(def empty-setup-state
+  {:with-claude false
+   :with-opencode false
+   :with-codex false
+   :with-gemini false
+   :with-pi false
+   :with-openspec false
+   :with-gitleaks false
+   :unisoma false
+   :claude-version nil
+   :opencode-version nil
+   :codex-version nil
+   :gemini-version nil
+   :pi-version nil
+   :openspec-version nil})
+
+(defn explicit-setup-state
+  "Build declarative setup intent from CLI opts only. Omitted flags stay disabled."
+  [opts]
+  (let [parsed (into {}
+                     (map (fn [{:keys [opt]}]
+                            [opt (parse-with-flag (get opts opt))])
+                          setup-harness-options))]
+    (assoc empty-setup-state
+           :with-claude (get-in parsed [:with-claude :enabled?])
+           :with-opencode (get-in parsed [:with-opencode :enabled?])
+           :with-codex (get-in parsed [:with-codex :enabled?])
+           :with-gemini (get-in parsed [:with-gemini :enabled?])
+           :with-pi (get-in parsed [:with-pi :enabled?])
+           :with-openspec (get-in parsed [:with-openspec :enabled?])
+           :with-gitleaks (boolean (:with-gitleaks opts))
+           :unisoma (boolean (:unisoma opts))
+           :claude-version (get-in parsed [:with-claude :version])
+           :opencode-version (get-in parsed [:with-opencode :version])
+           :codex-version (get-in parsed [:with-codex :version])
+           :gemini-version (get-in parsed [:with-gemini :version])
+           :pi-version (get-in parsed [:with-pi :version])
+           :openspec-version (get-in parsed [:with-openspec :version]))))
+
+(defn saved-setup-state
+  "Extract the persisted setup intent, excluding derived build metadata."
+  [saved-state]
+  (merge empty-setup-state
+         (select-keys saved-state (keys empty-setup-state))))
+
+(defn resolve-setup-state
+  "Resolve effective setup intent.
+
+   Plain setup is fully declarative: omitted flags stay disabled.
+   With --reuse-config, omitted flags inherit from the saved setup intent,
+   while explicit CLI flags override the inherited values."
+  [opts saved-state]
+  (let [reuse-config? (boolean (:reuse-config opts))]
+    (cond
+      (not reuse-config?)
+      {:reuse-config? false
+       :state-map (explicit-setup-state opts)}
+
+      (nil? saved-state)
+      {:reuse-config? true
+       :error "--reuse-config requires an existing saved setup. Run plain 'aishell setup --with-...' to write a new configuration."}
+
+      :else
+      (let [state-map (saved-setup-state saved-state)
+            state-map (reduce (fn [state-map {:keys [opt state version]}]
+                                (if (contains? opts opt)
+                                  (let [parsed (parse-with-flag (get opts opt))]
+                                    (assoc state-map
+                                           state (:enabled? parsed)
+                                           version (:version parsed)))
+                                  state-map))
+                              state-map
+                              setup-harness-options)
+            state-map (reduce (fn [state-map {:keys [opt state]}]
+                                (if (contains? opts opt)
+                                  (assoc state-map state (boolean (get opts opt)))
+                                  state-map))
+                              state-map
+                              setup-boolean-options)]
+        {:reuse-config? true
+         :state-map state-map}))))
+
+(defn setup-validation-error
+  "Return setup validation error string, or nil when the effective config is valid."
+  [{:keys [state-map reuse-config?]}]
+  (let [recovery-hint "Run plain 'aishell setup --with-...' to write a new configuration."]
+    (cond
+      (and (:unisoma state-map) (not (:with-opencode state-map)))
+      (if reuse-config?
+        (str "Saved setup config is invalid: --unisoma requires --with-opencode.\n" recovery-hint)
+        "--unisoma requires --with-opencode")
+
+      :else
+      (some (fn [{:keys [version label]}]
+              (when-let [msg (version-error-message (get state-map version) label)]
+                (if reuse-config?
+                  (str "Saved setup config is invalid: " msg "\n" recovery-hint)
+                  msg)))
+            setup-harness-options))))
+
+(defn validate-setup-state
+  "Exit with an error if the effective setup state is invalid."
+  [resolution]
+  (when-let [msg (setup-validation-error resolution)]
+    (output/error msg)))
+
+(defn enabled-harness-list
+  "Return enabled harness names in label order for volume metadata."
+  [state-map]
+  (->> [{:name "claude" :enabled? (:with-claude state-map)}
+        {:name "opencode" :enabled? (:with-opencode state-map)}
+        {:name "codex" :enabled? (:with-codex state-map)}
+        {:name "gemini" :enabled? (:with-gemini state-map)}
+        {:name "openspec" :enabled? (:with-openspec state-map)}
+        {:name "pi" :enabled? (:with-pi state-map)}]
+       (keep (fn [{:keys [name enabled?]}]
+               (when enabled? name)))
+       (str/join ",")))
+
+(defn print-effective-reused-setup
+  "Print the merged effective config when --reuse-config is active."
+  [state-map]
+  (println "Reusing saved setup configuration:")
+  (when (:with-claude state-map)
+    (println (str "  Claude Code: " (or (:claude-version state-map) "latest"))))
+  (when (:with-opencode state-map)
+    (println (str "  OpenCode: " (or (:opencode-version state-map) "latest"))))
+  (when (:unisoma state-map)
+    (println "  UniSoma: enabled"))
+  (when (:with-codex state-map)
+    (println (str "  Codex: " (or (:codex-version state-map) "latest"))))
+  (when (:with-gemini state-map)
+    (println (str "  Gemini: " (or (:gemini-version state-map) "latest"))))
+  (when (:with-pi state-map)
+    (println (str "  Pi: " (or (:pi-version state-map) "latest"))))
+  (when (:with-openspec state-map)
+    (println (str "  OpenSpec: " (or (:openspec-version state-map) "latest"))))
+  (when (:with-gitleaks state-map)
+    (println "  Gitleaks: enabled"))
+  (when-not (or (:with-claude state-map)
+                (:with-opencode state-map)
+                (:with-codex state-map)
+                (:with-gemini state-map)
+                (:with-pi state-map)
+                (:with-openspec state-map)
+                (:with-gitleaks state-map)
+                (:unisoma state-map))
+    (println "  No harnesses or optional tools enabled")))
 
 (defn installed-harnesses
   "Return set of installed harness names based on state.
@@ -198,7 +365,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :reuse-config :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -210,32 +377,27 @@
   (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
-  (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild")))
+  (println (str "  " output/CYAN "aishell setup --reuse-config" output/NC "           Reuse saved setup defaults"))
+  (println (str "  " output/CYAN "aishell setup --reuse-config --with-opencode" output/NC " Reuse config, reset OpenCode to latest"))
+  (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild"))
+  (println)
+  (println (str output/BOLD "Reuse mode:" output/NC))
+  (println "  - --reuse-config starts from the last saved setup intent")
+  (println "  - Omitted setup flags inherit from the saved config")
+  (println "  - A bare --with-... flag resets that tool to latest")
+  (println "  - To disable saved tools or write a brand-new config, use plain 'aishell setup'"))
 
 (defn handle-setup [{:keys [opts]}]
   (if (:help opts)
     (print-setup-help)
-    (let [;; Parse flags
-          claude-config (parse-with-flag (:with-claude opts))
-          opencode-config (parse-with-flag (:with-opencode opts))
-          codex-config (parse-with-flag (:with-codex opts))
-          gemini-config (parse-with-flag (:with-gemini opts))
-          pi-config (parse-with-flag (:with-pi opts))
-          openspec-config (parse-with-flag (:with-openspec opts))
-          with-gitleaks (boolean (:with-gitleaks opts))  ; opt-in: nil -> false, true -> true
-          with-unisoma (boolean (:unisoma opts))
-
-          ;; Validate --unisoma requires --with-opencode
-          _ (when (and with-unisoma (not (:enabled? opencode-config)))
-              (output/error "--unisoma requires --with-opencode"))
-
-          ;; Validate versions before build
-          _ (validate-version (:version claude-config) "Claude Code")
-          _ (validate-version (:version opencode-config) "OpenCode")
-          _ (validate-version (:version codex-config) "Codex")
-          _ (validate-version (:version gemini-config) "Gemini")
-          _ (validate-version (:version pi-config) "Pi")
-          _ (validate-version (:version openspec-config) "OpenSpec")
+    (let [prev-state (state/read-state)
+          resolution (resolve-setup-state opts prev-state)
+          _ (when-let [msg (:error resolution)]
+              (output/error msg))
+          _ (validate-setup-state resolution)
+          state-map (:state-map resolution)
+          _ (when (:reuse-config? resolution)
+              (print-effective-reused-setup state-map))
 
           ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/foundation-image-tag)
@@ -243,7 +405,7 @@
 
           ;; Build foundation image (harness tools will be volume-mounted in Phase 36)
           result (build/build-foundation-image
-                  {:with-gitleaks with-gitleaks
+                  {:with-gitleaks (:with-gitleaks state-map)
                    :verbose (:verbose opts)
                    :force (:force opts)})
 
@@ -253,23 +415,6 @@
           ;; Step 2: Compute harness volume hash
           project-dir (System/getProperty "user.dir")
           cfg (config/load-config project-dir)
-          prev-state (state/read-state)
-
-          state-map {:with-claude (:enabled? claude-config)
-                     :with-opencode (:enabled? opencode-config)
-                     :with-codex (:enabled? codex-config)
-                     :with-gemini (:enabled? gemini-config)
-                     :with-pi (:enabled? pi-config)
-                     :with-openspec (:enabled? openspec-config)
-                     :with-gitleaks with-gitleaks
-                     :unisoma with-unisoma
-                     :claude-version (:version claude-config)
-                     :opencode-version (:version opencode-config)
-                     :codex-version (:version codex-config)
-                     :gemini-version (:version gemini-config)
-                     :pi-version (:version pi-config)
-                     :openspec-version (:version openspec-config)}
-
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
@@ -279,15 +424,7 @@
                     vol-stale? (and (not vol-missing?)
                                     (not= (vol/get-volume-label volume-name "aishell.harness.hash")
                                           harness-hash))
-                    ;; Compute harness list for label
-                    harness-list (str/join "," (keep (fn [[k v]]
-                                                       (when v (name k)))
-                                                     {:claude (:with-claude state-map)
-                                                      :opencode (:with-opencode state-map)
-                                                      :codex (:with-codex state-map)
-                                                      :gemini (:with-gemini state-map)
-                                                      :openspec (:with-openspec state-map)
-                                                      :pi (:with-pi state-map)}))]
+                    harness-list (enabled-harness-list state-map)]
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
@@ -348,13 +485,16 @@
   (println)
   (println (str output/BOLD "Notes:" output/NC))
   (println "  - Refreshes harnesses from last build configuration")
-  (println "  - To change which harnesses are installed, use 'aishell setup'")
-  (println "  - Volume is deleted and recreated for a clean slate")
-  (println "  - Foundation image is NOT rebuilt (unless --force is used)")
+  (println "  - Deletes and recreates the harness volume for a clean slate")
+  (println "  - Foundation image is NOT rebuilt unless --force is used")
+  (println "  - Use 'aishell setup --reuse-config' when you want setup semantics")
+  (println "    (inherit saved config, override selected flags, avoid unconditional")
+  (println "    harness-volume repopulation when the effective config is unchanged)")
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell update" output/NC "          Refresh harness tools only"))
-  (println (str "  " output/CYAN "aishell update --force" output/NC "  Also rebuild foundation image")))
+  (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools only"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also rebuild foundation image"))
+  (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update
   "Update command: refresh harness tools to latest versions.

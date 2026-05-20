@@ -2,6 +2,74 @@
   (:require [clojure.test :refer [deftest is testing]]
             [aishell.cli :as cli]))
 
+(deftest resolve-setup-state-plain-setup-is-declarative
+  (testing "plain setup does not inherit omitted flags from saved state"
+    (is (= {:reuse-config? false
+            :state-map {:with-claude true
+                        :with-opencode false
+                        :with-codex false
+                        :with-gemini false
+                        :with-pi false
+                        :with-openspec false
+                        :with-gitleaks false
+                        :unisoma false
+                        :claude-version "2.0.22"
+                        :opencode-version nil
+                        :codex-version nil
+                        :gemini-version nil
+                        :pi-version nil
+                        :openspec-version nil}}
+           (cli/resolve-setup-state {:with-claude "2.0.22"}
+                                    {:with-opencode true
+                                     :opencode-version "1.2.3"
+                                     :with-gitleaks true
+                                     :unisoma true})))))
+
+(deftest resolve-setup-state-reuse-config-merges-and-overrides
+  (testing "reuse mode inherits omitted options and bare flags reset versions to latest"
+    (is (= {:with-claude true
+            :with-opencode true
+            :with-codex false
+            :with-gemini false
+            :with-pi true
+            :with-openspec false
+            :with-gitleaks true
+            :unisoma true
+            :claude-version "2.0.22"
+            :opencode-version nil
+            :codex-version nil
+            :gemini-version nil
+            :pi-version "1.0.0"
+            :openspec-version nil}
+           (:state-map (cli/resolve-setup-state {:reuse-config true
+                                                 :with-opencode true
+                                                 :with-pi "1.0.0"}
+                                                {:with-claude true
+                                                 :claude-version "2.0.22"
+                                                 :with-opencode true
+                                                 :opencode-version "0.9.0"
+                                                 :with-gitleaks true
+                                                 :unisoma true}))))))
+
+(deftest resolve-setup-state-reuse-config-requires-saved-setup
+  (testing "reuse mode fails clearly when no saved setup exists"
+    (is (= {:reuse-config? true
+            :error "--reuse-config requires an existing saved setup. Run plain 'aishell setup --with-...' to write a new configuration."}
+           (cli/resolve-setup-state {:reuse-config true} nil)))))
+
+(deftest setup-validation-error-validates-merged-effective-config
+  (testing "inherited OpenCode satisfies --unisoma in reuse mode"
+    (is (nil? (cli/setup-validation-error
+               (cli/resolve-setup-state {:reuse-config true :unisoma true}
+                                        {:with-opencode true
+                                         :opencode-version "1.2.3"})))))
+  (testing "invalid saved config includes a recovery hint"
+    (is (= "Saved setup config is invalid: --unisoma requires --with-opencode.\nRun plain 'aishell setup --with-...' to write a new configuration."
+           (cli/setup-validation-error
+            {:reuse-config? true
+             :state-map {:with-opencode false
+                         :unisoma true}})))))
+
 (deftest format-ps-data-empty
   (testing "no containers yields an empty vector"
     (is (= [] (cli/format-ps-data [])))))

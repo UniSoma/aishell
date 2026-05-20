@@ -1265,6 +1265,43 @@ Omit version for latest:
 **State tracking:**
 aishell saves harness selection and tool configuration in `~/.aishell/state.edn` and preserves it across updates.
 
+### --reuse-config
+
+**Purpose:** Start from the saved setup intent, then override only the flags you pass on the current command.
+
+**Usage:**
+```bash
+# Reuse the saved setup config exactly
+aishell setup --reuse-config
+
+# Reuse saved config, but reset OpenCode to latest
+aishell setup --reuse-config --with-opencode
+
+# Reuse saved config, but pin OpenCode to a new version
+aishell setup --reuse-config --with-opencode=1.2.3
+
+# Rebuild foundation/base layers from the saved config
+aishell setup --reuse-config --force
+```
+
+**Behavior:**
+- Requires an existing saved setup in `~/.aishell/state.edn`
+- Omitted setup flags inherit from the saved setup intent
+- Explicit `--with-...=VERSION` flags override inherited version pins
+- A bare `--with-...` flag resets that tool to `latest`
+- Inherited settings include harness selection, version pins, `--with-gitleaks`, and `--unisoma`
+- Validation runs against the merged effective config before the build starts
+- Setup still recomputes derived build metadata (hashes, build time, volume name) before persisting state
+
+**When to use:**
+- **Foundation rebuilds:** Rebuild setup layers from your saved config
+- **Small overrides:** Keep most of the saved config, change one or two tools
+- **Avoid update semantics:** Unlike `aishell update`, this does not unconditionally delete and repopulate the harness volume when the effective config is unchanged
+
+**When not to use:**
+- **Write a brand-new config:** Use plain `aishell setup ...`
+- **Disable saved tools:** Use plain `aishell setup ...` with the exact desired selection
+
 ---
 
 ### --with-gitleaks
@@ -1365,6 +1402,18 @@ To add or remove harnesses, use `aishell setup`:
 # Add OpenCode to existing Claude installation
 aishell setup --with-claude --with-opencode
 ```
+
+**When to use `setup --reuse-config` instead:**
+```bash
+# Rebuild foundation/base layers from the saved config
+# without update's unconditional volume repopulation
+aishell setup --reuse-config --force
+```
+
+Use `aishell setup --reuse-config` when you want setup semantics:
+- start from the saved setup intent
+- override only selected flags
+- avoid unconditional harness-volume repopulation when the effective config is unchanged
 
 **When to use update:**
 - **npm package updates:** Get the latest harness versions
