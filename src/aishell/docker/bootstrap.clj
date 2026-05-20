@@ -13,7 +13,7 @@
             [clojure.string :as str]
             [aishell.output :as output]))
 
-(defn- running?
+(defn running?
   "Docker `--format {{.Status}}` returns strings like `Up 3 minutes`,
    `Exited (0) 2 hours ago`, `Created`, `Restarting (1) …`. Only the
    `Up …` form is a running container; everything else is a state for

@@ -566,13 +566,23 @@
    `:bootstrap` is attached upstream by `bootstrap/attach-bootstrap!`
    (one of `:none :pending :ready :failed`); a missing key surfaces as
    `:none` so the JSON shape stays stable when the upstream attach is
-   skipped."
+   skipped.
+
+   `:ready` is the derived single-signal answer to \"is this container
+   running and ready to use?\" — true iff the container is `Up` and
+   either has no pre_start (`:none`) or finalized it (`:ready`). The
+   `:none`/`:ready` collapse is intentional: from the caller's view,
+   both mean \"no readiness work left.\""
   [c]
-  {:name (extract-short-name (:name c))
-   :fullName (:name c)
-   :status (:status c)
-   :created (:created c)
-   :bootstrap (or (:bootstrap c) :none)})
+  (let [status (:status c)
+        bootstrap (or (:bootstrap c) :none)]
+    {:name (extract-short-name (:name c))
+     :fullName (:name c)
+     :status status
+     :created (:created c)
+     :bootstrap bootstrap
+     :ready (and (bootstrap/running? status)
+                 (contains? #{:none :ready} bootstrap))}))
 
 (defn- bootstrap-cell
   "Render the BOOTSTRAP cell for one human-table row.
@@ -593,15 +603,16 @@
 (defn format-ps-data
   "Build the JSON-shaped data for `aishell ps`.
    Pure: takes the docker container list (vector of maps with
-   :name/:status/:created) and returns a vector of maps with
-   :name/:fullName/:status/:created keys. Empty input yields []."
+   :name/:status/:created/:bootstrap) and returns a vector of maps
+   with :name/:fullName/:status/:created/:bootstrap/:ready keys.
+   Empty input yields []."
   [containers]
   (mapv ps-row containers))
 
 (defn handle-ps
   "List all containers for the current project.
    In JSON mode, emits a compact JSON array of
-   {name,fullName,status,created,bootstrap}."
+   {name,fullName,status,created,bootstrap,ready}."
   [_]
   (let [project-dir (System/getProperty "user.dir")
         containers (-> (naming/list-project-containers project-dir)
