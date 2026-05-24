@@ -319,7 +319,12 @@ export DISABLE_INSTALLATION_CHECKS=1
 # docker stop/start. Removing them here ensures a config change from
 # pre_start to no-pre_start surfaces as bootstrap=none on the next start
 # instead of a stale done/failed.
-rm -f /tmp/pre-start.done /tmp/pre-start.failed
+#
+# `aishell.entrypoint-done` is touched immediately before `exec gosu` and
+# gates `:ready` in the probe — without it, a consumer that exec'd in the
+# moment docker reported the container `Up` could land before the alias
+# file (and other entrypoint setup) had been written.
+rm -f /tmp/aishell.entrypoint-done /tmp/pre-start.done /tmp/pre-start.failed
 
 # Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
 # Runs as developer user so caches (.m2, .npm, etc.) go to the right place
@@ -355,6 +360,13 @@ fi
 # Set UTF-8 locale for proper Unicode rendering
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
+
+# Entrypoint setup complete — touch the sentinel before exec so the probe
+# in docker/bootstrap.clj can flip `:ready` true. Placed after the pre_start
+# `&` launch so it never blocks on pre_start (the launch itself is sync; only
+# the subshell body runs in the background).
+touch /tmp/aishell.entrypoint-done
+chown \"$USER_ID:$GROUP_ID\" /tmp/aishell.entrypoint-done
 
 # Execute command as developer user
 exec gosu \"$USER_ID:$GROUP_ID\" \"$@\"

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`aishell ps` readiness no longer lies for no-`pre_start` containers**: `:bootstrap` was `:none` and `:ready` flipped `true` the moment docker reported the container `Up`, but the entrypoint still had setup to do (recursive `chown` over shared bbin/Maven caches, alias-file generation). Consumers that `docker exec`'d in immediately — tmux launchers polling `aishell ps --json`, scripted attaches — could land before `~/.bash_aliases` was written, so `claude` ran without `--dangerously-skip-permissions` and configured `harness_args`. The entrypoint now touches `/tmp/aishell.entrypoint-done` right before `exec gosu`, and the probe gates `:bootstrap` / `:ready` on that sentinel for both `pre_start` and no-`pre_start` paths
+
+### Breaking
+
+- **Containers must be recreated after upgrade**: existing containers were started by the previous entrypoint and never produced the new `/tmp/aishell.entrypoint-done` sentinel, so they will report `bootstrap: pending` indefinitely. `aishell down` + restart restores accurate readiness
+
 ## [3.18.0] - 2026-05-11
 
 ### Added

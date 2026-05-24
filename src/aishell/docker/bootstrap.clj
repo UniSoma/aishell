@@ -36,12 +36,23 @@
 (defn derive-state
   "Pure: map the entrypoint's sentinel state to a bootstrap keyword.
 
-   `:failed` wins over `:ready` when both sentinels are present. The
-   entrypoint cleans both at start, so the only path to a both-present
-   state is a brief write-ordering race inside the pre_start subshell;
-   surfacing failure is the safer resolution."
-  [{:keys [pre-start-configured? done? failed?]}]
+   `entrypoint-done?` gates everything: docker reports a container `Up`
+   the moment the entrypoint starts, but the entrypoint still has work
+   to do (chowns over shared caches, alias-file generation, …) before
+   the container is actually safe to exec into. Until the entrypoint
+   touches its sentinel right before `exec gosu`, every state is
+   `:pending`.
+
+   After entrypoint-done:
+   - no pre_start configured → `:none`
+   - pre_start failed → `:failed` (wins over done; both-present is a
+     brief write-ordering race inside the pre_start subshell, and
+     surfacing failure is the safer resolution)
+   - pre_start done → `:ready`
+   - pre_start launched, neither sentinel → `:pending`"
+  [{:keys [entrypoint-done? pre-start-configured? done? failed?]}]
   (cond
+    (not entrypoint-done?)      :pending
     (not pre-start-configured?) :none
     failed?                     :failed
     done?                       :ready
@@ -64,34 +75,41 @@
 
 (defn- read-sentinels
   "Probe sentinels in container via `docker exec`. Returns
-   {:done? bool :failed? bool}; nil on failure."
+   {:entrypoint-done? bool :done? bool :failed? bool}; nil on failure."
   [container-name]
-  (let [script "if [ -f /tmp/pre-start.done ]; then echo done; fi\nif [ -f /tmp/pre-start.failed ]; then echo failed; fi\ntrue"
+  (let [script (str "if [ -f /tmp/aishell.entrypoint-done ]; then echo entrypoint; fi\n"
+                    "if [ -f /tmp/pre-start.done ]; then echo done; fi\n"
+                    "if [ -f /tmp/pre-start.failed ]; then echo failed; fi\n"
+                    "true")
         {:keys [exit out]}
         (p/shell {:out :string :err :string :continue true}
                  "docker" "exec" container-name "sh" "-c" script)]
     (when (zero? exit)
       (let [tokens (set (map str/trim (str/split-lines out)))]
-        {:done?   (contains? tokens "done")
-         :failed? (contains? tokens "failed")}))))
+        {:entrypoint-done? (contains? tokens "entrypoint")
+         :done?            (contains? tokens "done")
+         :failed?          (contains? tokens "failed")}))))
 
 (defn- probe-one
   "Probe bootstrap state for one running container.
 
-   Inspect env first to short-circuit when PRE_START is unset (skip the
-   exec). Otherwise read the sentinels and feed `derive-state`. Any
-   inspect/exec error degrades to `:pending` with a warning (silenced in
-   JSON mode); the next `aishell ps` self-corrects."
+   Always reads sentinels — the previous `PRE_START unset → :none`
+   short-circuit was unsound because docker reports the container `Up`
+   the moment the entrypoint starts, before its setup (chowns, alias
+   generation) completes. `derive-state` now gates on
+   `entrypoint-done?` so `:ready` only flips true once the entrypoint
+   has reached its `touch` immediately before `exec gosu`.
+
+   Any inspect/exec error degrades to `:pending` with a warning
+   (silenced in JSON mode); the next `aishell ps` self-corrects."
   [container-name]
   (try
     (let [env (inspect-env container-name)
           pre-start (some-> env (get "PRE_START") not-empty)]
-      (if-not pre-start
-        :none
-        (if-let [sentinels (read-sentinels container-name)]
-          (derive-state (assoc sentinels :pre-start-configured? true))
-          (do (output/warn (str "bootstrap probe failed for " container-name))
-              :pending))))
+      (if-let [sentinels (read-sentinels container-name)]
+        (derive-state (assoc sentinels :pre-start-configured? (boolean pre-start)))
+        (do (output/warn (str "bootstrap probe failed for " container-name))
+            :pending)))
     (catch Exception e
       (output/warn (str "bootstrap probe error for " container-name
                         ": " (.getMessage e)))

@@ -2,34 +2,55 @@
   (:require [clojure.test :refer [deftest is testing]]
             [aishell.docker.bootstrap :as bootstrap]))
 
+(deftest derive-state-pending-when-entrypoint-not-done
+  (testing "entrypoint-done? false → :pending regardless of all other state"
+    (is (= :pending (bootstrap/derive-state {:entrypoint-done? false
+                                             :pre-start-configured? false
+                                             :done? false
+                                             :failed? false})))
+    (is (= :pending (bootstrap/derive-state {:entrypoint-done? false
+                                             :pre-start-configured? true
+                                             :done? true
+                                             :failed? false})))
+    (is (= :pending (bootstrap/derive-state {:entrypoint-done? false
+                                             :pre-start-configured? true
+                                             :done? false
+                                             :failed? true})))))
+
 (deftest derive-state-none-when-pre-start-unset
-  (testing "pre-start-configured? false → :none, regardless of sentinels"
-    (is (= :none (bootstrap/derive-state {:pre-start-configured? false
+  (testing "entrypoint-done + pre-start-configured? false → :none"
+    (is (= :none (bootstrap/derive-state {:entrypoint-done? true
+                                          :pre-start-configured? false
                                           :done? false
                                           :failed? false})))
-    (is (= :none (bootstrap/derive-state {:pre-start-configured? false
+    (is (= :none (bootstrap/derive-state {:entrypoint-done? true
+                                          :pre-start-configured? false
                                           :done? true
                                           :failed? true})))))
 
 (deftest derive-state-pending-when-no-sentinels
-  (testing "pre_start configured but no sentinels yet → :pending"
-    (is (= :pending (bootstrap/derive-state {:pre-start-configured? true
+  (testing "entrypoint-done, pre_start configured, no pre-start sentinels yet → :pending"
+    (is (= :pending (bootstrap/derive-state {:entrypoint-done? true
+                                             :pre-start-configured? true
                                              :done? false
                                              :failed? false})))))
 
 (deftest derive-state-ready-when-done-only
-  (testing "done sentinel present (no failed) → :ready"
-    (is (= :ready (bootstrap/derive-state {:pre-start-configured? true
+  (testing "entrypoint-done + pre-start done sentinel (no failed) → :ready"
+    (is (= :ready (bootstrap/derive-state {:entrypoint-done? true
+                                           :pre-start-configured? true
                                            :done? true
                                            :failed? false})))))
 
 (deftest derive-state-failed
-  (testing "failed sentinel only → :failed"
-    (is (= :failed (bootstrap/derive-state {:pre-start-configured? true
+  (testing "entrypoint-done + failed sentinel only → :failed"
+    (is (= :failed (bootstrap/derive-state {:entrypoint-done? true
+                                            :pre-start-configured? true
                                             :done? false
                                             :failed? true}))))
   (testing "both sentinels race → :failed (failure takes precedence)"
-    (is (= :failed (bootstrap/derive-state {:pre-start-configured? true
+    (is (= :failed (bootstrap/derive-state {:entrypoint-done? true
+                                            :pre-start-configured? true
                                             :done? true
                                             :failed? true})))))
 
