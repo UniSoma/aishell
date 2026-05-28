@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.19.0] - 2026-05-28
+
+### Added
+
+- **`aishell setup --reuse-config`**: Start from the saved setup intent and override only the flags passed on the current command — useful for foundation rebuilds (`--reuse-config --force`) and small per-tool overrides without `aishell update`'s unconditional harness-volume repopulation. Bare `--with-…` resets a tool to `latest`; `--with-…=VERSION` overrides an inherited version pin. Requires an existing saved setup in `~/.aishell/state.edn`
+- **`:ready` boolean on `aishell ps`**: Derived single-signal answer to "is this container running and ready to use?" — `true` iff status is `Up` and `:bootstrap` is `:none` (no `pre_start`) or `:ready` (`pre_start` finalized). Saves callers from combining the status string with the four-state bootstrap field
+
+### Changed
+
+- **Toolchain bumps**: babashka 1.12.218, gitleaks 8.30.1
+
 ### Fixed
 
 - **`aishell ps` readiness no longer lies for no-`pre_start` containers**: `:bootstrap` was `:none` and `:ready` flipped `true` the moment docker reported the container `Up`, but the entrypoint still had setup to do (recursive `chown` over shared bbin/Maven caches, alias-file generation). Consumers that `docker exec`'d in immediately — tmux launchers polling `aishell ps --json`, scripted attaches — could land before `~/.bash_aliases` was written, so `claude` ran without `--dangerously-skip-permissions` and configured `harness_args`. The entrypoint now touches `/tmp/aishell.entrypoint-done` right before `exec gosu`, and the probe gates `:bootstrap` / `:ready` on that sentinel for both `pre_start` and no-`pre_start` paths
+- **Miscased `.aishell/Dockerfile` on Windows surfaces a warning**: NTFS resolves `DockerFile`/`dockerfile`/etc. case-insensitively, so the file appeared to exist client-side, but Docker Desktop's Linux daemon is case-sensitive and BuildKit failed with a cryptic `open Dockerfile: no such file or directory`. The mismatch is now detected and warned about before invoking the build, pointing at the rename fix
 
 ### Breaking
 
