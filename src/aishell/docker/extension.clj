@@ -27,6 +27,24 @@
     (when (fs/exists? path)
       (str path))))
 
+(defn- miscased-dockerfile
+  "On Windows, return the actual filename if .aishell/<name> matches
+   'dockerfile' case-insensitively but isn't exactly 'Dockerfile'.
+   Returns nil otherwise (including on non-Windows platforms).
+
+   NTFS is case-insensitive so the file resolves locally, but Docker
+   Desktop's Linux daemon is case-sensitive — BuildKit fails with a
+   cryptic 'open Dockerfile: no such file or directory' error."
+  [project-dir]
+  (when (fs/windows?)
+    (let [aishell-dir (fs/path project-dir ".aishell")]
+      (when (fs/exists? aishell-dir)
+        (->> (fs/list-dir aishell-dir)
+             (map #(str (fs/file-name %)))
+             (some #(when (and (= (str/lower-case %) "dockerfile")
+                               (not= % "Dockerfile"))
+                      %)))))))
+
 (defn get-foundation-image-id
   "Get Docker image ID for foundation image.
 
@@ -118,6 +136,11 @@
             exits on error"
   [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
+    (when-let [actual (miscased-dockerfile project-dir)]
+      (output/warn
+       (str ".aishell/" actual " has non-canonical casing. "
+            "Docker Desktop's Linux daemon is case-sensitive and will fail "
+            "to find this file during build. Rename it to .aishell/Dockerfile.")))
     (let [base-id (get-foundation-image-id foundation-tag)
           extension-hash (get-extension-dockerfile-hash project-dir)
           build-args (cond-> ["-f" dockerfile-path
@@ -142,8 +165,7 @@
             {:success true :image extended-tag}
             (output/error "Extension build failed")))
         ;; Non-verbose: use spinner
-        (let [result (spinner/with-spinner "Building project extension"
-                                           build-fn)]
+        (let [result (spinner/with-spinner "Building project extension" build-fn)]
           (if (:success result)
             result
             (output/error (str "Extension build failed:\n" (:error result)))))))))
