@@ -2,12 +2,13 @@ FROM aishell:foundation
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
+# >>> clojure-dev stuff (managed) >>>
 # JDK 25 from Eclipse Temurin (foundation only ships JRE 17 headless).
 COPY --from=eclipse-temurin:25-jdk-jammy /opt/java/openjdk /opt/java/openjdk
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="/opt/java/openjdk/bin:${PATH}"
 
-ARG CLOJURE_VERSION=1.12.4.1618
+ARG CLOJURE_VERSION=1.12.5.1645
 RUN curl -fsSL "https://github.com/clojure/brew-install/releases/download/${CLOJURE_VERSION}/linux-install.sh" -o /tmp/linux-install.sh; \
     bash /tmp/linux-install.sh; \
     rm /tmp/linux-install.sh; \
@@ -19,19 +20,23 @@ RUN curl -fsSL "https://github.com/clojure-lsp/clojure-lsp/releases/download/${C
     rm /tmp/clojure-lsp.zip; \
     clojure-lsp --version
 
-ARG CLJ_KONDO_VERSION=2026.04.15
+ARG CLJ_KONDO_VERSION=2026.05.25
 RUN curl -fsSL "https://github.com/clj-kondo/clj-kondo/releases/download/v${CLJ_KONDO_VERSION}/clj-kondo-${CLJ_KONDO_VERSION}-linux-static-amd64.zip" -o /tmp/clj-kondo.zip; \
     unzip /tmp/clj-kondo.zip -d /usr/local/bin; \
     rm /tmp/clj-kondo.zip; \
     clj-kondo --version
 
-# Clojure MCP and MCP Light
-RUN bbin install https://github.com/bhauman/clojure-mcp-light.git --tag v0.2.2; \
-    bbin install https://github.com/bhauman/clojure-mcp-light.git --tag v0.2.2 --as clj-nrepl-eval --main-opts '["-m" "clojure-mcp-light.nrepl-eval"]'; \
-    bbin install https://github.com/bhauman/clojure-mcp-light.git --tag v0.2.2 --as clj-paren-repair --main-opts '["-m" "clojure-mcp-light.paren-repair"]' 
+# Clojure MCP
+RUN clojure -Ttools install-latest :lib io.github.bhauman/clojure-mcp :as mcp
 
-# clj-surgeon — structural analysis + AST refactoring CLI for Clojure.
-ARG CLJ_SURGEON_SHA=a6c0da960a59bdeb7927e9a79234893b02413ace
+ARG CLOJURE_MCP_LIGHT_VERSION=0.2.2
+RUN bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJURE_MCP_LIGHT_VERSION}"; \
+    bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJURE_MCP_LIGHT_VERSION}" --as clj-nrepl-eval --main-opts '["-m" "clojure-mcp-light.nrepl-eval"]'; \
+    bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJURE_MCP_LIGHT_VERSION}" --as clj-paren-repair --main-opts '["-m" "clojure-mcp-light.paren-repair"]'
+
+ARG CLJ_SURGEON_SHA=3fbf21bf5ec1b55e81fbe1a3b6358e70414bef04
 RUN bbin install https://github.com/realgenekim/clj-surgeon.git --git/sha "${CLJ_SURGEON_SHA}"
 
-RUN bbin install https://github.com/UniSoma/knot.git
+ARG KNOT_VERSION=0.6.0
+RUN bbin install https://github.com/UniSoma/knot.git --tag "v${KNOT_VERSION}"
+# <<< clojure-dev stuff (managed) <<<
