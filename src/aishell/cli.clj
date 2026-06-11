@@ -23,6 +23,7 @@
             [aishell.upgrade :as upgrade]
             [aishell.info :as info]
             [aishell.pi :as pi]
+            [aishell.util :as util]
             [aishell.update-check :as update-check]))
 
 (def version "3.19.0")
@@ -130,6 +131,7 @@
    :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
+   :dir           {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
    :reuse-config  {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
@@ -365,7 +367,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :reuse-config :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :dir :reuse-config :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -377,6 +379,7 @@
   (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
+  (println (str "  " output/CYAN "aishell setup --dir .sandbox" output/NC "           Scaffold a .sandbox/ project config dir"))
   (println (str "  " output/CYAN "aishell setup --reuse-config" output/NC "           Reuse saved setup defaults"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --with-opencode" output/NC " Reuse config, reset OpenCode to latest"))
   (println (str "  " output/CYAN "aishell setup --force" output/NC "                  Force rebuild"))
@@ -387,10 +390,58 @@
   (println "  - A bare --with-... flag resets that tool to latest")
   (println "  - To disable saved tools or write a brand-new config, use plain 'aishell setup'"))
 
+(def starter-config-yaml
+  "# aishell project configuration.
+# Inherit from global ~/.aishell/config.yaml (default), or 'none' to disable.
+# extends: global
+#
+# mounts:
+#   - /path/to/data
+# env:
+#   MY_VAR: literal_value
+# ports:
+#   - \"3000:3000\"
+")
+
+(defn normalize-config-dir-name
+  "Normalize a `--dir` value to a canonical project config dir name
+   (.aishell or .sandbox), or nil when invalid. Accepts the literal
+   names with or without the leading dot."
+  [v]
+  (when (string? v)
+    (let [name (if (str/starts-with? v ".") v (str "." v))]
+      (when (some #{name} util/project-config-dir-names)
+        name))))
+
+(defn scaffold-config-dir!
+  "Scaffold the chosen project config dir under project-dir.
+   Exits with an error on an invalid `--dir` value or when the other
+   alias dir already exists. Creates the dir and a starter config.yaml
+   when none is present."
+  [dir-value project-dir]
+  (let [dir-name (normalize-config-dir-name dir-value)]
+    (when-not dir-name
+      (output/error (str "Invalid --dir value: " (pr-str dir-value)
+                         ". Use .aishell or .sandbox.")))
+    (let [other (first (remove #{dir-name} util/project-config-dir-names))]
+      (when (fs/exists? (fs/path project-dir other))
+        (output/error (str "Cannot scaffold " dir-name "/: " other
+                           "/ already exists. Use only one project config directory."))))
+    (let [dir-path (fs/path project-dir dir-name)
+          config-path (fs/path dir-path "config.yaml")]
+      (fs/create-dirs dir-path)
+      (if (fs/exists? config-path)
+        (println (str "Project config dir already present: " dir-name "/"))
+        (do
+          (spit (str config-path) starter-config-yaml)
+          (println (str "Scaffolded " dir-name "/config.yaml")))))))
+
 (defn handle-setup [{:keys [opts]}]
   (if (:help opts)
     (print-setup-help)
-    (let [prev-state (state/read-state)
+    (let [_ (when (contains? opts :dir)
+              (scaffold-config-dir! (:dir opts) (System/getProperty "user.dir")))
+          prev-state (state/read-state)
           resolution (resolve-setup-state opts prev-state)
           _ (when-let [msg (:error resolution)]
               (output/error msg))
@@ -923,7 +974,9 @@
                      (println)
                      (println (str output/BOLD "Extra arguments:" output/NC))
                      (println "  Any arguments not listed above are passed through to the 'code' CLI.")
-                     (println "  Default args can be set via harness_args.vscode in .aishell/config.yaml.")
+                     (println (str "  Default args can be set via harness_args.vscode in "
+                                   (util/resolve-project-config-dir (System/getProperty "user.dir"))
+                                   "/config.yaml."))
                      (println)
                      (println (str output/BOLD "What this does:" output/NC))
                      (println "  1. Syncs host VSCode extensions to container config")

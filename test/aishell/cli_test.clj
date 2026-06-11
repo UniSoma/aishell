@@ -1,5 +1,6 @@
 (ns aishell.cli-test
   (:require [clojure.test :refer [deftest is testing]]
+            [babashka.fs :as fs]
             [aishell.cli :as cli]))
 
 (deftest resolve-setup-state-plain-setup-is-declarative
@@ -69,6 +70,29 @@
             {:reuse-config? true
              :state-map {:with-opencode false
                          :unisoma true}})))))
+
+(deftest normalize-config-dir-name-accepts-valid
+  (testing "literal names, with or without leading dot"
+    (is (= ".aishell" (cli/normalize-config-dir-name ".aishell")))
+    (is (= ".sandbox" (cli/normalize-config-dir-name ".sandbox")))
+    (is (= ".aishell" (cli/normalize-config-dir-name "aishell")))
+    (is (= ".sandbox" (cli/normalize-config-dir-name "sandbox")))))
+
+(deftest normalize-config-dir-name-rejects-invalid
+  (testing "anything else is nil"
+    (is (nil? (cli/normalize-config-dir-name ".secrets")))
+    (is (nil? (cli/normalize-config-dir-name "foo")))
+    (is (nil? (cli/normalize-config-dir-name "")))
+    (is (nil? (cli/normalize-config-dir-name nil)))))
+
+(deftest scaffold-config-dir-creates-sandbox
+  (testing "scaffolds .sandbox/config.yaml into an empty project"
+    (let [dir (str (fs/create-temp-dir {:prefix "aishell-scaffold-test"}))]
+      (try
+        (cli/scaffold-config-dir! ".sandbox" dir)
+        (is (fs/exists? (fs/path dir ".sandbox" "config.yaml")))
+        (finally
+          (fs/delete-tree dir))))))
 
 (deftest format-ps-data-empty
   (testing "no containers yields an empty vector"

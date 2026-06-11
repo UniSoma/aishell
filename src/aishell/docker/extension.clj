@@ -1,7 +1,8 @@
 (ns aishell.docker.extension
   "Per-project Dockerfile extension support.
 
-   Projects can extend the base image with .aishell/Dockerfile.
+   Projects can extend the base image with <active-dir>/Dockerfile, where
+   the active dir is .aishell or its .sandbox alias.
    The extension is auto-rebuilt when base image or extension Dockerfile changes."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
@@ -9,7 +10,8 @@
             [aishell.docker :as docker]
             [aishell.docker.hash :as hash]
             [aishell.docker.spinner :as spinner]
-            [aishell.output :as output]))
+            [aishell.output :as output]
+            [aishell.util :as util]))
 
 ;; Labels for tracking rebuild dependencies
 (def base-image-id-label "aishell.base.id")
@@ -21,14 +23,14 @@
    Arguments:
    - project-dir: Path to project directory
 
-   Returns: String path to .aishell/Dockerfile if exists, else nil"
+   Returns: String path to <active-dir>/Dockerfile if exists, else nil"
   [project-dir]
-  (let [path (fs/path project-dir ".aishell" "Dockerfile")]
+  (let [path (fs/path project-dir (util/resolve-project-config-dir project-dir) "Dockerfile")]
     (when (fs/exists? path)
       (str path))))
 
 (defn- miscased-dockerfile
-  "On Windows, return the actual filename if .aishell/<name> matches
+  "On Windows, return the actual filename if <active-dir>/<name> matches
    'dockerfile' case-insensitively but isn't exactly 'Dockerfile'.
    Returns nil otherwise (including on non-Windows platforms).
 
@@ -37,9 +39,9 @@
    cryptic 'open Dockerfile: no such file or directory' error."
   [project-dir]
   (when (fs/windows?)
-    (let [aishell-dir (fs/path project-dir ".aishell")]
-      (when (fs/exists? aishell-dir)
-        (->> (fs/list-dir aishell-dir)
+    (let [config-dir (fs/path project-dir (util/resolve-project-config-dir project-dir))]
+      (when (fs/exists? config-dir)
+        (->> (fs/list-dir config-dir)
              (map #(str (fs/file-name %)))
              (some #(when (and (= (str/lower-case %) "dockerfile")
                                (not= % "Dockerfile"))
@@ -137,10 +139,11 @@
   [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
     (when-let [actual (miscased-dockerfile project-dir)]
-      (output/warn
-       (str ".aishell/" actual " has non-canonical casing. "
-            "Docker Desktop's Linux daemon is case-sensitive and will fail "
-            "to find this file during build. Rename it to .aishell/Dockerfile.")))
+      (let [config-dir (util/resolve-project-config-dir project-dir)]
+        (output/warn
+         (str config-dir "/" actual " has non-canonical casing. "
+              "Docker Desktop's Linux daemon is case-sensitive and will fail "
+              "to find this file during build. Rename it to " config-dir "/Dockerfile."))))
     (let [base-id (get-foundation-image-id foundation-tag)
           extension-hash (get-extension-dockerfile-hash project-dir)
           build-args (cond-> ["-f" dockerfile-path

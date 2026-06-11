@@ -76,7 +76,7 @@
       volume-name)))
 
 (defn resolve-image-tag
-  "Determine which image to use: extended if project has .aishell/Dockerfile, else base.
+  "Determine which image to use: extended if project has a <active-dir>/Dockerfile, else base.
    Ensures base image is up to date before extension resolution.
    Auto-builds extension if needed (matches bash behavior)."
   [_base-tag project-dir force?]

@@ -1,6 +1,7 @@
 (ns aishell.config
   "Per-project configuration loading from YAML.
-   Supports .aishell/config.yaml in project dir with global fallback."
+   Supports .aishell/config.yaml (or its .sandbox/ alias) in the project
+   dir with global ~/.aishell/config.yaml fallback."
   (:require [clj-yaml.core :as yaml]
             [babashka.fs :as fs]
             [clojure.string :as cstr]
@@ -16,9 +17,10 @@
   #{"claude" "opencode" "codex" "gemini" "vscode" "pi" "openspec"})
 
 (defn project-config-path
-  "Path to project config: PROJECT_DIR/.aishell/config.yaml"
+  "Path to project config: PROJECT_DIR/<active-dir>/config.yaml.
+   The active dir (.aishell or .sandbox) is resolved from the filesystem."
   [project-dir]
-  (str (fs/path project-dir ".aishell" "config.yaml")))
+  (util/project-config-path project-dir))
 
 (defn global-config-path
   "Path to global config: ~/.aishell/config.yaml"
@@ -74,8 +76,8 @@
           unknown (clojure.set/difference config-harnesses known-harnesses)]
       (when (seq unknown)
         (output/warn (str "Unknown harness names in " source-path
-                         " harness_args: "
-                         (clojure.string/join ", " unknown)))))))
+                          " harness_args: "
+                          (clojure.string/join ", " unknown)))))))
 
 (defn validate-detection-config
   "Validate detection config. Warns on invalid severity and missing reason.
@@ -88,20 +90,20 @@
         (when-let [severity (:severity opts)]
           (when-not (contains? #{"high" "medium" "low"} severity)
             (output/warn (str "Invalid severity in " source-path
-                             " custom pattern '" pattern "': " severity
-                             "\nValid values: high, medium, low"))))))
+                              " custom pattern '" pattern "': " severity
+                              "\nValid values: high, medium, low"))))))
     ;; Validate allowlist entries must be maps with :path and :reason
     (when-let [allowlist (:allowlist detection-config)]
       (doseq [entry allowlist]
         (cond
           (not (map? entry))
           (output/warn (str "Invalid allowlist entry in " source-path
-                           ": must be a map with 'path' and 'reason' keys, got: " (pr-str entry)))
+                            ": must be a map with 'path' and 'reason' keys, got: " (pr-str entry)))
           (not (:path entry))
           (output/warn (str "Missing 'path' in " source-path " allowlist entry: " (pr-str entry)))
           (not (:reason entry))
           (output/warn (str "Missing 'reason' in " source-path
-                           " allowlist entry for path: " (:path entry)))))))
+                            " allowlist entry for path: " (:path entry)))))))
   detection-config)
 
 (defn validate-pi-packages
@@ -122,7 +124,7 @@
       (doseq [entry pi-packages]
         (when (or (not (string? entry)) (clojure.string/blank? entry))
           (output/warn (str "Invalid pi_packages entry in " source-path
-                           ": must be a non-empty string, got: " (pr-str entry)))))))
+                            ": must be a non-empty string, got: " (pr-str entry)))))))
   pi-packages)
 
 (defn validate-config
@@ -133,8 +135,8 @@
           unknown (clojure.set/difference config-keys known-keys)]
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
-                         (clojure.string/join ", " (map name unknown))
-                         "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check"))))
+                          (clojure.string/join ", " (map name unknown))
+                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
@@ -156,7 +158,7 @@
         project-normalized (normalize-harness-args project-args)]
     (merge-with (fn [global-list project-list]
                   (vec (concat (or global-list [])
-                              (or project-list []))))
+                               (or project-list []))))
                 global-normalized
                 project-normalized)))
 
@@ -173,7 +175,7 @@
         patterns (merge (:custom_patterns global-detection)
                         (:custom_patterns project-detection))
         allowlist (vec (concat (:allowlist global-detection [])
-                              (:allowlist project-detection [])))]
+                               (:allowlist project-detection [])))]
     (cond-> {}
       (some? enabled) (assoc :enabled enabled)
       (seq patterns) (assoc :custom_patterns patterns)
@@ -187,13 +189,13 @@
   (if (map? env)
     env
     (into {}
-      (map (fn [entry]
-             (let [s (str entry)
-                   idx (cstr/index-of s "=")]
-               (if idx
-                 [(keyword (subs s 0 idx)) (subs s (inc idx))]
-                 [(keyword s) nil])))
-           env))))
+          (map (fn [entry]
+                 (let [s (str entry)
+                       idx (cstr/index-of s "=")]
+                   (if idx
+                     [(keyword (subs s 0 idx)) (subs s (inc idx))]
+                     [(keyword s) nil])))
+               env))))
 
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
@@ -256,7 +258,7 @@
         merged-with-detection (if (or global-detection project-detection)
                                 (assoc merged :detection
                                        (merge-detection (or global-detection {})
-                                                       (or project-detection {})))
+                                                        (or project-detection {})))
                                 merged)]
     ;; Remove :extends key from result
     (dissoc merged-with-detection :extends)))

@@ -213,7 +213,7 @@
     (println (str output/BOLD "Project Extension" output/NC))
     (println "--------------------------------------")
     (if (ext/project-dockerfile project-dir)
-      (println "  Configured (.aishell/Dockerfile)")
+      (println (str "  Configured (" (util/resolve-project-config-dir project-dir) "/Dockerfile)"))
       (println "  Not configured"))
     (println)
 

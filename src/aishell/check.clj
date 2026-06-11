@@ -113,7 +113,9 @@
       (if (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (print-status :warn "Project extension needs rebuild")
         (print-status :ok (str "Project extension is up to date: " extended-tag))))
-    (print-status :ok "No project extension (.aishell/Dockerfile)")))
+    (print-status :ok (str "No project extension ("
+                           (util/resolve-project-config-dir project-dir)
+                           "/Dockerfile)"))))
 
 (defn- check-config
   "Validate configuration files. Returns loaded config."

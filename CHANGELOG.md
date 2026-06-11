@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`.sandbox/` alias for the project config dir**: A project-level `.sandbox/` directory is now a full alias for `.aishell/` (Dockerfile extension + `config.yaml`), for repos that want no "ai" naming in their tree. The active dir is resolved from the filesystem and threaded through `config`, `extension`, `run`, `check`, and `info`; path messages name the active dir. A project carrying both `.aishell/` and `.sandbox/` fails with a clear "use only one" error at the CLI boundary for every command. Scaffold one with `aishell setup --dir .sandbox` (`--dir` defaults to `.aishell`). The global config dir is unchanged — there is no `~/.sandbox/`, and a `.sandbox` repo still inherits `~/.aishell/config.yaml`
+
 ## [3.19.0] - 2026-05-28
 
 ### Added

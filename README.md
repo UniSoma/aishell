@@ -370,6 +370,8 @@ pre_start: "redis-server --daemonize yes"
 
 Project configs merge with `~/.aishell/config.yaml` by default. See [Configuration docs](docs/CONFIGURATION.md) for merge strategy details. Set `extends: none` to disable inheritance.
 
+> **Tip:** `.sandbox/` is a full alias for `.aishell/` if you prefer no "ai" naming in your repo — put your `Dockerfile`/`config.yaml` there instead. Use only one of the two. Scaffold it with `aishell setup --dir .sandbox`. The global config dir stays `~/.aishell/`, and a `.sandbox` repo still inherits `~/.aishell/config.yaml`.
+
 ## Security
 
 ### Sensitive file detection

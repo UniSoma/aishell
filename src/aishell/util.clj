@@ -87,9 +87,9 @@
   [path]
   (when path
     (str (fs/path
-           (-> path
-               (str/replace #"^~(?=[/\\]|$)" (get-home))
-               expand-vars)))))
+          (-> path
+              (str/replace #"^~(?=[/\\]|$)" (get-home))
+              expand-vars)))))
 
 (defn config-dir
   "Get aishell config directory path (~/.aishell)."
@@ -106,7 +106,7 @@
           fallback (str (fs/path (get-home) ".local" "state"))]
       (str (fs/path (or localappdata fallback) "aishell")))
     (let [xdg-state (or (System/getenv "XDG_STATE_HOME")
-                         (str (fs/path (get-home) ".local" "state")))]
+                        (str (fs/path (get-home) ".local" "state")))]
       (str (fs/path xdg-state "aishell")))))
 
 (defn ensure-dir
@@ -116,10 +116,44 @@
     (fs/create-dirs dir))
   dir)
 
-(defn project-config-path
-  "Get path to project config file (.aishell/config.yaml) relative to given dir."
+(def project-config-dir-names
+  "Recognized project config dir names, in filesystem-precedence order.
+   .sandbox is a full alias for .aishell for repos that want no \"ai\"
+   naming in their tree. Scope is the project dir only — there is no
+   ~/.sandbox; the global config dir stays ~/.aishell."
+  [".aishell" ".sandbox"])
+
+(defn resolve-project-config-dir
+  "Return the active project config dir name (\".aishell\" or \".sandbox\")
+   for project-dir by inspecting the filesystem.
+
+   - exactly one present → that name
+   - neither present     → \".aishell\" (default)
+   - both present        → throws ex-info, caught at the CLI error boundary
+     so every command fails the same way.
+
+   Matches the literal lowercase names only — no casing tolerance on the
+   dir name itself."
   [project-dir]
-  (str (fs/path project-dir ".aishell" "config.yaml")))
+  (let [present (filterv #(fs/exists? (fs/path project-dir %))
+                         project-config-dir-names)]
+    (if (= 2 (count present))
+      (throw (ex-info (str "Found both .aishell/ and .sandbox/ — use only one. "
+                           "Remove or rename one so aishell can pick a single "
+                           "project config directory.")
+                      {:project-dir (str project-dir)}))
+      (or (first present) ".aishell"))))
+
+(defn project-config-dir-path
+  "Absolute path to the active project config dir for project-dir."
+  [project-dir]
+  (str (fs/path project-dir (resolve-project-config-dir project-dir))))
+
+(defn project-config-path
+  "Get path to project config file (<active-dir>/config.yaml) relative to given dir.
+   The active dir is .aishell or .sandbox per resolve-project-config-dir."
+  [project-dir]
+  (str (fs/path project-dir (resolve-project-config-dir project-dir) "config.yaml")))
 
 (defn vscode-imageconfigs-dir
   "Get platform-appropriate path to VSCode Dev Containers imageConfigs directory.
