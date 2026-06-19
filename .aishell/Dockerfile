@@ -2,7 +2,7 @@ FROM aishell:foundation
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-# >>> clojure-dev stuff (managed) >>>
+# >>> clojure (managed) >>>
 # JDK 25 from Eclipse Temurin (foundation only ships JRE 17 headless).
 COPY --from=eclipse-temurin:25-jdk-jammy /opt/java/openjdk /opt/java/openjdk
 ENV JAVA_HOME=/opt/java/openjdk \
@@ -34,9 +34,11 @@ RUN bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJ
     bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJURE_MCP_LIGHT_VERSION}" --as clj-nrepl-eval --main-opts '["-m" "clojure-mcp-light.nrepl-eval"]'; \
     bbin install https://github.com/bhauman/clojure-mcp-light.git --tag "v${CLOJURE_MCP_LIGHT_VERSION}" --as clj-paren-repair --main-opts '["-m" "clojure-mcp-light.paren-repair"]'
 
-ARG CLJ_SURGEON_SHA=3fbf21bf5ec1b55e81fbe1a3b6358e70414bef04
+ARG CLJ_SURGEON_SHA=6baa2a4dddc32f8cf5c7f86106beb0ed13c1deb0
 RUN bbin install https://github.com/realgenekim/clj-surgeon.git --git/sha "${CLJ_SURGEON_SHA}"
+# <<< clojure (managed) <<<
 
-ARG KNOT_VERSION=0.6.0
+# >>> knot (managed) >>>
+ARG KNOT_VERSION=0.7.0
 RUN bbin install https://github.com/UniSoma/knot.git --tag "v${KNOT_VERSION}"
-# <<< clojure-dev stuff (managed) <<<
+# <<< knot (managed) <<<

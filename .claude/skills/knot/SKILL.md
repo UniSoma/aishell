@@ -93,6 +93,7 @@ fresher state run `knot list`, `knot ready`, or `knot show <id>` directly.
 | "what's afk?" / "what can an agent grab?"               | `knot ready --mode afk` (or `knot list --mode afk`)          |
 | "what's tagged <x>?"                                    | `knot list --tag <x>`                                        |
 | "what's open for <user>?" / "my tickets"                | `knot list --assignee <user>`                                |
+| "what are the children of <id>?" / "what's under <id>?" | `knot list --parent <id>`                                    |
 | "what's blocked?"                                       | `knot blocked`                                               |
 | "what did I close recently?"                            | `knot closed --limit 10`                                     |
 | "what's ready to close?" / "what's done?"               | `knot prime` (Ready to close section) — active tickets whose AC are all checked |
@@ -116,8 +117,8 @@ fresher state run `knot list`, `knot ready`, or `knot show <id>` directly.
 ### Filter, don't eyeball
 
 When the user's question targets a *subset* — a type, mode, tag, status,
-assignee, or priority — pass the matching filter rather than running bare
-`list` / `ready` / `blocked` / `closed` / `prime` and scanning the columns.
+assignee, parent, or priority — pass the matching filter rather than running
+bare `list` / `ready` / `blocked` / `closed` / `prime` and scanning the columns.
 All five listing commands accept the same filter set (each repeatable):
 
 ```
@@ -126,9 +127,27 @@ All five listing commands accept the same filter set (each repeatable):
 --limit <n>
 ```
 
+`--parent <id>` filters to the **direct children** of a parent on the four
+listing commands (`list` / `ready` / `blocked` / `closed`, *not* `prime`).
+It is repeatable (children of any given parent), and its value resolves like
+any partial id (live+archive) — an unresolvable value fails loudly (stderr
+die, or a `not_found` / `ambiguous_id` envelope under `--json`).
+
+**Umbrella progress (`CHLD`).** When a result set contains at least one
+*umbrella* (a ticket with ≥1 direct child), the four listing commands add a
+`CHLD` column showing `terminal/total` of that ticket's direct children
+(`-` for non-umbrellas); the column is hidden entirely when no umbrella is
+present. `show` mirrors this as a `## Children (d/t)` heading. `terminal`
+counts every closed child including `Won't do:` closures, and the tally spans
+live+archive, so it asserts nothing about readiness — an umbrella at `0/5`
+can still be `ready`. In `--json`, umbrella rows carry
+`children_total`/`children_terminal` (present only on umbrellas, so
+`jq 'select(has("children_total"))'` selects them); read these instead of
+re-deriving the rollup from `--parent` queries.
+
 Combine freely: `knot list --type bug --type chore`, `knot ready --mode
 afk --tag p0`, `knot ready --priority 0`, `knot blocked --mode afk`,
-`knot closed --type bug --limit 5`.
+`knot closed --type bug --limit 5`, `knot list --parent kno-01abc`.
 On `prime`, filters apply across **all** sections (in_progress + ready +
 recently_closed) — `knot prime --assignee me` shows only your tickets
 everywhere. Visual filtering is error-prone (titles wrap, columns shift,

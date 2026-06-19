@@ -210,17 +210,24 @@ Optional keys that may be present:
 - `parent` (string) — id of the parent ticket if any.
 - `acceptance` (array of `{title, done}`) — structured acceptance
   criteria (frontmatter, never body).
+- `children_total` / `children_terminal` (integer) — computed umbrella
+  progress: the count of direct children (`:parent` = this id) across the
+  full corpus (live + archive), and the subset in a terminal status
+  (`Won't do:` closures included). **Present together, and only on
+  umbrella rows** (tickets with ≥1 child) of `list`/`ready`/`blocked`/
+  `closed` and `show`. Absence doubles as the predicate — `jq 'select(has("children_total"))'`
+  selects umbrellas. Not frontmatter; never written to disk.
 - `body` (string) — included in *single-ticket-shape* envelopes; omitted in *ls-shape*.
 
 ### Read commands
 
 | Command              | `data` shape                                          | Body? | Notes                                                                                                                                                            |
 |----------------------|-------------------------------------------------------|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `list` (alias `ls`)  | `ticket[]`                                            | no    | Live tickets only (terminal-status tickets live in archive).                                                                                                     |
+| `list` (alias `ls`)  | `ticket[]`                                            | no    | Live tickets only (terminal-status tickets live in archive). Umbrella rows additionally carry `children_total`/`children_terminal` (see *Optional keys*) — true of `ready`/`blocked`/`closed` too. |
 | `ready`              | `ticket[]`                                            | no    | Non-terminal, non-blocked, sorted by priority.                                                                                                                   |
 | `blocked`            | `ticket[]`                                            | no    | Non-terminal tickets with at least one open `:deps` ref.                                                                                                         |
 | `closed`             | `ticket[]`                                            | no    | Terminal-status tickets from archive; entries additionally carry `closed` (ISO-8601 string).                                                                     |
-| `show <id>`          | `ticket`                                              | yes   | Plus computed inverse arrays at `data.blockers`, `data.blocking`, `data.children`, `data.linked`. Each inverse entry is `{id, title, status}` or `{id, missing: true}`. |
+| `show <id>`          | `ticket`                                              | yes   | Plus computed inverse arrays at `data.blockers`, `data.blocking`, `data.children`, `data.linked`. Each inverse entry is `{id, title, status}` or `{id, missing: true}`. Umbrella tickets also carry `children_total`/`children_terminal` (see *Optional keys*). |
 | `dep tree <id>`      | `{id, title?, status?, missing?, seen_before?, deps?}` | n/a   | Recursive tree node. Tolerant root: missing id emits `{id, missing: true}` with `ok: true`. Seen-before nodes carry `seen_before: true` and omit `deps`.         |
 | `prime`              | `{project, in_progress, ready, ready_truncated, ready_remaining, recently_closed}` | n/a | `project` is `{found, prefix, project_name?, live_count, archive_count}`. `ready_truncated` is boolean; `ready_remaining` is integer. Ticket entries are body-less. `in_progress` entries may carry `stale: true` when `:updated` is 14+ days old; the flag is **in_progress-only** — `ready` copies of the same ticket never carry it. To find stalled work, iterate `.in_progress` and filter on `stale`. |
 | `info`               | `{project, paths, defaults, allowed_values, counts}`  | n/a   | See *`info` shape* below.                                                                                                                                        |
