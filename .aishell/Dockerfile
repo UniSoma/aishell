@@ -39,6 +39,6 @@ RUN bbin install https://github.com/realgenekim/clj-surgeon.git --git/sha "${CLJ
 # <<< clojure (managed) <<<
 
 # >>> knot (managed) >>>
-ARG KNOT_VERSION=0.7.0
+ARG KNOT_VERSION=0.9.0
 RUN bbin install https://github.com/UniSoma/knot.git --tag "v${KNOT_VERSION}"
 # <<< knot (managed) <<<
