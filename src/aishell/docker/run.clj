@@ -261,17 +261,24 @@
 
 (def ^:private harness-config-files
   "Entries in harness-config-dirs that are files, not directories.
-   These are not auto-created on the host."
+   Created as seeded files (not directories) when absent on the host."
   #{[".claude.json"]})
 
-(defn- ensure-harness-config-dirs!
-  "Create harness config directories on host if they don't exist.
-   Ensures bind mounts work for first-time harness users.
-   Skips file entries (e.g. .claude.json) — only creates directories."
+(defn- ensure-harness-config-paths!
+  "Create harness config directories and files on host if they don't exist.
+   Ensures bind mounts work for first-time harness users — without a host
+   path to mount, a harness would write config (e.g. login credentials) only
+   inside the container, losing it when the container is removed.
+   File entries (e.g. .claude.json) are seeded with an empty JSON object so
+   the harness doesn't choke on a zero-byte file."
   [config-entries home]
   (doseq [components config-entries]
-    (when-not (harness-config-files components)
-      (util/ensure-dir (str (apply fs/path home components))))))
+    (let [path (str (apply fs/path home components))]
+      (if (harness-config-files components)
+        (when-not (fs/exists? path)
+          (util/ensure-dir (str (fs/parent path)))
+          (spit path "{}\n"))
+        (util/ensure-dir path)))))
 
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
@@ -285,7 +292,7 @@
                             (filter (fn [[state-key _]] (get state state-key)))
                             (mapcat val)
                             distinct)]
-    (ensure-harness-config-dirs! config-entries home)
+    (ensure-harness-config-paths! config-entries home)
     (->> config-entries
          (map (fn [components]
                 (let [src (str (apply fs/path home components))
