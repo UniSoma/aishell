@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.20.0] - 2026-07-14
+
 ### Added
 
 - **`.sandbox/` alias for the project config dir**: A project-level `.sandbox/` directory is now a full alias for `.aishell/` (Dockerfile extension + `config.yaml`), for repos that want no "ai" naming in their tree. The active dir is resolved from the filesystem and threaded through `config`, `extension`, `run`, `check`, and `info`; path messages name the active dir. A project carrying both `.aishell/` and `.sandbox/` fails with a clear "use only one" error at the CLI boundary for every command. Scaffold one with `aishell setup --dir .sandbox` (`--dir` defaults to `.aishell`). The global config dir is unchanged — there is no `~/.sandbox/`, and a `.sandbox` repo still inherits `~/.aishell/config.yaml`
+
+### Changed
+
+- **Toolchain bump**: knot 0.9.0, with updated clj-surgeon and knot skill docs
+
+### Fixed
+
+- **First-time Claude Code login no longer loses credentials**: `~/.claude.json` was listed as a `:with-claude` config file but skipped by the host-side ensure step, so it was bind-mounted only if it already existed. First-time users had no host file, so Claude Code's login wrote credentials to `~/.claude.json` *inside* the container, discarded on removal. The ensure step now creates missing config files (seeding them with an empty JSON object so the harness doesn't choke on a zero-byte file), so the mount is present and login persists to the host
 
 ## [3.19.0] - 2026-05-28
 
