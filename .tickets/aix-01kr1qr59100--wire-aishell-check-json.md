@@ -6,9 +6,10 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:44.064243075Z'
-updated: '2026-05-07T17:28:44.064243075Z'
+updated: '2026-07-15T02:44:33.217991534Z'
 tags:
 - ready-for-agent
+- json
 acceptance:
 - title: aishell check --json emits one compact JSON object with keys passed, summary, checks, sensitiveFiles
   done: false

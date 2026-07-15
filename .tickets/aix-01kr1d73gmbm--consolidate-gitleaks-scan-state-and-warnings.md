@@ -6,9 +6,10 @@ type: chore
 priority: 2
 mode: hitl
 created: '2026-05-07T14:24:39.443938975Z'
-updated: '2026-05-07T14:24:39.443938975Z'
+updated: '2026-07-15T02:44:18.756843086Z'
 tags:
 - needs-triage
+- codebase-design
 ---
 
 ## Description

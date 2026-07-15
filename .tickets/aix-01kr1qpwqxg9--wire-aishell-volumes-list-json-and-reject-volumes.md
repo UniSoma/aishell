@@ -6,9 +6,10 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:02.556561960Z'
-updated: '2026-05-07T17:28:02.556561960Z'
+updated: '2026-07-15T02:44:32.978306634Z'
 tags:
 - ready-for-agent
+- json
 acceptance:
 - title: aishell volumes --json and aishell volumes list --json emit identical compact JSON arrays of harness-volume objects
   done: false
