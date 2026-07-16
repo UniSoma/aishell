@@ -40,6 +40,89 @@
    {:pattern #"\.ssh/id_"
     :message "~/.ssh private keys: SSH key exposure"}])
 
+(def claude-machine-state-paths
+  "Top-level ~/.claude entries that hold Claude machine state — PID/socket
+   runtime data (daemon registry/lock, background jobs, tasks, session locks,
+   session env, shell snapshots, file history, the internal store db).
+   Sharing any of these across sandboxes corrupts the supervisor, so a
+   user claude_shared_paths entry colliding with one is hard-rejected.
+   Patterns match a path relative to ~/.claude (forward-slash separated)."
+  [{:pattern #"(?i)^daemon(\.lock)?(/|$)"
+    :message "daemon lock/registry (per-container supervisor state)"}
+   {:pattern #"(?i)^roster(\.json)?(/|$)"
+    :message "daemon roster (per-container supervisor state)"}
+   {:pattern #"(?i)^jobs(/|$)"
+    :message "background jobs registry (per-container runtime state)"}
+   {:pattern #"(?i)^tasks(/|$)"
+    :message "tasks registry (per-container runtime state)"}
+   {:pattern #"(?i)^sessions(/|$)"
+    :message "session locks (per-container runtime state)"}
+   {:pattern #"(?i)^session-env(/|$)"
+    :message "session environment (per-container runtime state)"}
+   {:pattern #"(?i)^shell-snapshots(/|$)"
+    :message "shell snapshots (per-container runtime state)"}
+   {:pattern #"(?i)^file-history(/|$)"
+    :message "file history (per-container runtime state)"}
+   {:pattern #"(?i)^__store\.db(/|$)"
+    :message "internal store db (per-container runtime state)"}])
+
+(defn- claude-shared-path-machine-state
+  "Return the blocklist message when a ~/.claude-relative path (forward-slash
+   separated) collides with a Claude machine-state path, else nil."
+  [rel-path]
+  (some (fn [{:keys [pattern message]}]
+          (when (re-find pattern rel-path) message))
+        claude-machine-state-paths))
+
+(defn- claude-shared-path-absolute?
+  "True when the entry is an absolute path (unix root, home, or Windows drive)
+   rather than a path relative to ~/.claude."
+  [entry]
+  (boolean (re-find #"^(/|~|[A-Za-z]:)" entry)))
+
+(defn- claude-shared-path-escapes?
+  "True when a forward-slash-separated relative path escapes above ~/.claude via
+   '..' segments. Resolves segments against a virtual root without touching the
+   filesystem, so it is platform-independent."
+  [rel-path]
+  (loop [comps (str/split rel-path #"/")
+         depth 0]
+    (if (empty? comps)
+      false
+      (let [c (first comps)]
+        (cond
+          (or (str/blank? c) (= "." c)) (recur (rest comps) depth)
+          (= ".." c) (if (zero? depth) true (recur (rest comps) (dec depth)))
+          :else (recur (rest comps) (inc depth)))))))
+
+(defn check-claude-shared-paths
+  "Hard-reject unsafe claude_shared_paths entries. Unlike the advisory,
+   warn-only checkers in this namespace, a violation calls output/error
+   (which exits 1) so an unsafe share never reaches Docker. Rejects, naming the
+   offending entry:
+     - absolute paths (must be relative to ~/.claude),
+     - entries escaping ~/.claude via '..',
+     - entries colliding with a Claude machine-state path.
+   No-ops for a nil/empty list and for safe entries."
+  [paths]
+  (doseq [entry paths
+          :when (string? entry)
+          :let [rel-path (str/replace entry "\\" "/")]]
+    (cond
+      (claude-shared-path-absolute? entry)
+      (output/error (str "Invalid claude_shared_paths entry '" entry
+                         "': must be a path relative to ~/.claude, not absolute."))
+
+      (claude-shared-path-escapes? rel-path)
+      (output/error (str "Invalid claude_shared_paths entry '" entry
+                         "': path escapes ~/.claude via '..'."))
+
+      :else
+      (when-let [msg (claude-shared-path-machine-state rel-path)]
+        (output/error (str "Refusing claude_shared_paths entry '" entry
+                           "': collides with Claude machine state — " msg
+                           ". Machine state must not be shared across sandboxes."))))))
+
 (defn check-dangerous-args
   "Check docker_args for dangerous patterns.
    Accepts string or vector of args.
@@ -50,13 +133,13 @@
                    docker-args)]
     (when (and args-str (not (str/blank? args-str)))
       (seq
-        (keep
-          (fn [{:keys [pattern message]}]
-            (when (if (string? pattern)
-                    (str/includes? args-str pattern)
-                    (re-find pattern args-str))
-              message))
-          dangerous-patterns)))))
+       (keep
+        (fn [{:keys [pattern message]}]
+          (when (if (string? pattern)
+                  (str/includes? args-str pattern)
+                  (re-find pattern args-str))
+            message))
+        dangerous-patterns)))))
 
 (defn warn-dangerous-args
   "Warn about dangerous docker_args if any found.
@@ -80,13 +163,13 @@
   [mounts]
   (when (seq mounts)
     (seq
-      (for [mount mounts
-            :let [mount-str (str mount)
+     (for [mount mounts
+           :let [mount-str (str mount)
                   ;; Extract source path (before : if present)
-                  source (first (str/split mount-str #":" 2))]
-            {:keys [pattern message]} dangerous-mount-paths
-            :when (re-find pattern source)]
-        message))))
+                 source (first (str/split mount-str #":" 2))]
+           {:keys [pattern message]} dangerous-mount-paths
+           :when (re-find pattern source)]
+       message))))
 
 (defn warn-dangerous-mounts
   "Warn about dangerous mount paths if any found.

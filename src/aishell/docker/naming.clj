@@ -6,6 +6,7 @@
             [babashka.process :as p]
             [clojure.string :as str]
             [aishell.docker.hash :as hash]
+            [aishell.util :as util]
             [aishell.output :as output]))
 
 (defn project-hash
@@ -20,6 +21,24 @@
   (let [canonical (str (fs/canonicalize project-dir))]
     (subs (hash/compute-hash canonical) 0 8)))
 
+(defn claude-state-root
+  "Root dir for a project's isolated Claude state:
+   {state-dir}/claude/{project-hash}. Keyed on the same 8-char hash as the
+   container name, so state dir and container agree per project."
+  [project-dir]
+  (str (fs/path (util/state-dir) "claude" (project-hash project-dir))))
+
+(defn claude-dot-claude-dir
+  "Per-project dot-claude dir, mounted at the container's ~/.claude in
+   project isolation mode."
+  [project-dir]
+  (str (fs/path (claude-state-root project-dir) "dot-claude")))
+
+(defn claude-meta-file
+  "meta.edn beside dot-claude/, recording project path and creation time."
+  [project-dir]
+  (str (fs/path (claude-state-root project-dir) "meta.edn")))
+
 (defn validate-container-name!
   "Validate user-provided name portion against Docker naming rules.
    Must start with alphanumeric, can contain alphanumeric, underscore, period, hyphen.
@@ -30,13 +49,13 @@
     (output/error "Container name cannot be empty"))
   (when-not (re-matches #"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$" name)
     (output/error (str "Invalid container name: " name
-                      "\nMust start with alphanumeric, can contain alphanumeric, underscore, period, hyphen")))
+                       "\nMust start with alphanumeric, can contain alphanumeric, underscore, period, hyphen")))
   ;; Full name format: "aishell-" (8 chars) + hash (8 chars) + "-" (1 char) + name
   ;; = 17 chars + name length. Max Docker name length is 63 chars.
   ;; So name portion max is 46 chars.
   (when (> (count name) 46)
     (output/error (str "Container name too long: " name
-                      "\nMaximum length: 46 characters (full container name must not exceed 63)"))))
+                       "\nMaximum length: 46 characters (full container name must not exceed 63)"))))
 
 (defn container-name
   "Generate deterministic container name from project directory and name.
@@ -51,7 +70,7 @@
   [container-name]
   (try
     (let [{:keys [exit]} (p/shell {:out :string :err :string :continue true}
-                                   "docker" "inspect" container-name)]
+                                  "docker" "inspect" container-name)]
       (zero? exit))
     (catch Exception _ false)))
 
@@ -60,9 +79,9 @@
   [container-name]
   (try
     (let [{:keys [exit out]} (p/shell {:out :string :err :string :continue true}
-                                       "docker" "ps"
-                                       "--filter" (str "name=^" container-name "$")
-                                       "--format" "{{.Names}}")]
+                                      "docker" "ps"
+                                      "--filter" (str "name=^" container-name "$")
+                                      "--format" "{{.Names}}")]
       (and (zero? exit)
            (= (str/trim out) container-name)))
     (catch Exception _ false)))
@@ -96,8 +115,8 @@
   (case (remove-container-if-stopped! container-name)
     :running
     (output/error (str "Container '" container-name "' is already running.\n"
-                      "To attach: aishell attach " harness-name "\n"
-                      "To force stop: docker stop " container-name))
+                       "To attach: aishell attach " harness-name "\n"
+                       "To force stop: docker stop " container-name))
 
     :removed
     (println (str "Removed stopped container: " container-name))
@@ -114,9 +133,9 @@
     (let [hash (project-hash project-dir)
           filter-pattern (str "name=^aishell-" hash "-")
           {:keys [exit out]} (p/shell {:out :string :err :string :continue true}
-                                       "docker" "ps" "-a"
-                                       "--filter" filter-pattern
-                                       "--format" "{{.Names}}\t{{.Status}}\t{{.CreatedAt}}")]
+                                      "docker" "ps" "-a"
+                                      "--filter" filter-pattern
+                                      "--format" "{{.Names}}\t{{.Status}}\t{{.CreatedAt}}")]
       (if (and (zero? exit) (not (str/blank? out)))
         (mapv (fn [line]
                 (let [[name status created] (str/split line #"\t")]

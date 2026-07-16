@@ -7,6 +7,7 @@
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
             [aishell.docker.hash :as hash]
+            [aishell.docker.naming :as naming]
             [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
             [aishell.config :as config]
@@ -214,6 +215,33 @@
         :else
         (print-status :ok (str "Gitleaks scan is fresh (" days " day(s) old)"))))))
 
+(defn- check-claude-isolation
+  "Report the effective Claude isolation mode. Only runs when Claude Code is
+   installed. In project mode, also report the per-project state dir path and
+   whether it exists, plus the effective credentials source (host-mounted vs
+   project-local vs none yet)."
+  [project-dir cfg state]
+  (when (:with-claude state)
+    (if (= :project (config/resolve-claude-isolation cfg))
+      (do
+        (print-status :ok "Claude isolation: project (per-project ~/.claude)")
+        (let [dot-claude (naming/claude-dot-claude-dir project-dir)]
+          (if (fs/exists? dot-claude)
+            (print-status :ok (str "Claude project state dir: " dot-claude))
+            (print-status :warn (str "Claude project state dir (created on first start): " dot-claude)))
+          (let [host-creds (fs/path (util/get-home) ".claude" ".credentials.json")
+                proj-creds (fs/path dot-claude ".credentials.json")]
+            (cond
+              (fs/exists? host-creds)
+              (print-status :ok "Claude credentials: host-mounted")
+
+              (fs/exists? proj-creds)
+              (print-status :ok "Claude credentials: project-local (promoted on next start)")
+
+              :else
+              (print-status :warn "Claude credentials: none yet (login persists into project state dir)")))))
+      (print-status :ok "Claude isolation: shared (host ~/.claude mounted wholesale)"))))
+
 (defn run-check
   "Run all pre-flight checks and report status.
    Returns exit code: 0 if all critical checks pass, 1 if any fail."
@@ -276,7 +304,10 @@
       (println (str output/BOLD "Security" output/NC))
       (check-security cfg)
       (check-sensitive-files project-dir cfg)
-      (check-gitleaks-freshness project-dir cfg (state/read-state)))
+      (check-gitleaks-freshness project-dir cfg (state/read-state))
+
+      ;; Claude isolation
+      (check-claude-isolation project-dir cfg (state/read-state)))
 
     (println)
 

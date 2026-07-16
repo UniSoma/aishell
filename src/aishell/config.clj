@@ -10,7 +10,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
@@ -127,6 +127,31 @@
                             ": must be a non-empty string, got: " (pr-str entry)))))))
   pi-packages)
 
+(defn validate-claude-isolation
+  "Validate claude_isolation value. Warns on an invalid value.
+   Returns value unchanged."
+  [value source-path]
+  (when-not (contains? #{"shared" "project"} value)
+    (output/warn (str "Invalid claude_isolation in " source-path ": " value
+                      "\nValid values: shared, project")))
+  value)
+
+(defn validate-claude-shared-paths
+  "Validate claude_shared_paths config. Must be a list of non-empty strings.
+   Unlike pi_packages this is a legitimate per-project key, so there is no
+   global-only warning. Returns value unchanged. Guard-rail rejection of unsafe
+   entries (machine-state collisions, absolute paths, '..' escapes) happens at
+   mount-build time in aishell.validation, not here (this checker is advisory)."
+  [paths source-path]
+  (when-not (sequential? paths)
+    (output/warn (str "claude_shared_paths in " source-path " must be a list of strings")))
+  (when (sequential? paths)
+    (doseq [entry paths]
+      (when (or (not (string? entry)) (clojure.string/blank? entry))
+        (output/warn (str "Invalid claude_shared_paths entry in " source-path
+                          ": must be a non-empty string, got: " (pr-str entry))))))
+  paths)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -136,13 +161,17 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                           (clojure.string/join ", " (map name unknown))
-                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check"))))
+                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check, claude_isolation, claude_shared_paths"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
       (validate-detection-config detection source-path))
     (when-let [pi-packages (:pi_packages config)]
       (validate-pi-packages pi-packages source-path))
+    (when (contains? config :claude_isolation)
+      (validate-claude-isolation (:claude_isolation config) source-path))
+    (when-let [paths (:claude_shared_paths config)]
+      (validate-claude-shared-paths paths source-path))
     (when (and (contains? config :update_check)
                (not= source-path (global-config-path)))
       (output/warn (str "update_check in " source-path " will be ignored.\n"
@@ -206,10 +235,10 @@
    - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
-  (let [list-keys #{:mounts :ports :docker_args :pi_packages}
+  (let [list-keys #{:mounts :ports :docker_args :pi_packages :claude_shared_paths}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
-        scalar-keys #{:pre_start :gitleaks_freshness_check}
+        scalar-keys #{:pre_start :gitleaks_freshness_check :claude_isolation}
         ;; Extract detection config before reduce
         global-detection (get global-config :detection)
         project-detection (get project-config :detection)
@@ -338,3 +367,14 @@
 
       ;; No config at all
       :else nil)))
+
+(defn resolve-claude-isolation
+  "Resolve the effective Claude isolation mode from a merged config.
+   Returns :project when claude_isolation is \"project\", else :shared
+   (the default when the key is absent, nil, or any other value).
+   Single source of truth for the mode; the default lives here, not in
+   merge-configs."
+  [config]
+  (if (= "project" (some-> (:claude_isolation config) name))
+    :project
+    :shared))

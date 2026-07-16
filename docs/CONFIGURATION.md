@@ -23,6 +23,8 @@ Complete reference for aishell configuration options, covering both the global (
   - [pi_packages](#pi_packages)
   - [update_check](#update_check)
   - [detection](#detection)
+  - [claude_isolation](#claude_isolation)
+  - [claude_shared_paths](#claude_shared_paths)
 - [Global Base Image Customization](#global-base-image-customization)
 - [Common Patterns](#common-patterns)
 
@@ -983,6 +985,60 @@ detection:
     - path: "test.pem"         # From project
       reason: "Test fixture"
 ```
+
+---
+
+### claude_isolation
+
+**Purpose:** Control whether Claude Code's `~/.claude` state is shared across all sandboxes or isolated per project.
+
+**Type:** String
+
+**Values:**
+- `"shared"` (default) - Mount the host `~/.claude` directory wholesale into every sandbox. This is the historical behavior: all projects share one set of skills, agents, credentials, and Claude machine state (daemon registry, session locks, jobs).
+- `"project"` - Give this project its own `~/.claude` under a per-project state dir (keyed by a hash of the project path), with a built-in allowlist of shared config (skills, agents, commands, hooks, plugins, credentials, `CLAUDE.md`, `settings.json`, transcripts) mounted on top. Isolates Claude machine state so concurrent sandboxes no longer corrupt each other's daemon/session runtime data.
+
+**Example:**
+
+```yaml
+# Isolate this project's Claude machine state from other sandboxes
+claude_isolation: project
+```
+
+**Notes:**
+- In `project` mode the per-project state lives under `{state-dir}/claude/{project-hash}/dot-claude/` (`state-dir` is `$XDG_STATE_HOME/aishell` or `~/.local/state/aishell`). Run `aishell check` to see the resolved path and whether it exists.
+- The container's `~/.claude` path is identical in both modes, so resume, history, and credentials work the same inside the sandbox.
+- Credentials: on first `project`-mode start with no host login, Claude starts without credentials and you log in inside the sandbox; the login persists into the per-project state dir and is promoted up to the host `~/.claude/.credentials.json` on a later start.
+- Extend the shared allowlist with [claude_shared_paths](#claude_shared_paths).
+
+**Merge behavior:** Scalar — a project value replaces the global value.
+
+---
+
+### claude_shared_paths
+
+**Purpose:** Extend the built-in Claude share allowlist with additional paths (relative to `~/.claude`) that should be shared across sandboxes when running in `project` isolation mode.
+
+**Type:** List of strings
+
+**Values:** Each entry is a path relative to `~/.claude` (e.g. `my-tool` for a directory, `config.toml` for a file). A missing host source is pre-created before mounting: an entry whose final segment contains a `.` is treated as a file, otherwise as a directory.
+
+**Example:**
+
+```yaml
+claude_isolation: project
+claude_shared_paths:
+  - shared-scripts          # directory shared across all sandboxes
+  - todos                   # another shared directory
+  - my-global.md            # a single shared file
+```
+
+**Notes:**
+- Only takes effect in `claude_isolation: project` mode; ignored in `shared` mode (where everything is already shared).
+- Entries that duplicate a built-in allowlist path (skills, agents, commands, hooks, plugins, projects, `CLAUDE.md`, `settings.json`, `history.jsonl`, `.credentials.json`) are ignored with a warning.
+- **Rejected (the run aborts):** absolute paths, `..` escapes above `~/.claude`, and any path that collides with Claude machine state (daemon registry, session locks, jobs, tasks, roster, shell snapshots, file history, and similar). Sharing machine-state paths across sandboxes is exactly what `project` mode exists to prevent.
+
+**Merge behavior:** Global and project lists concatenate (both apply).
 
 ---
 

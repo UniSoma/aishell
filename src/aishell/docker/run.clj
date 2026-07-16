@@ -7,6 +7,7 @@
             [aishell.util :as util]
             [aishell.output :as output]
             [aishell.docker.naming :as naming]
+            [aishell.validation :as validation]
             [aishell.config :as cfg]))
 
 (defn read-git-identity
@@ -44,9 +45,9 @@
           (let [common-dir (str/trim out)
                 ;; Make absolute without resolving symlinks (for mounting)
                 common-dir-abs (str (fs/normalize
-                                      (if (fs/relative? common-dir)
-                                        (fs/path project-dir common-dir)
-                                        common-dir)))
+                                     (if (fs/relative? common-dir)
+                                       (fs/path project-dir common-dir)
+                                       common-dir)))
                 ;; Canonicalize both for accurate comparison only
                 common-dir-real (str (fs/canonicalize common-dir-abs))
                 project-dir-real (str (fs/canonicalize project-dir))]
@@ -104,22 +105,22 @@
   (when (seq mounts)
     (->> mounts
          (mapcat
-           (fn [mount]
-             (let [mount-str (str mount)
-                   [source dest] (parse-mount-string mount-str)
-                   source (util/expand-path source)
-                   dest (if dest
-                          dest  ; Explicit dest: trust user (container path)
-                          (if (fs/windows?)
+          (fn [mount]
+            (let [mount-str (str mount)
+                  [source dest] (parse-mount-string mount-str)
+                  source (util/expand-path source)
+                  dest (if dest
+                         dest  ; Explicit dest: trust user (container path)
+                         (if (fs/windows?)
                             ;; Windows source-only: map under container home
-                            (str "/home/developer/" (fs/file-name source))
+                           (str "/home/developer/" (fs/file-name source))
                             ;; Unix source-only: same path
-                            source))]
-               (if (fs/exists? source)
-                 ["-v" (str (normalize-mount-source source) ":" dest)]
-                 (do
-                   (output/warn (str "Mount source does not exist: " source))
-                   []))))))))
+                           source))]
+              (if (fs/exists? source)
+                ["-v" (str (normalize-mount-source source) ":" dest)]
+                (do
+                  (output/warn (str "Mount source does not exist: " source))
+                  []))))))))
 
 (defn- parse-env-string
   "Parse env string 'KEY=value' or 'KEY' (passthrough).
@@ -153,16 +154,16 @@
                     (map parse-env-string env))]
       (->> entries
            (mapcat
-             (fn [[key-name value]]
-               (if (nil? value)
+            (fn [[key-name value]]
+              (if (nil? value)
                  ;; Passthrough: only add if set on host
-                 (if-let [host-val (System/getenv key-name)]
-                   ["-e" key-name]
-                   (do
-                     (output/warn (str "Skipping unset host variable: " key-name))
-                     []))
+                (if-let [host-val (System/getenv key-name)]
+                  ["-e" key-name]
+                  (do
+                    (output/warn (str "Skipping unset host variable: " key-name))
+                    []))
                  ;; Literal value (expand $HOME, $UID, $GID, $USER)
-                 ["-e" (str key-name "=" (util/expand-vars value))])))))))
+                ["-e" (str key-name "=" (util/expand-vars value))])))))))
 
 (def port-pattern
   "Valid port format: [IP:]HOST:CONTAINER[/PROTOCOL]"
@@ -177,11 +178,11 @@
   (when (seq ports)
     (->> ports
          (mapcat
-           (fn [port]
-             (let [port-str (str port)]
-               (if (re-matches port-pattern port-str)
-                 ["-p" port-str]
-                 (output/error (str "Invalid port mapping: " port-str
+          (fn [port]
+            (let [port-str (str port)]
+              (if (re-matches port-pattern port-str)
+                ["-p" port-str]
+                (output/error (str "Invalid port mapping: " port-str
                                    "\nExpected format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT"
                                    "\nExamples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp")))))))))
 
@@ -280,28 +281,211 @@
           (spit path "{}\n"))
         (util/ensure-dir path)))))
 
+(def claude-share-allowlist
+  "Built-in share allowlist mounted on top of the per-project dot-claude dir in
+   Claude project-isolation mode. Each entry:
+     :rel  path components relative to ~/.claude
+     :type :dir or :file
+     :seed how a missing host source should be created. Core only mounts
+           sources that already exist and ignores :seed; it is the contract the
+           bootstrapping ticket reads:
+             :dir   -> create the directory
+             \"{}\"   -> seed a JSON object file
+             :empty -> seed an empty file
+             :never -> never create (mount only when present)
+   Config dirs and files are shared so config stays identical across sandboxes;
+   projects/ and history.jsonl are Claude project data, shared so sessions
+   started before the flip stay resumable."
+  [{:rel ["skills"] :type :dir :seed :dir}
+   {:rel ["agents"] :type :dir :seed :dir}
+   {:rel ["commands"] :type :dir :seed :dir}
+   {:rel ["hooks"] :type :dir :seed :dir}
+   {:rel ["plugins"] :type :dir :seed :dir}
+   {:rel ["projects"] :type :dir :seed :dir}
+   {:rel ["CLAUDE.md"] :type :file :seed :empty}
+   {:rel ["settings.json"] :type :file :seed "{}"}
+   {:rel ["history.jsonl"] :type :file :seed :never}
+   {:rel [".credentials.json"] :type :file :seed :never}])
+
+(defn allowlist-entry->mount
+  "Build a -v arg pair mounting one allowlist entry from the host ~/.claude onto
+   the same relative path under the container ~/.claude. Preserves the Windows
+   unixify mapping used by build-harness-config-mounts. Returns
+   [\"-v\" \"src:dst\"] or nil when the host source is absent."
+  [entry host-claude-dir container-claude-dir]
+  (let [src (str (apply fs/path host-claude-dir (:rel entry)))]
+    (when (fs/exists? src)
+      (let [dst (if (fs/windows?)
+                  (fs/unixify (str (apply fs/path container-claude-dir (:rel entry))))
+                  (str (apply fs/path container-claude-dir (:rel entry))))]
+        ["-v" (str (normalize-mount-source src) ":" dst)]))))
+
+(defn- ensure-allowlist-source!
+  "Pre-create a missing host source for one allowlist entry so Docker binds an
+   existing path of the correct kind. Without this a missing single-file mount
+   (settings.json, CLAUDE.md) would be manufactured by Docker as a directory.
+   Extends the ensure-harness-config-paths! discipline; existing sources are
+   left untouched. Reads the entry :seed contract:
+     :dir   -> create the directory
+     \"{}\"   -> ensure parent, seed a JSON object file
+     :empty -> ensure parent, seed an empty file
+     :never -> do nothing (mount only when present; e.g. .credentials.json)"
+  [entry host-claude-dir]
+  (let [path (str (apply fs/path host-claude-dir (:rel entry)))]
+    (when-not (fs/exists? path)
+      (case (:seed entry)
+        :dir (util/ensure-dir path)
+        "{}" (do (util/ensure-dir (str (fs/parent path)))
+                 (spit path "{}\n"))
+        :empty (do (util/ensure-dir (str (fs/parent path)))
+                   (spit path ""))
+        nil))))
+
+(defn- promote-credentials!
+  "Promote a project-local Claude login up to the host so it is shared across
+   sandboxes. Copies dot-claude/.credentials.json to host ~/.claude/.credentials.json
+   only when the host file is absent; idempotent, and never clobbers an existing
+   host login. Copy direction is project-state -> host."
+  [project-dir]
+  (let [host-creds (str (fs/path (util/get-home) ".claude" ".credentials.json"))
+        proj-creds (str (fs/path (naming/claude-dot-claude-dir project-dir) ".credentials.json"))]
+    (when (and (not (fs/exists? host-creds))
+               (fs/exists? proj-creds))
+      (util/ensure-dir (str (fs/parent host-creds)))
+      (fs/copy proj-creds host-creds))))
+
+(defn- shared-path->rel
+  "Split a claude_shared_paths entry into path components relative to ~/.claude.
+   Accepts either separator; drops blank segments."
+  [entry]
+  (->> (str/split (str/replace (str entry) "\\" "/") #"/")
+       (remove str/blank?)
+       vec))
+
+(defn- infer-shared-entry-type
+  "Infer whether a user share entry is a :dir or :file. Prefers the host source
+   kind when it exists; otherwise falls back to the documented rule — a final
+   segment containing '.' is treated as a file, everything else as a directory.
+   Getting this right keeps Docker from manufacturing a directory at a file path."
+  [rel host-claude-dir]
+  (let [src (str (apply fs/path host-claude-dir rel))]
+    (cond
+      (fs/directory? src) :dir
+      (fs/exists? src) :file
+      (str/includes? (last rel) ".") :file
+      :else :dir)))
+
+(defn- user-share-entries
+  "Turn config :claude_shared_paths into allowlist entry maps of the same shape
+   as claude-share-allowlist so they flow through the identical mount pipeline.
+   First hard-rejects unsafe entries (machine-state collisions, absolute paths,
+   '..' escapes) via validation/check-claude-shared-paths, then drops entries
+   already covered by the built-in allowlist with a warning. :seed lets missing
+   sources be pre-created (dirs as dirs, files as empty files) so Docker binds a
+   path of the correct kind."
+  [config host-claude-dir]
+  (let [paths (:claude_shared_paths config)]
+    (when (seq paths)
+      (validation/check-claude-shared-paths paths)
+      (let [builtin-rels (set (map :rel claude-share-allowlist))]
+        (->> paths
+             (map (fn [entry]
+                    (let [rel (shared-path->rel entry)
+                          type (infer-shared-entry-type rel host-claude-dir)]
+                      {:rel rel
+                       :type type
+                       :seed (if (= :dir type) :dir :empty)})))
+             (remove (fn [{:keys [rel]}]
+                       (when (contains? builtin-rels rel)
+                         (output/warn (str "claude_shared_paths entry '"
+                                           (str/join "/" rel)
+                                           "' is already shared by default; ignoring."))
+                         true)))
+             vec)))))
+
+(defn- build-claude-isolation-mounts
+  "Build mount args for project-isolated Claude machine state.
+   Emits the base dot-claude mount first (docker applies -v in argv order, so
+   the base must precede its overlay children), then overlays each built-in
+   share-allowlist source. Ensures the dot-claude dir and writes meta.edn once
+   on first run. Pre-creates missing allowlist sources on host before mounting,
+   promotes a project-local credential file up to the host, and mounts the
+   credentials only when present (printing a notice when starting without them).
+   User-supplied claude_shared_paths entries are validated, then mounted as
+   overlays after the built-ins, going through the same pre-creation + mount
+   helpers."
+  [project-dir config]
+  (let [home (util/get-home)
+        host-claude-dir (str (fs/path home ".claude"))
+        container-claude-dir (if (fs/windows?)
+                               "/home/developer/.claude"
+                               host-claude-dir)
+        dot-claude (naming/claude-dot-claude-dir project-dir)
+        meta-file (naming/claude-meta-file project-dir)
+        ;; Validate + resolve user entries first, so an unsafe claude_shared_paths
+        ;; entry hard-rejects before any state dir is touched.
+        user-entries (user-share-entries config host-claude-dir)]
+    (util/ensure-dir dot-claude)
+    (when-not (fs/exists? meta-file)
+      (spit meta-file (pr-str {:project-path (str (fs/canonicalize project-dir))
+                               :created-at (str (java.time.Instant/now))})))
+    ;; Pre-create missing allowlist sources before mounting so Docker never
+    ;; manufactures a directory where a single-file mount belongs.
+    (doseq [entry claude-share-allowlist]
+      (ensure-allowlist-source! entry host-claude-dir))
+    ;; Pre-create missing user-share sources the same way, so a user file entry
+    ;; is bound as a file and a user dir entry as a directory.
+    (doseq [entry user-entries]
+      (ensure-allowlist-source! entry host-claude-dir))
+    ;; Credentials: promote a project-local login up to the host first, then
+    ;; re-check host presence. When still absent, start without the mount; first
+    ;; login inside the sandbox writes creds into the per-project state dir (via
+    ;; the base mount) and is promoted on a later start.
+    (promote-credentials! project-dir)
+    (when-not (fs/exists? (str (fs/path host-claude-dir ".credentials.json")))
+      (output/warn (str "No Claude credentials on host; starting without them. "
+                        "Log in inside the sandbox — credentials persist in the "
+                        "per-project state dir and are promoted to the host on a "
+                        "later start.")))
+    (let [base ["-v" (str (normalize-mount-source dot-claude) ":" container-claude-dir)]
+          overlays (mapcat #(allowlist-entry->mount % host-claude-dir container-claude-dir)
+                           claude-share-allowlist)
+          user-overlays (mapcat #(allowlist-entry->mount % host-claude-dir container-claude-dir)
+                                user-entries)]
+      (into (into base overlays) user-overlays))))
+
 (defn- build-harness-config-mounts
   "Build mount args for harness configuration directories.
    Only mounts directories for enabled harnesses that exist on host.
    On Windows: maps destinations under /home/developer (container home).
-   On Unix: mounts at same path as source."
-  [state]
+   On Unix: mounts at same path as source.
+   In Claude project-isolation mode, the wholesale ~/.claude mount is replaced
+   by a per-project dot-claude dir with the built-in share allowlist on top;
+   ~/.claude.json and all non-Claude harness mounts are unchanged."
+  [state project-dir config]
   (let [home (util/get-home)
         container-home "/home/developer"
-        config-entries (->> harness-config-dirs
-                            (filter (fn [[state-key _]] (get state state-key)))
-                            (mapcat val)
-                            distinct)]
-    (ensure-harness-config-paths! config-entries home)
-    (->> config-entries
-         (map (fn [components]
-                (let [src (str (apply fs/path home components))
-                      dst (if (fs/windows?)
-                            (fs/unixify (str (apply fs/path container-home components)))
-                            src)]
-                  [src dst])))
-         (filter (fn [[src _]] (fs/exists? src)))
-         (mapcat (fn [[src dst]] ["-v" (str (normalize-mount-source src) ":" dst)])))))
+        project-isolation? (and (:with-claude state)
+                                (= :project (cfg/resolve-claude-isolation config)))
+        config-entries (cond->> (->> harness-config-dirs
+                                     (filter (fn [[state-key _]] (get state state-key)))
+                                     (mapcat val)
+                                     distinct)
+                         project-isolation? (remove #(= % [".claude"])))
+        base-mounts (do
+                      (ensure-harness-config-paths! config-entries home)
+                      (->> config-entries
+                           (map (fn [components]
+                                  (let [src (str (apply fs/path home components))
+                                        dst (if (fs/windows?)
+                                              (fs/unixify (str (apply fs/path container-home components)))
+                                              src)]
+                                    [src dst])))
+                           (filter (fn [[src _]] (fs/exists? src)))
+                           (mapcat (fn [[src dst]] ["-v" (str (normalize-mount-source src) ":" dst)]))))]
+    (if project-isolation?
+      (into (vec base-mounts) (build-claude-isolation-mounts project-dir config))
+      base-mounts)))
 
 (def harness-api-keys
   "API key environment variables required by each harness.
@@ -310,10 +494,10 @@
    via config.yaml env: section."
   {:with-claude   ["ANTHROPIC_API_KEY"]
    :with-opencode ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
-                    "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]
+                   "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]
    :with-codex    ["OPENAI_API_KEY" "CODEX_API_KEY"]
    :with-gemini   ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
-                    "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
+                   "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
    :with-pi       ["PI_CODING_AGENT_DIR" "PI_SKIP_VERSION_CHECK"]})
 
 (defn- build-api-env-args
@@ -365,7 +549,7 @@
         ;; Without this, git inside the container can't follow the gitdir pointer
         (into (if-let [git-common-dir (detect-worktree-git-dir project-dir)]
                 ["-v" (str (normalize-mount-source git-common-dir) ":"
-                          (if (fs/windows?) (fs/unixify git-common-dir) git-common-dir))]
+                           (if (fs/windows?) (fs/unixify git-common-dir) git-common-dir))]
                 []))
 
         ;; Git identity
@@ -377,7 +561,7 @@
                  "-e" (str "GIT_COMMITTER_EMAIL=" (:email git-identity))]))
 
         ;; Harness config mounts (only enabled harnesses)
-        (into (build-harness-config-mounts state))
+        (into (build-harness-config-mounts state project-dir config))
 
         ;; GCP credentials file mount (only when Gemini enabled)
         (into (or (build-gcp-credentials-mount state) []))
@@ -447,16 +631,16 @@
    (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
   [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name harness-volume-name]}]
   (build-docker-args-internal
-    {:project-dir project-dir
-     :image-tag image-tag
-     :config config
-     :state state
-     :git-identity git-identity
-     :skip-pre-start skip-pre-start
-     :skip-interactive skip-interactive
-     :container-name container-name
-     :harness-volume-name harness-volume-name
-     :tty-flags ["-it"]}))
+   {:project-dir project-dir
+    :image-tag image-tag
+    :config config
+    :state state
+    :git-identity git-identity
+    :skip-pre-start skip-pre-start
+    :skip-interactive skip-interactive
+    :container-name container-name
+    :harness-volume-name harness-volume-name
+    :tty-flags ["-it"]}))
 
 (defn build-docker-args-for-exec
   "Build docker run arguments for one-off command execution.
@@ -477,12 +661,12 @@
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
   [{:keys [project-dir image-tag config state git-identity tty? harness-volume-name]}]
   (build-docker-args-internal
-    {:project-dir project-dir
-     :image-tag image-tag
-     :config config
-     :state state
-     :git-identity git-identity
-     :skip-pre-start true  ; Always skip pre_start for exec
-     :skip-interactive true  ; Skip interactive features for exec
-     :harness-volume-name harness-volume-name
-     :tty-flags (if tty? ["-it"] ["-i"])}))
+   {:project-dir project-dir
+    :image-tag image-tag
+    :config config
+    :state state
+    :git-identity git-identity
+    :skip-pre-start true  ; Always skip pre_start for exec
+    :skip-interactive true  ; Skip interactive features for exec
+    :harness-volume-name harness-volume-name
+    :tty-flags (if tty? ["-it"] ["-i"])}))

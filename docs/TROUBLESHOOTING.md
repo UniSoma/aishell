@@ -393,6 +393,20 @@ If you still see warnings:
 
 ---
 
+### Symptom: "text file busy" / EBUSY when a tool rewrites a Claude config file
+
+**Cause:** In `claude_isolation: project` mode, individual files from the share allowlist (e.g. `settings.json`, `CLAUDE.md`) are bind-mounted as single files. A single-file bind mount pins the inode, so a process that saves by writing a temp file and renaming it over the target fails the atomic rename with `EBUSY` / "text file busy". Directory mounts (skills, agents, plugins, projects) are unaffected — only single-file mounts hit this.
+
+**Resolution:**
+
+1. **Edit in place** rather than replacing the file, when the tool offers the option.
+2. **Move the file into a shared directory** you can mount as a whole, then reference it from there.
+3. **Symlink upgrade path:** instead of sharing the file directly, share a directory that contains it and symlink the expected path to it, so the atomic rename happens inside the mounted directory rather than across the bind-mount boundary. Add the containing directory via [claude_shared_paths](CONFIGURATION.md#claude_shared_paths).
+
+This does not affect `claude_isolation: shared` mode, where the whole `~/.claude` directory is mounted as one bind mount.
+
+---
+
 ## Volume Issues
 
 ### Symptom: "Harness command not found" inside container
@@ -668,6 +682,30 @@ ls -la ~/.gemini/
    ls -la ~/.claude
    # Should be writable by your user
    ```
+
+### Symptom: "Claude transcripts show up in other sandboxes"
+
+**Cause:** This is by design. Claude project data — the `projects/` records and `history.jsonl` transcripts — is portable and is shared in every isolation mode, including `claude_isolation: project`. Only Claude *machine state* (daemon registry, session locks, jobs) is isolated per project; transcripts are not machine state.
+
+**Resolution:** No action needed. If you want a project's transcripts kept out of the shared history, that is not currently supported — transcripts are intentionally readable across sandboxes so past work stays discoverable.
+
+---
+
+### Symptom: "Agent View / session list is different in each sandbox"
+
+**Cause:** By design. The Agent View (and the daemon's live session/roster state that backs it) is Claude machine state, which is isolated per project in `claude_isolation: project` mode. There is no unified cross-sandbox Agent View — each project sees only its own running and recent sessions.
+
+**Resolution:** No action needed. This isolation is the point of `project` mode: it stops concurrent sandboxes from corrupting each other's daemon and session runtime data. Switch to `claude_isolation: shared` if you deliberately want one shared machine-state view across all projects (at the cost of that corruption risk under concurrency).
+
+---
+
+### Symptom: "Background Claude sessions stop when the container stops"
+
+**Cause:** Background sessions and the Claude daemon run inside the container. When the container stops, its processes stop with it — the daemon is not a host process.
+
+**Resolution:** This is expected. The session *state* survives on disk (in the per-project state dir under `claude_isolation: project`, or in host `~/.claude` under `shared`), so the daemon reconnects to it on the next start. Restart the sandbox and the daemon picks the state back up; you do not lose transcripts or session records, only the live background processes.
+
+---
 
 ### Symptom: "Permission denied (publickey)" when using git over SSH
 
