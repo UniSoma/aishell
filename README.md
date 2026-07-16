@@ -555,6 +555,7 @@ Built on `debian:bookworm-slim` with:
 - bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
 - OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
 - CUE v0.16.1 — data validation, configuration, and code generation
+- uv v0.11.29 — Python package and toolchain manager (`uv`, `uvx`); no interpreter is baked, uv fetches the version a project pins on demand
 
 **Security tools:**
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)

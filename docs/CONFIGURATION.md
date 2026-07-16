@@ -350,6 +350,17 @@ mounts:
 - Read-only (`:ro`) prevents the container from modifying host files
 - aishell always mounts the project directory at the same host path
 
+**Persisting the uv (Python) cache:** The foundation image ships `uv`/`uvx`
+but no interpreter — because containers run `--rm` with an ephemeral home, the
+first `uv run`/`uv sync` in each session re-downloads the pinned interpreter.
+To persist that download across sessions, mount uv's cache from the host (on
+Unix the container home mirrors the host home, so the same path maps through):
+
+```yaml
+mounts:
+  - ~/.cache/uv
+```
+
 **Cross-Platform Path Notes:**
 
 - **Home directory expansion:** `~` expands to `$USERPROFILE` on Windows, `$HOME` on Unix. aishell normalizes all paths to forward slashes for Docker mount commands.

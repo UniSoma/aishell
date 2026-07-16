@@ -98,7 +98,7 @@
 (defn build-foundation-image
   "Build the foundation Docker image with embedded templates.
 
-   Foundation image contains only system dependencies (Debian, Node.js, babashka, gosu, gitleaks).
+   Foundation image contains only system dependencies (Debian, Node.js, babashka, uv, gosu, gitleaks).
    Harness tools are installed separately via volume injection (Phase 36).
 
    Options:

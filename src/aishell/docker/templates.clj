@@ -19,6 +19,7 @@ FROM debian:bookworm-slim
 ARG BABASHKA_VERSION=1.12.218
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.16.1
+ARG UV_VERSION=0.11.29
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -150,6 +151,22 @@ RUN set -eux; \\
     | tar -xz -C /usr/local/bin cue; \\
     chmod +x /usr/local/bin/cue; \\
     cue version
+
+# Install uv (Python toolchain) as a single static binary. Binaries only —
+# no interpreter is baked; uv fetches the version a project pins on demand.
+# Source: https://github.com/astral-sh/uv
+RUN set -eux; \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch}\" in \\
+        amd64) uvArch='x86_64-unknown-linux-gnu' ;; \\
+        arm64) uvArch='aarch64-unknown-linux-gnu' ;; \\
+        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL \"https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${uvArch}.tar.gz\" \\
+    | tar -xz --strip-components=1 -C /usr/local/bin \"uv-${uvArch}/uv\" \"uv-${uvArch}/uvx\"; \\
+    chmod +x /usr/local/bin/uv /usr/local/bin/uvx; \\
+    uv --version; \\
+    uvx --version
 
 # Install Gitleaks for secret scanning (conditional, opt-in)
 ARG WITH_GITLEAKS=false
