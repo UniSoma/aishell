@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.21.0] - 2026-07-23
+
+### Added
+
+- **`uv` (Python toolchain) in the foundation image**: `uv`/`uvx` (v0.11.29) are baked into the base image as a single pinned static binary, alongside node/jq/cue. Binaries only, no baked interpreter — `uv` fetches the Python version a project pins on demand. The cache stays on `uv`'s HOME defaults; cross-session persistence is an opt-in per-project mount, documented rather than built in. Rebuild is automatic via the foundation-content hash
+- **Opt-in per-project Claude machine-state isolation**: A new `claude_isolation` config key (`shared`|`project`, default `shared`) gives each sandbox its own `~/.claude` machine state keyed by project hash, instead of mounting the host `~/.claude` wholesale. Shared mode is byte-identical to today. In project mode a per-project dot-claude dir becomes the container `~/.claude`, with a built-in share allowlist mounted on top (skills, agents, commands, hooks, plugins, projects, `CLAUDE.md`, `settings.json`, `history.jsonl`, `.credentials.json`); `.credentials.json` is never seeded, mounted only when present, and promoted project-local → host when the host lacks it. A user-extensible `claude_shared_paths` allowlist merges additively, with a hard-reject guard against absolute paths, `..` escapes, and machine-state collisions. `aishell check` reports the effective mode, state-dir path/existence, and credentials source
+
+### Changed
+
+- **Toolchain bump**: CUE 0.17.1
+
+### Fixed
+
+- **`aishell info` now surfaces the `uv` version**: `uv`/`uvx` were added to the foundation image but `aishell info` never reported them. The `ARG UV_VERSION` is now parsed from the Dockerfile and printed in the Runtimes section alongside Node.js, Babashka, bbin, CUE, and gosu
+
 ## [3.20.0] - 2026-07-14
 
 ### Added
