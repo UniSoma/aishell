@@ -18,7 +18,7 @@ FROM debian:bookworm-slim
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.218
 ARG BBIN_VERSION=0.2.5
-ARG CUE_VERSION=0.16.1
+ARG CUE_VERSION=0.17.1
 ARG UV_VERSION=0.11.29
 
 # Avoid prompts during package installation
