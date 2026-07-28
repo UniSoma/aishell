@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Git over ssh remotes works in the container again**: the foundation image installs its apt packages with `--no-install-recommends`, and Debian's `git` package carries `patch` and `ssh-client` as Recommends. `ca-certificates` and `less` were listed explicitly; the other two were silently dropped — so `git clone git@github.com:…`, `git fetch`, and `git push` against ssh remotes all failed with no ssh binary present, and `patch -p1` was unavailable. `openssh-client` and `patch` are now installed explicitly (~12 MB). `~/.ssh` is the canonical `mounts:` example in the config docs, so keys could already be mounted into an image with no client able to use them; `docs/CONFIGURATION.md` now documents that mount and its key-exposure trade-off. Rebuild is automatic via the foundation-content hash
+
 ## [3.21.0] - 2026-07-23
 
 ### Added

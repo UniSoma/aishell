@@ -363,6 +363,21 @@ mounts:
   - ~/.cache/uv
 ```
 
+**Git over ssh remotes:** The foundation image ships `openssh-client`, but the
+container has no keys of its own — cloning, fetching, or pushing an `ssh://` or
+`git@host:` remote needs your host keys mounted in:
+
+```yaml
+mounts:
+  - ~/.ssh
+```
+
+Mount read-only (`~/.ssh:/home/developer/.ssh:ro`) if you want the container to
+use your keys but never modify `known_hosts`. Note that aishell warns about
+mounting private keys — `~/.ssh/id_*` is a flagged sensitive path — so this is a
+deliberate trade of key exposure for working ssh remotes. An https remote with a
+token, or a mounted ssh-agent socket, avoids exposing the keys themselves.
+
 **Cross-Platform Path Notes:**
 
 - **Home directory expansion:** `~` expands to `$USERPROFILE` on Windows, `$HOME` on Unix. aishell normalizes all paths to forward slashes for Docker mount commands.

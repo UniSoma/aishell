@@ -561,9 +561,12 @@ Built on `debian:bookworm-slim` with:
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
 
 **CLI tools:**
-- git, curl, jq, ripgrep, fd, vim
+- git, ssh, patch, curl, jq, ripgrep, fd, vim
 - tree, less, file, unzip, watch
 - htop, sqlite3, sudo, rlwrap
+
+`ssh` needs your host keys mounted to be useful — see
+[mounts](docs/CONFIGURATION.md#mounts).
 
 **Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image. This includes optional tools like OpenSpec when enabled.
 This allows harness updates without rebuilding the foundation image.

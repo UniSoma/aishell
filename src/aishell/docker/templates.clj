@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     jq \\
     less \\
     openjdk-17-jre-headless \\
+    openssh-client \\
+    patch \\
     ripgrep \\
     rlwrap \\
     sqlite3 \\
