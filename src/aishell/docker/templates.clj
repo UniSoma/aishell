@@ -24,8 +24,13 @@ ARG UV_VERSION=0.11.29
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required packages in single layer
+# Install required packages in single layer. Keep it to ONE install block:
+# aishell.info/parse-packages scrapes the first such block only, so packages
+# added in a second layer go silently missing from `aishell info --foundation`.
+#
 # openjdk-17-jre-headless: required by bbin for tools.deps dep resolution
+# openssh-client, patch: git Recommends, dropped by --no-install-recommends
+# poppler-data: CJK CMap tables; a libpoppler126 Recommends, likewise dropped
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     bash \\
     bc \\
@@ -37,9 +42,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     htop \\
     jq \\
     less \\
+    libxml2-utils \\
+    moreutils \\
     openjdk-17-jre-headless \\
     openssh-client \\
     patch \\
+    poppler-data \\
+    poppler-utils \\
     ripgrep \\
     rlwrap \\
     sqlite3 \\
@@ -48,6 +57,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     unzip \\
     vim \\
     watch \\
+    xz-utils \\
+    zip \\
+    zstd \\
     && rm -rf /var/lib/apt/lists/*
 
 # Create fd symlink (Debian packages fd-find as fdfind, but tools expect fd)

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Document and data tooling in the foundation image**: `poppler-utils` and `poppler-data` bring `pdftotext` (with `-layout` for tables), `pdftoppm`, `pdfinfo` and `pdfimages`, so agents can extract page ranges from large PDFs, preserve tabular structure, and rasterize pages — including CJK documents without embedded fonts. Alongside them, `libxml2-utils` (`xmllint` for XPath and validation), `moreutils` (`sponge`, `ts`, `chronic`, `ifne`), and `zip`/`zstd`/`xz-utils` round out archive handling next to the existing `unzip`. Roughly 42 MB installed, kept low because the bundled JRE already pays for the freetype/fontconfig/lcms2/jpeg/nss stack. The packages join the single existing apt layer — `aishell info --foundation` scrapes only the first install block, so a second layer would be silently invisible — and rebuild is automatic via the foundation-content hash. `docs/adr/0003-document-and-data-tooling-in-foundation-image.md` records the admission test now used to judge foundation additions, and what was rejected against it (pandoc at 168 MB; `yq`, which in bookworm is the Python wrapper, where babashka already bundles `clj-yaml`; tesseract, deferred)
+
 ### Fixed
 
 - **Git over ssh remotes works in the container again**: the foundation image installs its apt packages with `--no-install-recommends`, and Debian's `git` package carries `patch` and `ssh-client` as Recommends. `ca-certificates` and `less` were listed explicitly; the other two were silently dropped — so `git clone git@github.com:…`, `git fetch`, and `git push` against ssh remotes all failed with no ssh binary present, and `patch -p1` was unavailable. `openssh-client` and `patch` are now installed explicitly (~12 MB). `~/.ssh` is the canonical `mounts:` example in the config docs, so keys could already be mounted into an image with no client able to use them; `docs/CONFIGURATION.md` now documents that mount and its key-exposure trade-off. Rebuild is automatic via the foundation-content hash

@@ -554,7 +554,7 @@ Built on `debian:bookworm-slim` with:
 - Babashka
 - bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
 - OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
-- CUE v0.16.1 — data validation, configuration, and code generation
+- CUE v0.17.1 — data validation, configuration, and code generation
 - uv v0.11.29 — Python package and toolchain manager (`uv`, `uvx`); no interpreter is baked, uv fetches the version a project pins on demand
 
 **Security tools:**
@@ -562,11 +562,22 @@ Built on `debian:bookworm-slim` with:
 
 **CLI tools:**
 - git, ssh, patch, curl, jq, ripgrep, fd, vim
-- tree, less, file, unzip, watch
+- tree, less, file, watch
 - htop, sqlite3, sudo, rlwrap
+- zip, unzip, zstd, xz
 
 `ssh` needs your host keys mounted to be useful — see
 [mounts](docs/CONFIGURATION.md#mounts).
+
+**Document & data tools:**
+- `pdftotext`, `pdftoppm`, `pdfinfo`, `pdfimages` (poppler) — extract text from
+  PDFs (`-layout` preserves tables), pull page ranges out of large documents, and
+  rasterize pages to images. CJK CMap tables are included, so PDFs without
+  embedded fonts extract correctly
+- `xmllint` — validate XML/HTML and query it with XPath
+- `sponge`, `ts`, `chronic`, `ifne` (moreutils) — `sponge` soaks up stdin before
+  writing, making `cmd file | ... | sponge file` safe where `> file` would
+  truncate the input first
 
 **Harness tools** (npm packages, binaries) are mounted from volumes at `/tools`, not baked into the image. This includes optional tools like OpenSpec when enabled.
 This allows harness updates without rebuilding the foundation image.
