@@ -77,14 +77,23 @@
 
 (def unisoma-models
   "Hard-coded whitelist of model names for UniSoma OpenCode provider."
-  ["gpt-5.2"
-   "gpt-5.3-codex"
-   "gpt-5.4"
+  ["minimax-m3"
+   "glm-5.2"
+   "kimi-k2.6"
+   "qwen3.7-max"
+   "deepseek-v4-pro"
+   "deepseek-v4-flash"
+   "claude-opus-5"
+   "claude-sonnet-5"
    "claude-haiku-4-5"
-   "claude-sonnet-4-6"
-   "claude-opus-4-6"
-   "gemini-3-flash"
-   "gemini-3.1-pro"])
+   "gemini-3.6-flash"
+   "gemini-3.1-pro"
+   "grok-4.5"
+   "gpt-5.6-sol"
+   "gpt-5.6-terra"
+   "gpt-5.6-luna"
+   "gpt-5.4-mini"
+   "gpt-5.4-nano"])
 
 (defn- opencode-config-path
   "Path to OpenCode config: ~/.config/opencode/opencode.json"
