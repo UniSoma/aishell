@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.22.0] - 2026-07-30
+
 ### Added
 
 - **Document and data tooling in the foundation image**: `poppler-utils` and `poppler-data` bring `pdftotext` (with `-layout` for tables), `pdftoppm`, `pdfinfo` and `pdfimages`, so agents can extract page ranges from large PDFs, preserve tabular structure, and rasterize pages — including CJK documents without embedded fonts. Alongside them, `libxml2-utils` (`xmllint` for XPath and validation), `moreutils` (`sponge`, `ts`, `chronic`, `ifne`), and `zip`/`zstd`/`xz-utils` round out archive handling next to the existing `unzip`. Roughly 42 MB installed, kept low because the bundled JRE already pays for the freetype/fontconfig/lcms2/jpeg/nss stack. The packages join the single existing apt layer — `aishell info --foundation` scrapes only the first install block, so a second layer would be silently invisible — and rebuild is automatic via the foundation-content hash. `docs/adr/0003-document-and-data-tooling-in-foundation-image.md` records the admission test now used to judge foundation additions, and what was rejected against it (pandoc at 168 MB; `yq`, which in bookworm is the Python wrapper, where babashka already bundles `clj-yaml`; tesseract, deferred)
+
+### Changed
+
+- **Refreshed the UniSoma OpenCode model whitelist**: the hard-coded list now tracks the current UniSoma model set — MiniMax M3, GLM 5.2, Kimi K2.6, Qwen3.7 Max, DeepSeek V4 Pro/Flash, Claude Opus 5, Sonnet 5 and Haiku 4.5, Gemini 3.6 Flash and 3.1 Pro, Grok 4.5, the three GPT 5.6 variants (Sol, Terra, Luna), and GPT 5.4 Mini/Nano. Slugs follow OpenCode Zen naming, where dots come from each vendor's own version string, except Claude, which uses dashes throughout. Existing UniSoma users pick up the new list on the next `aishell update`, which re-upserts the whitelist
 
 ### Fixed
 
