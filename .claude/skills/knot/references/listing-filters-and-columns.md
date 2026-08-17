@@ -1,23 +1,28 @@
 # Listing filters and columns
 
 Deep semantics for the listing commands (`list`/`ready`/`blocked`/`closed`,
-and `prime`). `SKILL.md` covers the common filter set and when to reach for
-each; this file is the on-demand reference for the graph filters and the
-computed columns.
+and `prime`). `SKILL.md` covers the common attribute filters
+(`--type`/`--status`/`--tag`/`--mode`/`--assignee`/`--priority`/`--limit`,
+each repeatable, all five commands); this file is the on-demand reference for
+the acceptance filter, the graph filters, and the computed columns.
+
+## `--acceptance-complete=<true|false>`
+
+Filters on completion of *structured acceptance work*, on the four listing
+commands (`list`/`ready`/`blocked`/`closed`, *not* `prime`). `=false` keeps
+tickets with **at least one** `:acceptance` entry still `done: false`; `=true`
+keeps tickets where **every** entry is done. Tickets with no `:acceptance`
+list at all are excluded from **both** views — absent criteria mean the
+dimension does not apply, so `=false` and `=true` do not partition the corpus
+between them. Bare `--acceptance-complete` means `=true`.
+
+`=true` on `list` is close to `prime`'s `ready_to_close` section but not
+identical: `prime` additionally requires the ticket to sit in the project's
+`:active-status`, where `list --acceptance-complete=true` spans every live
+status. A fully-checked ticket still in `open` shows up in the `list` view and
+not in `prime`'s.
 
 ## Graph filters
-
-All five listing commands accept the common filter set (each repeatable):
-
-```
---type <type>      --mode <afk|hitl>    --tag <tag>
---status <status>  --assignee <user>    --priority <0-4>
---limit <n>
-```
-
-On `prime`, filters apply across **all** sections (in_progress + ready +
-recently_closed) — `knot prime --assignee me` shows only your tickets
-everywhere.
 
 ### `--parent <id>`
 
@@ -55,7 +60,7 @@ column's action-companion: the column reveals the live islands,
 column exactly — and is therefore **distinct from `--closure`**, not a live mode
 of it: `--closure` is corpus-wide where a closed ticket still conducts, so a
 live `A`—closed `C`—live `B` chain is one closure but two live components. Fixed
-shape (ADR 0014): a **single** id resolved by partial match like `--parent`
+shape: a **single** id resolved by partial match like `--parent`
 (**never** an ordinal — `--component 1` fails to resolve; an unresolvable or
 ambiguous seed dies on stderr, or returns a `not_found` / `ambiguous_id`
 envelope under `--json`), **all** axes (no `--via`), the seed **must be live**
@@ -80,6 +85,7 @@ knot closed --type bug --limit 5
 knot list --parent kno-01abc
 knot list --closure kno-01abc --via parent,deps
 knot list --component kno-01abc
+knot list --acceptance-complete=false --mode afk
 ```
 
 ## Columns
