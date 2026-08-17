@@ -65,6 +65,12 @@
   (validate-container-name! name)
   (str "aishell-" (project-hash project-dir) "-" name))
 
+(defn extract-short-name
+  "Inverse of `container-name`: recover the user-facing name from a full
+   container name. Example: 'aishell-a1b2c3d4-claude' -> 'claude'"
+  [container-name]
+  (last (str/split container-name #"-" 3)))
+
 (defn container-exists?
   "Check if a container exists (running or stopped)."
   [container-name]

@@ -175,7 +175,7 @@ When you run `aishell claude`, aishell launches an ephemeral Docker container wi
 - **One-off commands** - Run single commands in container with `aishell exec`
 - **Named containers** - Deterministic naming with `--name` override
 - **VSCode integration** - Open VSCode attached to a container as `developer` with `aishell vscode`, server state persisted across restarts
-- **Attach** - Open a shell in a running container via `aishell attach`
+- **Attach** - Open a shell in a running container via `aishell attach`; the name is optional when only one is running
 - **Container discovery** - List project containers with `aishell ps`
 - **Volume management** - List and prune orphaned harness volumes with `aishell volumes`
 - **Image info** - Show image stack and installed tools with `aishell info`
@@ -257,6 +257,9 @@ aishell ps
 
 # Open a shell in a running container
 aishell attach reviewer
+
+# With only one container running, the name is optional
+aishell attach
 
 # Stop a container (use `aishell ps` to find the container name)
 docker stop <container-name>

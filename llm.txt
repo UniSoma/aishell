@@ -140,11 +140,12 @@ Output: table with NAME, STATUS, CREATED.
 Open a bash shell in a running container.
 
 ```
+aishell attach                 # the only running container
 aishell attach claude
 aishell attach reviewer
 ```
 
-Takes a positional argument: the container name used when starting it (e.g., `aishell claude --name reviewer`).
+Takes an optional positional argument: the container name used when starting it (e.g., `aishell claude --name reviewer`). With no name, attach targets the project's single running container, announcing the pick on stderr. If zero or several are running, it errors and lists what it found.
 
 ### volumes
 

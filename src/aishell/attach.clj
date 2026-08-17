@@ -4,6 +4,7 @@
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [aishell.attach.invocation :as invocation]
+            [aishell.attach.resolve :as attach-resolve]
             [aishell.docker.naming :as naming]
             [aishell.output :as output]))
 
@@ -42,8 +43,31 @@
                        "To start: aishell " short-name "\n"
                        "Or use: docker start " container-name))))
 
+(defn- resolve-name!
+  "Return the short name to attach to. A nil `name` means the user gave
+   none, so it is inferred from the project's running containers: exactly
+   one running is the pick, anything else is a fatal error. An inferred
+   pick announces itself on stderr before the terminal is handed over;
+   an explicit name stays silent."
+  [name project-dir]
+  (if name
+    name
+    (let [{:keys [name error]} (attach-resolve/resolve-attach-target
+                                (naming/list-project-containers project-dir))]
+      (if error
+        (output/error error)
+        (do (binding [*out* *err*]
+              (println (str "Attaching to '" name "'...")))
+            name)))))
+
 (defn attach-to-container
   "Attach to a running container by opening a bash shell.
+
+   With a nil `name`, the container is inferred from the project's running
+   containers — see `resolve-name!`. The resolver hands back a short name,
+   so inferred and explicit attach then share one path; the re-validation
+   below is redundant but deliberate, so a container that dies between the
+   listing and the exec still produces the clear \"not running\" error.
 
    Performs pre-flight validations:
    1. Interactive terminal check
@@ -57,10 +81,11 @@
    - Unix: uses p/exec (replaces process, cleaner process tree)
    - Windows: uses p/process :inherit (child process with I/O inheritance)"
   [name & {:keys [command-argv]}]
+  ;; TTY check first: cheapest, and true regardless of container count
+  (validate-tty!)
   (let [project-dir (System/getProperty "user.dir")
+        name (resolve-name! name project-dir)
         container-name (naming/container-name project-dir name)]
-    ;; Run all validations
-    (validate-tty!)
     (validate-container-state! container-name name)
 
     ;; Resolve TERM valid inside the container (host TERM may lack terminfo)

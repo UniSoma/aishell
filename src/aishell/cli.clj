@@ -752,12 +752,6 @@
                          "\n\nValid subcommands: list, prune"
                          "\n\nTry: aishell volumes --help")))))
 
-(defn- extract-short-name
-  "Extract user-friendly name from full container name.
-   Example: 'aishell-a1b2c3d4-claude' -> 'claude'"
-  [container-name]
-  (last (str/split container-name #"-" 3)))
-
 (defn- ps-row
   "Pure: build the canonical row for one docker container.
    Used by both the JSON path (`format-ps-data`) and the human table
@@ -776,7 +770,7 @@
   [c]
   (let [status (:status c)
         bootstrap (or (:bootstrap c) :none)]
-    {:name (extract-short-name (:name c))
+    {:name (naming/extract-short-name (:name c))
      :fullName (:name c)
      :status status
      :created (:created c)
@@ -934,15 +928,19 @@
                        (cond
                          (some #{"-h" "--help"} rest-args)
                          (do
-                           (println (str output/BOLD "Usage:" output/NC " aishell attach <name> [-- <command> [args...]]"))
+                           (println (str output/BOLD "Usage:" output/NC " aishell attach [name] [-- <command> [args...]]"))
                            (println)
                            (println "Attach to a running container (opens bash shell).")
+                           (println "The name is optional: with exactly one running container, it is used.")
                            (println "If a command follows '--', it runs first; on exit you drop into the container shell.")
                            (println)
                            (println (str output/BOLD "Options:" output/NC))
                            (println "  -h, --help    Show this help")
                            (println)
                            (println (str output/BOLD "Examples:" output/NC))
+                           (println (str "  " output/CYAN "aishell attach" output/NC))
+                           (println "      Open bash shell in the only running container")
+                           (println)
                            (println (str "  " output/CYAN "aishell attach claude" output/NC))
                            (println "      Open bash shell in the 'claude' container")
                            (println)
@@ -957,6 +955,7 @@
                            (println)
                            (println (str output/BOLD "Notes:" output/NC))
                            (println "  Use 'aishell ps' to list running containers.")
+                           (println "  Without a name, attach errors if zero or several containers are running.")
                            (println "  The container must be running. Start one in another terminal: aishell <harness>"))
 
                          :else

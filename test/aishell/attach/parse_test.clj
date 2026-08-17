@@ -28,14 +28,19 @@
            (parse/parse-attach-args ["session" "--"])))))
 
 (deftest parse-attach-args-no-name-with-dash-dash
-  (testing "-- as first token yields the existing 'name required' error"
-    (is (= {:error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers."}
+  (testing "-- as first token yields a nil name; the target is inferred later"
+    (is (= {:name nil :command-argv ["btm"]}
            (parse/parse-attach-args ["--" "btm"])))))
 
 (deftest parse-attach-args-no-args
-  (testing "empty args yields the same 'name required' error"
-    (is (= {:error "Container name required.\n\nUsage: aishell attach <name>\n\nUse 'aishell ps' to list running containers."}
+  (testing "empty args yields a nil name and no command"
+    (is (= {:name nil :command-argv nil}
            (parse/parse-attach-args [])))))
+
+(deftest parse-attach-args-bare-dash-dash
+  (testing "a lone -- is still a trailing-separator error, not a nil name"
+    (is (= {:error "attach: '--' given but no command followed"}
+           (parse/parse-attach-args ["--"])))))
 
 (deftest parse-attach-args-multiple-names
   (testing "more than one token before -- is an error"
