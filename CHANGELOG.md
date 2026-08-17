@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.23.0] - 2026-08-17
+
 ### Added
 
 - **`aishell attach` infers the container when only one is running**: the name argument is now optional. With exactly one running container in the project, bare `aishell attach` (and `aishell attach -- <command>`) targets it and announces the pick on stderr — no more reading a name out of `aishell ps` and typing it back. Candidates are what `ps` shows, filtered to running; `vscode` containers are not special-cased and bootstrap state does not gate the pick, so the choice stays predictable from the `ps` output in front of you. Zero running errors with start guidance, the stopped container names, and a Docker hint (the listing cannot tell a dead daemon from an empty project); several running errors with each candidate's name and status plus a copyable `aishell attach <name>`. Explicit `aishell attach <name>` is unchanged and stays silent. `aishell exec` deliberately keeps requiring a name — it is non-interactive and often scripted, where an implicit target is a footgun
