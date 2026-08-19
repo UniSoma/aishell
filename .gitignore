@@ -31,3 +31,4 @@ Thumbs.db
 **/.DS_Store
 **/.gradle
 dist/
+/wip/

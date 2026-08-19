@@ -8,6 +8,14 @@ Docker sandbox for AI coding harnesses: each project runs its harness (Claude Co
 An AI coding CLI (Claude Code, OpenCode, Codex, Gemini, pi) that aishell installs and runs inside a sandbox container.
 _Avoid_: agent, tool, AI
 
+**Harness descriptor**:
+The pure-data record of one Harness's facts: identity, canonical label, state and version keys, capabilities (subcommand, launch command, shell alias, harness-volume participation), install source, config paths, and passthrough environment variables.
+_Avoid_: harness config, harness entry
+
+**Harness registry**:
+The ordered, closed collection of harness descriptors from which every harness-dependent behavior in aishell derives. Closed: users cannot add harnesses; new ones are added in aishell itself.
+_Avoid_: harness list, harness table
+
 **Project hash**:
 The 8-character SHA-256 prefix of a project's canonicalized directory path. Keys everything aishell scopes per project (container names, per-project state).
 

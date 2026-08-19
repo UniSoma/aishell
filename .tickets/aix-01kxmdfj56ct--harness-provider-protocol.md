@@ -6,12 +6,14 @@ type: task
 priority: 2
 mode: hitl
 created: '2026-07-16T02:53:19.907593579Z'
-updated: '2026-07-16T02:53:19.907593579Z'
+updated: '2026-08-19T18:59:34.122245173Z'
 parent: aix-01kxmde9p330
 tags:
 - wayfinder:grilling
 deps:
 - aix-01kxmdfj1ehw
+links:
+- aix-01m0dp97mdhs
 ---
 
 ## Description
