@@ -6,7 +6,7 @@ type: bug
 priority: 2
 mode: hitl
 created: '2026-07-28T23:28:26.856341752Z'
-updated: '2026-07-28T23:28:26.856341752Z'
+updated: '2026-08-20T12:49:21.652866615Z'
 tags:
 - docker
 - foundation
@@ -17,6 +17,8 @@ acceptance:
   done: false
 - title: CONFIGURATION.md documents the ~/.ssh mount opt-in
   done: false
+links:
+- aix-01m0fkf9tz6n
 ---
 
 ## Description

@@ -6,7 +6,7 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:23.633967378Z'
-updated: '2026-07-15T02:44:33.099606433Z'
+updated: '2026-08-20T12:49:21.557186617Z'
 tags:
 - ready-for-agent
 - json
@@ -29,6 +29,8 @@ acceptance:
   done: false
 deps:
 - aix-01kr1qp6deb1
+links:
+- aix-01m0fkfpxkzm
 ---
 
 ## Description
