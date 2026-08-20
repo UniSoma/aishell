@@ -497,7 +497,8 @@ Built on debian:bookworm-slim:
 
 - **Runtimes:** Node.js 24 (npm, npx), Babashka
 - **Security:** Gitleaks v8.30.0 (optional)
-- **Tools:** git, curl, jq, ripgrep, vim, tree, less, file, unzip, watch, htop, sqlite3, sudo
+- **Tools:** git, curl, jq, ripgrep, vim, tree, less, file, unzip, watch, htop, sudo
+- **SQLite 3.53.4:** built from source (sqlite3, sqldiff, sqlite3_rsync), shadowing Debian's 3.40.1 library
 - **User switching:** gosu (matches host UID/GID)
 - **Harness tools** are in a separate volume at `/tools`, not in the image
 

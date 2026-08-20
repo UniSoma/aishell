@@ -559,6 +559,12 @@ Built on `debian:bookworm-slim` with:
 - OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
 - CUE v0.17.1 — data validation, configuration, and code generation
 - uv v0.11.29 — Python package and toolchain manager (`uv`, `uvx`); no interpreter is baked, uv fetches the version a project pins on demand
+- SQLite 3.53.4 — compiled from upstream source, not Debian's 3.40.1. Ships
+  `sqlite3`, `sqldiff` and `sqlite3_rsync`, plus the shared library, header and
+  pkg-config file under `/usr/local`. The library is `ldconfig`'d ahead of
+  Debian's, so anything in the container that links `libsqlite3.so.0` gets
+  3.53.4 too. `sqlite3_analyzer` is not included: it is the one tool that
+  requires TCL
 
 **Security tools:**
 - Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
@@ -566,7 +572,7 @@ Built on `debian:bookworm-slim` with:
 **CLI tools:**
 - git, ssh, patch, curl, jq, ripgrep, fd, vim
 - tree, less, file, watch
-- htop, sqlite3, sudo, rlwrap
+- htop, sudo, rlwrap
 - zip, unzip, zstd, xz
 
 `ssh` needs your host keys mounted to be useful — see

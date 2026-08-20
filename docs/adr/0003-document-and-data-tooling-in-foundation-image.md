@@ -32,6 +32,17 @@ A tool belongs in the foundation image when all of these hold:
 5. **No baked language interpreter.** ADR 0002 settled this for Python; it
    generalizes.
 
+### Amendment: the test gates admission, not upgrades
+
+Added when SQLite moved to a source build (ADR 0004). Criterion 3 ("Installable
+via apt") fails by construction for that change, but the criterion was written to
+gate the *admission* of new tools — where the curl/tarball path buys convenience
+at the cost of permanent wiring — not to freeze already-admitted tools at
+whatever version Debian happens to ship. When a tool is already in the image and
+the distribution's version is itself the problem, criterion 3 does not apply; the
+packaging cost is the price of the capability rather than an argument against it.
+The remaining criteria still apply in full.
+
 ## Considered Options
 
 - **Placement: foundation, not overlay or ARG-gate.** The per-project

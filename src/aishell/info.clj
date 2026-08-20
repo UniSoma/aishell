@@ -53,6 +53,11 @@
   [dockerfile]
   (second (re-find #"ARG UV_VERSION=(\S+)" dockerfile)))
 
+(defn- parse-sqlite-version
+  "Extract SQLite version from ARG SQLITE_VERSION=X.Y.Z."
+  [dockerfile]
+  (second (re-find #"ARG SQLITE_VERSION=(\S+)" dockerfile)))
+
 (defn- parse-gitleaks-version
   "Extract Gitleaks version from ARG GITLEAKS_VERSION=X.Y.Z."
   [dockerfile]
@@ -170,6 +175,7 @@
         bbin-version (parse-bbin-version dockerfile)
         cue-version (parse-cue-version dockerfile)
         uv-version (parse-uv-version dockerfile)
+        sqlite-version (parse-sqlite-version dockerfile)
         gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
@@ -201,6 +207,10 @@
       (println (str "    CUE " cue-version)))
     (when uv-version
       (println (str "    uv " uv-version " (uv + uvx, Python toolchain)")))
+    (when sqlite-version
+      (println (str "    SQLite " sqlite-version
+                    " (sqlite3, sqldiff, sqlite3_rsync"
+                    " + libsqlite3/headers, built from source)")))
     (println "    gosu 1.19")
     (println)
     (println (str "  Gitleaks: "

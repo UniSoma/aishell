@@ -16,6 +16,14 @@ _Avoid_: harness config, harness entry
 The ordered, closed collection of harness descriptors from which every harness-dependent behavior in aishell derives. Closed: users cannot add harnesses; new ones are added in aishell itself.
 _Avoid_: harness list, harness table
 
+**Foundation image**:
+`aishell:foundation` — the bottom image layer, built from a Dockerfile embedded in aishell itself and identical for every user and project. Holds the OS packages, runtimes and shared tooling. Users never edit it; it rebuilds when its embedded content hash changes.
+_Avoid_: base (for this layer), system image
+
+**Base image**:
+`aishell:base` — the per-user layer between the Foundation image and a project's own extension, built from `~/.aishell/Dockerfile` when one exists and otherwise a plain tag alias of the Foundation image. This is where a user's own machine-wide customizations go.
+_Avoid_: foundation, global image
+
 **Project hash**:
 The 8-character SHA-256 prefix of a project's canonicalized directory path. Keys everything aishell scopes per project (container names, per-project state).
 

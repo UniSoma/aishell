@@ -1,27 +1,28 @@
 ---
 id: aix-01m0fkfpxkzm
 title: Surface and document the source-built SQLite toolchain
-status: open
+status: closed
 type: task
 priority: 2
 mode: afk
 created: '2026-08-20T12:49:09.555431634Z'
-updated: '2026-08-20T12:49:21.557186617Z'
+updated: '2026-08-20T13:16:09.506795655Z'
+closed: '2026-08-20T13:16:09.506795655Z'
 acceptance:
 - title: aishell info --foundation names SQLite and its version
-  done: false
+  done: true
 - title: parse-sqlite-version has unit test coverage
-  done: false
+  done: true
 - title: ADR 0004 records the source-build decision and the facts that forced it
-  done: false
+  done: true
 - title: ADR 0003 records that its admission test gates admission, not upgrades
-  done: false
+  done: true
 - title: README's foundation section gives SQLite its own entry
-  done: false
+  done: true
 - title: CONTEXT.md defines Foundation image and Base image
-  done: false
+  done: true
 - title: clj-kondo lint passes
-  done: false
+  done: true
 deps:
 - aix-01m0fkf9tz6n
 tags:
@@ -65,3 +66,17 @@ its own entry naming the version, the shared library, and the extra binaries.
 CONTEXT.md gains `Foundation image` and `Base image`. Both terms are load-bearing
 across base.clj, build.clj and extension.clj and neither is defined. SQLite itself
 gets no glossary entry — it is a tool, not domain vocabulary.
+
+## Notes
+
+**2026-08-20T13:16:09.401933226Z**
+
+Done alongside the parent (aix-01m0fkf9tz6n) rather than after it, in the same commit. Splitting them would have shipped an interim state where `aishell info` silently drops SQLite from its output — the exact gap this ticket exists to close — so the surfacing landed with the change that causes it.
+
+All seven criteria are met: parse-sqlite-version plus the render line in info.clj (worded as this ticket specifies), test/aishell/info_test.clj covering the new parser (and also pinning that a builder stage's apt block cannot be scraped as the foundation's package list), ADR 0004, the admission-test amendment in ADR 0003, the README entry, and Foundation image / Base image in CONTEXT.md. clj-kondo is clean of new warnings (14 pre-existing, unchanged) and `bb test` passes at 84 tests.
+
+Beyond the stated scope, llm.txt:500 also listed sqlite3 in its generic tool line and was updated to match README — it is hand-maintained alongside README by repo precedent.
+
+**2026-08-20T13:16:09.506795655Z**
+
+Surfaced the source-built SQLite in aishell info, README, llm.txt and CONTEXT.md; recorded the decision in ADR 0004 and amended ADR 0003's admission test. Landed in the same commit as the parent build change.

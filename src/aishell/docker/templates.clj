@@ -9,10 +9,117 @@
 # Debian-based container with dynamic user creation, gosu for user switching,
 # and stable foundation layer with system dependencies.
 
+# SQLite pins, declared globally because both the builder stage and the
+# verification step in the main stage need them: a bare `ARG NAME` inside a
+# stage inherits from the global scope only.
+#
+# SQLITE_VERSION must be X.Y.Z. The zero-padded download id (3.53.4 becomes
+# 3530400) is derived from it in-shell; sqlite.org URLs need the year as well.
+ARG SQLITE_VERSION=3.53.4
+ARG SQLITE_YEAR=2026
+# SHA-256 of sqlite-src-${dlId}.zip. sqlite.org publishes SHA3-256, so on a
+# version bump: fetch the zip, confirm `openssl dgst -sha3-256` against the
+# PRODUCT line on sqlite.org/download.html, then pin `sha256sum` here. Pinning
+# the SHA-256 keeps the builder to coreutils. This is the one tool we compile
+# and then load into every process in the container, so a swapped tarball is
+# worst here — hence the departure from curl-and-trust-TLS used elsewhere.
+ARG SQLITE_SHA256=d18fa15aec74d8c17e1463f861095adc01b5ad190256acb4f91d22f0368d232b
+
 # Stage 1: Node.js source (for multi-stage copy)
 FROM node:24-bookworm-slim AS node-source
 
-# Stage 2: Main image
+# Stage 2: SQLite, compiled from upstream source
+#
+# Debian bookworm ships 3.40.1 (2022) and projects using this sandbox depend on
+# current SQLite. Upstream's prebuilt tools cannot be used: they need GLIBC_2.38
+# and bookworm provides 2.36, there is no prebuilt shared library at all, and
+# there are no prebuilt tools for arm64. Compiling removes the architecture
+# question along with the glibc one.
+#
+# TCL is deliberately absent. Upstream's README states the core deliverables
+# build without it, and the tree bundles jimsh for its own build scripts.
+# sqlite3_analyzer is the one TCL-dependent tool, so it is not built.
+FROM debian:bookworm-slim AS sqlite-source
+
+ARG SQLITE_VERSION
+ARG SQLITE_YEAR
+ARG SQLITE_SHA256
+
+# Build dependencies only, and deliberately on a single line: the package
+# scraper in aishell.info anchors on an install list continued across lines, so
+# a wrapped install list in a builder stage would be reported as the
+# foundation's own package set. libc6-dev is explicit because gcc only
+# Recommends it and this build uses --no-install-recommends; libreadline-dev
+# keeps line editing in the shell at parity with Debian's sqlite3 package.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gcc libc6-dev libreadline-dev make unzip
+
+# Compile flags are a Debian-parity floor plus two extras. Upstream defaults
+# most features OFF, so a naive build would REGRESS against the 3.40.1 Debian
+# ships. --all covers only fts4, fts5, rtree, geopoly, session, dbpage, dbstat
+# and carray; everything else Debian enables is passed explicitly, either as a
+# configure flag (fts3, update-limit, column-metadata) or as a -D in CFLAGS,
+# which configure hoists into the feature flags applied to every compile.
+# EXPLAIN_COMMENTS and BYTECODE_VTAB are the two extras, for query-plan
+# readability.
+#
+# --soname=legacy is what makes the shadow work: without it the library is
+# built with no soname at all, and a consumer linked against Debian's
+# libsqlite3.so.0 would never load ours. --disable-rpath keeps the build
+# directory out of the binaries, so the loader resolves through the ldconfig
+# cache in the final image. --enable-readline is given explicitly so a missing
+# libreadline fails the build instead of silently dropping line editing.
+RUN set -eux; \\
+    set -- $(echo \"${SQLITE_VERSION}\" | tr '.' ' '); \\
+    dlId=\"$(printf '%d%02d%02d00' \"$1\" \"$2\" \"$3\")\"; \\
+    curl -fsSL -o /tmp/sqlite-src.zip \"https://sqlite.org/${SQLITE_YEAR}/sqlite-src-${dlId}.zip\"; \\
+    echo \"${SQLITE_SHA256}  /tmp/sqlite-src.zip\" | sha256sum -c -; \\
+    unzip -q /tmp/sqlite-src.zip -d /tmp/sqlite-src; \\
+    cd \"/tmp/sqlite-src/sqlite-src-${dlId}\"; \\
+    export CFLAGS=\"-O2 \\
+        -DSQLITE_ENABLE_FTS3_PARENTHESIS \\
+        -DSQLITE_ENABLE_STMTVTAB \\
+        -DSQLITE_ENABLE_UNLOCK_NOTIFY \\
+        -DSQLITE_ENABLE_LOAD_EXTENSION \\
+        -DSQLITE_ENABLE_EXPLAIN_COMMENTS \\
+        -DSQLITE_ENABLE_BYTECODE_VTAB \\
+        -DSQLITE_SOUNDEX \\
+        -DSQLITE_SECURE_DELETE \\
+        -DSQLITE_MAX_VARIABLE_NUMBER=250000\"; \\
+    ./configure \\
+        --prefix=/usr/local \\
+        --all \\
+        --enable-fts3 \\
+        --enable-update-limit \\
+        --enable-column-metadata \\
+        --enable-readline \\
+        --disable-tcl \\
+        --disable-rpath \\
+        --dynlink-tools \\
+        --soname=legacy; \\
+    make -j\"$(nproc)\" sqlite3 sqldiff sqlite3_rsync; \\
+    make DESTDIR=/staging install install-pc install-diff install-rsync
+
+# A dynamically-linked probe, run once in the main stage to prove the shadow
+# took: it reports the version and compile options of whichever libsqlite3.so.0
+# the loader picks, which is the only way to inspect the installed library
+# itself. The shell cannot answer this — upstream deliberately embeds a private
+# copy of sqlite3.c in it, built with shell-only flags, so its
+# `pragma compile_options` describes the shell and not the library.
+RUN set -eux; \\
+    printf '%s\\n' \\
+        '#include <stdio.h>' \\
+        '#include <sqlite3.h>' \\
+        'int main(void){' \\
+        '  int i; const char *z;' \\
+        '  puts(sqlite3_libversion());' \\
+        '  for(i=0; (z=sqlite3_compileoption_get(i))!=0; i++) puts(z);' \\
+        '  return 0;' \\
+        '}' > /tmp/probe.c; \\
+    mkdir -p /probe; \\
+    gcc -O2 -o /probe/sqlite-probe /tmp/probe.c \\
+        -I/staging/usr/local/include -L/staging/usr/local/lib -lsqlite3
+
+# Stage 3: Main image
 FROM debian:bookworm-slim
 
 # Build arguments for developer tools
@@ -28,6 +135,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # aishell.info/parse-packages scrapes the first such block only, so packages
 # added in a second layer go silently missing from `aishell info --foundation`.
 #
+# libreadline8: line editing for the source-built sqlite3 shell (stage 2)
 # openjdk-17-jre-headless: required by bbin for tools.deps dep resolution
 # openssh-client, patch: git Recommends, dropped by --no-install-recommends
 # poppler-data: CJK CMap tables; a libpoppler126 Recommends, likewise dropped
@@ -42,6 +150,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     htop \\
     jq \\
     less \\
+    libreadline8 \\
     libxml2-utils \\
     moreutils \\
     openjdk-17-jre-headless \\
@@ -51,7 +160,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     poppler-utils \\
     ripgrep \\
     rlwrap \\
-    sqlite3 \\
     sudo \\
     tree \\
     unzip \\
@@ -181,6 +289,62 @@ RUN set -eux; \\
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx; \\
     uv --version; \\
     uvx --version
+
+# Install SQLite, compiled in the sqlite-source stage. The shared library lands
+# in /usr/local/lib and is ldconfig'd, deliberately shadowing Debian's
+# libsqlite3-0 for every dynamically-linked consumer in the container.
+# libsqlite3-0 itself stays (other packages link it); SQLite's ABI is backward
+# compatible under libsqlite3.so.0, so this is low risk, and it is the only
+# arrangement that puts every consumer on the current version rather than just
+# the CLI. The apt sqlite3 package is gone from the install block above so that
+# /usr/bin/sqlite3 and /usr/local/bin/sqlite3 cannot both exist with PATH order
+# deciding the winner.
+#
+# Placed late on purpose: a version bump then invalidates only the tail of the
+# build.
+ARG SQLITE_VERSION
+COPY --from=sqlite-source /staging/usr/local/ /usr/local/
+COPY --from=sqlite-source /probe/sqlite-probe /tmp/sqlite-probe
+RUN set -eux; \\
+    ldconfig; \\
+    test -f /usr/local/lib/libsqlite3.so.0; \\
+    test -f /usr/local/include/sqlite3.h; \\
+    test -f /usr/local/lib/pkgconfig/sqlite3.pc; \\
+    sqlite3 --version | grep -q \"^${SQLITE_VERSION} \"; \\
+    sqldiff --help >/dev/null; \\
+    sqlite3_rsync --version >/dev/null; \\
+    ldd \"$(command -v sqldiff)\" | grep -q '=> /usr/local/lib/libsqlite3.so.0'; \\
+    /tmp/sqlite-probe > /tmp/sqlite-probe.out; \\
+    head -n 1 /tmp/sqlite-probe.out | grep -qx \"${SQLITE_VERSION}\"; \\
+    for opt in \\
+        ENABLE_BYTECODE_VTAB \\
+        ENABLE_CARRAY \\
+        ENABLE_COLUMN_METADATA \\
+        ENABLE_DBPAGE_VTAB \\
+        ENABLE_DBSTAT_VTAB \\
+        ENABLE_EXPLAIN_COMMENTS \\
+        ENABLE_FTS3 \\
+        ENABLE_FTS3_PARENTHESIS \\
+        ENABLE_FTS4 \\
+        ENABLE_FTS5 \\
+        ENABLE_GEOPOLY \\
+        ENABLE_LOAD_EXTENSION \\
+        ENABLE_MATH_FUNCTIONS \\
+        ENABLE_PREUPDATE_HOOK \\
+        ENABLE_RTREE \\
+        ENABLE_SESSION \\
+        ENABLE_STMTVTAB \\
+        ENABLE_UNLOCK_NOTIFY \\
+        ENABLE_UPDATE_DELETE_LIMIT \\
+        MAX_VARIABLE_NUMBER=250000 \\
+        SECURE_DELETE \\
+        SOUNDEX \\
+        THREADSAFE=1; \\
+    do \\
+        grep -qx \"$opt\" /tmp/sqlite-probe.out \\
+            || { echo \"missing SQLite compile option: $opt\"; exit 1; }; \\
+    done; \\
+    rm -f /tmp/sqlite-probe /tmp/sqlite-probe.out
 
 # Install Gitleaks for secret scanning (conditional, opt-in)
 ARG WITH_GITLEAKS=false

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **SQLite in the foundation image is now built from upstream source**: bookworm ships 3.40.1 (2022), and upstream's prebuilt tools cannot be used here — every binary in `sqlite-tools-linux-x64` needs `GLIBC_2.38` against bookworm's 2.36, there is no prebuilt shared library at all, and no prebuilt tools for arm64. A throwaway builder stage compiles 3.53.4 from the `sqlite-src` tree, giving `sqlite3`, `sqldiff` and `sqlite3_rsync` plus the shared library, header and pkg-config file under `/usr/local`. The library is `ldconfig`'d ahead of Debian's `libsqlite3-0`, deliberately shadowing it, so everything in the container that links `libsqlite3.so.0` gets 3.53.4 — not just whoever types `sqlite3`. The apt `sqlite3` package is dropped so two `sqlite3` binaries cannot coexist with `PATH` order picking the winner; `libsqlite3-0` stays, since other packages link it. Compile flags are a Debian-parity floor (FTS3/4/5, RTREE, SESSION, column metadata, `UPDATE`/`DELETE LIMIT`, soundex, secure delete, 250000 variables and the rest) plus `EXPLAIN_COMMENTS` and `BYTECODE_VTAB` — upstream defaults most features OFF, so a naive build would have shipped a newer SQLite with fewer features than the one it replaces. The build fails if the download does not match the pinned SHA-256, or if the installed library is missing any expected compile option. `libreadline8` joins the apt list to keep line editing in the shell at Debian parity. No TCL anywhere, which costs `sqlite3_analyzer` — the one tool that requires it. `docs/adr/0004-sqlite-from-source-in-foundation-image.md` records the decisions. Rebuild is automatic via the foundation-content hash
+
 ## [3.23.0] - 2026-08-17
 
 ### Added
