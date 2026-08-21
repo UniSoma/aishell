@@ -7,6 +7,7 @@
             [aishell.check :as check]))
 
 (def ^:private check-isolation #'check/check-claude-isolation)
+(def ^:private check-harnesses #'check/check-harnesses)
 
 (defn- with-temp-env
   "Run f with util/get-home and util/state-dir redefined to fresh temp dirs.
@@ -88,3 +89,17 @@
                                  {:with-claude false})))]
     (testing "gated on :with-claude — nothing printed when Claude absent"
       (is (str/blank? out)))))
+
+(deftest harness-report-uses-canonical-labels
+  (let [out (with-out-str (check-harnesses {:with-claude true
+                                            :with-codex true :codex-version "1.2.3"
+                                            :with-gitleaks true}))]
+    (testing "every harness is reported, by its canonical label"
+      (is (str/includes? out "Claude Code installed"))
+      (is (str/includes? out "Codex CLI installed (1.2.3)"))
+      (is (str/includes? out "Pi coding agent not installed"))
+      (is (str/includes? out "Gemini CLI not installed"))
+      (is (str/includes? out "OpenCode not installed"))
+      (is (str/includes? out "Gitleaks installed")))
+    (testing "the version-less harness reports no version"
+      (is (not (str/includes? out "Gitleaks installed ("))))))

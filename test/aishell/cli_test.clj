@@ -1,6 +1,11 @@
 (ns aishell.cli-test
   (:require [clojure.test :refer [deftest is testing]]
             [babashka.fs :as fs]
+            [clojure.set :as set]
+            [clojure.string :as str]
+            [aishell.harness :as harness]
+            [aishell.output :as output]
+            [aishell.state :as state]
             [aishell.cli :as cli]))
 
 (deftest resolve-setup-state-plain-setup-is-declarative
@@ -201,3 +206,122 @@
               :status "Up 2 minutes"
               :created "2026-05-07 14:03:00 +0000 UTC"
               :bootstrap :none}])))))
+
+;; --- command surface --------------------------------------------------------
+
+(deftest every-harness-is-a-recognised-subcommand
+  (testing "each registry harness dispatches as its own subcommand"
+    (is (= (set (harness/subcommands))
+           (set/intersection cli/known-subcommands (set (harness/subcommands))))))
+  (testing "recognised subcommands and the suggestion vocabulary are one surface"
+    (is (= output/known-commands cli/known-subcommands))))
+
+(deftest every-harness-passes-its-argv-through
+  (testing "pass-through is exactly the harness subcommands"
+    (is (= (set (harness/subcommands)) cli/pass-through-harnesses))))
+
+;; --- setup flags and labels -------------------------------------------------
+
+(deftest setup-spec-carries-one-flag-per-harness
+  (testing "every harness has a --with-<id> flag"
+    (is (= #{:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-gitleaks}
+           (set/intersection (set (keys cli/setup-spec))
+                             (set (map :state-key harness/registry))))))
+  (testing "versioned flags take an optional =VERSION and so are not coerced"
+    (is (= {:desc "Include Claude Code (optional: =VERSION)"}
+           (:with-claude cli/setup-spec)))
+    (is (= {:desc "Include Pi coding agent (optional: =VERSION)"}
+           (:with-pi cli/setup-spec)))
+    (is (= {:desc "Include Codex CLI (optional: =VERSION)"}
+           (:with-codex cli/setup-spec))))
+  (testing "the version-less gitleaks flag is a plain boolean"
+    (is (= {:coerce :boolean :desc "Include Gitleaks secret scanner"}
+           (:with-gitleaks cli/setup-spec))))
+  (testing "non-harness options are untouched"
+    (is (= {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
+           (:force cli/setup-spec)))))
+
+(deftest setup-help-lists-harness-flags-in-registry-order
+  (testing "harness flags come first, in display order, then the rest"
+    (let [out (with-out-str (cli/print-setup-help))
+          index (fn [flag] (str/index-of out (str "--" flag)))]
+      (is (apply < (map index ["with-claude" "with-opencode" "with-codex"
+                               "with-gemini" "with-pi" "with-gitleaks"
+                               "unisoma" "dir"]))))))
+
+(deftest setup-validation-uses-the-canonical-label
+  (testing "a bad version names the harness by its canonical label"
+    (is (str/starts-with? (cli/setup-validation-error
+                           {:reuse-config? false
+                            :state-map {:with-codex true :codex-version "1.2"}})
+                          "Invalid Codex CLI version format"))
+    (is (str/starts-with? (cli/setup-validation-error
+                           {:reuse-config? false
+                            :state-map {:with-pi true :pi-version "1.2"}})
+                          "Invalid Pi coding agent version format"))
+    (is (str/starts-with? (cli/setup-validation-error
+                           {:reuse-config? false
+                            :state-map {:with-gemini true :gemini-version "1.2"}})
+                          "Invalid Gemini CLI version format"))))
+
+(deftest empty-setup-state-covers-every-harness-key
+  (testing "a boolean per harness, a version per versioned harness, plus unisoma"
+    (is (= {:with-claude false :with-opencode false :with-codex false
+            :with-gemini false :with-pi false :with-gitleaks false
+            :unisoma false
+            :claude-version nil :opencode-version nil :codex-version nil
+            :gemini-version nil :pi-version nil}
+           cli/empty-setup-state))))
+
+(deftest explicit-setup-state-reads-every-harness-flag
+  (testing "flags with versions, bare flags, and the boolean-only harness"
+    (is (= (assoc cli/empty-setup-state
+                  :with-pi true :pi-version "1.2.3"
+                  :with-gitleaks true
+                  :with-gemini true)
+           (cli/explicit-setup-state {:with-pi "1.2.3"
+                                      :with-gemini true
+                                      :with-gitleaks true})))))
+
+(deftest reused-setup-summary-uses-canonical-labels
+  (testing "each enabled harness prints its canonical label and version"
+    (let [out (with-out-str
+                (cli/print-effective-reused-setup
+                 (assoc cli/empty-setup-state
+                        :with-codex true :codex-version "1.2.3"
+                        :with-pi true
+                        :with-gitleaks true
+                        :unisoma true)))]
+      (is (str/includes? out "  Codex CLI: 1.2.3"))
+      (is (str/includes? out "  Pi coding agent: latest"))
+      (is (str/includes? out "  Gitleaks: enabled"))
+      (is (str/includes? out "  UniSoma: enabled"))))
+  (testing "an empty configuration says so"
+    (is (str/includes? (with-out-str (cli/print-effective-reused-setup cli/empty-setup-state))
+                       "No harnesses or optional tools enabled"))))
+
+(deftest enabled-harness-list-names-volume-participants
+  (testing "gitleaks lives outside the volume and is not listed"
+    (is (= "claude,pi"
+           (cli/enabled-harness-list (assoc cli/empty-setup-state
+                                            :with-claude true
+                                            :with-pi true
+                                            :with-gitleaks true))))))
+
+(deftest help-lists-every-harness-command-with-its-label
+  (testing "with no saved state every harness is listed, for discoverability"
+    (let [out (with-redefs [state/read-state (fn [] nil)]
+                (binding [output/CYAN "" output/NC "" output/BOLD ""]
+                  (with-out-str (cli/print-help))))]
+      (is (str/includes? out "claude     Run Claude Code"))
+      (is (str/includes? out "opencode   Run OpenCode"))
+      (is (str/includes? out "codex      Run Codex CLI"))
+      (is (str/includes? out "gemini     Run Gemini CLI"))
+      (is (str/includes? out "pi         Run Pi coding agent"))
+      (is (str/includes? out "gitleaks   Run Gitleaks"))))
+  (testing "only the harnesses in the saved state are listed"
+    (let [out (with-redefs [state/read-state (fn [] {:with-pi true})]
+                (binding [output/CYAN "" output/NC "" output/BOLD ""]
+                  (with-out-str (cli/print-help))))]
+      (is (str/includes? out "pi         Run Pi coding agent"))
+      (is (not (str/includes? out "  claude     Run Claude Code"))))))

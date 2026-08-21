@@ -9,6 +9,7 @@
             [aishell.docker.templates :as templates]
             [aishell.docker.base :as base]
             [aishell.docker.extension :as ext]
+            [aishell.harness :as harness]
             [aishell.docker.naming :as naming]
             [aishell.docker.run :as run]
             [aishell.output :as output]
@@ -85,26 +86,16 @@
 (defn- format-harnesses
   "Format enabled harnesses from state map."
   [state]
-  (let [harness-defs [[:with-claude "Claude Code" :claude-version]
-                      [:with-opencode "OpenCode" :opencode-version]
-                      [:with-codex "Codex CLI" :codex-version]
-                      [:with-gemini "Gemini CLI" :gemini-version]
-                      [:with-pi "Pi" :pi-version]]
-        enabled (filter (fn [[flag _ _]] (get state flag)) harness-defs)]
+  (let [enabled (filter #(get state (:state-key %)) (harness/versioned))]
     (if (empty? enabled)
       ["  None"]
-      (mapv (fn [[_ name version-key]]
-              (let [version (get state version-key)]
-                (str "  " name ": " (or version "latest"))))
+      (mapv (fn [{:keys [label version-key]}]
+              (str "  " label ": " (or (get state version-key) "latest")))
             enabled))))
 
 (def ^:private harness-labels
-  "Map harness state keys to display names."
-  {:with-claude   "Claude Code"
-   :with-opencode "OpenCode"
-   :with-codex    "Codex CLI"
-   :with-gemini   "Gemini CLI"
-   :with-pi       "Pi"})
+  "Map harness state keys to their canonical display labels."
+  (into {} (map (juxt :state-key :label)) harness/registry))
 
 (defn- format-config-paths
   "Format host config paths for enabled harnesses."

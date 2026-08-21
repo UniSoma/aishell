@@ -5,6 +5,8 @@
             [aishell.info :as info]))
 
 (def ^:private parse-packages #'info/parse-packages)
+(def ^:private format-harnesses #'info/format-harnesses)
+(def ^:private harness-labels @#'info/harness-labels)
 (def ^:private parse-sqlite-version #'info/parse-sqlite-version)
 
 (deftest package-list-comes-from-the-main-stage-apt-block
@@ -27,3 +29,17 @@
 (deftest sqlite-version-is-parsed-from-the-pinned-arg
   (is (re-matches #"\d+\.\d+\.\d+"
                   (parse-sqlite-version templates/base-dockerfile))))
+
+(deftest harness-lines-use-canonical-labels
+  (testing "each enabled harness prints its canonical label and version"
+    (is (= ["  Claude Code: 2.0.22" "  Pi coding agent: latest"]
+           (format-harnesses {:with-claude true :claude-version "2.0.22"
+                              :with-pi true}))))
+  (testing "no harnesses reads as None"
+    (is (= ["  None"] (format-harnesses {})))))
+
+(deftest config-path-labels-are-canonical
+  (testing "the state keys that carry host config map to canonical labels"
+    (is (= "Pi coding agent" (get harness-labels :with-pi)))
+    (is (= "Codex CLI" (get harness-labels :with-codex)))
+    (is (= "Gemini CLI" (get harness-labels :with-gemini)))))

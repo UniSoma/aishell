@@ -32,6 +32,8 @@
 ;;   :skip-permissions-flag    flag added when skip-permissions is in effect
 ;;   :alias                    presence = emits a shell alias in the sandbox;
 ;;                             {:always? bool} — false means "only when it has args"
+;;   :setup-flag-desc          help text for the `--with-<id>` flag; absent when
+;;                             "Include <label>" already says it
 ;;   :install                  {:kind :npm|:binary-tarball|:image-baked, …}
 ;;   :config-paths             [{:path [".claude"] :type :dir|:file} …], home-relative
 ;;   :credentials-file-env     env var naming a host credentials file to mount
@@ -125,6 +127,7 @@
     :label "Gitleaks"
     :subcommand "gitleaks"
     :state-key :with-gitleaks
+    :setup-flag-desc "Include Gitleaks secret scanner"
     :interactive? false
     :pre-start? false
     :accepts-config-defaults? false
@@ -140,15 +143,31 @@
 ;; Capability filters
 ;; ---------------------------------------------------------------------------
 
+(defn versioned
+  "Descriptors whose version can be pinned at setup — those with a
+   `:version-key`. The others (gitleaks, baked into the image) take a plain
+   boolean flag."
+  []
+  (filterv :version-key registry))
+
+(defn setup-flag-desc
+  "Help text for a descriptor's `--with-<id>` setup flag. Derived from the
+   canonical label, except where a descriptor spells its own out because the
+   label alone would not say what the tool is."
+  [{:keys [label version-key setup-flag-desc]}]
+  (or setup-flag-desc
+      (str "Include " label (when version-key " (optional: =VERSION)"))))
+
 (defn subcommands
   "Every harness subcommand, in display order."
   []
   (mapv :subcommand registry))
 
 (defn suggestion-terms
-  "Harness contributions to the typo-suggestion vocabulary."
+  "Harness contributions to the typo-suggestion vocabulary. Every harness is
+   dispatchable and so every harness is suggestible — this is `subcommands`."
   []
-  (mapv :subcommand registry))
+  (subcommands))
 
 (defn volume-participants
   "Descriptors installed into the shared harness volume — the harnesses whose

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Typo suggestions now cover every subcommand**: the suggestion vocabulary was a hand-kept list that had fallen behind the dispatch table, so `aishell p1` suggested nothing and neither did a typo near the `a` attach alias. Suggestions and unknown-command detection now read the same command surface — aishell's own subcommands plus every harness in the registry — so a name aishell dispatches is a name it can suggest. Two rules keep the wider vocabulary useful: a candidate matches within three edits but never more edits than it has characters, so the one-letter `a` cannot absorb every piece of garbage input, and ties on edit distance break alphabetically, so the suggestion no longer depends on set iteration order
+
+- **One label per harness across setup, update, info, check and help**: the same tool was "Codex" in a setup summary and "Codex CLI" in `info`, "Pi" in `check` and "Pi coding agent" in a launch error. Every one of those lines now prints the canonical label from the harness registry: Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi coding agent, Gitleaks. Three small output diffs come with it — `aishell update` now lists Gitleaks alongside the harnesses it was already reporting, the `UniSoma: enabled` line moves to the end of a setup summary instead of sitting after OpenCode, and the `gitleaks` line in `aishell --help` reads "Run Gitleaks"
+
 - **`harness_args` for a harness that cannot receive them now warns**: a `harness_args: {gitleaks: [...]}` entry was read, merged, and then quietly discarded when `aishell gitleaks` ran — the run path passed the command-line arguments straight through and never the configured defaults, while `--verbose` cheerfully announced "Applying gitleaks defaults". Gitleaks is not launched with configured defaults (its descriptor says so), so those defaults now produce a warning naming the harness and the ignored arguments, on every run rather than only under `--verbose`. Harnesses that do take defaults keep the verbose note they had
 
 

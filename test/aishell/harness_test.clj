@@ -252,3 +252,18 @@
         (is (vector? v))
         (is (every? string? v))
         (is (= (:subcommand d) (first v)))))))
+
+(deftest versioned-harnesses-are-those-with-a-version-key
+  (testing "gitleaks is image-baked and carries no pinnable version"
+    (is (= [:claude :opencode :codex :gemini :pi]
+           (mapv :id (harness/versioned))))))
+
+(deftest setup-flag-descriptions
+  (testing "a versioned harness advertises its optional =VERSION"
+    (is (= "Include Claude Code (optional: =VERSION)"
+           (harness/setup-flag-desc (harness/descriptor :claude))))
+    (is (= "Include Pi coding agent (optional: =VERSION)"
+           (harness/setup-flag-desc (harness/descriptor :pi)))))
+  (testing "gitleaks describes itself, since 'Gitleaks' alone would not"
+    (is (= "Include Gitleaks secret scanner"
+           (harness/setup-flag-desc (harness/descriptor :gitleaks))))))

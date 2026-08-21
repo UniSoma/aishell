@@ -129,68 +129,73 @@
           (spit config-path (json/generate-string config {:pretty true})))))))
 
 ;; Setup subcommand spec
-;; Note: with-claude/with-opencode don't use :coerce because babashka.cli
-;; returns boolean true for flags without values, which can't be coerced to string.
-;; parse-with-flag handles both boolean true and string values.
+;; Note: the versioned --with-<harness> flags don't use :coerce because
+;; babashka.cli returns boolean true for flags without values, which can't be
+;; coerced to string. parse-with-flag handles both boolean true and string
+;; values. A harness with no version takes :coerce :boolean instead.
+(def harness-setup-spec
+  "The `--with-<harness>` half of the setup spec, one entry per registry row.
+   A versioned harness takes an optional =VERSION and so stays uncoerced;
+   a version-less one is a plain boolean."
+  (into {}
+        (map (fn [{:keys [state-key version-key] :as descriptor}]
+               [state-key (cond-> {:desc (harness/setup-flag-desc descriptor)}
+                            (not version-key) (assoc :coerce :boolean))]))
+        harness/registry))
+
 (def setup-spec
-  {:with-claude   {:desc "Include Claude Code (optional: =VERSION)"}
-   :with-opencode {:desc "Include OpenCode (optional: =VERSION)"}
-   :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
-   :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
-   :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
-   :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
-   :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
+  (merge
+   harness-setup-spec
+   {:unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
    :dir           {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
    :reuse-config  {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
    :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
    :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
-   :help          {:alias :h :coerce :boolean :desc "Show setup help"}})
+    :help          {:alias :h :coerce :boolean :desc "Show setup help"}}))
+
+(def setup-option-order
+  "Setup help order: harness flags in registry display order, then the rest."
+  (into (mapv :state-key harness/registry)
+        [:unisoma :dir :reuse-config :force :verbose :help]))
 
 (def setup-harness-options
-  [{:opt :with-claude :state :with-claude :version :claude-version :label "Claude Code"}
-   {:opt :with-opencode :state :with-opencode :version :opencode-version :label "OpenCode"}
-   {:opt :with-codex :state :with-codex :version :codex-version :label "Codex"}
-   {:opt :with-gemini :state :with-gemini :version :gemini-version :label "Gemini"}
-   {:opt :with-pi :state :with-pi :version :pi-version :label "Pi"}])
+  "Setup options that carry an optional version, with the label their
+   validation errors and summaries print."
+  (mapv (fn [{:keys [state-key version-key label]}]
+          {:opt state-key :state state-key :version version-key :label label})
+        (harness/versioned)))
 
 (def setup-boolean-options
-  [{:opt :with-gitleaks :state :with-gitleaks}
-   {:opt :unisoma :state :unisoma}])
+  "Setup options that are a plain on/off: the version-less harnesses, plus
+   the UniSoma whitelist, which is not a harness at all."
+  (conj (mapv (fn [{:keys [state-key]}] {:opt state-key :state state-key})
+              (remove :version-key harness/registry))
+        {:opt :unisoma :state :unisoma}))
 
 (def empty-setup-state
-  {:with-claude false
-   :with-opencode false
-   :with-codex false
-   :with-gemini false
-   :with-pi false
-   :with-gitleaks false
-   :unisoma false
-   :claude-version nil
-   :opencode-version nil
-   :codex-version nil
-   :gemini-version nil
-   :pi-version nil})
+  "Every setup-state key, all disabled: a boolean per harness, a version per
+   versioned harness, plus the UniSoma flag."
+  (into {:unisoma false}
+        (mapcat (fn [{:keys [state-key version-key]}]
+                  (cond-> [[state-key false]]
+                    version-key (conj [version-key nil]))))
+        harness/registry))
 
 (defn explicit-setup-state
   "Build declarative setup intent from CLI opts only. Omitted flags stay disabled."
   [opts]
-  (let [parsed (into {}
-                     (map (fn [{:keys [opt]}]
-                            [opt (parse-with-flag (get opts opt))])
-                          setup-harness-options))]
-    (assoc empty-setup-state
-           :with-claude (get-in parsed [:with-claude :enabled?])
-           :with-opencode (get-in parsed [:with-opencode :enabled?])
-           :with-codex (get-in parsed [:with-codex :enabled?])
-           :with-gemini (get-in parsed [:with-gemini :enabled?])
-           :with-pi (get-in parsed [:with-pi :enabled?])
-           :with-gitleaks (boolean (:with-gitleaks opts))
-           :unisoma (boolean (:unisoma opts))
-           :claude-version (get-in parsed [:with-claude :version])
-           :opencode-version (get-in parsed [:with-opencode :version])
-           :codex-version (get-in parsed [:with-codex :version])
-           :gemini-version (get-in parsed [:with-gemini :version])
-           :pi-version (get-in parsed [:with-pi :version]))))
+  (as-> empty-setup-state state-map
+    (reduce (fn [state-map {:keys [opt state version]}]
+              (let [parsed (parse-with-flag (get opts opt))]
+                (assoc state-map
+                       state (:enabled? parsed)
+                       version (:version parsed))))
+            state-map
+            setup-harness-options)
+    (reduce (fn [state-map {:keys [opt state]}]
+              (assoc state-map state (boolean (get opts opt))))
+            state-map
+            setup-boolean-options)))
 
 (defn saved-setup-state
   "Extract the persisted setup intent, excluding derived build metadata."
@@ -260,43 +265,35 @@
     (output/error msg)))
 
 (defn enabled-harness-list
-  "Return enabled harness names in label order for volume metadata."
+  "Return the enabled harness volume participants, in display order, as the
+   comma-separated value of the volume's `aishell.harnesses` label."
   [state-map]
-  (->> [{:name "claude" :enabled? (:with-claude state-map)}
-        {:name "opencode" :enabled? (:with-opencode state-map)}
-        {:name "codex" :enabled? (:with-codex state-map)}
-        {:name "gemini" :enabled? (:with-gemini state-map)}
-        {:name "pi" :enabled? (:with-pi state-map)}]
-       (keep (fn [{:keys [name enabled?]}]
-               (when enabled? name)))
+  (->> (harness/volume-participants)
+       (keep (fn [{:keys [subcommand state-key]}]
+               (when (get state-map state-key) subcommand)))
        (str/join ",")))
+
+(defn setup-summary-lines
+  "Lines describing what a setup state enables, in registry display order:
+   a versioned harness shows its pinned version, a version-less one shows
+   `enabled`, and the UniSoma whitelist follows the harnesses."
+  [state-map]
+  (cond-> (vec (keep (fn [{:keys [label state-key version-key]}]
+                       (when (get state-map state-key)
+                         (if version-key
+                           (str "  " label ": " (or (get state-map version-key) "latest"))
+                           (str "  " label ": enabled"))))
+                     harness/registry))
+    (:unisoma state-map) (conj "  UniSoma: enabled")))
 
 (defn print-effective-reused-setup
   "Print the merged effective config when --reuse-config is active."
   [state-map]
   (println "Reusing saved setup configuration:")
-  (when (:with-claude state-map)
-    (println (str "  Claude Code: " (or (:claude-version state-map) "latest"))))
-  (when (:with-opencode state-map)
-    (println (str "  OpenCode: " (or (:opencode-version state-map) "latest"))))
-  (when (:unisoma state-map)
-    (println "  UniSoma: enabled"))
-  (when (:with-codex state-map)
-    (println (str "  Codex: " (or (:codex-version state-map) "latest"))))
-  (when (:with-gemini state-map)
-    (println (str "  Gemini: " (or (:gemini-version state-map) "latest"))))
-  (when (:with-pi state-map)
-    (println (str "  Pi: " (or (:pi-version state-map) "latest"))))
-  (when (:with-gitleaks state-map)
-    (println "  Gitleaks: enabled"))
-  (when-not (or (:with-claude state-map)
-                (:with-opencode state-map)
-                (:with-codex state-map)
-                (:with-gemini state-map)
-                (:with-pi state-map)
-                (:with-gitleaks state-map)
-                (:unisoma state-map))
-    (println "  No harnesses or optional tools enabled")))
+  (let [lines (setup-summary-lines state-map)]
+    (if (seq lines)
+      (run! println lines)
+      (println "  No harnesses or optional tools enabled"))))
 
 (defn installed-harnesses
   "Return set of installed harness names based on state.
@@ -304,15 +301,12 @@
    to aid discoverability."
   []
   (if-let [state (state/read-state)]
-    (cond-> #{}
-      (:with-claude state) (conj "claude")
-      (:with-opencode state) (conj "opencode")
-      (:with-codex state) (conj "codex")
-      (:with-gemini state) (conj "gemini")
-      (:with-pi state) (conj "pi")
-      (:with-gitleaks state false) (conj "gitleaks"))
+    (into #{}
+          (comp (filter #(get state (:state-key %)))
+                (map :subcommand))
+          harness/registry)
     ;; No state = no build yet, show all for discoverability
-    #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))
+    (set (harness/subcommands))))
 
 (defn print-help []
   (println (str output/BOLD "Usage:" output/NC " aishell [OPTIONS] COMMAND [ARGS...]"))
@@ -332,18 +326,11 @@
   (println (str "  " output/CYAN "upgrade" output/NC "    Upgrade aishell to latest version"))
   ;; Conditionally show harness commands based on installation
   (let [installed (installed-harnesses)]
-    (when (contains? installed "claude")
-      (println (str "  " output/CYAN "claude" output/NC "     Run Claude Code")))
-    (when (contains? installed "opencode")
-      (println (str "  " output/CYAN "opencode" output/NC "   Run OpenCode")))
-    (when (contains? installed "codex")
-      (println (str "  " output/CYAN "codex" output/NC "      Run Codex CLI")))
-    (when (contains? installed "gemini")
-      (println (str "  " output/CYAN "gemini" output/NC "     Run Gemini CLI")))
-    (when (contains? installed "pi")
-      (println (str "  " output/CYAN "pi" output/NC "         Run Pi coding agent")))
-    (when (contains? installed "gitleaks")
-      (println (str "  " output/CYAN "gitleaks" output/NC "   Run Gitleaks secret scanner"))))
+    (doseq [{:keys [subcommand label]} harness/registry
+            :when (contains? installed subcommand)]
+      (println (str "  " output/CYAN subcommand output/NC
+                    (str/join (repeat (- 11 (count subcommand)) \space))
+                    "Run " label))))
   (println (str "  " output/CYAN "(none)" output/NC "     Enter interactive shell"))
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
@@ -366,7 +353,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-gitleaks :unisoma :dir :reuse-config :force :verbose :help]}))
+                             :order setup-option-order}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -561,18 +548,7 @@
 
       ;; Show what we're updating
       (println "Updating with preserved configuration...")
-      (when (:with-claude state)
-        (println (str "  Claude Code: " (or (:claude-version state) "latest"))))
-      (when (:with-opencode state)
-        (println (str "  OpenCode: " (or (:opencode-version state) "latest"))))
-      (when (:unisoma state)
-        (println "  UniSoma: enabled"))
-      (when (:with-codex state)
-        (println (str "  Codex: " (or (:codex-version state) "latest"))))
-      (when (:with-gemini state)
-        (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
-      (when (:with-pi state)
-        (println (str "  Pi: " (or (:pi-version state) "latest"))))
+      (run! println (setup-summary-lines state))
 
       ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
@@ -814,10 +790,10 @@
   #{"ps"})
 
 (def known-subcommands
-  "All recognised aishell subcommands. Used for unknown_command detection."
-  #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a"
-    "vscode" "upgrade" "info" "claude" "opencode" "codex" "gemini"
-    "pi" "gitleaks"})
+  "All recognised aishell subcommands. Used for unknown_command detection.
+   The same surface typo suggestions draw from, so a name aishell dispatches
+   is a name it can suggest."
+  output/known-commands)
 
 (defn classify-json-command
   "Classify the cleaned argv (after --json stripping) for JSON-mode dispatch.
@@ -861,7 +837,7 @@
 
 (def pass-through-harnesses
   "Harness subcommands whose argv (including --json) is forwarded verbatim."
-  #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"})
+  (set (harness/subcommands)))
 
 (defn- json-error-message [args]
   (if (empty? args)
@@ -875,8 +851,10 @@
 
         ;; Extract --name flag (--name VALUE format) for run-mode commands
         ;; attach and other commands parse their own --name flag
-        known-subcommands #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a" "vscode" "upgrade" "info"}
-        should-extract-name? (not (contains? known-subcommands (first clean-args)))
+        ;; Deliberately the narrow set: harnesses are absent because a harness
+        ;; subcommand is exactly the case where --name belongs to aishell and
+        ;; not to the harness, and where the update check should still run.
+        should-extract-name? (not (contains? output/non-harness-commands (first clean-args)))
         container-name-override (when should-extract-name?
                                   (let [idx (.indexOf (vec clean-args) "--name")]
                                     (when (and (>= idx 0) (< (inc idx) (count clean-args)))
@@ -891,7 +869,7 @@
     ;; (setup -v, update -v) it means verbose. Only skip the update check when
     ;; there's no subcommand — i.e. the args will route to handle-default.
     (let [first-arg (first clean-args)
-          has-subcommand? (contains? known-subcommands first-arg)
+          has-subcommand? (contains? output/non-harness-commands first-arg)
           skip? (or (some #{"--help" "-h"} clean-args)
                     (and (not has-subcommand?)
                          (some #{"-v" "--version"} clean-args))

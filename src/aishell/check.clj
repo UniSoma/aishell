@@ -10,6 +10,7 @@
             [aishell.docker.naming :as naming]
             [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
+            [aishell.harness :as harness]
             [aishell.config :as config]
             [aishell.state :as state]
             [aishell.validation :as validation]
@@ -93,17 +94,11 @@
 (defn- check-harnesses
   "Report which harnesses are installed."
   [state]
-  (let [harnesses [["Claude Code" :with-claude :claude-version]
-                   ["OpenCode" :with-opencode :opencode-version]
-                   ["Codex CLI" :with-codex :codex-version]
-                   ["Gemini CLI" :with-gemini :gemini-version]
-                   ["Pi" :with-pi :pi-version]
-                   ["Gitleaks" :with-gitleaks nil]]]
-    (doseq [[name key version-key] harnesses]
-      (if (get state key)
-        (let [ver (when version-key (get state version-key))]
-          (print-status :ok (str name " installed" (when ver (str " (" ver ")")))))
-        (print-status :warn (str name " not installed"))))))
+  (doseq [{:keys [label state-key version-key]} harness/registry]
+    (if (get state state-key)
+      (let [ver (when version-key (get state version-key))]
+        (print-status :ok (str label " installed" (when ver (str " (" ver ")")))))
+      (print-status :warn (str label " not installed")))))
 
 (defn- check-extension
   "Check project extension Dockerfile status."

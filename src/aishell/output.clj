@@ -1,7 +1,8 @@
 (ns aishell.output
   (:require [babashka.fs :as fs]
             [cheshire.core :as json]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [aishell.harness :as harness]))
 
 (def ^:dynamic *verbose* false)
 (def ^:dynamic *json-output* false)
@@ -88,10 +89,19 @@
 (def ^:dynamic BOLD (if (colors-enabled?) "\u001b[1m" ""))
 (def ^:dynamic NC (if (colors-enabled?) "\u001b[0m" ""))
 
-;; Known commands for suggestion matching
-(def known-commands #{"setup" "update" "check" "exec" "attach" "ps" "volumes"
-                      "claude" "opencode" "codex" "gemini" "gitleaks" "vscode"
-                      "upgrade" "info"})
+(def non-harness-commands
+  "aishell's own subcommands — everything that is not a harness launch.
+   `a` is the attach alias; `vscode` is a command, not a Harness, so it has
+   no registry row. Dispatch reads this set directly where the narrower
+   \"not a harness\" meaning is what it needs."
+  #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a"
+    "vscode" "upgrade" "info"})
+
+(def known-commands
+  "aishell's full command surface: its own subcommands plus every harness
+   subcommand from the registry. Backs typo suggestions and unknown-command
+   detection, which recognise exactly the same names."
+  (into non-harness-commands (harness/subcommands)))
 
 (defn- levenshtein-distance
   "Calculate edit distance between two strings."
@@ -119,13 +129,18 @@
       (last @d))))
 
 (defn suggest-command
-  "Suggest a similar command based on input."
+  "Suggest a similar command based on input.
+
+   A candidate matches within three edits, but never more edits than it has
+   characters, so short names like the `a` attach alias cannot absorb every
+   piece of garbage input. Ties on distance break alphabetically, so the
+   suggestion never depends on set iteration order."
   [input]
   (let [input (str/lower-case input)
         candidates (->> known-commands
                         (map (fn [cmd] [cmd (levenshtein-distance input cmd)]))
-                        (filter (fn [[_ dist]] (<= dist 3)))  ;; Max 3 edits
-                        (sort-by second))]
+                        (filter (fn [[cmd dist]] (<= dist (min 3 (count cmd)))))
+                        (sort-by (juxt second first)))]
     (when (seq candidates)
       (first (first candidates)))))
 

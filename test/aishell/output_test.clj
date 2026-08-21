@@ -1,5 +1,6 @@
 (ns aishell.output-test
   (:require [clojure.test :refer [deftest is testing]]
+            [clojure.set :as set]
             [aishell.output :as output]))
 
 (deftest error-json-payload-shape
@@ -50,3 +51,45 @@
                   "{\"message\":\"--json is not supported for this command\","
                   "\"code\":\"unsupported_json\"}}\n")
              stderr)))))
+
+;; --- typo suggestions -------------------------------------------------------
+
+(deftest suggestion-vocabulary-covers-every-subcommand
+  (testing "every harness subcommand, including pi, can be suggested"
+    (is (= #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}
+           (set/intersection output/known-commands
+                             #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))))
+  (testing "the attach alias 'a' is part of the vocabulary"
+    (is (contains? output/known-commands "a")))
+  (testing "the vocabulary is exactly aishell's command surface"
+    (is (= #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a"
+             "vscode" "upgrade" "info"
+             "claude" "opencode" "codex" "gemini" "pi" "gitleaks"}
+           output/known-commands))))
+
+(deftest suggests-the-nearest-command
+  (testing "a typo near a harness suggests that harness"
+    (is (= "pi" (output/suggest-command "p1")))
+    (is (= "claude" (output/suggest-command "clade")))
+    (is (= "gitleaks" (output/suggest-command "gitleak"))))
+  (testing "a typo near a plain subcommand suggests it"
+    (is (= "attach" (output/suggest-command "attch")))
+    (is (= "volumes" (output/suggest-command "volume")))
+    (is (= "setup" (output/suggest-command "setpu")))))
+
+(deftest suggestions-are-case-insensitive
+  (testing "input is lower-cased before matching"
+    (is (= "codex" (output/suggest-command "CODEX")))))
+
+(deftest ties-break-alphabetically
+  (testing "'p1' is one edit from both pi and ps; the alphabetically first wins"
+    (is (= "pi" (output/suggest-command "p1"))))
+  (testing "the winner does not depend on set iteration order"
+    (is (= (output/suggest-command "p1") (output/suggest-command "p1")))))
+
+(deftest short-commands-only-match-close-input
+  (testing "the one-letter attach alias is suggested only for near-identical input"
+    (is (= "a" (output/suggest-command "a")))
+    (is (not= "a" (output/suggest-command "xyz"))))
+  (testing "distant garbage gets no suggestion"
+    (is (nil? (output/suggest-command "completelyunrelated")))))
