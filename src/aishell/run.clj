@@ -12,6 +12,7 @@
             [aishell.docker.extension :as ext]
             [aishell.docker.volume :as vol]
             [aishell.config :as config]
+            [aishell.harness :as harness]
             [aishell.state :as state]
             [aishell.output :as output]
             [aishell.validation :as validation]
@@ -20,20 +21,29 @@
             [aishell.gitleaks.scan-state :as scan-state]
             [aishell.pi :as pi]))
 
+(defn- harness-for
+  "The registry descriptor for a run command name, or nil in shell mode."
+  [cmd]
+  (some-> cmd keyword harness/descriptor))
+
 (defn- verify-harness-available
-  "Check that harness was included in setup. Exit with error if not."
-  [harness-name state-key state]
+  "Check that the harness was included in setup. Exit with error if not."
+  [{:keys [label subcommand state-key]} state]
   (when-not (get state state-key)
     (output/error
-     (str (case harness-name
-            "claude" "Claude Code"
-            "opencode" "OpenCode"
-            "codex" "Codex CLI"
-            "gemini" "Gemini CLI"
-            "pi" "Pi coding agent"
-            "gitleaks" "Gitleaks")
+     (str label
           " not installed. Run: aishell setup --with-"
-          harness-name))))
+          subcommand))))
+
+(defn- container-command
+  "Launch argv for `cmd` inside the container. Harness commands derive their
+   argv from the registry's interpreter; anything else opens a shell."
+  [cmd default-args cli-args skip-perms?]
+  (if-let [descriptor (harness-for cmd)]
+    (harness/launch-argv descriptor {:skip-permissions? skip-perms?
+                                     :default-args default-args
+                                     :cli-args cli-args})
+    ["/bin/bash"]))
 
 (defn- check-dockerfile-stale
   "Check if any baked-in foundation content (Dockerfile or any COPY'd
@@ -138,14 +148,8 @@
           _ (pi/ensure-pi-packages! cfg state harness-volume-name)]
 
       ;; Verify harness if requested
-      (case cmd
-        "claude" (verify-harness-available "claude" :with-claude state)
-        "opencode" (verify-harness-available "opencode" :with-opencode state)
-        "codex" (verify-harness-available "codex" :with-codex state)
-        "gemini" (verify-harness-available "gemini" :with-gemini state)
-        "pi" (verify-harness-available "pi" :with-pi state)
-        "gitleaks" (verify-harness-available "gitleaks" :with-gitleaks state)
-        nil)
+      (when-let [descriptor (harness-for cmd)]
+        (verify-harness-available descriptor state))
 
       ;; Resolve final image (may auto-build extension)
       (let [image-tag (resolve-image-tag base-tag project-dir false)
@@ -157,9 +161,6 @@
 
             ;; Ensure defaults is a vector
             defaults-vec (vec (or defaults []))
-
-            ;; Merge: defaults first, then CLI args (CLI can override by position)
-            merged-args (vec (concat defaults-vec harness-args))
 
             ;; Verbose output (when we add --verbose support)
             _ (when cfg
@@ -208,37 +209,17 @@
                           :state state
                           :git-identity git-id
                           :skip-pre-start (:skip-pre-start opts)
-                          :skip-interactive (= cmd "gitleaks")
+                          :skip-interactive (if-let [descriptor (harness-for cmd)]
+                                              (not (:interactive? descriptor))
+                                              false)
                           :container-name container-name-str
                           :harness-volume-name harness-volume-name})
 
             ;; Determine command to run in container
-            skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
+            skip-perms? (harness/skip-permissions?
+                         (System/getenv harness/skip-permissions-env-var))
 
-            container-cmd (case cmd
-                            "claude"
-                            (into (if skip-perms?
-                                    ["claude" "--dangerously-skip-permissions"]
-                                    ["claude"])
-                                  merged-args)
-
-                            "opencode"
-                            (into ["opencode"] merged-args)
-
-                            "codex"
-                            (into ["codex" "-c" "check_for_update_on_startup=false"] merged-args)
-
-                            "gemini"
-                            (into ["gemini"] merged-args)
-
-                            "pi"
-                            (into ["pi"] merged-args)
-
-                            "gitleaks"
-                            (into ["gitleaks"] harness-args)
-
-                            ;; Default: bash shell
-                            ["/bin/bash"])]
+            container-cmd (container-command cmd defaults-vec harness-args skip-perms?)]
 
         ;; For gitleaks, use shell instead of exec so we can update timestamp after
         ;; :continue true prevents p/shell from throwing on non-zero exit

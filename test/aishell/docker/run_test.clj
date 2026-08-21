@@ -5,7 +5,9 @@
             [clojure.string :as str]
             [aishell.util :as util]
             [aishell.docker.naming :as naming]
-            [aishell.docker.run :as run]))
+            [aishell.docker.run :as run]
+            [aishell.harness :as harness]
+            [aishell.run]))
 
 (def ^:private build-mounts #'run/build-harness-config-mounts)
 
@@ -322,3 +324,85 @@
       (finally
         (fs/delete-tree home)
         (fs/delete-tree tmp-state)))))
+
+;; ---------------------------------------------------------------------------
+;; Harness alias env args — the in-sandbox shell aliases
+;;
+;; Criterion: the alias argv and the container launch argv come from the same
+;; interpreter and are byte-identical for the same inputs. Both sides below are
+;; production code paths (docker.run's alias builder vs aishell.run's launch
+;; argv), not two calls into the interpreter.
+;; ---------------------------------------------------------------------------
+
+(def ^:private alias-env-args #'run/build-harness-alias-env-args)
+(def ^:private container-command #'aishell.run/container-command)
+
+(def ^:private all-enabled
+  {:with-claude true :with-opencode true :with-codex true
+   :with-gemini true :with-pi true :with-gitleaks true})
+
+(defn- alias-value
+  "The value of HARNESS_ALIAS_<NAME> in a -e flag vector, or nil when absent."
+  [env-args harness-name]
+  (let [prefix (str "HARNESS_ALIAS_" (str/upper-case harness-name) "=")]
+    (some #(when (str/starts-with? % prefix) (subs % (count prefix))) env-args)))
+
+(defn- alias-names [env-args]
+  (->> env-args
+       (keep #(second (re-find #"^HARNESS_ALIAS_([A-Z]+)=" %)))
+       (mapv str/lower-case)))
+
+(def ^:private every-harness-args
+  {:claude ["--model" "opus"]
+   :opencode ["-m" "gpt"]
+   :codex ["--full-auto"]
+   :gemini ["-d"]
+   :pi ["-y"]})
+
+(deftest alias-argv-is-byte-identical-to-container-launch-argv
+  (doseq [skip? [true false]
+          [label harness-args] [["no config defaults" {}]
+                                ["config defaults for every harness" every-harness-args]]]
+    (testing (str "skip-permissions " skip? " with " label)
+      (with-redefs [harness/skip-permissions? (constantly skip?)]
+        (let [env-args (alias-env-args {:harness_args harness-args} all-enabled)
+              emitted (alias-names env-args)]
+          (is (seq emitted))
+          (doseq [harness-name emitted]
+            (is (= (str/join " " (container-command harness-name
+                                                    (get harness-args (keyword harness-name) [])
+                                                    []
+                                                    skip?))
+                   (alias-value env-args harness-name))
+                (str harness-name " alias must match its launch argv"))))))))
+
+(deftest alias-emission-rules-come-from-descriptor-capabilities
+  (with-redefs [harness/skip-permissions? (constantly true)]
+    (testing "claude and codex always emit; the rest only when they carry args"
+      (is (= ["claude" "codex"] (alias-names (alias-env-args {} all-enabled)))))
+    (testing "config defaults make the remaining harnesses emit"
+      (is (= ["claude" "opencode" "codex" "gemini" "pi"]
+             (alias-names (alias-env-args {:harness_args every-harness-args} all-enabled)))))
+    (testing "gitleaks has no alias even with config defaults"
+      (is (nil? (alias-value (alias-env-args {:harness_args {:gitleaks ["--redact"]}} all-enabled)
+                             "gitleaks"))))
+    (testing "a disabled harness emits nothing"
+      (is (empty? (alias-names (alias-env-args {:harness_args every-harness-args} {})))))))
+
+(deftest skip-permissions-affects-both-paths-identically
+  (testing "claude's alias carries the flag exactly when the launch argv does"
+    (doseq [skip? [true false]]
+      (with-redefs [harness/skip-permissions? (constantly skip?)]
+        (let [v (alias-value (alias-env-args {} all-enabled) "claude")]
+          (is (= skip? (str/includes? v "--dangerously-skip-permissions")))
+          (is (= (str/join " " (container-command "claude" [] [] skip?)) v)))))))
+
+(deftest shell-mode-has-no-harness-descriptor
+  (testing "no harness command falls back to bash"
+    (is (= ["/bin/bash"] (container-command nil [] [] true)))
+    (is (= ["/bin/bash"] (container-command "bash" [] [] true)))))
+
+(deftest gitleaks-launch-drops-config-defaults
+  (testing "gitleaks takes CLI args only, per its capability field"
+    (is (= ["gitleaks" "dir" "."]
+           (container-command "gitleaks" ["--redact"] ["dir" "."] true)))))

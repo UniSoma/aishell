@@ -13,6 +13,7 @@
             [aishell.docker.templates :as templates]
             [aishell.docker.volume :as vol]
             [aishell.output :as output]
+            [aishell.harness :as harness]
             [aishell.run :as run]
             [aishell.check :as check]
             [aishell.state :as state]
@@ -903,148 +904,142 @@
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
-    ;; Handle pass-through commands before standard dispatch
-    ;; This ensures all args (including --help, --version) go to the harness
-    (case (first clean-args)
-      "info" (info/run-info (vec (rest clean-args)))
-      "check" (check/run-check)
-      "exec" (run/run-exec (vec (rest clean-args)))
-      "ps" (handle-ps nil)
-      "volumes" (handle-volumes (vec (rest clean-args)))
-      ("attach" "a") (let [rest-args (vec (rest clean-args))]
-                       (cond
-                         (some #{"-h" "--help"} rest-args)
-                         (do
-                           (println (str output/BOLD "Usage:" output/NC " aishell attach [name] [-- <command> [args...]]"))
-                           (println)
-                           (println "Attach to a running container (opens bash shell).")
-                           (println "The name is optional: with exactly one running container, it is used.")
-                           (println "If a command follows '--', it runs first; on exit you drop into the container shell.")
-                           (println)
-                           (println (str output/BOLD "Options:" output/NC))
-                           (println "  -h, --help    Show this help")
-                           (println)
-                           (println (str output/BOLD "Examples:" output/NC))
-                           (println (str "  " output/CYAN "aishell attach" output/NC))
-                           (println "      Open bash shell in the only running container")
-                           (println)
-                           (println (str "  " output/CYAN "aishell attach claude" output/NC))
-                           (println "      Open bash shell in the 'claude' container")
-                           (println)
-                           (println (str "  " output/CYAN "aishell attach shell" output/NC))
-                           (println "      Open bash shell in the 'shell' container")
-                           (println)
-                           (println (str "  " output/CYAN "aishell attach session -- btm" output/NC))
-                           (println "      Run 'btm' first; on exit, drop into the container shell")
-                           (println)
-                           (println (str "  " output/CYAN "aishell attach session -- bash -c \"btm | tee log\"" output/NC))
-                           (println "      Use bash -c to opt into shell pipelines")
-                           (println)
-                           (println (str output/BOLD "Notes:" output/NC))
-                           (println "  Use 'aishell ps' to list running containers.")
-                           (println "  Without a name, attach errors if zero or several containers are running.")
-                           (println "  The container must be running. Start one in another terminal: aishell <harness>"))
+    ;; Harness pass-through: a harness subcommand launches its container with
+    ;; every remaining arg (including --help, --version) forwarded verbatim.
+    ;; Launch shape — such as whether the project's pre_start hook runs — is
+    ;; read from the harness descriptor, not spelled per harness here.
+    (if-let [descriptor (some-> (first clean-args) keyword harness/descriptor)]
+      (run/run-container (:subcommand descriptor) (vec (rest clean-args))
+                         (cond-> {:unsafe unsafe? :container-name container-name-override}
+                           (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))
+      (case (first clean-args)
+        "info" (info/run-info (vec (rest clean-args)))
+        "check" (check/run-check)
+        "exec" (run/run-exec (vec (rest clean-args)))
+        "ps" (handle-ps nil)
+        "volumes" (handle-volumes (vec (rest clean-args)))
+        ("attach" "a") (let [rest-args (vec (rest clean-args))]
+                         (cond
+                           (some #{"-h" "--help"} rest-args)
+                           (do
+                             (println (str output/BOLD "Usage:" output/NC " aishell attach [name] [-- <command> [args...]]"))
+                             (println)
+                             (println "Attach to a running container (opens bash shell).")
+                             (println "The name is optional: with exactly one running container, it is used.")
+                             (println "If a command follows '--', it runs first; on exit you drop into the container shell.")
+                             (println)
+                             (println (str output/BOLD "Options:" output/NC))
+                             (println "  -h, --help    Show this help")
+                             (println)
+                             (println (str output/BOLD "Examples:" output/NC))
+                             (println (str "  " output/CYAN "aishell attach" output/NC))
+                             (println "      Open bash shell in the only running container")
+                             (println)
+                             (println (str "  " output/CYAN "aishell attach claude" output/NC))
+                             (println "      Open bash shell in the 'claude' container")
+                             (println)
+                             (println (str "  " output/CYAN "aishell attach shell" output/NC))
+                             (println "      Open bash shell in the 'shell' container")
+                             (println)
+                             (println (str "  " output/CYAN "aishell attach session -- btm" output/NC))
+                             (println "      Run 'btm' first; on exit, drop into the container shell")
+                             (println)
+                             (println (str "  " output/CYAN "aishell attach session -- bash -c \"btm | tee log\"" output/NC))
+                             (println "      Use bash -c to opt into shell pipelines")
+                             (println)
+                             (println (str output/BOLD "Notes:" output/NC))
+                             (println "  Use 'aishell ps' to list running containers.")
+                             (println "  Without a name, attach errors if zero or several containers are running.")
+                             (println "  The container must be running. Start one in another terminal: aishell <harness>"))
 
-                         :else
-                         (let [parsed (attach-parse/parse-attach-args rest-args)]
-                           (if-let [err (:error parsed)]
-                             (output/error err)
-                             (attach/attach-to-container (:name parsed)
-                                                         :command-argv (:command-argv parsed))))))
-      "vscode" (let [rest-args (vec (rest clean-args))
-                     own-flags #{"--detach" "--stop" "-h" "--help"}
-                     code-args (vec (remove own-flags rest-args))]
-                 (cond
-                   (some #{"-h" "--help"} rest-args)
-                   (do
-                     (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS] [-- CODE_ARGS...]"))
-                     (println)
-                     (println "Open VSCode attached to the aishell container as the developer user.")
-                     (println (str output/YELLOW "(Experimental — API subject to change)" output/NC))
-                     (println)
-                     (println (str output/BOLD "Options:" output/NC))
-                     (println "  -h, --help      Show this help")
-                     (println "      --detach    Run in background (don't wait for VSCode to close)")
-                     (println "      --stop      Stop a detached vscode container")
-                     (println)
-                     (println (str output/BOLD "Extra arguments:" output/NC))
-                     (println "  Any arguments not listed above are passed through to the 'code' CLI.")
-                     (println (str "  Default args can be set via harness_args.vscode in "
-                                   (util/resolve-project-config-dir (System/getProperty "user.dir"))
-                                   "/config.yaml."))
-                     (println)
-                     (println (str output/BOLD "What this does:" output/NC))
-                     (println "  1. Syncs host VSCode extensions to container config")
-                     (println "  2. Starts the container if not already running")
-                     (println "  3. Opens VSCode attached to the container")
-                     (println "  4. Waits for VSCode to close, then stops the container")
-                     (println)
-                     (println (str output/BOLD "Note:" output/NC))
-                     (println "  Your locally installed VSCode extensions are automatically")
-                     (println "  made available inside the container.")
-                     (println)
-                     (println (str output/BOLD "Prerequisites:" output/NC))
-                     (println "  - VSCode with 'code' CLI on PATH")
-                     (println "  - Dev Containers extension installed in VSCode")
-                     (println "  - aishell setup completed")
-                     (println)
-                     (println (str output/BOLD "Examples:" output/NC))
-                     (println (str "  " output/CYAN "aishell vscode" output/NC "                         Open VSCode (blocks until closed)"))
-                     (println (str "  " output/CYAN "aishell vscode --detach" output/NC "                Run in background"))
-                     (println (str "  " output/CYAN "aishell vscode --stop" output/NC "                  Stop a detached container"))
-                     (println (str "  " output/CYAN "aishell vscode --disable-gpu" output/NC "           Pass --disable-gpu to code"))
-                     (println (str "  " output/CYAN "aishell vscode --detach --profile Work" output/NC " Detach with a code profile")))
+                           :else
+                           (let [parsed (attach-parse/parse-attach-args rest-args)]
+                             (if-let [err (:error parsed)]
+                               (output/error err)
+                               (attach/attach-to-container (:name parsed)
+                                                           :command-argv (:command-argv parsed))))))
+        "vscode" (let [rest-args (vec (rest clean-args))
+                       own-flags #{"--detach" "--stop" "-h" "--help"}
+                       code-args (vec (remove own-flags rest-args))]
+                   (cond
+                     (some #{"-h" "--help"} rest-args)
+                     (do
+                       (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS] [-- CODE_ARGS...]"))
+                       (println)
+                       (println "Open VSCode attached to the aishell container as the developer user.")
+                       (println (str output/YELLOW "(Experimental — API subject to change)" output/NC))
+                       (println)
+                       (println (str output/BOLD "Options:" output/NC))
+                       (println "  -h, --help      Show this help")
+                       (println "      --detach    Run in background (don't wait for VSCode to close)")
+                       (println "      --stop      Stop a detached vscode container")
+                       (println)
+                       (println (str output/BOLD "Extra arguments:" output/NC))
+                       (println "  Any arguments not listed above are passed through to the 'code' CLI.")
+                       (println (str "  Default args can be set via harness_args.vscode in "
+                                     (util/resolve-project-config-dir (System/getProperty "user.dir"))
+                                     "/config.yaml."))
+                       (println)
+                       (println (str output/BOLD "What this does:" output/NC))
+                       (println "  1. Syncs host VSCode extensions to container config")
+                       (println "  2. Starts the container if not already running")
+                       (println "  3. Opens VSCode attached to the container")
+                       (println "  4. Waits for VSCode to close, then stops the container")
+                       (println)
+                       (println (str output/BOLD "Note:" output/NC))
+                       (println "  Your locally installed VSCode extensions are automatically")
+                       (println "  made available inside the container.")
+                       (println)
+                       (println (str output/BOLD "Prerequisites:" output/NC))
+                       (println "  - VSCode with 'code' CLI on PATH")
+                       (println "  - Dev Containers extension installed in VSCode")
+                       (println "  - aishell setup completed")
+                       (println)
+                       (println (str output/BOLD "Examples:" output/NC))
+                       (println (str "  " output/CYAN "aishell vscode" output/NC "                         Open VSCode (blocks until closed)"))
+                       (println (str "  " output/CYAN "aishell vscode --detach" output/NC "                Run in background"))
+                       (println (str "  " output/CYAN "aishell vscode --stop" output/NC "                  Stop a detached container"))
+                       (println (str "  " output/CYAN "aishell vscode --disable-gpu" output/NC "           Pass --disable-gpu to code"))
+                       (println (str "  " output/CYAN "aishell vscode --detach --profile Work" output/NC " Detach with a code profile")))
 
-                   (some #{"--stop"} rest-args)
-                   (vscode/stop-vscode)
+                     (some #{"--stop"} rest-args)
+                     (vscode/stop-vscode)
 
-                   :else
-                   (let [detach? (some #{"--detach"} rest-args)]
-                     (vscode/open-vscode {:detach? (boolean detach?)
-                                          :code-args code-args}))))
-      "upgrade" (let [rest-args (vec (rest clean-args))]
-                  (cond
-                    (some #{"-h" "--help"} rest-args)
-                    (do
-                      (println (str output/BOLD "Usage:" output/NC " aishell upgrade [VERSION]"))
-                      (println)
-                      (println "Upgrade aishell to the latest version (or a specific version).")
-                      (println)
-                      (println (str output/BOLD "Arguments:" output/NC))
-                      (println "  VERSION    Target version (e.g., 3.4.0). Defaults to latest.")
-                      (println)
-                      (println (str output/BOLD "Options:" output/NC))
-                      (println "  -h, --help    Show this help")
-                      (println)
-                      (println (str output/BOLD "Examples:" output/NC))
-                      (println (str "  " output/CYAN "aishell upgrade" output/NC "          Upgrade to latest version"))
-                      (println (str "  " output/CYAN "aishell upgrade 3.4.0" output/NC "   Upgrade to specific version"))
-                      (println (str "  " output/CYAN "aishell upgrade 3.2.0" output/NC "   Downgrade to older version")))
+                     :else
+                     (let [detach? (some #{"--detach"} rest-args)]
+                       (vscode/open-vscode {:detach? (boolean detach?)
+                                            :code-args code-args}))))
+        "upgrade" (let [rest-args (vec (rest clean-args))]
+                    (cond
+                      (some #{"-h" "--help"} rest-args)
+                      (do
+                        (println (str output/BOLD "Usage:" output/NC " aishell upgrade [VERSION]"))
+                        (println)
+                        (println "Upgrade aishell to the latest version (or a specific version).")
+                        (println)
+                        (println (str output/BOLD "Arguments:" output/NC))
+                        (println "  VERSION    Target version (e.g., 3.4.0). Defaults to latest.")
+                        (println)
+                        (println (str output/BOLD "Options:" output/NC))
+                        (println "  -h, --help    Show this help")
+                        (println)
+                        (println (str output/BOLD "Examples:" output/NC))
+                        (println (str "  " output/CYAN "aishell upgrade" output/NC "          Upgrade to latest version"))
+                        (println (str "  " output/CYAN "aishell upgrade 3.4.0" output/NC "   Upgrade to specific version"))
+                        (println (str "  " output/CYAN "aishell upgrade 3.2.0" output/NC "   Downgrade to older version")))
 
-                    :else
-                    (let [target-version (first rest-args)]
-                      (when target-version
-                        (validate-version target-version "aishell"))
-                      (upgrade/do-upgrade version target-version))))
-      "claude" (run/run-container "claude" (vec (rest clean-args))
-                                  {:unsafe unsafe? :container-name container-name-override})
-      "opencode" (run/run-container "opencode" (vec (rest clean-args))
-                                    {:unsafe unsafe? :container-name container-name-override})
-      "codex" (run/run-container "codex" (vec (rest clean-args))
-                                 {:unsafe unsafe? :container-name container-name-override})
-      "gemini" (run/run-container "gemini" (vec (rest clean-args))
-                                  {:unsafe unsafe? :container-name container-name-override})
-      "pi" (run/run-container "pi" (vec (rest clean-args))
-                              {:unsafe unsafe? :container-name container-name-override})
-      "gitleaks" (run/run-container "gitleaks" (vec (rest clean-args))
-                                    {:unsafe unsafe? :container-name container-name-override :skip-pre-start true})
-      ;; Standard dispatch for other commands (setup, update, help)
-      (if (or unsafe? container-name-override)
-        ;; --unsafe or --name with no harness command -> shell mode
-        (run/run-container nil [] {:unsafe (boolean unsafe?) :container-name container-name-override})
-        ;; Normal dispatch
-        (cli/dispatch dispatch-table args {:error-fn handle-error
-                                           :restrict true})))))
+                      :else
+                      (let [target-version (first rest-args)]
+                        (when target-version
+                          (validate-version target-version "aishell"))
+                        (upgrade/do-upgrade version target-version))))
+        ;; Standard dispatch for other commands (setup, update, help)
+        (if (or unsafe? container-name-override)
+          ;; --unsafe or --name with no harness command -> shell mode
+          (run/run-container nil [] {:unsafe (boolean unsafe?) :container-name container-name-override})
+          ;; Normal dispatch
+          (cli/dispatch dispatch-table args {:error-fn handle-error
+                                             :restrict true}))))))
 
 (defn- subcommand-of
   "Return the first non-flag token in args, or nil. Used to decide whether

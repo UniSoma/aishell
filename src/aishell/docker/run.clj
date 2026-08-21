@@ -8,7 +8,8 @@
             [aishell.output :as output]
             [aishell.docker.naming :as naming]
             [aishell.validation :as validation]
-            [aishell.config :as cfg]))
+            [aishell.config :as cfg]
+            [aishell.harness :as harness]))
 
 (defn read-git-identity
   "Read git identity from host configuration.
@@ -222,31 +223,22 @@
 
 (defn- build-harness-alias-env-args
   "Build -e flags for harness aliases inside the container.
-   Passes full command strings so the entrypoint can create shell aliases."
+   Passes full command strings so the entrypoint can create shell aliases.
+   The argv comes from the registry's interpreter — the same one the container
+   launch path uses — so an alias cannot drift from `aishell <harness>`."
   [config state]
   (let [harness-args (get config :harness_args {})
-        known [["claude"   :with-claude   true]
-               ["opencode" :with-opencode false]
-               ["codex"    :with-codex    true]
-               ["gemini"   :with-gemini   false]
-               ["pi"       :with-pi       false]]]
-    (->> known
-         (keep (fn [[name state-key always?]]
+        skip-perms? (harness/skip-permissions?
+                     (System/getenv harness/skip-permissions-env-var))]
+    (->> (harness/alias-emitters)
+         (keep (fn [{:keys [id subcommand state-key] :as descriptor}]
                  (when (get state state-key)
-                   (let [args (get harness-args (keyword name) [])
-                         skip-perms? (not= "false" (System/getenv "AISHELL_SKIP_PERMISSIONS"))
-                         full-args (cond
-                                     (and (= name "claude") skip-perms?)
-                                     (into ["--dangerously-skip-permissions"] args)
-
-                                     (= name "codex")
-                                     (into ["-c" "check_for_update_on_startup=false"] args)
-
-                                     :else
-                                     (vec args))]
-                     (when (or always? (seq full-args))
-                       ["-e" (str "HARNESS_ALIAS_" (str/upper-case name)
-                                  "=" name " " (str/join " " full-args))])))))
+                   (let [argv (harness/launch-argv descriptor
+                                                   {:skip-permissions? skip-perms?
+                                                    :default-args (get harness-args id [])})]
+                     (when (or (get-in descriptor [:alias :always?]) (next argv))
+                       ["-e" (str "HARNESS_ALIAS_" (str/upper-case subcommand)
+                                  "=" (str/join " " argv))])))))
          (apply concat)
          vec)))
 

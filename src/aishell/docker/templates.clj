@@ -478,7 +478,7 @@ fi
 # Mirrors what 'aishell <harness>' does with config defaults
 ALIAS_FILE=\"$HOME/.bash_aliases\"
 : > \"$ALIAS_FILE\"
-for var in HARNESS_ALIAS_CLAUDE HARNESS_ALIAS_OPENCODE HARNESS_ALIAS_CODEX HARNESS_ALIAS_GEMINI HARNESS_ALIAS_PI; do
+for var in \"${!HARNESS_ALIAS_@}\"; do
     cmd=\"${!var}\"
     if [ -n \"$cmd\" ]; then
         name=\"${var##*_}\"
