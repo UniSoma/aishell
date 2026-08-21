@@ -6,7 +6,7 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:23.633967378Z'
-updated: '2026-08-20T12:49:21.557186617Z'
+updated: '2026-08-21T14:21:35.687930954Z'
 tags:
 - ready-for-agent
 - json
@@ -63,3 +63,9 @@ Mechanics:
 ## Blocked by
 
 - aix-01kr1qp6deb1 (Wire --json infrastructure and aishell ps --json)
+
+## Notes
+
+**2026-08-21T14:21:35.687930954Z**
+
+OpenSpec was removed from aishell (aix-01m0dpf8cvrx), so this ticket's 'all six keys' for the info --json harness shape is now five: claude, opencode, codex, gemini, pi. Update the spec before implementing.

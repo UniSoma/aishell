@@ -137,7 +137,6 @@
    :with-codex    {:desc "Include Codex CLI (optional: =VERSION)"}
    :with-gemini   {:desc "Include Gemini CLI (optional: =VERSION)"}
    :with-pi       {:desc "Include Pi coding agent (optional: =VERSION)"}
-   :with-openspec {:desc "Include OpenSpec (optional: =VERSION)"}
    :with-gitleaks {:coerce :boolean :desc "Include Gitleaks secret scanner"}
    :unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
    :dir           {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
@@ -151,8 +150,7 @@
    {:opt :with-opencode :state :with-opencode :version :opencode-version :label "OpenCode"}
    {:opt :with-codex :state :with-codex :version :codex-version :label "Codex"}
    {:opt :with-gemini :state :with-gemini :version :gemini-version :label "Gemini"}
-   {:opt :with-pi :state :with-pi :version :pi-version :label "Pi"}
-   {:opt :with-openspec :state :with-openspec :version :openspec-version :label "OpenSpec"}])
+   {:opt :with-pi :state :with-pi :version :pi-version :label "Pi"}])
 
 (def setup-boolean-options
   [{:opt :with-gitleaks :state :with-gitleaks}
@@ -164,15 +162,13 @@
    :with-codex false
    :with-gemini false
    :with-pi false
-   :with-openspec false
    :with-gitleaks false
    :unisoma false
    :claude-version nil
    :opencode-version nil
    :codex-version nil
    :gemini-version nil
-   :pi-version nil
-   :openspec-version nil})
+   :pi-version nil})
 
 (defn explicit-setup-state
   "Build declarative setup intent from CLI opts only. Omitted flags stay disabled."
@@ -187,15 +183,13 @@
            :with-codex (get-in parsed [:with-codex :enabled?])
            :with-gemini (get-in parsed [:with-gemini :enabled?])
            :with-pi (get-in parsed [:with-pi :enabled?])
-           :with-openspec (get-in parsed [:with-openspec :enabled?])
            :with-gitleaks (boolean (:with-gitleaks opts))
            :unisoma (boolean (:unisoma opts))
            :claude-version (get-in parsed [:with-claude :version])
            :opencode-version (get-in parsed [:with-opencode :version])
            :codex-version (get-in parsed [:with-codex :version])
            :gemini-version (get-in parsed [:with-gemini :version])
-           :pi-version (get-in parsed [:with-pi :version])
-           :openspec-version (get-in parsed [:with-openspec :version]))))
+           :pi-version (get-in parsed [:with-pi :version]))))
 
 (defn saved-setup-state
   "Extract the persisted setup intent, excluding derived build metadata."
@@ -271,7 +265,6 @@
         {:name "opencode" :enabled? (:with-opencode state-map)}
         {:name "codex" :enabled? (:with-codex state-map)}
         {:name "gemini" :enabled? (:with-gemini state-map)}
-        {:name "openspec" :enabled? (:with-openspec state-map)}
         {:name "pi" :enabled? (:with-pi state-map)}]
        (keep (fn [{:keys [name enabled?]}]
                (when enabled? name)))
@@ -293,8 +286,6 @@
     (println (str "  Gemini: " (or (:gemini-version state-map) "latest"))))
   (when (:with-pi state-map)
     (println (str "  Pi: " (or (:pi-version state-map) "latest"))))
-  (when (:with-openspec state-map)
-    (println (str "  OpenSpec: " (or (:openspec-version state-map) "latest"))))
   (when (:with-gitleaks state-map)
     (println "  Gitleaks: enabled"))
   (when-not (or (:with-claude state-map)
@@ -302,7 +293,6 @@
                 (:with-codex state-map)
                 (:with-gemini state-map)
                 (:with-pi state-map)
-                (:with-openspec state-map)
                 (:with-gitleaks state-map)
                 (:unisoma state-map))
     (println "  No harnesses or optional tools enabled")))
@@ -319,7 +309,6 @@
       (:with-codex state) (conj "codex")
       (:with-gemini state) (conj "gemini")
       (:with-pi state) (conj "pi")
-      (:with-openspec state) (conj "openspec")
       (:with-gitleaks state false) (conj "gitleaks"))
     ;; No state = no build yet, show all for discoverability
     #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}))
@@ -376,7 +365,7 @@
   (println)
   (println (str output/BOLD "Options:" output/NC))
   (println (cli/format-opts {:spec setup-spec
-                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec :with-gitleaks :unisoma :dir :reuse-config :force :verbose :help]}))
+                             :order [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-gitleaks :unisoma :dir :reuse-config :force :verbose :help]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
@@ -385,7 +374,6 @@
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
-  (println (str "  " output/CYAN "aishell setup --with-openspec" output/NC "          Include OpenSpec"))
   (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
   (println (str "  " output/CYAN "aishell setup --dir .sandbox" output/NC "           Scaffold a .sandbox/ project config dir"))
@@ -448,7 +436,8 @@
 (defn handle-setup [{:keys [opts]}]
   (if (:help opts)
     (print-setup-help)
-    (let [_ (when (contains? opts :dir)
+    (let [_ (state/warn-removed-harnesses!)
+          _ (when (contains? opts :dir)
               (scaffold-config-dir! (:dir opts) (System/getProperty "user.dir")))
           prev-state (state/read-state)
           resolution (resolve-setup-state opts prev-state)
@@ -479,7 +468,7 @@
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
+          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                     (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -563,7 +552,8 @@
   [{:keys [opts]}]
   (if (:help opts)
     (print-update-help)
-    (let [state (state/read-state)]
+    (let [_ (state/warn-removed-harnesses!)
+          state (state/read-state)]
       ;; Must have prior build
       (when-not state
         (output/error "No previous setup found. Run: aishell setup"))
@@ -582,8 +572,6 @@
         (println (str "  Gemini: " (or (:gemini-version state) "latest"))))
       (when (:with-pi state)
         (println (str "  Pi: " (or (:pi-version state) "latest"))))
-      (when (:with-openspec state)
-        (println (str "  OpenSpec: " (or (:openspec-version state) "latest"))))
 
       ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
@@ -605,7 +593,7 @@
                             (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi :with-openspec])
+            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
@@ -616,7 +604,6 @@
                                                         :opencode (:with-opencode state)
                                                         :codex (:with-codex state)
                                                         :gemini (:with-gemini state)
-                                                        :openspec (:with-openspec state)
                                                         :pi (:with-pi state)}))]
                   (println "Repopulating harness volume...")
                   (let [rm-result (vol/remove-volume volume-name)]

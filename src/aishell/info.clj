@@ -89,8 +89,7 @@
                       [:with-opencode "OpenCode" :opencode-version]
                       [:with-codex "Codex CLI" :codex-version]
                       [:with-gemini "Gemini CLI" :gemini-version]
-                      [:with-pi "Pi" :pi-version]
-                      [:with-openspec "OpenSpec" :openspec-version]]
+                      [:with-pi "Pi" :pi-version]]
         enabled (filter (fn [[flag _ _]] (get state flag)) harness-defs)]
     (if (empty? enabled)
       ["  None"]
@@ -105,7 +104,6 @@
    :with-opencode "OpenCode"
    :with-codex    "Codex CLI"
    :with-gemini   "Gemini CLI"
-   :with-openspec "OpenSpec"
    :with-pi       "Pi"})
 
 (defn- format-config-paths

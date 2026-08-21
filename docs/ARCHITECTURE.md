@@ -36,7 +36,7 @@ graph TB
 
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
-        Harness[AI Harness/Tools<br/>claude/opencode/codex/gemini/pi/vscode/openspec]
+        Harness[AI Harness/Tools<br/>claude/opencode/codex/gemini/pi/vscode]
         Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
@@ -132,12 +132,11 @@ The base image is the intermediate layer between foundation and project extensio
 Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
-- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @earendil-works/pi-coding-agent, @fission-ai/openspec)
+- `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @openai/codex, @google/gemini-cli, @earendil-works/pi-coding-agent)
 - `/tools/bin` - Go binaries (opencode)
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
 - Enabled harnesses (which flags passed to build)
-- Enabled tools (e.g., OpenSpec)
 - Harness versions (pinned or 'latest')
 - Alphabetically sorted for order-independence
 
@@ -439,8 +438,6 @@ Each namespace handles one concern:
  :with-codex false                       ; boolean: Codex CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-pi false                         ; boolean: Pi coding agent enabled?
- :with-openspec false                   ; boolean: OpenSpec tool enabled? (opt-in, not a harness)
- :openspec-version nil                  ; string or nil: pinned version
  :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version

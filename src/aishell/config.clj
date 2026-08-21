@@ -14,7 +14,7 @@
 
 (def known-harnesses
   "Valid harness names for harness_args validation."
-  #{"claude" "opencode" "codex" "gemini" "vscode" "pi" "openspec"})
+  #{"claude" "opencode" "codex" "gemini" "vscode" "pi"})
 
 (defn project-config-path
   "Path to project config: PROJECT_DIR/<active-dir>/config.yaml.

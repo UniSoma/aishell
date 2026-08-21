@@ -11,15 +11,13 @@
                         :with-codex false
                         :with-gemini false
                         :with-pi false
-                        :with-openspec false
                         :with-gitleaks false
                         :unisoma false
                         :claude-version "2.0.22"
                         :opencode-version nil
                         :codex-version nil
                         :gemini-version nil
-                        :pi-version nil
-                        :openspec-version nil}}
+                        :pi-version nil}}
            (cli/resolve-setup-state {:with-claude "2.0.22"}
                                     {:with-opencode true
                                      :opencode-version "1.2.3"
@@ -33,15 +31,13 @@
             :with-codex false
             :with-gemini false
             :with-pi true
-            :with-openspec false
             :with-gitleaks true
             :unisoma true
             :claude-version "2.0.22"
             :opencode-version nil
             :codex-version nil
             :gemini-version nil
-            :pi-version "1.0.0"
-            :openspec-version nil}
+            :pi-version "1.0.0"}
            (:state-map (cli/resolve-setup-state {:reuse-config true
                                                  :with-opencode true
                                                  :with-pi "1.0.0"}
@@ -51,6 +47,18 @@
                                                  :opencode-version "0.9.0"
                                                  :with-gitleaks true
                                                  :unisoma true}))))))
+
+(deftest resolve-setup-state-drops-removed-openspec-keys
+  (testing "reuse mode ignores OpenSpec left over in a saved setup"
+    (let [state-map (:state-map (cli/resolve-setup-state
+                                 {:reuse-config true}
+                                 {:with-claude true
+                                  :claude-version "2.0.22"
+                                  :with-openspec true
+                                  :openspec-version "1.2.3"}))]
+      (is (not (contains? state-map :with-openspec)))
+      (is (not (contains? state-map :openspec-version)))
+      (is (true? (:with-claude state-map))))))
 
 (deftest resolve-setup-state-reuse-config-requires-saved-setup
   (testing "reuse mode fails clearly when no saved setup exists"

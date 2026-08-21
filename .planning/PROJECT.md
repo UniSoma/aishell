@@ -173,7 +173,6 @@ Run agentic AI harnesses in isolated, reproducible environments without pollutin
 **Tech stack:** Babashka, Docker, Debian bookworm-slim base, Node.js 24, Gitleaks v8.30.0 (opt-in)
 **Platforms:** Linux, macOS, Windows (cmd.exe/PowerShell with Docker Desktop WSL2)
 **Harnesses:** Claude Code, OpenCode, Codex CLI, Gemini CLI, Pi
-**Additional tools:** OpenSpec (opt-in)
 **Image architecture:** Three-tier (foundation -> base -> extension)
 **Documentation:** 5,000+ lines across docs/ and README
 

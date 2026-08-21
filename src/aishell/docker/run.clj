@@ -257,7 +257,6 @@
    :with-opencode [[".config" "opencode"] [".local" "share" "opencode"]]
    :with-codex    [[".codex"]]
    :with-gemini   [[".gemini"]]
-   :with-openspec [[".config" "openspec"]]
    :with-pi       [[".pi"]]})
 
 (def ^:private harness-config-files
@@ -571,10 +570,6 @@
 
         ;; Disable autoupdater in container
         (into ["-e" "DISABLE_AUTOUPDATER=1"])
-
-        ;; Disable OpenSpec telemetry
-        (cond-> (:with-openspec state)
-          (into ["-e" "OPENSPEC_TELEMETRY=0"]))
 
         ;; Harness volume mount (volume-mounted harness tools)
         (into (build-harness-volume-args harness-volume-name config))
