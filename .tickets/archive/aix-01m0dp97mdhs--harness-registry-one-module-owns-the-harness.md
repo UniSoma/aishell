@@ -1,12 +1,13 @@
 ---
 id: aix-01m0dp97mdhs
 title: 'Harness registry: one module owns the Harness; remove OpenSpec'
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-08-19T18:59:34.122245173Z'
-updated: '2026-08-19T18:59:34.122245173Z'
+updated: '2026-08-21T15:45:47.926254590Z'
+closed: '2026-08-21T15:45:47.926254590Z'
 tags:
 - registry
 - ready-for-agent
@@ -82,3 +83,9 @@ Both terms are defined in CONTEXT.md.
 - Design settled in a grilling session on 2026-08-19 (architecture review candidate #1). CONTEXT.md already defines **Harness descriptor** and **Harness registry**.
 - Lint with clj-kondo before committing; no AI attribution in commit messages (repo hard rules).
 - The May 2026 tickets on the launch pipeline and state schema remain open; this ticket intentionally narrows to static facts.
+
+## Notes
+
+**2026-08-21T15:45:47.926254590Z**
+
+All six children closed. One module (aishell.harness) now owns every Harness's static facts as pure data; ~12 namespaces derive from it instead of holding their own literal lists. Volume hash proven unchanged against a frozen independent oracle across 32 combinations x 3 version shapes, with the pinned anchor untouched. Ships four user-visible fixes: pi/a typo suggestions, canonical labels, gitleaks harness_args warning, and single-sourced skip-permissions. Costs one foundation image rebuild. Two-axis review run against ca5b353; confirmed findings fixed. Suite 153 tests / 716 assertions green; clj-kondo 0 errors, 13 warnings (one better than baseline). Commits 708a201..2dcb2b1.
