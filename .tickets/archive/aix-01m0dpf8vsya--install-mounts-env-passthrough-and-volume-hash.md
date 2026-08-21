@@ -1,27 +1,28 @@
 ---
 id: aix-01m0dpf8vsya
 title: Install, mounts, env passthrough, and volume hash derive from the registry
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-08-19T19:02:52.021230721Z'
-updated: '2026-08-19T19:02:52.021230721Z'
+updated: '2026-08-21T15:12:10.300336922Z'
+closed: '2026-08-21T15:12:10.300336922Z'
 parent: aix-01m0dp97mdhs
 tags:
 - registry
 - ready-for-agent
 acceptance:
 - title: Install commands (npm and binary tarball) derive from descriptors
-  done: false
+  done: true
 - title: Config-dir/file mounts and API-key env passthrough derive from descriptors
-  done: false
+  done: true
 - title: 'Hash-equivalence test: registry-derived hash input is byte-identical to today''s for every enabled-harness combination'
-  done: false
+  done: true
 - title: harness_args for a non-launchable harness warns instead of silently dropping
-  done: false
+  done: true
 - title: clj-kondo clean; tests green
-  done: false
+  done: true
 deps:
 - aix-01m0dpf8h3qk
 ---
@@ -31,3 +32,9 @@ deps:
 Third migrate batch of the parent spec. Volume population (npm packages, the OpenCode binary tarball, version pinning), sandbox config-path mounts, API-key env passthrough, and the volume-hash input all become registry derivations.
 
 Hash compatibility is the hard constraint: the hash derivation sorts harness keys internally so registry (display) order never affects it, and a hash-equivalence test pins that no user's volume rebuilds from this refactor. Also fixes the silent drop of harness_args for a harness without a launch (gitleaks) — it warns instead; changelog entry.
+
+## Notes
+
+**2026-08-21T15:12:10.300336922Z**
+
+Installs, mounts, API-key passthrough and the enabled-harness gates derive from the registry. Hash equivalence proven against a frozen independent oracle across 32 combos x 3 version shapes; the pinned 65b8e9d41105 anchor passes untouched. gitleaks harness_args now warns. known-harnesses left literal on purpose so vscode keeps validating. Commit 8626eb2.
