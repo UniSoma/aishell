@@ -12,6 +12,11 @@
             [babashka.process :as p]
             [clojure.string :as str]))
 
+(def volume-schema-version
+  "Value of the `aishell.harness.version` label stamped on every harness
+   volume aishell creates. Bumped when the volume's on-disk layout changes."
+  "3.1.0")
+
 (defn normalize-harness-config
   "Extract and normalize harness configuration for deterministic hashing.
 

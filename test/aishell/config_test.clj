@@ -1,6 +1,7 @@
 (ns aishell.config-test
   (:require [clojure.test :refer [deftest is testing]]
-            [aishell.config :as config]))
+            [aishell.config :as config]
+            [aishell.harness :as harness]))
 
 (deftest resolve-claude-isolation-defaults-to-shared
   (testing "absent key defaults to :shared"
@@ -73,3 +74,29 @@
   (testing "valid list of strings does not warn"
     (is (= "" (captured-warnings
                #(config/validate-claude-shared-paths ["skills" "notes/x.md"] "/x"))))))
+
+(deftest harness-args-accepts-every-harness-that-takes-defaults
+  (testing "each registry harness whose descriptor takes configured defaults is accepted"
+    (doseq [{:keys [subcommand]} (filter :accepts-config-defaults? harness/registry)]
+      (is (= "" (captured-warnings
+                 #(config/validate-harness-names {(keyword subcommand) ["--x"]}
+                                                 "config.yaml")))
+          (str subcommand " should be a known harness name")))))
+
+(deftest harness-args-accepts-vscode
+  (testing "vscode has no descriptor but its harness_args are consumed, so it stays known"
+    (is (= "" (captured-warnings
+               #(config/validate-harness-names {:vscode ["--verbose"]} "config.yaml"))))))
+
+(deftest harness-args-warns-for-a-harness-that-cannot-take-defaults
+  (testing "gitleaks takes no configured defaults, so naming it warns at load time"
+    (let [out (captured-warnings
+               #(config/validate-harness-names {:gitleaks ["--redact"]} "config.yaml"))]
+      (is (re-find #"Unknown harness names" out))
+      (is (re-find #"gitleaks" out)))))
+
+(deftest harness-args-warns-for-a-name-no-harness-owns
+  (testing "a genuine typo still warns"
+    (is (re-find #"opnecode"
+                 (captured-warnings
+                  #(config/validate-harness-names {:opnecode ["--x"]} "config.yaml"))))))

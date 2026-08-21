@@ -1,6 +1,7 @@
 (ns aishell.run
   "Run command orchestration.
-   Handles shell, claude, and opencode execution in containers."
+   Launches an interactive shell, or any harness the registry knows, in a
+   container."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as str]
@@ -86,7 +87,7 @@
         (not (vol/volume-exists? volume-name))
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
-                                          "aishell.harness.version" "3.1.0"})
+                                          "aishell.harness.version" vol/volume-schema-version})
           (let [result (vol/populate-volume volume-name state {:config config})]
             (when-not (:success result)
               ;; Remove empty volume so next run retries population
@@ -127,7 +128,7 @@
   "Run docker container for shell or harness.
 
    Arguments:
-   - cmd: nil (shell), \"claude\", or \"opencode\"
+   - cmd: nil for a shell, else a harness subcommand from the registry
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings)"
   [cmd harness-args & [opts]]
@@ -169,7 +170,11 @@
         (verify-harness-available descriptor state))
 
       ;; Resolve final image (may auto-build extension)
-      (let [image-tag (resolve-image-tag base-tag project-dir false)
+      (let [descriptor (harness-for cmd)
+            ;; A harness that is itself a secret scanner stands in for aishell's
+            ;; own scanning: no sensitive-file scan, no scan-freshness nag.
+            secret-scanner? (boolean (:secret-scanner? descriptor))
+            image-tag (resolve-image-tag base-tag project-dir false)
             git-id (docker-run/read-git-identity project-dir)
 
             ;; Extract defaults for this harness (if any)
@@ -199,9 +204,9 @@
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
 
-            ;; Scan for sensitive files (unless --unsafe or gitleaks command)
+            ;; Scan for sensitive files (unless --unsafe or a secret scanner)
             ;; Uses project-dir already bound at line 71
-            _ (when-not (or (:unsafe opts) (= cmd "gitleaks"))
+            _ (when-not (or (:unsafe opts) secret-scanner?)
                 (let [detection-config (get cfg :detection {})
                       allowlist (:allowlist detection-config [])
                       ;; scan-project checks :enabled and uses :custom_patterns
@@ -213,7 +218,7 @@
                     (detection/confirm-if-needed filtered-findings))))
 
             ;; Display gitleaks freshness warning only if gitleaks is installed
-            _ (when (and (:with-gitleaks state) (not= cmd "gitleaks"))
+            _ (when (and (:with-gitleaks state) (not secret-scanner?))
                 (gitleaks-warnings/display-freshness-warning project-dir cfg))
 
             ;; Build docker args
@@ -224,9 +229,8 @@
                           :state state
                           :git-identity git-id
                           :skip-pre-start (:skip-pre-start opts)
-                          :skip-interactive (if-let [descriptor (harness-for cmd)]
-                                              (not (:interactive? descriptor))
-                                              false)
+                          :skip-interactive (boolean (and descriptor
+                                                          (not (:interactive? descriptor))))
                           :container-name container-name-str
                           :harness-volume-name harness-volume-name})
 
@@ -236,9 +240,9 @@
 
             container-cmd (container-command cmd defaults-vec harness-args skip-perms?)]
 
-        ;; For gitleaks, use shell instead of exec so we can update timestamp after
+        ;; For a scan, use shell instead of exec so we can update the timestamp after
         ;; :continue true prevents p/shell from throwing on non-zero exit
-        (if (= cmd "gitleaks")
+        (if secret-scanner?
           (let [result (apply p/shell {:inherit true :continue true} (concat docker-args container-cmd))
                 ;; Only update timestamp for actual scan subcommands, not help/version
                 scan-subcommands #{"dir" "git" "detect" "protect"}

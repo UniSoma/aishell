@@ -6,6 +6,7 @@
             [babashka.fs :as fs]
             [clojure.string :as cstr]
             [aishell.util :as util]
+            [aishell.harness :as harness]
             [aishell.output :as output]))
 
 (def known-keys
@@ -13,8 +14,17 @@
   #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
 
 (def known-harnesses
-  "Valid harness names for harness_args validation."
-  #{"claude" "opencode" "codex" "gemini" "vscode" "pi"})
+  "Harness names accepted under `harness_args`, derived from the registry: the
+   harnesses whose descriptors take configured defaults. Gitleaks is absent on
+   purpose — it cannot receive defaults, so `harness_args: {gitleaks: ...}`
+   warns here at load time.
+
+   `vscode` is not a Harness and has no descriptor, but its `harness_args` are
+   read by the vscode command, so it is added by hand. A known wart, left for a
+   future command registry."
+  (into #{"vscode"}
+        (comp (filter :accepts-config-defaults?) (map :subcommand))
+        harness/registry))
 
 (defn project-config-path
   "Path to project config: PROJECT_DIR/<active-dir>/config.yaml.

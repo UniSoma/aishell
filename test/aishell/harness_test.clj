@@ -132,11 +132,6 @@
     (is (= ["claude" "opencode" "codex" "gemini" "pi" "gitleaks"]
            (harness/subcommands)))))
 
-(deftest suggestion-contributions-include-pi
-  (testing "typo suggestions draw on every harness subcommand"
-    (is (= #{"claude" "opencode" "codex" "gemini" "pi" "gitleaks"}
-           (set (harness/suggestion-terms))))))
-
 (deftest alias-emitters-and-their-unconditional-flag
   (testing "gitleaks emits no shell alias"
     (is (= [:claude :opencode :codex :gemini :pi]
@@ -157,6 +152,13 @@
       (is (true? (:interactive? d)))
       (is (true? (:pre-start? d)))
       (is (true? (:accepts-config-defaults? d))))))
+
+(deftest secret-scanner-capability
+  (testing "gitleaks is the secret scanner, so aishell stands its own scanning down"
+    (is (true? (:secret-scanner? (harness/descriptor :gitleaks)))))
+  (testing "no other harness claims it"
+    (is (= [:gitleaks]
+           (mapv :id (filter :secret-scanner? harness/registry))))))
 
 (deftest config-paths-and-env-passthrough-are-carried
   (testing "claude's config paths distinguish the directory from the seed file"

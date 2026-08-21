@@ -34,6 +34,9 @@
 ;;                             {:always? bool} — false means "only when it has args"
 ;;   :setup-flag-desc          help text for the `--with-<id>` flag; absent when
 ;;                             "Include <label>" already says it
+;;   :secret-scanner?          the harness is itself a secret scanner, so
+;;                             aishell's own sensitive-file scan and its
+;;                             scan-freshness warning stand down while it runs
 ;;   :install                  {:kind :npm|:binary-tarball|:image-baked, …}
 ;;   :config-paths             [{:path [".claude"] :type :dir|:file} …], home-relative
 ;;   :credentials-file-env     env var naming a host credentials file to mount
@@ -132,6 +135,7 @@
     :pre-start? false
     :accepts-config-defaults? false
     :volume-participant? false
+    :secret-scanner? true
     :install {:kind :image-baked :version "8.30.1"}}])
 
 (defn descriptor
@@ -162,12 +166,6 @@
   "Every harness subcommand, in display order."
   []
   (mapv :subcommand registry))
-
-(defn suggestion-terms
-  "Harness contributions to the typo-suggestion vocabulary. Every harness is
-   dispatchable and so every harness is suggestible — this is `subcommands`."
-  []
-  (subcommands))
 
 (defn volume-participants
   "Descriptors installed into the shared harness volume — the harnesses whose

@@ -465,7 +465,7 @@
                 (when (or vol-missing? vol-stale?)
                   (when vol-missing?
                     (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                    "aishell.harness.version" "3.1.0"
+                                                    "aishell.harness.version" vol/volume-schema-version
                                                     "aishell.harnesses" harness-list}))
                   (let [pop-result (vol/populate-volume volume-name state-map {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)
@@ -588,7 +588,7 @@
                          (str "Failed to remove harness volume " volume-name
                               ": " (:stderr rm-result))))))
                   (vol/create-volume volume-name {"aishell.harness.hash" harness-hash
-                                                  "aishell.harness.version" "3.1.0"
+                                                  "aishell.harness.version" vol/volume-schema-version
                                                   "aishell.harnesses" harness-list})
                   (let [pop-result (vol/populate-volume volume-name state {:verbose (:verbose opts) :config cfg})]
                     (when-not (:success pop-result)

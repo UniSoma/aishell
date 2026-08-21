@@ -11,6 +11,7 @@
             [aishell.util :as util]
             [aishell.config :as config]
             [aishell.docker.volume :as vol]
+            [aishell.harness :as harness]
             [aishell.output :as output]))
 
 (defn check-vscode!
@@ -58,7 +59,7 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
     (when-not (naming/container-running? container-name)
       (let [cfg (config/load-config project-dir)
             git-id (docker-run/read-git-identity project-dir)
-            harness-volume-name (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+            harness-volume-name (when (harness/volume-harnesses-enabled? state)
                                  (or (:harness-volume-name state)
                                      (vol/volume-name (vol/compute-harness-hash state))))
             docker-args (docker-run/build-docker-args
