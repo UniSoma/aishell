@@ -14,16 +14,19 @@
   #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
 
 (def known-harnesses
-  "Harness names accepted under `harness_args`, derived from the registry: the
-   harnesses whose descriptors take configured defaults. Gitleaks is absent on
-   purpose — it cannot receive defaults, so `harness_args: {gitleaks: ...}`
-   warns here at load time.
+  "Harness names accepted under `harness_args`, derived from the registry.
 
    `vscode` is not a Harness and has no descriptor, but its `harness_args` are
    read by the vscode command, so it is added by hand. A known wart, left for a
    future command registry."
-  (into #{"vscode"}
-        (comp (filter :accepts-config-defaults?) (map :subcommand))
+  (into #{"vscode"} (map :subcommand) harness/registry))
+
+(def ^:private defaultless-harnesses
+  "Harnesses the registry knows but that cannot receive configured defaults.
+   Their `harness_args` are accepted as a name but ignored at launch, so they
+   warrant a different warning from an outright unknown name."
+  (into #{}
+        (comp (remove :accepts-config-defaults?) (map :subcommand))
         harness/registry))
 
 (defn project-config-path
@@ -79,15 +82,21 @@
                harness-args-map))))
 
 (defn validate-harness-names
-  "Warn if harness_args contains unknown harness names."
+  "Warn if harness_args names a harness that does not exist, or one that exists
+   but cannot receive configured defaults."
   [harness-args-map source-path]
   (when harness-args-map
     (let [config-harnesses (set (map name (keys harness-args-map)))
-          unknown (clojure.set/difference config-harnesses known-harnesses)]
+          unknown (clojure.set/difference config-harnesses known-harnesses)
+          ignored (clojure.set/intersection config-harnesses defaultless-harnesses)]
       (when (seq unknown)
         (output/warn (str "Unknown harness names in " source-path
                           " harness_args: "
-                          (clojure.string/join ", " unknown)))))))
+                          (clojure.string/join ", " (sort unknown)))))
+      (when (seq ignored)
+        (output/warn (str "Ignored harness_args in " source-path
+                          ": " (clojure.string/join ", " (sort ignored))
+                          " cannot receive configured defaults"))))))
 
 (defn validate-detection-config
   "Validate detection config. Warns on invalid severity and missing reason.

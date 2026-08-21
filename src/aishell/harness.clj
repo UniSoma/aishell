@@ -143,6 +143,14 @@
   [id]
   (first (filter #(= id (:id %)) registry)))
 
+(defn for-subcommand
+  "The descriptor a user reaches by typing `subcommand`, or nil when no harness
+   answers to that name. Callers dispatching on a command-line word want this
+   rather than `descriptor`, which keys on the internal id."
+  [subcommand]
+  (when subcommand
+    (first (filter #(= subcommand (:subcommand %)) registry))))
+
 ;; ---------------------------------------------------------------------------
 ;; Capability filters
 ;; ---------------------------------------------------------------------------

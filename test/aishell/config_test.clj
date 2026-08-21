@@ -89,11 +89,18 @@
                #(config/validate-harness-names {:vscode ["--verbose"]} "config.yaml"))))))
 
 (deftest harness-args-warns-for-a-harness-that-cannot-take-defaults
-  (testing "gitleaks takes no configured defaults, so naming it warns at load time"
+  (testing "gitleaks is a real harness, so the warning says its args are ignored"
     (let [out (captured-warnings
                #(config/validate-harness-names {:gitleaks ["--redact"]} "config.yaml"))]
+      (is (re-find #"Ignored harness_args" out))
+      (is (re-find #"gitleaks" out))
+      (is (not (re-find #"Unknown harness names" out))
+          "gitleaks is known to the registry; calling it unknown misleads")))
+  (testing "a name no harness answers to is still reported as unknown"
+    (let [out (captured-warnings
+               #(config/validate-harness-names {:openspec ["--x"]} "config.yaml"))]
       (is (re-find #"Unknown harness names" out))
-      (is (re-find #"gitleaks" out)))))
+      (is (not (re-find #"Ignored harness_args" out))))))
 
 (deftest harness-args-warns-for-a-name-no-harness-owns
   (testing "a genuine typo still warns"

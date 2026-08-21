@@ -146,12 +146,12 @@
 (def setup-spec
   (merge
    harness-setup-spec
-   {:unisoma       {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
-   :dir           {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
-   :reuse-config  {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
-   :force         {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
-   :verbose       {:alias :v :coerce :boolean :desc "Show full Docker build output"}
-    :help          {:alias :h :coerce :boolean :desc "Show setup help"}}))
+   {:unisoma      {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
+    :dir          {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
+    :reuse-config {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
+    :force        {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
+    :verbose      {:alias :v :coerce :boolean :desc "Show full Docker build output"}
+    :help         {:alias :h :coerce :boolean :desc "Show setup help"}}))
 
 (def setup-option-order
   "Setup help order: harness flags in registry display order, then the rest."
@@ -880,7 +880,7 @@
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape — such as whether the project's pre_start hook runs — is
     ;; read from the harness descriptor, not spelled per harness here.
-    (if-let [descriptor (some-> (first clean-args) keyword harness/descriptor)]
+    (if-let [descriptor (harness/for-subcommand (first clean-args))]
       (run/run-container (:subcommand descriptor) (vec (rest clean-args))
                          (cond-> {:unsafe unsafe? :container-name container-name-override}
                            (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))

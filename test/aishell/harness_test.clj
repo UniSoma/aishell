@@ -1,5 +1,6 @@
 (ns aishell.harness-test
   (:require [clojure.test :refer [deftest is testing]]
+            [aishell.docker.templates :as templates]
             [aishell.harness :as harness]))
 
 ;; ---------------------------------------------------------------------------
@@ -269,3 +270,18 @@
   (testing "gitleaks describes itself, since 'Gitleaks' alone would not"
     (is (= "Include Gitleaks secret scanner"
            (harness/setup-flag-desc (harness/descriptor :gitleaks))))))
+
+;; ---------------------------------------------------------------------------
+;; Image-baked versions
+;; ---------------------------------------------------------------------------
+
+(deftest image-baked-version-matches-the-dockerfile
+  (testing "the registry's gitleaks version is the one the image actually installs"
+    ;; The Dockerfile pins gitleaks with an ARG, and the registry repeats the
+    ;; version so `aishell info` can report it without parsing the build file.
+    ;; Two spellings of one fact, so pin them together: bumping either alone
+    ;; fails here rather than silently reporting a version that was not built.
+    (let [declared (get-in (harness/descriptor :gitleaks) [:install :version])
+          built (second (re-find #"ARG GITLEAKS_VERSION=(\S+)" templates/base-dockerfile))]
+      (is (some? built) "the Dockerfile should still pin GITLEAKS_VERSION")
+      (is (= declared built)))))

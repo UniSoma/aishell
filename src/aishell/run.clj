@@ -26,7 +26,7 @@
 (defn- harness-for
   "The registry descriptor for a run command name, or nil in shell mode."
   [cmd]
-  (some-> cmd keyword harness/descriptor))
+  (harness/for-subcommand cmd))
 
 (defn- verify-harness-available
   "Check that the harness was included in setup. Exit with error if not."
