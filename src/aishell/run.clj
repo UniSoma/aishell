@@ -3,6 +3,7 @@
    Handles shell, claude, and opencode execution in containers."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
+            [clojure.string :as str]
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
             [aishell.docker.naming :as naming]
@@ -35,6 +36,22 @@
           " not installed. Run: aishell setup --with-"
           subcommand))))
 
+(defn- report-harness-defaults!
+  "Report the `harness_args` defaults configured for `cmd`.
+
+   Defaults that reach the launch argv are a verbose note. A harness that
+   cannot receive them — one whose descriptor sets :accepts-config-defaults?
+   false, gitleaks today — warns instead, so the config mistake is visible
+   rather than silently dropped."
+  [cmd default-args]
+  (when (seq default-args)
+    (let [descriptor (harness-for cmd)
+          joined (str/join " " default-args)]
+      (if (and descriptor (not (:accepts-config-defaults? descriptor)))
+        (output/warn (str "Ignoring harness_args for " cmd ": " (:label descriptor)
+                          " does not accept configured defaults (" joined ")"))
+        (output/verbose (str "Applying " cmd " defaults: " joined))))))
+
 (defn- container-command
   "Launch argv for `cmd` inside the container. Harness commands derive their
    argv from the registry's interpreter; anything else opens a shell."
@@ -60,7 +77,7 @@
    Populates lazily if missing or stale (hash mismatch).
    Returns volume name for docker run mounting, or nil if no harnesses enabled."
   [state config]
-  (when (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+  (when (harness/volume-harnesses-enabled? state)
     (let [expected-hash (vol/compute-harness-hash state)
           volume-name (or (:harness-volume-name state)
                           (vol/volume-name expected-hash))]
@@ -169,9 +186,7 @@
             _ (when (and (:name git-id) (:email git-id))
                 (output/verbose (str "Git identity: " (:name git-id)
                                      " <" (:email git-id) ">")))
-            _ (when (seq defaults-vec)
-                (output/verbose (str "Applying " cmd " defaults: "
-                                     (clojure.string/join " " defaults-vec))))
+            _ (report-harness-defaults! cmd defaults-vec)
 
             ;; Check for stale image (advisory warning)
             _ (check-dockerfile-stale state)

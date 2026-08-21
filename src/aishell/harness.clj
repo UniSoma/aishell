@@ -34,6 +34,8 @@
 ;;                             {:always? bool} — false means "only when it has args"
 ;;   :install                  {:kind :npm|:binary-tarball|:image-baked, …}
 ;;   :config-paths             [{:path [".claude"] :type :dir|:file} …], home-relative
+;;   :credentials-file-env     env var naming a host credentials file to mount
+;;                             read-only; absent when the harness has none
 ;;   :env-passthrough          host env vars forwarded when set, in declared order
 ;; ---------------------------------------------------------------------------
 
@@ -101,6 +103,7 @@
     :alias {:always? false}
     :install {:kind :npm :package "@google/gemini-cli"}
     :config-paths [{:path [".gemini"] :type :dir}]
+    :credentials-file-env "GOOGLE_APPLICATION_CREDENTIALS"
     :env-passthrough ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
                       "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]}
 
@@ -152,6 +155,25 @@
    enabled state and pinned version feed the volume hash."
   []
   (filterv :volume-participant? registry))
+
+(defn volume-harnesses-enabled?
+  "Whether `state` enables any harness that lives in the shared harness volume.
+   Gates volume creation, population and repopulation."
+  [state]
+  (boolean (some #(get state (:state-key %)) (volume-participants))))
+
+(defn volume-config
+  "Canonical, hash-bearing description of the harness volume `state` asks for:
+   a vector of `[id version]` pairs for every enabled volume participant,
+   sorted by id so registry (display) order can never affect it. An unpinned
+   harness carries the version \"latest\"."
+  [state]
+  (->> (volume-participants)
+       (filter #(get state (:state-key %)))
+       (map (fn [{:keys [id version-key]}]
+              [id (or (get state version-key) "latest")]))
+       (sort-by first)
+       vec))
 
 (defn alias-emitters
   "Descriptors that get a shell alias inside the sandbox. Those with

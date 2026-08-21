@@ -5,23 +5,12 @@
    This ensures projects with identical harness combinations share the
    same volume, reducing disk usage and improving performance."
   (:require [aishell.docker.hash :as hash]
+            [aishell.harness :as harness]
             [aishell.docker.build :as build]
             [aishell.docker.spinner :as spinner]
             [aishell.output :as output]
             [babashka.process :as p]
             [clojure.string :as str]))
-
-(def ^:private harness-keys
-  "Ordered list of harness names for deterministic sorting."
-  [:claude :codex :gemini :opencode :pi])
-
-(def ^:private harness-npm-packages
-  "Map of harness key to npm package name.
-   OpenCode is excluded as it's a Go binary, not an npm package."
-  {:claude "@anthropic-ai/claude-code"
-   :codex "@openai/codex"
-   :gemini "@google/gemini-cli"
-   :pi "@earendil-works/pi-coding-agent"})
 
 (defn normalize-harness-config
   "Extract and normalize harness configuration for deterministic hashing.
@@ -42,14 +31,7 @@
    - Same configuration always produces same canonical form
    - nil versions consistently normalized to \"latest\""
   [state]
-  (->> harness-keys
-       (filter #(get state (keyword (str "with-" (name %)))))
-       (map (fn [harness-kw]
-              (let [version-key (keyword (str (name harness-kw) "-version"))
-                    version (get state version-key)]
-                [harness-kw (or version "latest")])))
-       (sort-by first)
-       vec))
+  (harness/volume-config state))
 
 (defn compute-harness-hash
   "Compute deterministic hash from harness configuration.
@@ -178,27 +160,32 @@
       (str/includes? lower "volume is in use") {:removed? false :reason :in-use :stderr (str/trim err-str)}
       :else {:removed? false :reason :error :stderr (str/trim err-str)})))
 
-(defn- build-opencode-install-command
-  "Build shell command for installing OpenCode binary if enabled.
+(defn- harness-version
+  "Pinned version for `descriptor` in `state`, or \"latest\" when unpinned."
+  [state {:keys [version-key]}]
+  (or (get state version-key) "latest"))
 
-   Arguments:
-   - state: State map with :with-opencode and :opencode-version
+(defn- npm-install-command
+  "npm command installing every enabled npm-backed harness, or nil if none."
+  [state descriptors]
+  (let [packages (->> descriptors
+                      (filter #(= :npm (get-in % [:install :kind])))
+                      (map #(str (get-in % [:install :package])
+                                 "@" (harness-version state %))))]
+    (when (seq packages)
+      (str "npm install -g " (str/join " " packages)))))
 
-   Returns: Shell command string or nil if OpenCode not enabled
-
-   Implementation:
-   - Downloads from anomalyco/opencode GitHub releases
-   - Uses opencode-linux-x64.tar.gz (contains single 'opencode' binary)
-   - Installs to /tools/bin/opencode
-   - Version \"latest\" maps to /releases/latest/download URL"
-  [state]
-  (when (:with-opencode state)
-    (let [version (or (:opencode-version state) "latest")
-          ;; Build URL: latest uses /releases/latest/download, specific version uses /releases/download/v{VERSION}
-          url (if (= version "latest")
-                "https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-x64.tar.gz"
-                (str "https://github.com/anomalyco/opencode/releases/download/v" version "/opencode-linux-x64.tar.gz"))]
-      (str "mkdir -p /tools/bin && curl -fsSL " url " | tar -xz -C /tools/bin"))))
+(defn- tarball-install-command
+  "Command downloading and unpacking one binary-tarball harness release.
+   An unpinned harness uses the release's `latest` URL; a pinned one fills the
+   version into the descriptor's versioned URL template."
+  [state {:keys [install] :as descriptor}]
+  (let [{:keys [latest-url versioned-url-template install-dir]} install
+        version (harness-version state descriptor)
+        url (if (= version "latest")
+              latest-url
+              (format versioned-url-template version))]
+    (str "mkdir -p " install-dir " && curl -fsSL " url " | tar -xz -C " install-dir)))
 
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
@@ -209,34 +196,21 @@
 
    Returns: Shell command string that:
             1. Sets NPM_CONFIG_PREFIX to /tools/npm
-            2. Installs enabled npm-based harnesses
-            3. Installs OpenCode binary if enabled
+            2. Installs enabled npm-backed harnesses in registry order
+            3. Installs enabled binary-tarball harnesses
             4. Sets world-writable permissions with chmod
 
-   Example output:
-   \"export NPM_CONFIG_PREFIX=/tools/npm && npm install -g @anthropic-ai/claude-code@2.0.22 && mkdir -p /tools/bin && curl -fsSL {URL} | tar -xz -C /tools/bin && chmod -R a+rwX /tools\"
-
-   Notes:
-   - OpenCode is a Go binary, installed separately from npm packages
-   - Nil versions become \"latest\"
-   - Only enabled harnesses are included"
+   Install kinds come from each harness descriptor; image-baked harnesses
+   (gitleaks) never reach the volume. Nil versions become \"latest\"."
   [state]
-  (let [;; Build list of package@version strings for enabled harnesses
-        packages (keep (fn [[harness-kw package-name]]
-                         (when (get state (keyword (str "with-" (name harness-kw))))
-                           (let [version-key (keyword (str (name harness-kw) "-version"))
-                                 version (or (get state version-key) "latest")]
-                             (str package-name "@" version))))
-                       harness-npm-packages)
-        ;; Join packages into npm install command
-        npm-install (when (seq packages)
-                      (str "npm install -g " (str/join " " packages)))
-        ;; Build OpenCode binary install command if enabled
-        opencode-install (build-opencode-install-command state)]
-    ;; Build complete command string, concatenating all non-nil commands
+  (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
+        npm-install (npm-install-command state enabled)
+        tarball-installs (->> enabled
+                              (filter #(= :binary-tarball (get-in % [:install :kind])))
+                              (map #(tarball-install-command state %)))]
     (str "export NPM_CONFIG_PREFIX=/tools/npm"
          (when npm-install (str " && " npm-install))
-         (when opencode-install (str " && " opencode-install))
+         (str/join (map #(str " && " %) tarball-installs))
          " && chmod -R a+rwX /tools")))
 
 (defn list-harness-volumes

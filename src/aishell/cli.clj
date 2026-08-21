@@ -469,7 +469,7 @@
           volume-name (vol/volume-name harness-hash)
 
           ;; Step 3: Populate volume if needed (only if missing or stale)
-          _ (when (some #(get state-map %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+          _ (when (harness/volume-harnesses-enabled? state-map)
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
                                     (not= (vol/get-volume-label volume-name "aishell.harness.hash")
@@ -594,18 +594,12 @@
                             (vol/volume-name harness-hash))
 
             ;; Check if any harness is enabled
-            harnesses-enabled? (some #(get state %) [:with-claude :with-opencode :with-codex :with-gemini :with-pi])
+            harnesses-enabled? (harness/volume-harnesses-enabled? state)
 
             _ (if harnesses-enabled?
                 ;; Repopulate volume (delete + recreate)
                 (let [;; Compute harness list for label
-                      harness-list (str/join "," (keep (fn [[k v]]
-                                                         (when v (name k)))
-                                                       {:claude (:with-claude state)
-                                                        :opencode (:with-opencode state)
-                                                        :codex (:with-codex state)
-                                                        :gemini (:with-gemini state)
-                                                        :pi (:with-pi state)}))]
+                      harness-list (enabled-harness-list state)]
                   (println "Repopulating harness volume...")
                   (let [rm-result (vol/remove-volume volume-name)]
                     (when-not (:removed? rm-result)

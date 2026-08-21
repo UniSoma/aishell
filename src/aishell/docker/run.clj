@@ -243,18 +243,23 @@
          vec)))
 
 (def harness-config-dirs
-  "Config directories required by each harness.
+  "Config directories required by each harness, keyed by setup-state flag and
+   derived from the registry's descriptors in display order.
    Only directories for enabled harnesses are mounted."
-  {:with-claude   [[".claude"] [".claude.json"]]
-   :with-opencode [[".config" "opencode"] [".local" "share" "opencode"]]
-   :with-codex    [[".codex"]]
-   :with-gemini   [[".gemini"]]
-   :with-pi       [[".pi"]]})
+  (into {}
+        (keep (fn [{:keys [state-key config-paths]}]
+                (when (seq config-paths)
+                  [state-key (mapv :path config-paths)])))
+        harness/registry))
 
 (def ^:private harness-config-files
   "Entries in harness-config-dirs that are files, not directories.
    Created as seeded files (not directories) when absent on the host."
-  #{[".claude.json"]})
+  (into #{}
+        (comp (mapcat :config-paths)
+              (filter #(= :file (:type %)))
+              (map :path))
+        harness/registry))
 
 (defn- ensure-harness-config-paths!
   "Create harness config directories and files on host if they don't exist.
@@ -479,17 +484,16 @@
       base-mounts)))
 
 (def harness-api-keys
-  "API key environment variables required by each harness.
+  "API key environment variables required by each harness, keyed by setup-state
+   flag and derived from the registry's descriptors in display order.
    Only keys for enabled harnesses are passed into the container.
    Cross-cutting keys (GITHUB_TOKEN, AWS_*) must be added explicitly
    via config.yaml env: section."
-  {:with-claude   ["ANTHROPIC_API_KEY"]
-   :with-opencode ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
-                   "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]
-   :with-codex    ["OPENAI_API_KEY" "CODEX_API_KEY"]
-   :with-gemini   ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
-                   "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
-   :with-pi       ["PI_CODING_AGENT_DIR" "PI_SKIP_VERSION_CHECK"]})
+  (into {}
+        (keep (fn [{:keys [state-key env-passthrough]}]
+                (when (seq env-passthrough)
+                  [state-key (vec env-passthrough)])))
+        harness/registry))
 
 (defn- build-api-env-args
   "Build -e flags for API keys required by enabled harnesses."
@@ -502,15 +506,28 @@
          (filter #(System/getenv %))
          (mapcat (fn [var] ["-e" (str var "=" (System/getenv var))])))))
 
+(def ^:private harness-credential-files
+  "Setup-state flag -> env var naming a host credentials file the harness reads.
+   Derived from descriptors carrying :credentials-file-env (today: Gemini)."
+  (into {}
+        (keep (fn [{:keys [state-key credentials-file-env]}]
+                (when credentials-file-env [state-key credentials-file-env])))
+        harness/registry))
+
 (defn build-gcp-credentials-mount
-  "Mount GCP service account credentials file if GOOGLE_APPLICATION_CREDENTIALS is set
-   and the Gemini harness is enabled.
-   The env var is passed through separately; this mounts the file it references."
+  "Mount, read-only, the credentials file named by an enabled harness's
+   credentials env var (Gemini's GOOGLE_APPLICATION_CREDENTIALS).
+   The env var is passed through separately; this mounts the file it references.
+   Returns nil when there is nothing to mount."
   [state]
-  (when (get state :with-gemini)
-    (when-let [creds-path (System/getenv "GOOGLE_APPLICATION_CREDENTIALS")]
-      (when (fs/exists? creds-path)
-        ["-v" (str creds-path ":" creds-path ":ro")]))))
+  (seq (into []
+             (comp (filter (fn [[state-key _]] (get state state-key)))
+                   (keep (fn [[_ env-var]]
+                           (when-let [path (System/getenv env-var)]
+                             (when (fs/exists? path) path))))
+                   (distinct)
+                   (mapcat (fn [path] ["-v" (str path ":" path ":ro")])))
+             harness-credential-files)))
 
 (defn- build-docker-args-internal
   "Internal helper to build docker run arguments.

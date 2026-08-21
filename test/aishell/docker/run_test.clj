@@ -406,3 +406,70 @@
   (testing "gitleaks takes CLI args only, per its capability field"
     (is (= ["gitleaks" "dir" "."]
            (container-command "gitleaks" ["--redact"] ["dir" "."] true)))))
+
+;; ---------------------------------------------------------------------------
+;; Harness config-path and env-passthrough tables
+;;
+;; These tables are what the mount and env builders consume, and what
+;; `aishell info` prints. The literals below are the pre-registry values: they
+;; pin that deriving them from descriptors changed nothing a caller can see.
+;; ---------------------------------------------------------------------------
+
+(def ^:private config-files @#'run/harness-config-files)
+(def ^:private api-env-args #'run/build-api-env-args)
+
+(deftest harness-config-dirs-table
+  (testing "home-relative config paths per harness state key, in registry order"
+    (is (= {:with-claude   [[".claude"] [".claude.json"]]
+            :with-opencode [[".config" "opencode"] [".local" "share" "opencode"]]
+            :with-codex    [[".codex"]]
+            :with-gemini   [[".gemini"]]
+            :with-pi       [[".pi"]]}
+           run/harness-config-dirs)))
+  (testing "iteration order is preserved for mount and info output"
+    (is (= [:with-claude :with-opencode :with-codex :with-gemini :with-pi]
+           (vec (keys run/harness-config-dirs)))))
+  (testing "gitleaks mounts no host config"
+    (is (nil? (get run/harness-config-dirs :with-gitleaks)))))
+
+(deftest harness-config-files-are-seeded-not-created-as-dirs
+  (testing "only .claude.json is a file entry"
+    (is (= #{[".claude.json"]} config-files))))
+
+(deftest harness-api-keys-table
+  (testing "passthrough env vars per harness state key"
+    (is (= {:with-claude   ["ANTHROPIC_API_KEY"]
+            :with-opencode ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
+                            "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]
+            :with-codex    ["OPENAI_API_KEY" "CODEX_API_KEY"]
+            :with-gemini   ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
+                            "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
+            :with-pi       ["PI_CODING_AGENT_DIR" "PI_SKIP_VERSION_CHECK"]}
+           run/harness-api-keys)))
+  (testing "gitleaks passes no API keys through"
+    (is (nil? (get run/harness-api-keys :with-gitleaks)))))
+
+(deftest api-env-args-only-cover-enabled-harnesses
+  (testing "a disabled harness contributes no -e flag even when the var is set"
+    (let [set-var (first (filter #(System/getenv %) (get run/harness-api-keys :with-gemini)))]
+      (when set-var
+        (is (empty? (filter #(str/starts-with? (str %) (str set-var "="))
+                            (api-env-args {:with-claude true})))))))
+  (testing "no harness enabled means no API env args at all"
+    (is (empty? (api-env-args {}))))
+  (testing "unset vars are never forwarded as empty values"
+    (is (not-any? #(str/ends-with? (str %) "=") (api-env-args {:with-claude true
+                                                               :with-opencode true
+                                                               :with-codex true
+                                                               :with-gemini true
+                                                               :with-pi true})))))
+
+(deftest credentials-file-mount-follows-the-gemini-descriptor
+  (testing "the mount is offered only when Gemini is enabled"
+    (is (nil? (run/build-gcp-credentials-mount {:with-claude true}))))
+  (testing "Gemini declares which env var names its credentials file"
+    (is (= "GOOGLE_APPLICATION_CREDENTIALS"
+           (:credentials-file-env (harness/descriptor :gemini)))))
+  (testing "no other harness declares one"
+    (is (= [:gemini]
+           (mapv :id (filter :credentials-file-env harness/registry))))))
