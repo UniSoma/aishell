@@ -13,7 +13,7 @@ Requirements: Linux, macOS, Windows, or WSL2; Docker; Babashka (https://babashka
 
 ## How It Works
 
-aishell builds a foundation Docker image (Debian bookworm-slim with Node.js 24, git, and CLI tools) and populates a Docker volume with harness tools (npm packages and binaries). Each harness launch creates an ephemeral container with your project mounted at its real host path, your git identity forwarded, and the harness tools available.
+aishell builds a foundation Docker image (Debian trixie-slim with Node.js 24, git, and CLI tools) and populates a Docker volume with harness tools (npm packages and binaries). Each harness launch creates an ephemeral container with your project mounted at its real host path, your git identity forwarded, and the harness tools available.
 
 Key design principles:
 
@@ -493,12 +493,12 @@ docker stop aishell-<hash>-reviewer        # Stop container
 
 ## Foundation Image Contents
 
-Built on debian:bookworm-slim:
+Built on debian:trixie-slim:
 
 - **Runtimes:** Node.js 24 (npm, npx), Babashka
 - **Security:** Gitleaks v8.30.0 (optional)
 - **Tools:** git, curl, jq, ripgrep, vim, tree, less, file, unzip, watch, htop, sudo
-- **SQLite 3.53.4:** built from source (sqlite3, sqldiff, sqlite3_rsync), shadowing Debian's 3.40.1 library
+- **SQLite 3.53.4:** built from source (sqlite3, sqldiff, sqlite3_rsync), shadowing Debian's 3.46.1 library
 - **User switching:** gosu (matches host UID/GID)
 - **Harness tools** are in a separate volume at `/tools`, not in the image
 

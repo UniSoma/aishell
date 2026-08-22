@@ -82,7 +82,7 @@ Base image changes cascade automatically: when `aishell:base` is rebuilt, all pr
 The foundation image contains stable system components that change rarely:
 
 **Contents:**
-- Debian bookworm-slim base
+- Debian trixie-slim distro image (glibc floor >= 2.39, asserted at build time)
 - Node.js 24 runtime
 - Babashka CLI runtime
 - System tools (git, curl, jq, ripgrep, vim, etc.)
@@ -209,7 +209,7 @@ The build phase creates the foundation Docker image and populates the harness vo
          ▼
 ┌──────────────────────────────────────────────┐
 │ Docker Build (Foundation)                    │
-│ - FROM debian:bookworm-slim                  │
+│ - FROM debian:trixie-slim                    │
 │ - Install system packages                    │
 │ - Install Node.js, Babashka, Gosu             │
 │ - Install Gitleaks (if --with-gitleaks)        │
@@ -540,7 +540,7 @@ aishell v3.1.0 adds native Windows support using host-side platform detection wi
 
 **1. Host-side platform detection, container-side Linux-only**
 
-aishell uses `babashka.fs/windows?` for conditional logic on the host machine, but containers are always Linux (Debian bookworm-slim). Docker Desktop's WSL2 backend provides Linux containers on Windows, covering 95%+ of Windows Docker users.
+aishell uses `babashka.fs/windows?` for conditional logic on the host machine, but containers are always Linux (Debian trixie-slim). Docker Desktop's WSL2 backend provides Linux containers on Windows, covering 95%+ of Windows Docker users.
 
 **Rationale:** Native Windows containers would require separate Dockerfile and entrypoint scripts. The WSL2 approach provides broad Windows compatibility with a single codebase.
 
@@ -571,6 +571,6 @@ Unix systems use `babashka.process/exec` (process replacement, clean process tre
 
 ### Container Environment
 
-**Containers are always Linux (Debian bookworm-slim)**, regardless of host platform. aishell does not support Windows containers.
+**Containers are always Linux (Debian trixie-slim)**, regardless of host platform. aishell does not support Windows containers.
 
 **Why:** Docker Desktop's WSL2 backend provides Linux containers on Windows. This covers the vast majority of Windows Docker users without requiring separate Windows container images, Dockerfiles, or entrypoint scripts.

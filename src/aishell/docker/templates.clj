@@ -26,20 +26,22 @@ ARG SQLITE_YEAR=2026
 ARG SQLITE_SHA256=d18fa15aec74d8c17e1463f861095adc01b5ad190256acb4f91d22f0368d232b
 
 # Stage 1: Node.js source (for multi-stage copy)
-FROM node:24-bookworm-slim AS node-source
+FROM node:24-trixie-slim AS node-source
 
 # Stage 2: SQLite, compiled from upstream source
 #
-# Debian bookworm ships 3.40.1 (2022) and projects using this sandbox depend on
-# current SQLite. Upstream's prebuilt tools cannot be used: they need GLIBC_2.38
-# and bookworm provides 2.36, there is no prebuilt shared library at all, and
-# there are no prebuilt tools for arm64. Compiling removes the architecture
-# question along with the glibc one.
+# Debian trixie ships 3.46.1 and projects using this sandbox depend on current
+# SQLite. Upstream's prebuilt tools still cannot be used: there is no prebuilt
+# shared library at all — and the shared library is the point, since shadowing
+# libsqlite3.so.0 is what puts every consumer on the new version — and there are
+# no prebuilt tools for arm64. Compiling also fixes the compile-flag set, which a
+# prebuilt binary would not. The glibc argument for compiling has expired: trixie
+# provides 2.41 and upstream's prebuilt tools want 2.38. See ADR 0004.
 #
 # TCL is deliberately absent. Upstream's README states the core deliverables
 # build without it, and the tree bundles jimsh for its own build scripts.
 # sqlite3_analyzer is the one TCL-dependent tool, so it is not built.
-FROM debian:bookworm-slim AS sqlite-source
+FROM debian:trixie-slim AS sqlite-source
 
 ARG SQLITE_VERSION
 ARG SQLITE_YEAR
@@ -54,7 +56,7 @@ ARG SQLITE_SHA256
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gcc libc6-dev libreadline-dev make unzip
 
 # Compile flags are a Debian-parity floor plus two extras. Upstream defaults
-# most features OFF, so a naive build would REGRESS against the 3.40.1 Debian
+# most features OFF, so a naive build would REGRESS against the 3.46.1 Debian
 # ships. --all covers only fts4, fts5, rtree, geopoly, session, dbpage, dbstat
 # and carray; everything else Debian enables is passed explicitly, either as a
 # configure flag (fts3, update-limit, column-metadata) or as a -D in CFLAGS,
@@ -120,7 +122,7 @@ RUN set -eux; \\
         -I/staging/usr/local/include -L/staging/usr/local/lib -lsqlite3
 
 # Stage 3: Main image
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Build arguments for developer tools
 ARG BABASHKA_VERSION=1.12.218
@@ -135,8 +137,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # aishell.info/parse-packages scrapes the first such block only, so packages
 # added in a second layer go silently missing from `aishell info --foundation`.
 #
-# libreadline8: line editing for the source-built sqlite3 shell (stage 2)
-# openjdk-17-jre-headless: required by bbin for tools.deps dep resolution
+# libreadline8t64: line editing for the source-built sqlite3 shell (stage 2)
+# openjdk-21-jre-headless: required by bbin for tools.deps dep resolution
 # openssh-client, patch: git Recommends, dropped by --no-install-recommends
 # poppler-data: CJK CMap tables; a libpoppler126 Recommends, likewise dropped
 RUN apt-get update && apt-get install -y --no-install-recommends \\
@@ -150,10 +152,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     htop \\
     jq \\
     less \\
-    libreadline8 \\
+    libreadline8t64 \\
     libxml2-utils \\
     moreutils \\
-    openjdk-17-jre-headless \\
+    openjdk-21-jre-headless \\
     openssh-client \\
     patch \\
     poppler-data \\
@@ -169,6 +171,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     zip \\
     zstd \\
     && rm -rf /var/lib/apt/lists/*
+
+# Assert the glibc floor. Prebuilt binaries we download (uv, cue, gitleaks,
+# gosu) and ones a project pulls in later are linked against ever-newer glibc,
+# so the distro image carries a floor as a first-class property: >= 2.39. The
+# number asserted is the policy, not what trixie happens to ship (2.41) — the
+# headroom is why trixie was chosen, but the promise is 2.39. dpkg does the
+# comparison because a string compare on version numbers is lexicographic and
+# would pass 2.4 as newer than 2.39. See ADR 0005.
+RUN set -eux; \\
+    glibcVersion=\"$(getconf GNU_LIBC_VERSION | awk '{print $2}')\"; \\
+    echo \"glibc ${glibcVersion}\"; \\
+    dpkg --compare-versions \"${glibcVersion}\" ge 2.39 \\
+        || { echo \"glibc ${glibcVersion} is below the 2.39 floor\"; exit 1; }
 
 # Create fd symlink (Debian packages fd-find as fdfind, but tools expect fd)
 RUN ln -s /usr/bin/fdfind /usr/bin/fd

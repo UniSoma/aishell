@@ -16,6 +16,10 @@ _Avoid_: harness config, harness entry
 The ordered, closed collection of harness descriptors from which every harness-dependent behavior in aishell derives. Closed: users cannot add harnesses; new ones are added in aishell itself.
 _Avoid_: harness list, harness table
 
+**Distro image**:
+The upstream OS image the Foundation image is built FROM — `debian:trixie-slim`. It carries a minimum glibc version as a declared property (`>= 2.39`), asserted at build time; when a tool outruns the floor, the distro image is bumped rather than the tool vendored per-case.
+_Avoid_: base image, OS image
+
 **Foundation image**:
 `aishell:foundation` — the bottom image layer, built from a Dockerfile embedded in aishell itself and identical for every user and project. Holds the OS packages, runtimes and shared tooling. Users never edit it; it rebuilds when its embedded content hash changes.
 _Avoid_: base (for this layer), system image

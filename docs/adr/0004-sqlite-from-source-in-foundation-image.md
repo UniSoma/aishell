@@ -25,6 +25,7 @@ one path that does not need one.
   2.36, so the prebuilt tools do not run here at all. Upstream ships no prebuilt
   shared library, and no prebuilt tools for arm64. Compiling is the only option
   that works, and it settles the architecture question at the same time.
+  **(Amended — the glibc half of this has expired. See "Amendment" below.)**
 
 - **Shadowing `libsqlite3-0`, not removing it.** `libsqlite3-0` stays installed
   — other packages link it and apt would remove them along with it. Installing
@@ -74,6 +75,35 @@ one path that does not need one.
   plain `fgets` — no history, no arrow keys — which is exactly the kind of
   regression this change exists to avoid. `--enable-readline` is passed
   explicitly so a missing library fails the build rather than degrading it.
+
+## Amendment: the glibc premise expired
+
+The distro image moved from `debian:bookworm-slim` to `debian:trixie-slim`, which
+provides glibc 2.41 (ADR 0005). Upstream's prebuilt SQLite tools want
+`GLIBC_2.38`, so as of that change **they would run here**. The headline reason
+above — "the prebuilt tools do not run here at all" — is no longer true, and an
+ADR whose stated reason has quietly stopped being true is worse than one that
+says so.
+
+The decision stands on its remaining legs, none of which the distro bump
+touches:
+
+- Upstream ships **no prebuilt shared library at all**, and the shared library is
+  the whole point: shadowing `libsqlite3.so.0` is what puts every consumer in the
+  container on the current version rather than just whoever types `sqlite3`.
+- There are **no prebuilt tools for arm64**.
+- The prebuilt tools come with **upstream's compile flags**, not the
+  Debian-parity floor this build asserts option by option.
+- Trixie's own `sqlite3` is **3.46.1**, still well behind the pinned 3.53.4, so
+  "install it from apt" and "have current SQLite" remain mutually exclusive.
+
+One package name above also went stale with the distro: the readline runtime in
+the image is now `libreadline8t64`, renamed by Debian's time_t transition. The
+argument for having it is unchanged.
+
+The source build is therefore kept, and the numbers in this ADR that describe
+bookworm are left as the historical record of why the decision was originally
+made.
 
 ## Consequences
 

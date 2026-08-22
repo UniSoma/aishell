@@ -1,12 +1,12 @@
 ---
 id: aix-01m0k3e5txye
 title: Move the distro image to debian:trixie-slim (glibc floor 2.39)
-status: open
+status: in_progress
 type: task
 priority: 2
 mode: hitl
 created: '2026-08-21T21:25:39.805035512Z'
-updated: '2026-08-21T21:26:00.316130070Z'
+updated: '2026-08-22T20:34:25.520358252Z'
 acceptance:
 - title: Foundation image builds successfully from debian:trixie-slim on all three stages
   done: false
@@ -17,17 +17,17 @@ acceptance:
 - title: 'Every existing in-build probe still passes: SQLite compile-option checks, node, bb, gosu, cue, uv'
   done: false
 - title: 'aishell info --foundation reports ''Distro: debian:trixie-slim'' scraped from the Dockerfile, not hardcoded'
-  done: false
+  done: true
 - title: ADR 0005 records the glibc-floor policy; ADR 0004 is amended to note its glibc premise expired
-  done: false
+  done: true
 - title: 'CONTEXT.md defines ''distro image'' with Avoid: base image'
-  done: false
+  done: true
 - title: Unreleased changelog entry warns about libreadline8 / openjdk-17 as the shape of downstream extension breakage
-  done: false
+  done: true
 - title: No 'bookworm' strings remain outside .planning/
-  done: false
+  done: true
 - title: clj-kondo lint is clean
-  done: false
+  done: true
 tags:
 - ready-for-human
 links:
@@ -89,3 +89,24 @@ Already handled, nothing to design: the foundation rebuilds off its embedded con
 ## Watch for
 
 `aishell info`'s package scraper anchors on the *first* multi-line `apt-get install` block. Renaming packages inside that block is safe, but any change to its shape silently changes what `aishell info --foundation` reports.
+
+## Notes
+
+**2026-08-22T20:34:25.520358252Z**
+
+Implementation landed; four acceptance criteria are left open on purpose — they need a container runtime, which this environment does not have.
+
+Human verification steps:
+1. `aishell setup --force` (or `aishell update`) to force a foundation rebuild. Watch all three stages come up on trixie.
+2. Confirm the glibc layer echoes `glibc 2.41` and does not fail. To prove the assertion actually bites, temporarily flip the floor to `ge 2.99` and confirm the build fails with "glibc 2.41 is below the 2.99 floor".
+3. Confirm the in-build probes still pass: the SQLite compile-option loop, `node --version`, `bb --version`, `gosu --version`, `cue version`, `uv --version`.
+4. Confirm bbin still resolves tools.deps deps against JRE 21 — the existing `bbin version && test -d /usr/local/share/m2/org/clojure` layer is the proof; it must not be skipped by cache.
+
+Verified without Docker:
+- The glibc comparison was run on this host (glibc 2.36): the exact snippet exits 1 with a named cause. `dpkg --compare-versions` ranks 2.41 and 2.39 as passing, 2.36 and 2.4 as failing — so the lexicographic trap (2.4 > 2.39) is avoided.
+- `aishell info` reports `Distro: debian:trixie-slim` and `Node.js 24 (from node:24-trixie-slim)`, both scraped.
+- Full suite green (156 tests / 726 assertions), clj-kondo clean.
+
+Interpretation of "No 'bookworm' strings remain outside .planning/": live code and current docs are scrubbed (src, test fixtures aside, README, ARCHITECTURE, llm.txt, CONTEXT.md, .aishell/Dockerfile). Historical records deliberately keep the word: released CHANGELOG entries, ADR 0004's original rationale (the amendment explains why the numbers stay), ADR 0005's account of the move, .tickets/ and artifacts/. Rewriting those would falsify the record.
+
+Two ADR-staleness items outside the ticket's own enumeration were also fixed: ADR 0004's `libreadline8` package name is noted in its amendment, and ADR 0003 got a short amendment marking its openjdk-17 and yq facts as bookworm-era.

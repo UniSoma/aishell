@@ -29,10 +29,24 @@
          sort
          vec)))
 
-(defn- parse-node-version
-  "Extract Node.js major version from FROM node:XX-bookworm-slim."
+(defn- parse-distro
+  "Extract the distro image from the final stage's FROM line.
+
+   Takes the last FROM that carries no `AS` alias: builder stages are named
+   and the main stage is not, so a builder on a different distro can never be
+   reported as the foundation's own."
   [dockerfile]
-  (second (re-find #"FROM node:(\d+)-bookworm-slim" dockerfile)))
+  (second (last (re-seq #"(?im)^FROM[ \t]+(\S+)[ \t]*$" dockerfile))))
+
+(defn- parse-node-tag
+  "Extract the Node.js image tag and major version from the node-source stage.
+
+   Returns [tag major], e.g. [\"24-trixie-slim\" \"24\"]. Deliberately not
+   anchored on a Debian suite name: a distro bump changes the tag and should
+   not need a change here."
+  [dockerfile]
+  (let [[_ tag major] (re-find #"(?i)FROM[ \t]+node:((\d+)-\S+)\s+AS\s+node-source" dockerfile)]
+    (when tag [tag major])))
 
 (defn- parse-babashka-version
   "Extract Babashka version from ARG BABASHKA_VERSION=X.Y.Z."
@@ -159,7 +173,8 @@
 
   (let [dockerfile templates/base-dockerfile
         packages (parse-packages dockerfile)
-        node-version (parse-node-version dockerfile)
+        distro (parse-distro dockerfile)
+        [node-tag node-version] (parse-node-tag dockerfile)
         bb-version (parse-babashka-version dockerfile)
         bbin-version (parse-bbin-version dockerfile)
         cue-version (parse-cue-version dockerfile)
@@ -179,7 +194,8 @@
     ;; Foundation section
     (println (str output/BOLD "Foundation Image" output/NC " (aishell:foundation)"))
     (println "--------------------------------------")
-    (println "  Base: debian:bookworm-slim")
+    (when distro
+      (println (str "  Distro: " distro)))
     (println)
     (println "  System Packages:")
     (doseq [line (wrap-packages packages)]
@@ -187,7 +203,7 @@
     (println)
     (println "  Runtimes:")
     (when node-version
-      (println (str "    Node.js " node-version " (from node:" node-version "-bookworm-slim)")))
+      (println (str "    Node.js " node-version " (from node:" node-tag ")")))
     (when bb-version
       (println (str "    Babashka " bb-version)))
     (when bbin-version

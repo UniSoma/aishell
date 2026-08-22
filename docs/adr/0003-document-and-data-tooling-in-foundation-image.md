@@ -78,7 +78,8 @@ The remaining criteria still apply in full.
   (fixing a parser to accommodate a worse Dockerfile). The constraint is now
   commented in the template so it is not silently undone.
 
-- **Rejected, with measurements.** `pandoc` is 168 MB installed — twelve times
+- **Rejected, with measurements.** (See the amendment below: the `yq` fact is a
+  bookworm one.) `pandoc` is 168 MB installed — twelve times
   this entire change — and belongs in a project overlay. `yq` in bookworm is the
   *Python* wrapper (3.1.0, needs python3 + PyYAML), which violates the
   no-interpreter rule; and babashka already bundles `clj-yaml`, so `bb` reads
@@ -108,3 +109,14 @@ The remaining criteria still apply in full.
   `docs/CONFIGURATION.md` along with its key-exposure trade-off.
 - The admission test above should be applied to, and updated by, the next
   foundation addition.
+
+## Amendment: the measurements here are bookworm-era
+
+The distro image moved to `debian:trixie-slim` (ADR 0005). The package names,
+versions and size measurements in this ADR were taken against bookworm and are
+kept as the record of what the admission decision was made on. Two of them no
+longer describe the image: `openjdk-17-jre-headless` was replaced by
+`openjdk-21-jre-headless` (17 is absent from trixie), and the `yq` in the
+distro is no longer necessarily the Python wrapper — the no-interpreter rule
+that rejected it still stands and would have to be re-checked against trixie
+before `yq` were reconsidered. The admission test itself is unaffected.

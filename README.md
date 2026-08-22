@@ -545,16 +545,16 @@ env:
 
 ### Foundation image contents
 
-Built on `debian:bookworm-slim` with:
+Built on `debian:trixie-slim` (glibc 2.41; the build asserts a floor of 2.39 — see `docs/adr/0005-glibc-floor-on-the-distro-image.md`) with:
 
 **Runtimes:**
 - Node.js 24 (with npm, npx)
 - Babashka
 - bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
-- OpenJDK 17 JRE (headless) — required by bbin's `tools.deps` dep resolution
+- OpenJDK 21 JRE (headless) — required by bbin's `tools.deps` dep resolution
 - CUE v0.17.1 — data validation, configuration, and code generation
 - uv v0.11.29 — Python package and toolchain manager (`uv`, `uvx`); no interpreter is baked, uv fetches the version a project pins on demand
-- SQLite 3.53.4 — compiled from upstream source, not Debian's 3.40.1. Ships
+- SQLite 3.53.4 — compiled from upstream source, not Debian's 3.46.1. Ships
   `sqlite3`, `sqldiff` and `sqlite3_rsync`, plus the shared library, header and
   pkg-config file under `/usr/local`. The library is `ldconfig`'d ahead of
   Debian's, so anything in the container that links `libsqlite3.so.0` gets

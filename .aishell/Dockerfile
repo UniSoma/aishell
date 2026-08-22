@@ -3,7 +3,7 @@ FROM aishell:base
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # >>> clojure (managed) >>>
-# JDK 25 from Eclipse Temurin (foundation only ships JRE 17 headless).
+# JDK 25 from Eclipse Temurin (foundation only ships JRE 21 headless).
 COPY --from=eclipse-temurin:25-jdk-jammy /opt/java/openjdk /opt/java/openjdk
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="/opt/java/openjdk/bin:${PATH}"
