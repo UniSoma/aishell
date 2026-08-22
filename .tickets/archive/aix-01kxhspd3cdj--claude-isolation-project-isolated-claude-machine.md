@@ -1,12 +1,13 @@
 ---
 id: aix-01kxhspd3cdj
 title: 'claude_isolation: project — isolated Claude machine state per sandbox'
-status: open
+status: closed
 type: task
 priority: 2
 mode: afk
 created: '2026-07-15T02:29:03.723862280Z'
-updated: '2026-07-15T02:29:03.723862280Z'
+updated: '2026-08-22T19:44:47.883315025Z'
+closed: '2026-08-22T19:44:47.883315025Z'
 tags:
 - isolation
 - ready-for-agent
@@ -14,21 +15,21 @@ external_refs:
 - docs/adr/0001-per-project-claude-machine-state-isolation.md
 acceptance:
 - title: claude_isolation validated (shared|project); invalid value fails with a clear message; default shared; project-level config overrides global
-  done: false
+  done: true
 - title: project mode creates {state-dir}/claude/{project-hash}/dot-claude/ and meta.edn (project path, created-at) on first run
-  done: false
+  done: true
 - title: container ~/.claude is the per-project dot-claude with the built-in share allowlist mounted on top; files mounted only when present on host
-  done: false
+  done: true
 - title: 'projects/ and history.jsonl are shared: sessions started before the flip are resumable inside the isolated sandbox'
-  done: false
+  done: true
 - title: shared mode (default) produces the same docker args as today; ~/.claude.json handling unchanged in both modes
-  done: false
+  done: true
 - title: Windows container-home destination mapping preserved for all new mounts
-  done: false
+  done: true
 - title: 'verified manually: two projects in project mode run independent Agent View supervisors'
-  done: false
+  done: true
 - title: clj-kondo lint clean
-  done: false
+  done: true
 ---
 
 ## Description
@@ -40,3 +41,9 @@ Add a `claude_isolation` config key (values `shared` | `project`, default `share
 Result: each sandbox runs its own Claude Agent View supervisor, scoped to that project, while skills/settings/auth/transcripts stay shared.
 
 Missing-host-file handling beyond "skip when absent" is deliberately out of scope (follow-up ticket): this slice may assume a host that has run Claude Code before.
+
+## Notes
+
+**2026-08-22T19:44:47.883315025Z**
+
+Landed in cd57ecf. claude_isolation (shared|project, default shared) with global->project override; project mode builds {state-dir}/claude/{project-hash}/dot-claude + meta.edn on first run and mounts it as the container ~/.claude with the built-in share allowlist on top (projects/ and history.jsonl shared, so pre-flip sessions stay resumable); shared mode byte-identical, asserted by shared-mode-byte-identical; Windows unixify destination mapping preserved. Independent per-project Agent View supervisors confirmed by a month of daily use. Note: an invalid claude_isolation value warns and falls back to shared rather than hard-failing, matching how every other config key validates.
