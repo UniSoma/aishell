@@ -144,11 +144,6 @@
                       {:project-dir (str project-dir)}))
       (or (first present) ".aishell"))))
 
-(defn project-config-dir-path
-  "Absolute path to the active project config dir for project-dir."
-  [project-dir]
-  (str (fs/path project-dir (resolve-project-config-dir project-dir))))
-
 (defn project-config-path
   "Get path to project config file (<active-dir>/config.yaml) relative to given dir.
    The active dir is .aishell or .sandbox per resolve-project-config-dir."

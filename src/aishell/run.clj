@@ -285,35 +285,36 @@
 
     ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
-          base-tag base/base-image-tag]
+          base-tag base/base-image-tag
 
-      ;; Resolve final image (may auto-build extension, ensures base image up to date)
-      (let [image-tag (resolve-image-tag base-tag project-dir false)
-            cfg (config/load-config project-dir)
-            git-id (docker-run/read-git-identity project-dir)
+          ;; Resolve final image (may auto-build extension, ensures base image up to date)
+          image-tag (resolve-image-tag base-tag project-dir false)
+          cfg (config/load-config project-dir)
+          git-id (docker-run/read-git-identity project-dir)
 
-            ;; Ensure harness volume ready (lazy population)
-            harness-volume-name (ensure-harness-volume state cfg)
+          ;; Ensure harness volume ready (lazy population)
+          harness-volume-name (ensure-harness-volume state cfg)
 
-            ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
-            tty? (some? (System/console))
+          ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
+          tty? (some? (System/console))
 
-            ;; Build docker args for exec (conditional TTY, skip pre_start)
-            docker-args (docker-run/build-docker-args-for-exec
-                         {:project-dir project-dir
-                          :image-tag image-tag
-                          :config cfg
-                          :state state
-                          :git-identity git-id
-                          :tty? tty?
-                          :harness-volume-name harness-volume-name})
+          ;; Build docker args for exec (conditional TTY, skip pre_start)
+          docker-args (docker-run/build-docker-args-for-exec
+                       {:project-dir project-dir
+                        :image-tag image-tag
+                        :config cfg
+                        :state state
+                        :git-identity git-id
+                        :tty? tty?
+                        :harness-volume-name harness-volume-name})
 
-            ;; Command to run in container (user's command)
-            container-cmd cmd-args]
+          ;; Command to run in container (user's command)
+          container-cmd cmd-args
 
-        ;; Execute command with inherited stdin/stdout/stderr
-        ;; :continue true prevents exception on non-zero exit
-        (let [result (apply p/shell {:inherit true :continue true}
-                            (concat docker-args container-cmd))]
-          ;; Propagate exit code to caller
-          (System/exit (:exit result)))))))
+          ;; Execute command with inherited stdin/stdout/stderr
+          ;; :continue true prevents exception on non-zero exit
+          result (apply p/shell {:inherit true :continue true}
+                        (concat docker-args container-cmd))]
+
+      ;; Propagate exit code to caller
+      (System/exit (:exit result)))))

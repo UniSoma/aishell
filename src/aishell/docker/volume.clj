@@ -8,7 +8,6 @@
             [aishell.harness :as harness]
             [aishell.docker.build :as build]
             [aishell.docker.spinner :as spinner]
-            [aishell.output :as output]
             [babashka.process :as p]
             [clojure.string :as str]))
 

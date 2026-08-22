@@ -15,6 +15,7 @@
       (str/replace "_" "-")
       symbol))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn run-all []
   (let [files (->> (fs/glob "test" "**/*_test.clj")
                    (map str)

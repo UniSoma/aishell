@@ -1,4 +1,4 @@
-FROM aishell:foundation
+FROM aishell:base
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 

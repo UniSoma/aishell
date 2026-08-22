@@ -1008,7 +1008,7 @@
         ;; Standard dispatch for other commands (setup, update, help)
         (if (or unsafe? container-name-override)
           ;; --unsafe or --name with no harness command -> shell mode
-          (run/run-container nil [] {:unsafe (boolean unsafe?) :container-name container-name-override})
+          (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override})
           ;; Normal dispatch
           (cli/dispatch dispatch-table args {:error-fn handle-error
                                              :restrict true}))))))

@@ -3,6 +3,7 @@
    Supports .aishell/config.yaml (or its .sandbox/ alias) in the project
    dir with global ~/.aishell/config.yaml fallback."
   (:require [clj-yaml.core :as yaml]
+            [clojure.set]
             [babashka.fs :as fs]
             [clojure.string :as cstr]
             [aishell.util :as util]

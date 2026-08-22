@@ -158,7 +158,7 @@
             (fn [[key-name value]]
               (if (nil? value)
                  ;; Passthrough: only add if set on host
-                (if-let [host-val (System/getenv key-name)]
+                (if (System/getenv key-name)
                   ["-e" key-name]
                   (do
                     (output/warn (str "Skipping unset host variable: " key-name))

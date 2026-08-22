@@ -158,7 +158,7 @@
                 (output/error (str "Failed to download checksum for v" target))))
 
             ;; 8. Verify checksum
-            (let [expected-hash (first (str/split (str/trim (slurp (str tmp-checksum))) #"\s+"))
+            (let [expected-hash (first (str/split (str/trim (slurp tmp-checksum)) #"\s+"))
                   actual-hash (compute-sha256-file tmp-script)]
               (when (not= expected-hash actual-hash)
                 (output/error (str "Checksum verification failed!\n"

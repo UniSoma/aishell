@@ -5,7 +5,6 @@
    on Dockerfile content hash. Supports verbose, quiet, and spinner modes."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
-            [clojure.string :as str]
             [aishell.docker :as docker]
             [aishell.docker.hash :as hash]
             [aishell.docker.spinner :as spinner]
@@ -14,10 +13,7 @@
 
 ;; Label keys for cache tracking
 (def dockerfile-hash-label "aishell.dockerfile.hash")
-(def foundation-image-id-label "aishell.foundation.id")
-(def base-image-id-label foundation-image-id-label) ;; Backward compatibility alias
 (def foundation-image-tag "aishell:foundation")
-(def base-image-tag foundation-image-tag)
 
 (defn get-dockerfile-hash
   "Compute hash of every file baked into the foundation image — the
@@ -85,11 +81,11 @@
                                   cmd)]
         (zero? exit))
       ;; Silent: capture output
-      (let [{:keys [exit out err]} (apply p/shell {:dir (str build-dir)
-                                                   :out :string
-                                                   :err :string
-                                                   :continue true}
-                                          cmd)]
+      (let [{:keys [exit err]} (apply p/shell {:dir (str build-dir)
+                                               :out :string
+                                               :err :string
+                                               :continue true}
+                                      cmd)]
         (when-not (zero? exit)
           (binding [*out* *err*]
             (println err)))
@@ -108,7 +104,7 @@
    - :quiet - Suppress all output except errors
 
    Returns {:success true :image tag} on success, exits on failure."
-  [{:keys [force verbose quiet with-gitleaks] :as opts}]
+  [{:keys [force verbose quiet] :as opts}]
   ;; Verify Docker is available
   (docker/check-docker!)
 
@@ -155,5 +151,3 @@
           ;; Cleanup temp directory
           (fs/delete-tree build-dir))))))
 
-;; Backward compatibility alias
-(def build-base-image build-foundation-image)

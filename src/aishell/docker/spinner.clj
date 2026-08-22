@@ -34,7 +34,7 @@
       (f))
     ;; Animated spinner
     (let [running (atom true)
-          spinner-thread (future
+          _spinner-thread (future
                            (loop [i 0]
                              (when @running
                                (binding [*out* *err*]

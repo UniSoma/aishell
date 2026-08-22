@@ -6,7 +6,6 @@
    base image from it. Otherwise, tags foundation as base (alias)."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
-            [clojure.string :as str]
             [aishell.docker :as docker]
             [aishell.docker.hash :as hash]
             [aishell.docker.extension :as ext]

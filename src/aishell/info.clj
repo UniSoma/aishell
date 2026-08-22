@@ -110,7 +110,7 @@
                 (let [label (get harness-labels state-key (name state-key))]
                   (into [(str "  " label ":")]
                         (map (fn [components]
-                               (str "    " (str (apply fs/path home components))))
+                               (str "    " (apply fs/path home components)))
                              paths))))
               enabled))))
 

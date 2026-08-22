@@ -9,13 +9,6 @@
   (let [path-str (fs/unixify (str path))]
     (some #(str/includes? path-str (str "/" % "/")) excluded-dirs)))
 
-(defn- case-insensitive-basename-match?
-  "Check if filename matches pattern (case-insensitive)."
-  [path pattern-lower]
-  (let [name-lower (str/lower-case (str (fs/file-name path)))]
-    (or (= name-lower pattern-lower)
-        (str/starts-with? name-lower (str pattern-lower ".")))))
-
 (defn detect-env-files
   "Detect .env files (medium severity) and templates (low severity).
    Returns vector of findings."

@@ -7,8 +7,7 @@
             [aishell.output :as output]
             [aishell.detection.formatters :as formatters]
             [aishell.detection.patterns :as patterns]
-            [aishell.detection.gitignore :as gitignore]
-            [aishell.config :as config])
+            [aishell.detection.gitignore :as gitignore])
   (:import [java.nio.file FileSystems]))
 
 ;; Directories to skip during scanning (performance optimization)
@@ -21,12 +20,6 @@
 (def severity-order
   "Sort order for severities (lower number = higher priority)."
   {:high 0 :medium 1 :low 2})
-
-(defn- in-excluded-dir?
-  "Check if a path is within an excluded directory."
-  [path]
-  (let [path-str (fs/unixify (str path))]
-    (some #(str/includes? path-str (str "/" % "/")) excluded-dirs)))
 
 (defn- path-matches-glob?
   "Check if a path string matches a glob pattern using Java NIO PathMatcher."
