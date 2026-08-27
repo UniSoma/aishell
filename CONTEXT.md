@@ -48,3 +48,23 @@ _Avoid_: history (as a category name)
 
 **Claude isolation**:
 Per-project choice of whether a sandbox shares the user's Claude machine state (`shared`, the default — today's behavior) or gets its own keyed by project hash (`project`). Claude config and Claude project data are shared in both modes.
+
+**Security profile**:
+The named bundle of restrictions a Sandbox runs under — `default` or `strict` — chosen per project. Governs capabilities, privilege escalation, process limits and which Network mode applies.
+_Avoid_: posture, hardening level, security mode
+
+**Network mode**:
+Per-project choice of what a Sandbox can reach: `open` (the Docker default), `restricted` (internet only — no loopback, LAN, link-local or metadata addresses), `allowlist` (deny by default; the harness's own hosts plus project additions), or `none`.
+_Avoid_: network policy (the allowlist is the policy; the mode selects whether one applies), firewall
+
+**Egress proxy**:
+The aishell-managed sidecar container that is a Sandbox's only route to the network under `restricted` and `allowlist`. It resolves names itself and enforces the Network mode on the resolved address.
+_Avoid_: sidecar (unqualified), gateway, firewall
+
+**Secret broker**:
+A planned sidecar that holds an API key on the Sandbox's behalf and substitutes it into outbound requests, so the harness sees only a placeholder. Applies to API-key harnesses; OAuth tokens are not brokered.
+_Avoid_: vault, key proxy
+
+**Runtime**:
+The OCI runtime Docker starts a Sandbox with — `runc` (default) or `runsc` (gVisor). A per-project key independent of the Security profile, reported by `aishell check`.
+_Avoid_: backend, engine, isolation level

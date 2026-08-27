@@ -6,9 +6,11 @@ type: epic
 priority: 2
 mode: hitl
 created: '2026-07-16T02:52:38.466589346Z'
-updated: '2026-07-16T03:00:15.429734729Z'
+updated: '2026-08-27T16:15:59.619581288Z'
 tags:
 - wayfinder:map
+links:
+- aix-01m1203dkknf
 ---
 
 ## Destination
@@ -22,6 +24,10 @@ v1 orchestration layer design locked: a babashka library (harness-provider abstr
 - Skills to consult per session: /grilling and /domain-modeling for decision tickets; /research for research tickets.
 - Standing preference: no AI attribution in commits; lint with clj-kondo before commit.
 - Interaction to watch: headless runs exec into the same container as live interactive sessions — the in-flight Claude-isolation work (shared vs project machine state) may affect this.
+
+**2026-08-27T16:15:59.619581288Z**
+
+ADR 0006: headless runs default to the strict security profile (see aix-01m1203dkknf). Add that to the v1 design decisions.
 
 ## Decisions so far
 

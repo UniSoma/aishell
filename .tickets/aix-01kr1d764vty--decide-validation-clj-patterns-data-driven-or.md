@@ -6,10 +6,13 @@ type: chore
 priority: 2
 mode: hitl
 created: '2026-05-07T14:24:42.139395775Z'
-updated: '2026-07-15T02:44:18.985541940Z'
+updated: '2026-08-27T16:17:27.349549261Z'
 tags:
 - needs-triage
 - codebase-design
+- security
+links:
+- aix-01m1203dkknf
 ---
 
 ## Description
@@ -30,3 +33,9 @@ tags:
 ## Blocked by
 
 None.
+
+## Notes
+
+**2026-08-27T16:15:59.528421591Z**
+
+Decided in ADR 0006 (docs/adr/0006-harden-on-docker-with-an-egress-proxy.md): patterns stay hardcoded and additive; config can add checks, never relax them; the only override is an explicit CLI flag. Implementation lands with the security-profiles ticket aix-01m1203dkknf, which closes this one.
