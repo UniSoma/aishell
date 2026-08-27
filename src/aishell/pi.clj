@@ -83,12 +83,13 @@
                    "sh" "-c" install-script "sh"]
                   packages)]
     (try
-      (let [{:keys [exit err]} (apply p/shell {:out :string
-                                               :err :string
-                                               :continue true}
+      (let [{:keys [exit err]} (apply p/shell (if output/*verbose*
+                                                {:out :inherit :err :inherit :continue true}
+                                                {:out :string :err :string :continue true})
                                       cmd)]
         (when-not (zero? exit)
-          (output/warn (str "Pi package installation failed:\n" err)))
+          (output/warn (str "Pi package installation failed"
+                            (when err (str ":\n" err)))))
         (zero? exit))
       (catch Exception e
         (output/warn (str "Pi package installation error: " (.getMessage e)))
@@ -109,9 +110,10 @@
       (let [current-hash (compute-packages-hash packages)
             stored-hash (read-stored-hash)]
         (when (not= current-hash stored-hash)
-          (let [success? (spinner/with-spinner
-                           "Installing Pi packages"
-                           #(run-pi-install! packages harness-volume-name))]
+          (let [install! #(run-pi-install! packages harness-volume-name)
+                success? (if output/*verbose*
+                           (install!)
+                           (spinner/with-spinner "Installing Pi packages" install!))]
             (if success?
               (write-hash! current-hash)
               (output/warn "Pi packages may not be available. Installation will retry next run."))))))))

@@ -239,6 +239,39 @@ sudo aishell setup --with-claude
 
 ## Container Issues
 
+### Symptom: "aishell claude" hangs before the harness starts
+
+**Cause:** Before the container launches, aishell may build the global base image (`~/.aishell/Dockerfile`), build the project extension (`.aishell/Dockerfile`), populate the harness volume (`npm install` in a temporary container), install Pi packages, and scan the project for sensitive files. Each of these runs behind a spinner, so a slow or stalled step looks like a hang.
+
+**Resolution:**
+
+1. **Run with `--verbose` to see which step is running:**
+   ```bash
+   aishell --verbose claude
+   # Streams docker build and npm output instead of the spinner
+   ```
+   The flag must come before the harness name. `aishell claude --verbose` is forwarded to Claude Code, which has its own `--verbose`.
+
+2. **Check Docker from another terminal:**
+   ```bash
+   docker ps          # a build or temporary container means it is working, not hung
+   docker info        # a wedged daemon hangs here too
+   ```
+
+3. **Rule out the sensitive-file scan:**
+   ```bash
+   aishell claude --unsafe
+   ```
+   If this starts immediately, the scan was walking a large tree, or a `(y/n)` confirmation prompt was waiting for input. Allowlist the directory or answer the prompt.
+
+4. **Rebuild with full output** if a build is the culprit:
+   ```bash
+   aishell update --verbose
+   docker build --progress=plain -f .aishell/Dockerfile .
+   ```
+
+---
+
 ### Symptom: "Container exits immediately" after launch
 
 **Cause:** The pre-start command fails or is misconfigured.

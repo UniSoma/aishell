@@ -325,3 +325,18 @@
                   (with-out-str (cli/print-help))))]
       (is (str/includes? out "pi         Run Pi coding agent"))
       (is (not (str/includes? out "  claude     Run Claude Code"))))))
+
+(deftest split-leading-verbose-only-consumes-the-flag-before-the-subcommand
+  (testing "before the harness it is aishell's flag"
+    (is (= [true ["claude" "--model" "opus"]]
+           (cli/split-leading-verbose ["--verbose" "claude" "--model" "opus"]))))
+  (testing "after the harness it is forwarded untouched"
+    (is (= [false ["claude" "--verbose"]]
+           (cli/split-leading-verbose ["claude" "--verbose"]))))
+  (testing "other leading flags survive in order"
+    (is (= [true ["--unsafe" "--name" "x" "claude"]]
+           (cli/split-leading-verbose ["--unsafe" "--verbose" "--name" "x" "claude"]))))
+  (testing "no subcommand means shell mode with the flag consumed"
+    (is (= [true []] (cli/split-leading-verbose ["--verbose"]))))
+  (testing "absent flag leaves args as they were"
+    (is (= [false ["exec" "ls"]] (cli/split-leading-verbose ["exec" "ls"])))))

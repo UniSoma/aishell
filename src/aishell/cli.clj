@@ -36,7 +36,9 @@
   {:help    {:alias :h :coerce :boolean :desc "Show help"}
    :version {:alias :v :coerce :boolean :desc "Show version"}
    :json    {:coerce :boolean
-             :desc "Emit JSON for: ps, --version"}})
+             :desc "Emit JSON for: ps, --version"}
+   :verbose {:coerce :boolean
+             :desc "Show image build and install output (run commands)"}})
 
 ;; Version validation patterns
 (def semver-pattern
@@ -335,7 +337,7 @@
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
   (println (cli/format-opts {:spec global-spec
-                             :order [:help :version :json]}))
+                             :order [:help :version :json :verbose]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "     Set up with Claude Code"))
@@ -343,6 +345,7 @@
   (println (str "  " output/CYAN "aishell exec ls -la" output/NC "             Run command in container"))
   (println (str "  " output/CYAN "aishell ps" output/NC "                       List containers"))
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
+  (println (str "  " output/CYAN "aishell --verbose claude" output/NC "        Run Claude Code, showing build output"))
   (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
 
@@ -844,7 +847,7 @@
     "--json requires a supported command (ps, volumes list, info, check, --version)"
     (str "--json is not supported for: " (first args))))
 
-(defn- do-dispatch [args]
+(defn- do-dispatch* [args verbose?]
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
@@ -1006,12 +1009,29 @@
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
         ;; Standard dispatch for other commands (setup, update, help)
-        (if (or unsafe? container-name-override)
-          ;; --unsafe or --name with no harness command -> shell mode
+        (if (or unsafe? verbose? container-name-override)
+          ;; --unsafe, --verbose or --name with no harness command -> shell mode
           (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override})
           ;; Normal dispatch
           (cli/dispatch dispatch-table args {:error-fn handle-error
                                              :restrict true}))))))
+
+(defn split-leading-verbose
+  "Consume `--verbose` from the flags that precede the subcommand.
+   Returns [verbose? args-without-it]. Only the leading position counts:
+   `aishell --verbose claude` is aishell's flag, `aishell claude --verbose`
+   belongs to Claude Code (which has a --verbose of its own) and is forwarded."
+  [args]
+  (let [leading (take-while #(str/starts-with? % "-") args)
+        trailing (drop (count leading) args)]
+    (if (some #{"--verbose"} leading)
+      [true (vec (concat (remove #{"--verbose"} leading) trailing))]
+      [false (vec args)])))
+
+(defn- do-dispatch [args]
+  (let [[verbose? args] (split-leading-verbose args)]
+    (binding [output/*verbose* (or verbose? output/*verbose*)]
+      (do-dispatch* args verbose?))))
 
 (defn- subcommand-of
   "Return the first non-flag token in args, or nil. Used to decide whether

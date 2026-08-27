@@ -88,7 +88,8 @@
         (do
           (vol/create-volume volume-name {"aishell.harness.hash" expected-hash
                                           "aishell.harness.version" vol/volume-schema-version})
-          (let [result (vol/populate-volume volume-name state {:config config})]
+          (let [result (vol/populate-volume volume-name state {:config config
+                                                               :verbose output/*verbose*})]
             (when-not (:success result)
               ;; Remove empty volume so next run retries population
               (vol/remove-volume volume-name)
@@ -97,7 +98,8 @@
         ;; Volume exists but stale (hash mismatch or missing label)
         (not= (vol/get-volume-label volume-name "aishell.harness.hash")
               expected-hash)
-        (let [result (vol/populate-volume volume-name state {:config config})]
+        (let [result (vol/populate-volume volume-name state {:config config
+                                                             :verbose output/*verbose*})]
           (when-not (:success result)
             (output/error "Failed to populate harness volume"))))
       ;; Return volume name regardless
@@ -106,10 +108,12 @@
 (defn resolve-image-tag
   "Determine which image to use: extended if project has a <active-dir>/Dockerfile, else base.
    Ensures base image is up to date before extension resolution.
-   Auto-builds extension if needed (matches bash behavior)."
+   Auto-builds extension if needed (matches bash behavior).
+   Builds stream their docker output when output/*verbose* is bound (--verbose);
+   otherwise they run behind a spinner."
   [_base-tag project-dir force?]
   ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
-  (base/ensure-base-image {:quiet true})
+  (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     ;; Project has extension — builds FROM aishell:base
     (let [extended-tag (ext/compute-extended-tag project-dir)]
@@ -119,7 +123,7 @@
           :foundation-tag base/base-image-tag
           :extended-tag extended-tag
           :force force?
-          :verbose false}))
+          :verbose output/*verbose*}))
       extended-tag)
     ;; No extension, use base
     base/base-image-tag))
