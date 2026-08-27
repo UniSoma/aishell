@@ -1,21 +1,22 @@
 ---
 id: aix-01m0k3e5txye
 title: Move the distro image to debian:trixie-slim (glibc floor 2.39)
-status: in_progress
+status: closed
 type: task
 priority: 2
 mode: hitl
 created: '2026-08-21T21:25:39.805035512Z'
-updated: '2026-08-22T20:34:25.520358252Z'
+updated: '2026-08-27T12:16:15.150441544Z'
+closed: '2026-08-27T12:16:15.150441544Z'
 acceptance:
 - title: Foundation image builds successfully from debian:trixie-slim on all three stages
-  done: false
+  done: true
 - title: Build-time assertion fails the build if the final image's glibc is below 2.39
-  done: false
+  done: true
 - title: libreadline8t64 and openjdk-21-jre-headless replace their bookworm predecessors; bbin still resolves tools.deps dependencies
-  done: false
+  done: true
 - title: 'Every existing in-build probe still passes: SQLite compile-option checks, node, bb, gosu, cue, uv'
-  done: false
+  done: true
 - title: 'aishell info --foundation reports ''Distro: debian:trixie-slim'' scraped from the Dockerfile, not hardcoded'
   done: true
 - title: ADR 0005 records the glibc-floor policy; ADR 0004 is amended to note its glibc premise expired
@@ -110,3 +111,7 @@ Verified without Docker:
 Interpretation of "No 'bookworm' strings remain outside .planning/": live code and current docs are scrubbed (src, test fixtures aside, README, ARCHITECTURE, llm.txt, CONTEXT.md, .aishell/Dockerfile). Historical records deliberately keep the word: released CHANGELOG entries, ADR 0004's original rationale (the amendment explains why the numbers stay), ADR 0005's account of the move, .tickets/ and artifacts/. Rewriting those would falsify the record.
 
 Two ADR-staleness items outside the ticket's own enumeration were also fixed: ADR 0004's `libreadline8` package name is noted in its amendment, and ADR 0003 got a short amendment marking its openjdk-17 and yq facts as bookworm-era.
+
+**2026-08-27T12:16:15.150441544Z**
+
+Foundation image moved to debian:trixie-slim with a build-enforced glibc >= 2.39 floor. libreadline8t64 and openjdk-21-jre-headless replace their bookworm predecessors; aishell info scrapes 'Distro:' from the Dockerfile instead of hardcoding it. ADR 0005 records the glibc-floor policy, ADR 0004 amended where its glibc premise expired. Human verified the rebuild, the assertion, the in-build probes and bbin against JRE 21.
