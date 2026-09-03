@@ -83,7 +83,7 @@
    Returns version string, or nil if fetch fails, times out, or no downloader."
   []
   (when-let [downloader (upgrade/find-downloader)]
-    (let [f (future (upgrade/fetch-latest-version downloader))
+    (let [f (future (upgrade/fetch-latest-version downloader (upgrade/release-base-url nil)))
           result (deref f check-timeout-ms ::timeout)]
       (when-not (= result ::timeout)
         result))))

@@ -1,12 +1,12 @@
 ---
 id: aix-01m1kyn7nsxe
 title: 'Release workflow: build, five-runner smoke matrix, then release'
-status: open
+status: in_progress
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.436449350Z'
-updated: '2026-09-03T15:37:04.436449350Z'
+updated: '2026-09-03T21:52:42.006541397Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-agent
@@ -25,8 +25,8 @@ The release workflow becomes three stages. A build job on ubuntu runs the build 
 ### Acceptance criteria
 
 - [ ] A dry-run dispatch builds, smoke-tests on all five runners and creates no release
-- [ ] The tagged path publishes only after the matrix is green
-- [ ] bb version in the workflow matches the build script pin
+- [x] The tagged path publishes only after the matrix is green
+- [x] bb version in the workflow matches the build script pin
 
 ### Blocked by
 

@@ -79,36 +79,82 @@
    :target-version "4.1.0"
    :pinned? false})
 
-(deftest upgrade-plan-fetches-the-uberscript-on-unix
-  (testing "asset aishell, dest = installed path, chmod, no extras"
-    (let [plan (upgrade/upgrade-plan unix-env)]
-      (is (= "aishell" (:asset-name plan)))
-      (is (= "https://github.com/UniSoma/aishell/releases/download/v4.1.0/aishell"
-             (:asset-url plan)))
-      (is (= "https://github.com/UniSoma/aishell/releases/download/v4.1.0/aishell.sha256"
-             (:checksum-url plan)))
-      (is (= "aishell" (:checksum-asset plan)))
-      (is (= "/home/u/.local/bin/aishell" (:dest-path plan)))
+(defn- plan-for [& kvs]
+  (upgrade/upgrade-plan (merge unix-env (apply hash-map kvs))))
+
+(deftest upgrade-plan-picks-the-asset-for-every-supported-platform
+  (testing "each [os arch] pair maps to its release binary, script or binary install alike"
+    (doseq [[[os arch] asset] {[:linux :amd64] "aishell-linux-amd64"
+                               [:linux :aarch64] "aishell-linux-aarch64"
+                               [:macos :amd64] "aishell-macos-amd64"
+                               [:macos :aarch64] "aishell-macos-aarch64"
+                               [:windows :amd64] "aishell-windows-amd64.exe"}
+            script? [true false]
+            pinned? [true false]]
+      (let [install-path (if (= :windows os)
+                           (if script? "C:\\bin\\aishell" "C:\\bin\\aishell.exe")
+                           "/home/u/.local/bin/aishell")
+            plan (plan-for :os os :arch arch :install-path install-path
+                           :script-install? script? :pinned? pinned?)]
+        (is (nil? (:error plan)))
+        (is (= asset (:asset-name plan)))
+        (is (= asset (:checksum-asset plan)))
+        (is (= (str "https://github.com/UniSoma/aishell/releases/download/v4.1.0/" asset)
+               (:asset-url plan)))
+        (is (= "https://github.com/UniSoma/aishell/releases/download/v4.1.0/SHA256SUMS"
+               (:checksum-url plan)))
+        (is (= (not= :windows os) (:chmod-x? plan)))))))
+
+(deftest upgrade-plan-writes-aishell-exe-on-windows-and-aishell-elsewhere
+  (testing "the destination comes from the install directory, not the resolved file name"
+    (is (= "/home/u/.local/bin/aishell" (:dest-path (plan-for))))
+    (is (= "C:\\bin\\aishell.exe"
+           (:dest-path (plan-for :os :windows :install-path "C:\\bin\\aishell"))))
+    (is (= "C:\\bin\\aishell.exe"
+           (:dest-path (plan-for :os :windows :install-path "C:\\bin\\aishell.exe"
+                                 :script-install? false))))))
+
+(deftest upgrade-plan-rejects-an-unsupported-platform
+  (testing "an unknown [os arch] pair yields the error envelope, not a plan"
+    (let [plan (plan-for :arch :riscv64)]
+      (is (= "unsupported_platform" (get-in plan [:error :code])))
+      (is (str/includes? (get-in plan [:error :message]) "linux/riscv64"))
+      (is (str/includes? (get-in plan [:error :message]) "aishell-linux-amd64"))
+      (is (nil? (:asset-url plan))))
+    (is (= "unsupported_platform"
+           (get-in (plan-for :os :windows :arch :aarch64) [:error :code])))))
+
+(deftest upgrade-plan-overwrites-a-unix-script-in-place
+  (testing "nothing is deleted; the binary lands on the script's own path"
+    (let [plan (plan-for :script-install? true)]
       (is (= [] (:delete-after plan)))
       (is (false? (:rename-old? plan)))
       (is (nil? (:old-path plan)))
-      (is (true? (:chmod-x? plan)))
-      (is (= [] (:extra-downloads plan)))
       (is (= [] (:notes plan))))))
 
-(deftest upgrade-plan-refreshes-the-bat-launcher-on-windows
-  (testing "no chmod, and aishell.bat is fetched beside the script"
-    (let [plan (upgrade/upgrade-plan (assoc unix-env
-                                            :os :windows
-                                            :install-path "C:\\bin\\aishell"))]
-      (is (false? (:chmod-x? plan)))
-      (is (= "C:\\bin\\aishell" (:dest-path plan)))
-      (is (= [{:url "https://github.com/UniSoma/aishell/releases/download/v4.1.0/aishell.bat"
-               :dest-path "C:\\bin\\aishell.bat"
-               :optional? true}]
-             (:extra-downloads plan)))
-      (is (= [] (:delete-after plan)))
-      (is (false? (:rename-old? plan))))))
+(deftest upgrade-plan-removes-the-old-script-and-bat-on-a-windows-migration
+  (testing "aishell and aishell.bat go, aishell.exe stays, and the user is told"
+    (let [plan (plan-for :os :windows :install-path "C:\\bin\\aishell"
+                         :script-install? true :bat-present? true)]
+      (is (= ["C:\\bin\\aishell" "C:\\bin\\aishell.bat"] (:delete-after plan)))
+      (is (false? (:rename-old? plan)))
+      (is (= 1 (count (:notes plan))))
+      (is (str/includes? (first (:notes plan)) "aishell.bat")))))
+
+(deftest upgrade-plan-renames-a-running-windows-binary-out-of-the-way
+  (testing "replacing an existing exe needs the .old dance; a script migration does not"
+    (let [plan (plan-for :os :windows :install-path "C:\\bin\\aishell.exe"
+                         :script-install? false)]
+      (is (true? (:rename-old? plan)))
+      (is (= "C:\\bin\\aishell.exe.old" (:old-path plan)))
+      (is (= [] (:delete-after plan))))
+    (is (false? (:rename-old? (plan-for :script-install? false))))))
+
+(deftest upgrade-plan-still-clears-a-stale-bat-beside-a-windows-binary
+  (testing "a leftover shim ahead of aishell.exe on PATH is removed"
+    (let [plan (plan-for :os :windows :install-path "C:\\bin\\aishell.exe"
+                         :script-install? false :bat-present? true)]
+      (is (= ["C:\\bin\\aishell.bat"] (:delete-after plan))))))
 
 (deftest upgrade-plan-uses-pinned-urls-either-way
   (testing "a pinned target and a resolved latest produce identical URLs"
@@ -120,8 +166,8 @@
 (deftest upgrade-plan-honors-a-releases-url-override
   (testing "both URLs come from :releases-url"
     (let [plan (upgrade/upgrade-plan (assoc unix-env :releases-url "http://localhost:8000/releases"))]
-      (is (= "http://localhost:8000/releases/download/v4.1.0/aishell" (:asset-url plan)))
-      (is (= "http://localhost:8000/releases/download/v4.1.0/aishell.sha256" (:checksum-url plan))))))
+      (is (= "http://localhost:8000/releases/download/v4.1.0/aishell-linux-amd64" (:asset-url plan)))
+      (is (= "http://localhost:8000/releases/download/v4.1.0/SHA256SUMS" (:checksum-url plan))))))
 
 (deftest upgrade-plan-flags-a-downgrade
   (testing ":downgrade? follows the version comparison"
@@ -161,6 +207,16 @@
               (is (false? (:script-install? env)))
               (is (true? (:bat-present? env))))))))))
 
+(deftest detect-env-finds-the-bat-beside-a-migrated-windows-binary
+  (testing "aishell.bat sits beside aishell.exe, not at aishell.exe.bat"
+    (with-temp-dir
+      (fn [dir]
+        (let [path (str dir "/aishell.exe")]
+          (fs/write-bytes path (byte-array [0x4d 0x5a]))
+          (spit (str dir "/aishell.bat") "@echo off\n")
+          (with-redefs [upgrade/find-aishell-path (constantly path)]
+            (is (true? (:bat-present? (upgrade/detect-env "4.0.0" "4.1.0" {}))))))))))
+
 (deftest detect-env-passes-opts-through
   (testing ":pinned? and :releases-url reach the env"
     (with-redefs [upgrade/find-aishell-path (constantly nil)]
@@ -173,12 +229,13 @@
 (defn- stub-downloads
   "Serve download-to-file from an in-memory {url content} map."
   [responses f]
-  (with-redefs [upgrade/download-to-file
-                (fn [_ url dest]
-                  (if-let [content (get responses url)]
-                    (spit dest content)
-                    (throw (ex-info (str "404 " url) {}))))]
-    (f)))
+  (let [serve (fn [url dest]
+                (if-let [content (get responses url)]
+                  (spit dest content)
+                  (throw (ex-info (str "404 " url) {}))))]
+    (with-redefs [upgrade/download-to-file (fn [_ url dest] (serve url dest))
+                  upgrade/download-asset! (fn [_ url dest _] (serve url dest))]
+      (f))))
 
 (deftest execute-plan-installs-a-verified-download
   (testing "asset lands at :dest-path after its hash matches the checksum file"
@@ -196,7 +253,6 @@
                     :dest-path dest
                     :delete-after []
                     :chmod-x? true
-                    :extra-downloads []
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes []}
@@ -222,7 +278,6 @@
                     :dest-path dest
                     :delete-after []
                     :chmod-x? false
-                    :extra-downloads []
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes []}]
@@ -260,7 +315,6 @@
                     :dest-path dest
                     :delete-after [stale (str dir "/never-existed")]
                     :chmod-x? false
-                    :extra-downloads []
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes []}]
@@ -287,7 +341,6 @@
                     :dest-path dest
                     :delete-after []
                     :chmod-x? false
-                    :extra-downloads []
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes ["Removed the old aishell script."]}
@@ -307,3 +360,214 @@
     (is (neg? (upgrade/version-compare "4.0.0" "4.1.0")))
     (is (zero? (upgrade/version-compare "4.1.0" "4.1.0")))
     (is (pos? (upgrade/version-compare "4.10.0" "4.9.0")))))
+
+(defn- sha256-of
+  "Hash of `body` as the checksum file would list it."
+  [dir body]
+  (let [tmp (str dir "/probe")]
+    (spit tmp body)
+    (let [h (upgrade/compute-sha256-file tmp)]
+      (fs/delete tmp)
+      h)))
+
+(deftest execute-plan-renames-the-running-binary-before-installing-over-it
+  (testing "Windows locks a running exe: the old file moves to .old, the new one takes its place"
+    (with-temp-dir
+      (fn [dir]
+        (let [dest (str dir "/aishell.exe")
+              old (str dest ".old")
+              body "new binary\n"]
+          (spit dest "running binary\n")
+          (stub-downloads {"http://x/a" body
+                           "http://x/sums" (str (sha256-of dir body) "  aishell-windows-amd64.exe\n")}
+                          #(with-out-str
+                             (upgrade/execute-plan
+                              {:asset-name "aishell-windows-amd64.exe"
+                               :asset-url "http://x/a"
+                               :checksum-url "http://x/sums"
+                               :checksum-asset "aishell-windows-amd64.exe"
+                               :dest-path dest
+                               :delete-after []
+                               :rename-old? true
+                               :old-path old
+                               :chmod-x? false
+                               :current-version "4.1.0"
+                               :target-version "4.2.0"
+                               :notes []}
+                              :curl)))
+          (is (= "running binary\n" (slurp old)))
+          (is (= body (slurp dest))))))))
+
+(deftest execute-plan-names-the-missing-asset-when-a-download-fails
+  (testing "the platform asset name, not the legacy \"aishell\""
+    (with-temp-dir
+      (fn [dir]
+        (let [err (java.io.StringWriter.)]
+          (with-redefs [output/exit! (fn [c] (throw (ex-info "exit" {:code c})))]
+            (try
+              (stub-downloads {}
+                              #(binding [*err* err]
+                                 (with-out-str
+                                   (upgrade/execute-plan
+                                    {:asset-name "aishell-macos-aarch64"
+                                     :asset-url "http://x/a"
+                                     :checksum-url "http://x/sums"
+                                     :checksum-asset "aishell-macos-aarch64"
+                                     :dest-path (str dir "/aishell")
+                                     :delete-after []
+                                     :chmod-x? false
+                                     :current-version "4.0.0"
+                                     :target-version "4.1.0"
+                                     :notes []}
+                                    :curl))))
+              (catch clojure.lang.ExceptionInfo _ nil)))
+          (is (str/includes? (str err) "aishell-macos-aarch64")))))))
+
+(deftest download-argv-shows-a-meter-on-a-terminal
+  (testing "curl -# and wget --show-progress replace the quiet flags"
+    (is (= ["curl" "-fSL" "-#" "-o" "/tmp/a" "http://x/a"]
+           (upgrade/download-argv :curl "http://x/a" "/tmp/a" true)))
+    (is (= ["wget" "-q" "--show-progress" "-O" "/tmp/a" "http://x/a"]
+           (upgrade/download-argv :wget "http://x/a" "/tmp/a" true)))))
+
+(deftest download-argv-stays-quiet-off-a-terminal
+  (testing "piped output gets no progress meter"
+    (is (= ["curl" "-fsSL" "-o" "/tmp/a" "http://x/a"]
+           (upgrade/download-argv :curl "http://x/a" "/tmp/a" false)))
+    (is (= ["wget" "-q" "-O" "/tmp/a" "http://x/a"]
+           (upgrade/download-argv :wget "http://x/a" "/tmp/a" false)))))
+
+(deftest content-length-from-headers-reads-the-last-value
+  (testing "a redirect chain ends with the real asset's size"
+    (is (= 94371840
+           (upgrade/content-length-from-headers
+            (str "HTTP/1.1 302 Found\r\ncontent-length: 0\r\n\r\n"
+                 "HTTP/1.1 200 OK\r\nContent-Length: 94371840\r\n\r\n"))))
+    (is (nil? (upgrade/content-length-from-headers "HTTP/1.1 200 OK\r\n\r\n")))
+    (is (nil? (upgrade/content-length-from-headers nil)))))
+
+(deftest describe-size-rounds-to-megabytes
+  (testing "a known length becomes MB; an unknown one falls back to the ADR's estimate"
+    (is (= "90 MB" (upgrade/describe-size (* 90 1024 1024))))
+    (is (= "about 90 MB" (upgrade/describe-size nil)))))
+
+(deftest download-asset!-announces-the-size-when-there-is-no-terminal
+  (testing "one line with the asset name and its size, in place of a progress bar"
+    (with-temp-dir
+      (fn [dir]
+        (let [dest (str dir "/asset")
+              out (with-redefs [output/tty? (constantly false)
+                                upgrade/remote-content-length (constantly (* 90 1024 1024))
+                                upgrade/run-download! (fn [_argv] (spit dest "payload"))]
+                    (with-out-str
+                      (upgrade/download-asset! :curl "http://x/a" dest "aishell-linux-amd64")))]
+          (is (str/includes? out "aishell-linux-amd64"))
+          (is (str/includes? out "90 MB"))
+          (is (= "payload" (slurp dest))))))))
+
+(deftest download-asset!-stays-silent-when-the-meter-will-show
+  (testing "on a TTY the progress bar is the only progress output"
+    (with-temp-dir
+      (fn [dir]
+        (let [dest (str dir "/asset")
+              seen (atom nil)
+              out (with-redefs [output/tty? (constantly true)
+                                upgrade/remote-content-length (fn [& _] (throw (ex-info "no HEAD on a TTY" {})))
+                                upgrade/run-download! (fn [argv] (reset! seen argv) (spit dest "payload"))]
+                    (with-out-str
+                      (upgrade/download-asset! :curl "http://x/a" dest "aishell-linux-amd64")))]
+          (is (= "" out))
+          (is (= ["curl" "-fSL" "-#" "-o" dest "http://x/a"] @seen)))))))
+
+(deftest release-base-url-prefers-an-explicit-override
+  (testing "an override wins, a trailing slash goes, and the default is the GitHub releases page"
+    (is (= "http://localhost:8000/releases" (upgrade/release-base-url "http://localhost:8000/releases/")))
+    (is (= upgrade/releases-url (upgrade/release-base-url nil)))))
+
+(deftest detect-env-carries-the-release-base-url
+  (testing "install and upgrade cannot point at different places"
+    (with-redefs [upgrade/find-aishell-path (constantly nil)]
+      (is (= "http://localhost/r"
+             (:releases-url (upgrade/detect-env "4.0.0" "4.1.0" {:releases-url "http://localhost/r"}))))
+      (is (= upgrade/releases-url
+             (:releases-url (upgrade/detect-env "4.0.0" "4.1.0" {})))))))
+
+(deftest fetch-latest-version-asks-the-configured-release-base
+  (testing "the latest lookup follows the same base URL the download will use"
+    (let [asked (atom nil)]
+      (with-redefs [upgrade/http-head (fn [_ url] (reset! asked url) "")]
+        (upgrade/fetch-latest-version :curl "http://localhost:8000/releases")
+        (is (= "http://localhost:8000/releases/latest" @asked))))))
+
+(deftest cleanup-stale-old!-deletes-a-leftover-beside-the-install
+  (testing "the .old file the previous upgrade could not remove goes on the next start"
+    (with-temp-dir
+      (fn [dir]
+        (let [install (str dir "/aishell.exe")
+              old (str install ".old")]
+          (spit install "binary\n")
+          (spit old "previous\n")
+          (upgrade/cleanup-stale-old! install)
+          (is (false? (fs/exists? old)))
+          (is (true? (fs/exists? install))))))))
+
+(deftest cleanup-stale-old!-is-silent-when-there-is-nothing-to-clean
+  (testing "no leftover, an undeletable one, no install at all: never throws, never prints"
+    (with-temp-dir
+      (fn [dir]
+        (let [locked (str dir "/locked")
+              install (str locked "/aishell.exe")]
+          (fs/create-dirs locked)
+          (spit (str install ".old") "previous\n")
+          ;; A read-only directory is how a delete fails for real: startup must
+          ;; shrug it off rather than keep the CLI from running.
+          (fs/set-posix-file-permissions locked "r-xr-xr-x")
+          (try
+            (is (= "" (with-out-str (upgrade/cleanup-stale-old! install))))
+            (is (true? (fs/exists? (str install ".old"))))
+            (finally
+              (fs/set-posix-file-permissions locked "rwxr-xr-x"))))
+        (is (= "" (with-out-str (upgrade/cleanup-stale-old! (str dir "/aishell.exe")))))
+        (is (= "" (with-out-str (upgrade/cleanup-stale-old! nil))))))))
+
+(deftest execute-plan-puts-the-parked-binary-back-when-the-install-fails
+  (testing "a Windows-shaped upgrade that cannot install must not leave PATH empty"
+    (with-temp-dir
+      (fn [dir]
+        (let [dest (str dir "/aishell.exe")
+              err (java.io.StringWriter.)
+              exits (atom [])
+              body "installed\n"
+              plan {:asset-name "aishell-windows-amd64.exe"
+                    :asset-url "http://x/aishell-windows-amd64.exe"
+                    :checksum-url "http://x/SHA256SUMS"
+                    :checksum-asset "aishell-windows-amd64.exe"
+                    :dest-path dest
+                    :delete-after []
+                    :chmod-x? false
+                    :rename-old? true
+                    :old-path (str dest ".old")
+                    :current-version "4.1.0"
+                    :target-version "4.2.0"
+                    :notes []}]
+          (spit dest body)
+          (with-redefs [output/exit! (fn [c]
+                                       (swap! exits conj c)
+                                       (throw (ex-info "exit" {:code c})))
+                        ;; only the staged asset fails to install; putting the
+                        ;; parked binary back must still work
+                        upgrade/install-file! (fn [src dst]
+                                                (if (str/ends-with? (str src) "aishell-windows-amd64.exe")
+                                                  (throw (ex-info "disk full" {}))
+                                                  (fs/move src dst {:replace-existing true})))]
+            (try
+              (stub-downloads {"http://x/aishell-windows-amd64.exe" "new\n"
+                               "http://x/SHA256SUMS" (str (sha256-of dir "new\n")
+                                                          "  aishell-windows-amd64.exe\n")}
+                              #(binding [*err* err]
+                                 (with-out-str (upgrade/execute-plan plan :curl))))
+              (catch clojure.lang.ExceptionInfo _ nil)))
+          (is (= [1] @exits))
+          (is (str/includes? (str err) "previous version was put back"))
+          (is (= body (slurp dest))
+              "the parked binary is back where PATH expects it"))))))

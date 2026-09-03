@@ -24,35 +24,99 @@
     :wget (p/shell {:out :string :err :string}
                    "wget" "-q" "-O" (str dest) url)))
 
-(defn fetch-latest-version
-  "Fetch latest release version from GitHub by following the /releases/latest redirect.
-   Returns version string like \"3.3.0\" (without v prefix), or nil on failure."
-  [downloader]
-  (let [url (str releases-url "/latest")]
-    (try
-      (case downloader
-        :curl
-        (let [null-dev (if (fs/windows?) "NUL" "/dev/null")
-              result (p/shell {:out :string :err :string :continue true}
-                              "curl" "-fsSLI" "-o" null-dev
-                              "-w" "%{url_effective}" url)
-              effective-url (str/trim (:out result))]
-          (when (and (zero? (:exit result))
-                     (str/includes? effective-url "/tag/v"))
-            (subs effective-url (+ (str/last-index-of effective-url "/v") 2))))
+(defn download-argv
+  "Command line for fetching url to dest.
+   With a meter when stdout is a terminal: `curl -s` would suppress `-#`, so the
+   quiet flags cannot simply be reused."
+  [downloader url dest tty?]
+  (case downloader
+    :curl (if tty?
+            ["curl" "-fSL" "-#" "-o" (str dest) url]
+            ["curl" "-fsSL" "-o" (str dest) url])
+    :wget (if tty?
+            ["wget" "-q" "--show-progress" "-O" (str dest) url]
+            ["wget" "-q" "-O" (str dest) url])))
 
-        :wget
-        (let [result (p/shell {:out :string :err :string :continue true}
-                              "wget" "--spider" "-S" "--max-redirect=5" url)
-              ;; wget prints headers to stderr
-              stderr (:err result)
-              lines (str/split-lines stderr)
-              location-line (last (filter #(str/includes? % "Location:") lines))]
-          (when (and location-line (str/includes? location-line "/tag/v"))
-            (let [loc (str/trim (subs location-line (+ (str/index-of location-line "Location:") 9)))]
-              (subs loc (+ (str/last-index-of loc "/v") 2))))))
-      (catch Exception _
-        nil))))
+(defn content-length-from-headers
+  "Size in bytes from the last content-length header of a response chain, or nil."
+  [headers]
+  (when headers
+    (some->> (re-seq #"(?i)content-length:\s*(\d+)" headers)
+             seq
+             last
+             second
+             parse-long)))
+
+(defn remote-content-length
+  "Ask the server how big the asset is. nil when the probe fails."
+  [downloader url]
+  (try
+    (let [result (case downloader
+                   :curl (p/shell {:out :string :err :string :continue true}
+                                  "curl" "-fsSLI" url)
+                   :wget (p/shell {:out :string :err :string :continue true}
+                                  "wget" "--spider" "-S" "--max-redirect=5" url))]
+      (when (zero? (:exit result))
+        (content-length-from-headers (str (:out result) (:err result)))))
+    (catch Exception _ nil)))
+
+(defn describe-size
+  "Human-readable download size. Falls back to the ADR's estimate when unknown."
+  [bytes]
+  (if bytes
+    (str (Math/round (double (/ bytes 1024 1024))) " MB")
+    "about 90 MB"))
+
+(defn run-download!
+  "Run a download command line, letting its progress meter reach the terminal."
+  [argv]
+  (apply p/shell argv))
+
+(defn download-asset!
+  "Fetch the release binary, showing a progress bar on a terminal and printing
+   one size line otherwise."
+  [downloader url dest asset-name]
+  (let [tty? (output/tty?)]
+    (when-not tty?
+      (println (str "Downloading " asset-name " (" (describe-size (remote-content-length downloader url)) ")...")))
+    (run-download! (download-argv downloader url dest tty?))))
+
+(defn http-head
+  "Headers of a HEAD request, following redirects. For curl the text is the
+   effective URL; for wget it is the header dump wget writes to stderr.
+   Returns nil when the request fails."
+  [downloader url]
+  (case downloader
+    :curl (let [null-dev (if (fs/windows?) "NUL" "/dev/null")
+                result (p/shell {:out :string :err :string :continue true}
+                                "curl" "-fsSLI" "-o" null-dev
+                                "-w" "%{url_effective}" url)]
+            (when (zero? (:exit result))
+              (str/trim (:out result))))
+    :wget (:err (p/shell {:out :string :err :string :continue true}
+                         "wget" "--spider" "-S" "--max-redirect=5" url))))
+
+(defn fetch-latest-version
+  "Fetch latest release version by following the /releases/latest redirect.
+   Returns version string like \"3.3.0\" (without v prefix), or nil on failure."
+  ([downloader] (fetch-latest-version downloader releases-url))
+  ([downloader base-url]
+   (let [url (str base-url "/latest")]
+     (try
+       (let [text (http-head downloader url)]
+         (case downloader
+           :curl
+           (when (and text (str/includes? text "/tag/v"))
+             (subs text (+ (str/last-index-of text "/v") 2)))
+
+           :wget
+           (let [location-line (last (filter #(str/includes? % "Location:")
+                                             (str/split-lines (or text ""))))]
+             (when (and location-line (str/includes? location-line "/tag/v"))
+               (let [loc (str/trim (subs location-line (+ (str/index-of location-line "Location:") 9)))]
+                 (subs loc (+ (str/last-index-of loc "/v") 2)))))))
+       (catch Exception _
+         nil)))))
 
 (defn compute-sha256-file
   "Compute SHA-256 hash of a file, returning 64-character hex string."
@@ -121,41 +185,86 @@
   [a b]
   (compare (parse-semver a) (parse-semver b)))
 
+(def supported-targets
+  "Platform table: [os arch] -> the release asset built for it."
+  {[:linux   :amd64]   "aishell-linux-amd64"
+   [:linux   :aarch64] "aishell-linux-aarch64"
+   [:macos   :amd64]   "aishell-macos-amd64"
+   [:macos   :aarch64] "aishell-macos-aarch64"
+   [:windows :amd64]   "aishell-windows-amd64.exe"})
+
+(defn- split-dir
+  "Split a path into [directory separator file-name].
+   Handles Windows paths on any host: fs/parent cannot see the backslashes in
+   \"C:\\\\bin\\\\aishell\" when the plan is built or tested on Linux."
+  [path]
+  (let [idx (max (long (or (str/last-index-of path "/") -1))
+                 (long (or (str/last-index-of path "\\") -1)))]
+    (if (neg? idx)
+      [nil nil path]
+      [(subs path 0 idx) (subs path idx (inc idx)) (subs path (inc idx))])))
+
+(defn old-path-for
+  "Where a destination is parked while it is still running.
+   Both the plan and the startup cleanup derive the name from here, so they
+   cannot drift apart."
+  [dest-path]
+  (str dest-path ".old"))
+
+(defn- sibling
+  "Path of `name` in the same directory as `path`."
+  [path name]
+  (let [[dir sep _] (split-dir path)]
+    (if dir (str dir sep name) name)))
+
 (defn upgrade-plan
   "Pure: decide what to fetch, where to put it, and what to clean up.
    Reads only the env map (see detect-env) and returns a plan map that
    execute-plan carries out. May return {:error {:message .. :code ..}} when the
    environment cannot be served."
-  [{:keys [os install-path current-version target-version releases-url pinned?]
+  [{:keys [os arch install-path script-install? bat-present?
+           current-version target-version releases-url pinned?]
     :or {releases-url releases-url}}]
-  (let [asset "aishell"
-        download-url (fn [name] (str releases-url "/download/v" target-version "/" name))
-        windows? (= :windows os)]
-    {:asset-name asset
-     :asset-url (download-url asset)
-     :checksum-url (download-url (str asset ".sha256"))
-     :checksum-asset asset
-     :dest-path install-path
-     :delete-after []
-     :rename-old? false
-     :old-path nil
-     :chmod-x? (not windows?)
-     :extra-downloads (if windows?
-                        [{:url (download-url "aishell.bat")
-                          :dest-path (str install-path ".bat")
-                          :optional? true}]
-                        [])
-     :downgrade? (neg? (version-compare target-version current-version))
-     :pinned? (boolean pinned?)
-     :current-version current-version
-     :target-version target-version
-     :releases-url releases-url
-     :notes []}))
+  (if-let [asset (get supported-targets [os arch])]
+    (let [download-url (fn [name] (str releases-url "/download/v" target-version "/" name))
+          windows? (= :windows os)
+          dest-path (if windows?
+                      (sibling install-path "aishell.exe")
+                      (sibling install-path "aishell"))
+          rename-old? (and windows? (not script-install?))]
+      {:asset-name asset
+       :asset-url (download-url asset)
+       :checksum-url (download-url "SHA256SUMS")
+       :checksum-asset asset
+       :dest-path dest-path
+       :delete-after (if windows?
+                       (vec (concat (when script-install? [(sibling install-path "aishell")])
+                                    (when bat-present? [(sibling install-path "aishell.bat")])))
+                       [])
+       :rename-old? rename-old?
+       :old-path (when rename-old? (old-path-for dest-path))
+       :chmod-x? (not windows?)
+       :downgrade? (neg? (version-compare target-version current-version))
+       :pinned? (boolean pinned?)
+       :current-version current-version
+       :target-version target-version
+       :releases-url releases-url
+       :notes (if (and windows? script-install?)
+                [(str "Removed the old aishell script"
+                      (when bat-present? " and aishell.bat")
+                      "; aishell.exe is now on PATH.")]
+                [])})
+    {:error {:message (str "Unsupported platform: " (name (or os :unknown)) "/"
+                           (name (or arch :unknown)) ". Supported: "
+                           (str/join ", " (sort (vals supported-targets))) ".")
+             :code "unsupported_platform"}}))
 
 (defn find-aishell-path
-  "Find the installed aishell script path.
-   On Windows, fs/which returns the .bat launcher (e.g. aishell.bat);
-   we strip the extension to get the actual script path."
+  "Find the installed aishell, as it sits on PATH.
+   On Windows a pre-4.1.0 install is found through its aishell.bat launcher;
+   the .bat suffix is stripped so the caller sees the script itself, which is
+   what tells a script install from a binary one. The plan derives the
+   destination from the directory, so either shape lands in the right place."
   []
   (let [path (or (fs/which "aishell")
                  (let [home (System/getProperty "user.home")
@@ -168,6 +277,32 @@
                  (str/ends-with? (str/lower-case path-str) ".bat"))
           (subs path-str 0 (- (count path-str) 4))
           path-str)))))
+
+(defn release-base-url
+  "Base URL for release assets: an explicit override, else AISHELL_RELEASE_URL
+   (the same variable the installers honour), else the GitHub releases page."
+  [override]
+  (let [raw (or override (System/getenv "AISHELL_RELEASE_URL"))
+        trimmed (some-> raw str/trim not-empty)]
+    (if trimmed
+      (str/replace trimmed #"/+$" "")
+      releases-url)))
+
+(defn cleanup-stale-old!
+  "Delete the aishell.exe.old a previous upgrade left behind.
+   Runs at startup, so every failure is swallowed: a leftover is cosmetic and
+   must never keep the CLI from starting."
+  ([]
+   (try
+     (when (fs/windows?)
+       (cleanup-stale-old! (find-aishell-path)))
+     (catch Exception _ nil)))
+  ([install-path]
+   (try
+     (when install-path
+       (fs/delete-if-exists (old-path-for (sibling install-path "aishell.exe"))))
+     (catch Exception _ nil))
+   nil))
 
 (defn detect-env
   "Gather everything upgrade-plan needs from the machine.
@@ -183,20 +318,20 @@
                ("amd64" "x86_64") :amd64
                ("aarch64" "arm64") :aarch64
                (keyword raw-arch))]
-    (cond-> {:os os
-             :arch arch
-             :install-path install-path
-             :script-install? (boolean (and install-path
-                                            (fs/exists? install-path)
-                                            (shebang? (leading-bytes-or-nil install-path 2))))
-             :bat-present? (boolean (and install-path
-                                         (fs/exists? (str install-path ".bat"))))
-             :current-version current-version
-             :target-version target-version
-             :pinned? (boolean pinned?)}
-      releases-url (assoc :releases-url releases-url))))
+    {:os os
+     :arch arch
+     :install-path install-path
+     :script-install? (boolean (and install-path
+                                    (fs/exists? install-path)
+                                    (shebang? (leading-bytes-or-nil install-path 2))))
+     :bat-present? (boolean (and install-path
+                                 (fs/exists? (sibling install-path "aishell.bat"))))
+     :current-version current-version
+     :target-version target-version
+     :pinned? (boolean pinned?)
+     :releases-url (release-base-url releases-url)}))
 
-(defn- install-file!
+(defn install-file!
   "Move src onto dest, falling back to copy+delete across filesystems."
   [src dest]
   (try
@@ -204,6 +339,19 @@
     (catch Exception _
       (fs/copy src dest {:replace-existing true})
       (fs/delete src))))
+
+(defn- staging-dir
+  "A temp directory to download into, beside the destination where possible.
+   Same filesystem means installing is a rename, so a 90 MB asset can never be
+   caught half-written on PATH; the system temp dir is the fallback for an
+   install directory we may not create files in."
+  [dest-path]
+  (let [parent (fs/parent dest-path)]
+    (or (try
+          (when (and parent (fs/writable? parent))
+            (fs/create-temp-dir {:dir parent :prefix ".aishell-upgrade-"}))
+          (catch Exception _ nil))
+        (fs/create-temp-dir {:prefix "aishell-upgrade-"}))))
 
 (defn execute-plan
   "Carry out an upgrade plan: download, verify, install, clean up.
@@ -213,7 +361,7 @@
   (when-let [err (:error plan)]
     (output/error (:message err)))
   (let [{:keys [asset-name asset-url checksum-url checksum-asset dest-path
-                delete-after chmod-x? extra-downloads
+                delete-after chmod-x? rename-old? old-path
                 current-version target-version notes]} plan
         releases (:releases-url plan releases-url)]
     ;; Write permission: the file itself when it is already there, else its directory.
@@ -225,15 +373,17 @@
 
     (println (str "Upgrading aishell: v" current-version " -> v" target-version))
 
-    (let [tmp-dir (fs/create-temp-dir {:prefix "aishell-upgrade-"})
+    (let [tmp-dir (staging-dir dest-path)
           tmp-asset (str tmp-dir "/" asset-name)
           tmp-checksum (str tmp-dir "/checksums")]
       (try
         (try
-          (download-to-file downloader asset-url tmp-asset)
+          (download-asset! downloader asset-url tmp-asset asset-name)
           (catch Exception _
-            (output/error (str "Failed to download aishell v" target-version
-                               "\nRelease may not exist: " releases "/tag/v" target-version))))
+            (output/error (str "Failed to download " asset-name " v" target-version
+                               " from " asset-url
+                               "\nCheck your connection, and that the release exists: "
+                               releases "/tag/v" target-version))))
 
         (try
           (download-to-file downloader checksum-url tmp-checksum)
@@ -251,31 +401,52 @@
                                "  Got:      " actual-hash "\n"
                                "Download may be corrupted. Try again."))))
 
-        (install-file! tmp-asset dest-path)
-
+        ;; Executable before it is installed, never after: dest must not exist
+        ;; for a moment as a file nobody can run.
         (when chmod-x?
           (p/shell {:out :string :err :string}
-                   "chmod" "+x" (str dest-path)))
+                   "chmod" "+x" tmp-asset))
 
-        (doseq [{:keys [url dest-path optional?]} extra-downloads]
-          (let [tmp (str tmp-dir "/" (fs/file-name dest-path))]
+        ;; A running Windows executable cannot be replaced, only renamed:
+        ;; move it aside first and let the next start delete the leftover.
+        (let [parked? (and rename-old? old-path (fs/exists? dest-path))]
+          (when parked?
             (try
-              (download-to-file downloader url tmp)
-              (install-file! tmp dest-path)
+              (fs/delete-if-exists old-path)
+              (install-file! dest-path old-path)
               (catch Exception e
-                (if optional?
-                  (output/warn (str "Could not update " (fs/file-name dest-path) ": " (.getMessage e)))
-                  (throw e))))))
+                (output/error (str "Could not move the running " (fs/file-name dest-path)
+                                   " aside: " (.getMessage e))))))
 
-        (doseq [path delete-after]
+          ;; The staging directory sits beside dest, so this is a rename on the
+          ;; same filesystem and nobody ever sees a half-written aishell. If it
+          ;; fails anyway, put back what was parked rather than leaving the user
+          ;; with nothing on PATH.
           (try
-            (fs/delete-if-exists path)
-            (catch Exception _ nil)))
+            (install-file! tmp-asset dest-path)
+            (catch Exception e
+              (when parked?
+                (try
+                  (install-file! old-path dest-path)
+                  (catch Exception _ nil)))
+              (output/error (str "Could not install " (fs/file-name dest-path) ": "
+                                 (.getMessage e)
+                                 (when parked?
+                                   "\nThe previous version was put back."))))))
 
-        (println (str output/BOLD "Upgraded aishell: v" current-version
-                      " -> v" target-version output/NC))
-        (doseq [note notes]
-          (println note))
+        (let [failed (doall (remove (fn [path]
+                                      (try
+                                        (fs/delete-if-exists path)
+                                        true
+                                        (catch Exception _ false)))
+                                    delete-after))]
+          (println (str output/BOLD "Upgraded aishell: v" current-version
+                        " -> v" target-version output/NC))
+          (if (seq failed)
+            (doseq [path failed]
+              (output/warn (str "Could not remove " path "; delete it by hand.")))
+            (doseq [note notes]
+              (println note))))
 
         (finally
           (fs/delete-tree tmp-dir))))))
@@ -285,14 +456,15 @@
    current-version: current aishell version string (e.g. \"3.3.0\")
    target-version: specific version to upgrade to, or nil for latest"
   [current-version target-version]
-  (let [downloader (find-downloader)]
+  (let [downloader (find-downloader)
+        base-url (release-base-url nil)]
     (when-not downloader
       (output/error "Neither curl nor wget found. Install one to use upgrade."))
 
     (let [target (or target-version
                      (do
                        (println "Checking for latest version...")
-                       (fetch-latest-version downloader)))]
+                       (fetch-latest-version downloader base-url)))]
       (when-not target
         (output/error "Could not determine latest version from GitHub.\nCheck your internet connection or specify a version: aishell upgrade <VERSION>"))
 
@@ -303,7 +475,8 @@
       (when (neg? (version-compare target current-version))
         (output/warn (str "Downgrading from v" current-version " to v" target)))
 
-      (let [env (detect-env current-version target {:pinned? (some? target-version)})]
+      (let [env (detect-env current-version target {:pinned? (some? target-version)
+                                                   :releases-url base-url})]
         (when-not (:install-path env)
           (output/error "Could not find aishell installation path.\nReinstall using: curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash"))
 

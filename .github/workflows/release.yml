@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run (build only, skip release creation)'
+        description: 'Dry run (build and smoke-test only, skip release creation)'
         required: false
         default: false
         type: boolean
@@ -17,7 +17,184 @@ permissions:
   contents: write
 
 jobs:
+  # Build every platform binary once. The binaries are not byte-reproducible
+  # across runs (jar timestamps), so smoke and release both consume this
+  # artifact rather than rebuilding.
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      bb_version: ${{ steps.bb.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Single source of truth for the runtime pin: the constant the build
+      # script appends its uberjar to. Reading it here is what keeps the
+      # workflow and the script from drifting.
+      - name: Read babashka pin from the build script
+        id: bb
+        shell: bash
+        run: |
+          BB=$(grep -oP '\(def babashka-version "\K[^"]+' scripts/build-release.clj)
+          test -n "$BB" || { echo "Could not read babashka-version from scripts/build-release.clj"; exit 1; }
+          echo "version=$BB" >> "$GITHUB_OUTPUT"
+          echo "Pinned babashka: $BB"
+
+      - name: Install Babashka
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          bb: ${{ steps.bb.outputs.version }}
+
+      - name: Build release
+        run: bb scripts/build-release.clj
+
+      - name: Verify build artifacts
+        shell: bash
+        run: |
+          for f in aishell-linux-amd64 aishell-linux-aarch64 aishell-macos-amd64 \
+                   aishell-macos-aarch64 aishell-windows-amd64.exe SHA256SUMS; do
+            test -f "dist/$f" || { echo "Build failed: dist/$f not found"; exit 1; }
+          done
+          echo "Build artifacts:"
+          ls -la dist/
+          echo ""
+          cat dist/SHA256SUMS
+
+      - name: Extract version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(./dist/aishell-linux-amd64 --version --json | jq -r '.version')
+          test -n "$VERSION" || { echo "Could not read version from dist/aishell-linux-amd64"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Built version: $VERSION"
+
+      # Fail a mistagged build here rather than on five smoke runners.
+      - name: Check version matches the tag
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          BUILT: ${{ steps.version.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ "$BUILT" != "${TAG#v}" ]; then
+            echo "::error title=version/tag mismatch::built $BUILT but tag is $TAG"
+            exit 1
+          fi
+          echo "Version $BUILT matches tag $TAG"
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  # One leg per published binary, on a runner of that platform. fail-fast is
+  # off so a single bad target does not hide the state of the other four.
+  smoke:
+    needs: build
+    name: smoke ${{ matrix.target }}
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-amd64
+            runs-on: ubuntu-latest
+            asset: aishell-linux-amd64
+          - target: linux-aarch64
+            runs-on: ubuntu-24.04-arm
+            asset: aishell-linux-aarch64
+          # macos-13 was retired; macos-15-intel is the current x64 label.
+          - target: macos-amd64
+            runs-on: macos-15-intel
+            asset: aishell-macos-amd64
+          # This leg answers aix-01m1mjm1vjd8: appending the jar puts data past
+          # the arm64 LC_CODE_SIGNATURE, which may make the binary unrunnable.
+          - target: macos-aarch64
+            runs-on: macos-latest
+            asset: aishell-macos-aarch64
+          - target: windows-amd64
+            runs-on: windows-latest
+            asset: aishell-windows-amd64.exe
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      # download-artifact does not preserve the executable bit. On Windows this
+      # step is a harmless no-op under Git Bash.
+      - name: Run the binary
+        id: run
+        shell: bash
+        env:
+          ASSET: ${{ matrix.asset }}
+        run: |
+          chmod +x "dist/$ASSET"
+          OUT=$("./dist/$ASSET" --version --json)
+          echo "$OUT"
+          VERSION=$(echo "$OUT" | jq -r '.version')
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Every install and every upgrade trusts SHA256SUMS. This is the last
+      # point before publishing where the file can be checked against the
+      # binaries it describes.
+      - name: Verify the published checksum
+        shell: bash
+        env:
+          ASSET: ${{ matrix.asset }}
+        run: |
+          cd dist
+          EXPECTED=$(awk -v a="$ASSET" '$2 == a || $2 == "*"a { print $1 }' SHA256SUMS)
+          test -n "$EXPECTED" || { echo "SHA256SUMS lists no entry for $ASSET"; exit 1; }
+          if command -v sha256sum >/dev/null; then
+            ACTUAL=$(sha256sum "$ASSET" | cut -d" " -f1)
+          else
+            ACTUAL=$(shasum -a 256 "$ASSET" | cut -d" " -f1)
+          fi
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "checksum mismatch for $ASSET: SHA256SUMS says $EXPECTED, file is $ACTUAL"
+            exit 1
+          fi
+
+      # On a tag the expected version is the tag itself. A workflow_dispatch has
+      # no tag, so fall back to what the build job read from the binary.
+      - name: Check version
+        shell: bash
+        env:
+          ACTUAL: ${{ steps.run.outputs.version }}
+          ASSET: ${{ matrix.asset }}
+          BUILT: ${{ needs.build.outputs.version }}
+          TAG: ${{ github.ref_name }}
+          IS_TAG: ${{ github.ref_type == 'tag' }}
+        run: |
+          if [ "$IS_TAG" = "true" ]; then
+            EXPECTED="${TAG#v}"
+          else
+            EXPECTED="$BUILT"
+          fi
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "$ASSET reports $ACTUAL"
+
+      - name: Report the failing target
+        if: failure()
+        shell: bash
+        run: |
+          echo "::error title=smoke failed: ${{ matrix.target }}::${{ matrix.asset }} did not run correctly on ${{ matrix.runs-on }}"
+
   release:
+    needs: [build, smoke]
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,31 +203,21 @@ jobs:
       - name: Install Babashka
         uses: DeLaGuardo/setup-clojure@12.5
         with:
-          bb: latest
+          bb: ${{ needs.build.outputs.bb_version }}
 
-      - name: Build release
-        run: bb scripts/build-release.clj
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
-      - name: Verify build artifacts
-        run: |
-          test -f dist/aishell || { echo "Build failed: dist/aishell not found"; exit 1; }
-          test -f dist/aishell.bat || { echo "Build failed: dist/aishell.bat not found"; exit 1; }
-          test -f dist/aishell.sha256 || { echo "Build failed: dist/aishell.sha256 not found"; exit 1; }
-          echo "Build artifacts:"
-          ls -la dist/
-          echo ""
-          echo "Checksum:"
-          cat dist/aishell.sha256
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=$(./dist/aishell --version --json | jq -r '.version')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Built version: $VERSION"
+      # create-release.clj reads the version by running the linux binary, and
+      # download-artifact stripped its executable bit.
+      - name: Restore executable bits
+        shell: bash
+        run: chmod +x dist/aishell-linux-amd64
 
       - name: Create GitHub release
-        if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bb scripts/create-release.clj
