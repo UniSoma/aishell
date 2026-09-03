@@ -1,15 +1,15 @@
 ---
 id: aix-01m1kyn7zqy6
 title: aishell upgrade fetches the binary and migrates script installs in place
-status: in_progress
+status: open
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.754678901Z'
-updated: '2026-09-03T21:52:41.900420338Z'
+updated: '2026-09-03T22:10:13.806512082Z'
 parent: aix-01m1kydv7r76
 tags:
-- ready-for-agent
+- ready-for-human
 deps:
 - aix-01m1kyn7exas
 ---

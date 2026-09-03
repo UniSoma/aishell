@@ -1,15 +1,15 @@
 ---
 id: aix-01m1kyn7wahm
 title: install.ps1 and install.bat install aishell.exe, no babashka
-status: in_progress
+status: open
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.650804594Z'
-updated: '2026-09-03T21:26:18.147119993Z'
+updated: '2026-09-03T22:10:13.277600695Z'
 parent: aix-01m1kydv7r76
 tags:
-- ready-for-agent
+- ready-for-human
 ---
 
 ## Description

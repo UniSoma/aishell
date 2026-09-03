@@ -1,15 +1,15 @@
 ---
 id: aix-01m1kyn7nsxe
 title: 'Release workflow: build, five-runner smoke matrix, then release'
-status: in_progress
+status: open
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.436449350Z'
-updated: '2026-09-03T21:52:42.006541397Z'
+updated: '2026-09-03T22:10:14.269928219Z'
 parent: aix-01m1kydv7r76
 tags:
-- ready-for-agent
+- ready-for-human
 deps:
 - aix-01m1kyn7j5th
 ---
