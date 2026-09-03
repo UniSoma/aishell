@@ -215,8 +215,20 @@ RUN set -eux; \\
     bb --version
 
 # Install bbin (Babashka script installer)
+#
+# WORKAROUND(bbin-gensym-tmp): bbin's shim templates write their temp
+# deps.edn to (fs/file (fs/temp-dir) (str (gensym \"bbin\"))). gensym's
+# counter restarts per process, so every shim on the image uses the same
+# /tmp/bbinN path, and once another UID owns that file every bbin script
+# fails with \"Permission denied\". Rewrite the five forms to a per-user
+# name. The count check turns a BBIN_VERSION bump that changes the form
+# into a build error instead of a silent no-op. Drop the sed, the guard
+# and the matching rm in the entrypoint once upstream fixes this
+# (aix-01m1ms2ngp23).
 RUN set -eux; \\
     curl -fsSL \"https://raw.githubusercontent.com/babashka/bbin/v${BBIN_VERSION}/bbin\" -o /usr/local/bin/bbin; \\
+    sed -i 's|(gensym \\\\\"bbin\\\\\")|(gensym (str \\\\\"bbin-\\\\\" (System/getProperty \\\\\"user.name\\\\\") \\\\\"-\\\\\"))|g' /usr/local/bin/bbin; \\
+    test \"$(grep -o 'gensym (str \\\\\"bbin-\\\\\"' /usr/local/bin/bbin | wc -l)\" -eq 5; \\
     chmod +x /usr/local/bin/bbin
 
 # Shared bbin install dir (executables on PATH for everyone).
@@ -546,6 +558,13 @@ export DISABLE_INSTALLATION_CHECKS=1
 # moment docker reported the container `Up` could land before the alias
 # file (and other entrypoint setup) had been written.
 rm -f /tmp/aishell.entrypoint-done /tmp/pre-start.done /tmp/pre-start.failed
+
+# WORKAROUND(bbin-gensym-tmp): bbin shims exec bb, so fs/delete-on-exit never
+# fires and each shim's temp deps.edn stays in /tmp; a leftover owned by
+# another UID blocks every bbin script. The glob also covers the per-user
+# names the Dockerfile patches in. Drop together with the sed there
+# (aix-01m1ms2ngp23).
+rm -f /tmp/bbin*
 
 # Execute pre-start command if specified (PRE-01, PRE-02, PRE-03)
 # Runs as developer user so caches (.m2, .npm, etc.) go to the right place
