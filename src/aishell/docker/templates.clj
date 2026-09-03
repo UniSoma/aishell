@@ -125,7 +125,7 @@ RUN set -eux; \\
 FROM debian:trixie-slim
 
 # Build arguments for developer tools
-ARG BABASHKA_VERSION=1.12.218
+ARG BABASHKA_VERSION=1.13.220
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.17.1
 ARG UV_VERSION=0.11.29
@@ -196,9 +196,20 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \\
     && node --version \\
     && npm --version
 
-# Install Babashka (static binary for container compatibility)
+# Install Babashka. amd64 takes the dynamically linked build: the static one
+# cannot dlopen, so babashka.ffi fails to load any library on it, including by
+# absolute path. It needs only libc, libdl and libpthread, all in libc6, and its
+# highest versioned symbol is GLIBC_2.27 — under the 2.39 floor asserted above.
+# arm64 has no dynamic build upstream, so it takes the static one and loses FFI.
+# Source: https://github.com/babashka/babashka
 RUN set -eux; \\
-    curl -fsSL \"https://github.com/babashka/babashka/releases/download/v${BABASHKA_VERSION}/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz\" \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch}\" in \\
+        amd64) bbArch='linux-amd64' ;; \\
+        arm64) bbArch='linux-aarch64-static' ;; \\
+        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL \"https://github.com/babashka/babashka/releases/download/v${BABASHKA_VERSION}/babashka-${BABASHKA_VERSION}-${bbArch}.tar.gz\" \\
     | tar -xz -C /usr/local/bin bb; \\
     chmod +x /usr/local/bin/bb; \\
     bb --version
