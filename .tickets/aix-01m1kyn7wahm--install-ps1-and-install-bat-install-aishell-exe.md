@@ -1,12 +1,12 @@
 ---
 id: aix-01m1kyn7wahm
 title: install.ps1 and install.bat install aishell.exe, no babashka
-status: open
+status: in_progress
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.650804594Z'
-updated: '2026-09-03T15:37:04.650804594Z'
+updated: '2026-09-03T21:26:18.147119993Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-agent
@@ -22,9 +22,9 @@ Parent spec: aix-01m1kydv7r76 (ADR 0007).
 
 ### Acceptance criteria
 
-- [ ] No reference to babashka or Scoop remains in either script
-- [ ] Both scripts verify against `SHA256SUMS` and clean up on mismatch
-- [ ] Result is a single `aishell.exe` on PATH; no `.bat` written
+- [x] No reference to babashka or Scoop remains in either script
+- [x] Both scripts verify against `SHA256SUMS` and clean up on mismatch
+- [x] Result is a single `aishell.exe` on PATH; no `.bat` written
 - [ ] Verified on a Windows machine or runner against a locally served asset, or against the 4.1.0 release once published
 
 ### Blocked by

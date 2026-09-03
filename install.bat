@@ -2,18 +2,21 @@
 setlocal enabledelayedexpansion
 
 REM install.bat - Installer for aishell (Windows CMD)
-REM Downloads and installs Babashka + aishell with checksum verification
+REM Downloads the aishell binary from GitHub Releases and verifies it against
+REM the release's SHA256SUMS. Nothing else is installed.
 REM
 REM Usage: curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.bat -o install.bat && install.bat
 REM
 REM Environment variables:
-REM   VERSION     - Version to install (default: latest)
-REM   INSTALL_DIR - Installation directory (default: %LOCALAPPDATA%\Programs\aishell)
+REM   VERSION             - Version to install (default: latest)
+REM   INSTALL_DIR         - Installation directory (default: %LOCALAPPDATA%\Programs\aishell)
+REM   AISHELL_RELEASE_URL - Release base URL (default: the GitHub releases page)
 
 REM --- Configuration ---
-set "REPO_URL=https://github.com/UniSoma/aishell"
+if defined AISHELL_RELEASE_URL (set "RELEASES_URL=%AISHELL_RELEASE_URL%") else (set "RELEASES_URL=https://github.com/UniSoma/aishell/releases")
 if defined VERSION (set "VER=%VERSION%") else (set "VER=latest")
 if defined INSTALL_DIR (set "INST_DIR=%INSTALL_DIR%") else (set "INST_DIR=%LOCALAPPDATA%\Programs\aishell")
+set "ASSET=aishell-windows-amd64.exe"
 
 REM --- Check for curl ---
 where curl >nul 2>&1
@@ -24,183 +27,97 @@ if %errorlevel% neq 0 (
 )
 
 REM --- Create Install Directory ---
-echo ==> Creating installation directory...
+echo ==^> Creating installation directory...
 if not exist "%INST_DIR%" mkdir "%INST_DIR%"
-if %errorlevel% neq 0 (
+if not exist "%INST_DIR%" (
     echo Error: Failed to create directory %INST_DIR%
     exit /b 1
 )
 
-REM --- Check for Babashka ---
-where bb >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ==> Babashka found.
-    goto :bb_done
-)
-
-echo ==> Babashka not found. Installing...
-
-REM Try Scoop first
-where scoop >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ==> Installing Babashka via Scoop...
-    scoop install babashka
-    if !errorlevel! equ 0 (
-        echo ==> Babashka installed via Scoop.
-        goto :bb_done
-    )
-    echo Warning: Scoop install failed. Trying direct download...
-)
-
-REM Direct download from GitHub
-echo ==> Installing Babashka directly from GitHub...
-
-REM Get latest version by following redirect
-set "BB_VER="
-for /f "tokens=2 delims= " %%a in ('curl -sI "https://github.com/babashka/babashka/releases/latest" 2^>nul ^| findstr /i "^location:"') do (
-    set "BB_LOCATION=%%a"
-)
-if not defined BB_LOCATION (
-    echo Error: Failed to determine latest Babashka version.
-    exit /b 1
-)
-REM Strip trailing CR/LF from the location header
-set "BB_LOCATION=!BB_LOCATION: =!"
-for /f "delims=" %%a in ("!BB_LOCATION!") do set "BB_LOCATION=%%a"
-REM Extract version from URL (last segment after /v)
-for %%a in ("!BB_LOCATION:/=" "!") do set "BB_VER=%%~a"
-REM Remove leading 'v' if present
-if "!BB_VER:~0,1!"=="v" set "BB_VER=!BB_VER:~1!"
-REM Remove trailing carriage return
-set "BB_VER=!BB_VER: =!"
-for /f "delims=" %%a in ("!BB_VER!") do set "BB_VER=%%a"
-
-if not defined BB_VER (
-    echo Error: Failed to parse Babashka version from redirect.
-    exit /b 1
-)
-
-set "BB_URL=https://github.com/babashka/babashka/releases/download/v!BB_VER!/babashka-!BB_VER!-windows-amd64.zip"
-set "BB_ZIP=%TEMP%\babashka.zip"
-
-echo ==> Downloading Babashka v!BB_VER!...
-curl -fsSL "!BB_URL!" -o "!BB_ZIP!"
-if !errorlevel! neq 0 (
-    echo Error: Failed to download Babashka from !BB_URL!
-    if exist "!BB_ZIP!" del "!BB_ZIP!"
-    exit /b 1
-)
-
-echo ==> Extracting Babashka to %INST_DIR%...
-REM Try tar first (built-in on Windows 10+)
-tar -xf "!BB_ZIP!" -C "%INST_DIR%" >nul 2>&1
-if !errorlevel! neq 0 (
-    REM Fallback to PowerShell Expand-Archive
-    powershell -NoProfile -Command "Expand-Archive -Path '!BB_ZIP!' -DestinationPath '%INST_DIR%' -Force" >nul 2>&1
-    if !errorlevel! neq 0 (
-        echo Error: Failed to extract Babashka. Neither tar nor PowerShell extraction worked.
-        del "!BB_ZIP!"
-        exit /b 1
-    )
-)
-
-del "!BB_ZIP!"
-
-if not exist "%INST_DIR%\bb.exe" (
-    echo Error: Babashka installation failed - bb.exe not found.
-    exit /b 1
-)
-
-echo ==> Babashka installed to %INST_DIR%\bb.exe
-
-:bb_done
-
 REM --- Determine Download URLs ---
 if "%VER%"=="latest" (
-    set "DOWNLOAD_URL=%REPO_URL%/releases/latest/download/aishell"
-    set "BAT_URL=%REPO_URL%/releases/latest/download/aishell.bat"
+    set "ASSET_BASE=%RELEASES_URL%/latest/download"
 ) else (
-    set "DOWNLOAD_URL=%REPO_URL%/releases/download/v%VER%/aishell"
-    set "BAT_URL=%REPO_URL%/releases/download/v%VER%/aishell.bat"
+    set "ASSET_BASE=%RELEASES_URL%/download/v%VER%"
 )
-set "CHECKSUM_URL=%DOWNLOAD_URL%.sha256"
+set "DOWNLOAD_URL=!ASSET_BASE!/%ASSET%"
+set "CHECKSUM_URL=!ASSET_BASE!/SHA256SUMS"
 
-REM --- Download aishell ---
-echo ==> Downloading aishell...
-curl -fsSL "%DOWNLOAD_URL%" -o "%INST_DIR%\aishell"
-if %errorlevel% neq 0 (
-    echo Error: Failed to download aishell from %DOWNLOAD_URL%
-    if exist "%INST_DIR%\aishell" del "%INST_DIR%\aishell"
+REM --- Download (to a temp dir, so a bad download never touches the install) ---
+set "TMP_DIR=%TEMP%\aishell-install-%RANDOM%%RANDOM%"
+mkdir "%TMP_DIR%"
+if not exist "%TMP_DIR%" (
+    echo Error: Failed to create temporary directory %TMP_DIR%
     exit /b 1
 )
 
-REM --- Download aishell.bat ---
-echo ==> Downloading aishell.bat...
-curl -fsSL "%BAT_URL%" -o "%INST_DIR%\aishell.bat"
-if %errorlevel% neq 0 (
-    echo Error: Failed to download aishell.bat from %BAT_URL%
-    if exist "%INST_DIR%\aishell" del "%INST_DIR%\aishell"
-    if exist "%INST_DIR%\aishell.bat" del "%INST_DIR%\aishell.bat"
-    exit /b 1
+echo ==^> Downloading %ASSET%...
+curl -fsSL --retry 3 "!DOWNLOAD_URL!" -o "%TMP_DIR%\%ASSET%"
+if !errorlevel! neq 0 (
+    echo Error: Failed to download %ASSET% from !DOWNLOAD_URL!
+    goto :fail
 )
 
-REM --- Download Checksum ---
-echo ==> Downloading checksum...
-curl -fsSL "%CHECKSUM_URL%" -o "%TEMP%\aishell.sha256"
-if %errorlevel% neq 0 (
-    echo Error: Failed to download checksum from %CHECKSUM_URL%
-    if exist "%INST_DIR%\aishell" del "%INST_DIR%\aishell"
-    if exist "%INST_DIR%\aishell.bat" del "%INST_DIR%\aishell.bat"
-    if exist "%TEMP%\aishell.sha256" del "%TEMP%\aishell.sha256"
-    exit /b 1
+curl -fsSL --retry 3 "!CHECKSUM_URL!" -o "%TMP_DIR%\SHA256SUMS"
+if !errorlevel! neq 0 (
+    echo Error: Failed to download checksum from !CHECKSUM_URL!
+    goto :fail
 )
 
 REM --- Verify Checksum ---
-echo ==> Verifying checksum...
+echo ==^> Verifying checksum...
 
-REM Read expected hash (first token from checksum file)
+REM Match the filename token exactly: "aishell" is a prefix of "%ASSET%".
 set "EXPECTED_HASH="
-for /f "tokens=1" %%a in (%TEMP%\aishell.sha256) do (
-    if not defined EXPECTED_HASH set "EXPECTED_HASH=%%a"
+for /f "usebackq tokens=1,2" %%a in ("%TMP_DIR%\SHA256SUMS") do (
+    set "TOK=%%b"
+    if "!TOK:~0,1!"=="*" set "TOK=!TOK:~1!"
+    if /i "!TOK!"=="%ASSET%" if not defined EXPECTED_HASH set "EXPECTED_HASH=%%a"
 )
 
 REM Compute actual hash using certutil
-set "ACTUAL_HASH="
 REM certutil outputs: line1=algorithm header, line2=hash, line3=CertUtil success
-set "HASH_LINE=0"
-for /f "skip=1 tokens=*" %%a in ('certutil -hashfile "%INST_DIR%\aishell" SHA256') do (
+set "ACTUAL_HASH="
+for /f "skip=1 tokens=*" %%a in ('certutil -hashfile "%TMP_DIR%\%ASSET%" SHA256') do (
     if not defined ACTUAL_HASH set "ACTUAL_HASH=%%a"
 )
 REM Remove spaces from certutil output
 set "ACTUAL_HASH=!ACTUAL_HASH: =!"
 
 if not defined EXPECTED_HASH (
-    echo Error: Could not read expected checksum.
-    goto :checksum_fail
+    echo Error: SHA256SUMS from !CHECKSUM_URL! lists no entry for %ASSET%
+    goto :fail
 )
 if not defined ACTUAL_HASH (
     echo Error: Could not compute file checksum.
-    goto :checksum_fail
+    goto :fail
 )
 
+REM certutil emits uppercase; /i makes the comparison case-insensitive.
 if /i "!ACTUAL_HASH!" neq "!EXPECTED_HASH!" (
     echo Error: Checksum verification failed.
     echo   Expected: !EXPECTED_HASH!
     echo   Got:      !ACTUAL_HASH!
-    goto :checksum_fail
+    goto :fail
 )
 
-echo ==> Checksum verified.
-del "%TEMP%\aishell.sha256"
-goto :checksum_ok
+echo ==^> Checksum verified.
 
-:checksum_fail
+REM --- Install ---
+echo ==^> Installing...
+move /y "%TMP_DIR%\%ASSET%" "%INST_DIR%\aishell.exe" >nul
+if !errorlevel! neq 0 (
+    echo Error: Failed to install to %INST_DIR%\aishell.exe
+    goto :fail
+)
+
+REM Pre-4.1.0 installs put a bb-dependent script and its CMD shim here; both are
+REM dead now that aishell.exe is on PATH. bb.exe is left alone - the old
+REM installer may have put it there, and it is a tool in its own right.
 if exist "%INST_DIR%\aishell" del "%INST_DIR%\aishell"
 if exist "%INST_DIR%\aishell.bat" del "%INST_DIR%\aishell.bat"
-if exist "%TEMP%\aishell.sha256" del "%TEMP%\aishell.sha256"
-exit /b 1
 
-:checksum_ok
+rmdir /s /q "%TMP_DIR%" 2>nul
 
 REM --- PATH Management ---
 set "PATH_UPDATED=0"
@@ -214,7 +131,7 @@ for /f "tokens=2,*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul ^| find
 REM Check if install dir is already in PATH
 echo !CURRENT_PATH! | findstr /i /c:"%INST_DIR%" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ==> Adding %INST_DIR% to user PATH...
+    echo ==^> Adding %INST_DIR% to user PATH...
     if defined CURRENT_PATH (
         setx Path "!CURRENT_PATH!;%INST_DIR%" >nul 2>&1
     ) else (
@@ -222,17 +139,17 @@ if %errorlevel% neq 0 (
     )
     if !errorlevel! equ 0 (
         set "PATH_UPDATED=1"
-        echo ==> PATH updated.
+        echo ==^> PATH updated.
     ) else (
         echo Warning: Failed to update PATH. You may need to add %INST_DIR% to PATH manually.
     )
 ) else (
-    echo ==> %INST_DIR% already in PATH.
+    echo ==^> %INST_DIR% already in PATH.
 )
 
 REM --- Success Message ---
 echo.
-echo ==> Done! Installed aishell to %INST_DIR%
+echo ==^> Done! Installed aishell to %INST_DIR%\aishell.exe
 echo.
 
 if "%PATH_UPDATED%"=="1" (
@@ -247,3 +164,9 @@ echo   aishell opencode                # Run OpenCode
 echo.
 
 endlocal
+exit /b 0
+
+:fail
+if exist "%TMP_DIR%" rmdir /s /q "%TMP_DIR%" 2>nul
+endlocal
+exit /b 1

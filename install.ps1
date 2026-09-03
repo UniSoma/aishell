@@ -1,18 +1,22 @@
 # install.ps1 - Installer for aishell (Windows)
-# Downloads and installs Babashka + aishell with checksum verification
+# Downloads the aishell binary from GitHub Releases and verifies it against the
+# release's SHA256SUMS. Nothing else is installed.
 #
 # Usage: irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 #
 # Environment variables:
-#   $env:VERSION     - Version to install (default: latest)
-#   $env:INSTALL_DIR - Installation directory (default: $env:LOCALAPPDATA\Programs\aishell)
+#   $env:VERSION             - Version to install (default: latest)
+#   $env:INSTALL_DIR         - Installation directory (default: $env:LOCALAPPDATA\Programs\aishell)
+#   $env:AISHELL_RELEASE_URL - Release base URL (default: the GitHub releases page)
 
 $ErrorActionPreference = "Stop"
 
 # --- Configuration ---
-$repoUrl = "https://github.com/UniSoma/aishell"
+$releasesUrl = if ($env:AISHELL_RELEASE_URL) { $env:AISHELL_RELEASE_URL } else { "https://github.com/UniSoma/aishell/releases" }
 $version = if ($env:VERSION) { $env:VERSION } else { "latest" }
 $installDir = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { "$env:LOCALAPPDATA\Programs\aishell" }
+$asset = "aishell-windows-amd64.exe"
+$destPath = Join-Path $installDir "aishell.exe"
 
 # --- Output Functions ---
 function Write-Info {
@@ -43,110 +47,90 @@ function Write-Warn {
 Write-Info "Creating installation directory..."
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
-# --- Check for Babashka ---
-if (-not (Get-Command bb -ErrorAction SilentlyContinue)) {
-    Write-Info "Babashka not found. Installing..."
+# --- Determine Download URLs ---
+$assetBase = if ($version -eq "latest") {
+    "$releasesUrl/latest/download"
+} else {
+    "$releasesUrl/download/v${version}"
+}
+$downloadUrl = "$assetBase/$asset"
+$checksumUrl = "$assetBase/SHA256SUMS"
 
-    # Check for scoop
-    if (Get-Command scoop -ErrorAction SilentlyContinue) {
-        Write-Info "Installing Babashka via Scoop..."
-        scoop install babashka
-        Write-Success "Babashka installed via Scoop"
-    } else {
-        Write-Info "Scoop not found. Installing Babashka directly from GitHub..."
+# --- Download (to a temp dir, so a bad download never touches the install) ---
+$tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("aishell-install-" + [IO.Path]::GetRandomFileName())
+New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 
-        # Fetch latest release info from GitHub API
-        try {
-            $bbRelease = Invoke-RestMethod "https://api.github.com/repos/babashka/babashka/releases/latest"
-            $bbVersion = $bbRelease.tag_name -replace '^v', ''
-            $bbUrl = "https://github.com/babashka/babashka/releases/download/v${bbVersion}/babashka-${bbVersion}-windows-amd64.zip"
-            $bbZip = "$env:TEMP\babashka.zip"
+try {
+    $tmpAsset = Join-Path $tmpDir $asset
+    $tmpSums = Join-Path $tmpDir "SHA256SUMS"
 
-            Write-Info "Downloading Babashka v${bbVersion}..."
-            Invoke-WebRequest -Uri $bbUrl -OutFile $bbZip
+    # The asset is ~90 MB; Windows PowerShell 5.1 renders download progress one
+    # write at a time, which dominates the transfer. Restored in the finally
+    # below, because "irm | iex" runs this in the caller's own session.
+    $previousProgressPreference = $ProgressPreference
+    $ProgressPreference = "SilentlyContinue"
 
-            Write-Info "Extracting Babashka to ${installDir}..."
-            Expand-Archive -Path $bbZip -DestinationPath $installDir -Force
+    Write-Info "Downloading ${asset} (about 90 MB); this takes a while..."
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpAsset -UseBasicParsing
+    } catch {
+        Write-Error "Failed to download ${asset} from ${downloadUrl}: $_"
+        exit 1
+    }
 
-            # Cleanup
-            Remove-Item $bbZip
+    try {
+        Invoke-WebRequest -Uri $checksumUrl -OutFile $tmpSums -UseBasicParsing
+    } catch {
+        Write-Error "Failed to download checksum from ${checksumUrl}: $_"
+        exit 1
+    }
 
-            # Verify
-            if (-not (Test-Path "$installDir\bb.exe")) {
-                Write-Error "Babashka installation failed - bb.exe not found"
-                exit 1
-            }
-
-            Write-Success "Babashka installed to $installDir\bb.exe"
-        } catch {
-            Write-Error "Failed to install Babashka: $_"
-            exit 1
+    # --- Verify Checksum ---
+    Write-Info "Verifying checksum..."
+    # Match the filename token exactly: "aishell" is a prefix of "aishell-windows-amd64.exe".
+    $expectedHash = $null
+    foreach ($line in Get-Content $tmpSums) {
+        $fields = $line.Trim() -split '\s+'
+        if ($fields.Count -ge 2 -and $fields[1].TrimStart('*') -eq $asset) {
+            $expectedHash = $fields[0].ToLower()
+            break
         }
     }
-} else {
-    Write-Success "Babashka found: $((Get-Command bb).Source)"
-}
 
-# --- Determine Download URL ---
-$downloadUrl = if ($version -eq "latest") {
-    "$repoUrl/releases/latest/download/aishell"
-} else {
-    "$repoUrl/releases/download/v${version}/aishell"
-}
-$checksumUrl = "${downloadUrl}.sha256"
-$batUrl = if ($version -eq "latest") {
-    "$repoUrl/releases/latest/download/aishell.bat"
-} else {
-    "$repoUrl/releases/download/v${version}/aishell.bat"
-}
+    if (-not $expectedHash) {
+        Write-Error "SHA256SUMS from ${checksumUrl} lists no entry for ${asset}"
+        exit 1
+    }
 
-# --- Download aishell ---
-Write-Info "Downloading aishell..."
-try {
-    Invoke-WebRequest -Uri $downloadUrl -OutFile "$installDir\aishell"
-} catch {
-    Write-Error "Failed to download aishell from ${downloadUrl}: $_"
-    exit 1
+    $actualHash = (Get-FileHash $tmpAsset -Algorithm SHA256).Hash.ToLower()
+
+    if ($actualHash -ne $expectedHash) {
+        Write-Error "Checksum verification failed"
+        Write-Host "  Expected: $expectedHash" -ForegroundColor Red
+        Write-Host "  Got:      $actualHash" -ForegroundColor Red
+        exit 1
+    }
+
+    # --- Install ---
+    Write-Info "Installing..."
+    try {
+        Move-Item -Path $tmpAsset -Destination $destPath -Force
+    } catch {
+        Write-Error "Failed to install to ${destPath}: $_"
+        exit 1
+    }
+
+    # Pre-4.1.0 installs put a bb-dependent script and its CMD shim here; both
+    # are dead now that aishell.exe is on PATH. bb.exe is left alone - the old
+    # installer may have put it there, and it is a tool in its own right.
+    Remove-Item (Join-Path $installDir "aishell") -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $installDir "aishell.bat") -Force -ErrorAction SilentlyContinue
+} finally {
+    if ($null -ne $previousProgressPreference) {
+        $ProgressPreference = $previousProgressPreference
+    }
+    Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
 }
-
-# --- Download aishell.bat ---
-Write-Info "Downloading aishell.bat..."
-try {
-    Invoke-WebRequest -Uri $batUrl -OutFile "$installDir\aishell.bat"
-} catch {
-    Write-Error "Failed to download aishell.bat from ${batUrl}: $_"
-    Remove-Item "$installDir\aishell" -ErrorAction SilentlyContinue
-    exit 1
-}
-
-# --- Download checksum ---
-Write-Info "Downloading checksum..."
-try {
-    Invoke-WebRequest -Uri $checksumUrl -OutFile "$env:TEMP\aishell.sha256"
-} catch {
-    Write-Error "Failed to download checksum from ${checksumUrl}: $_"
-    Remove-Item "$installDir\aishell" -ErrorAction SilentlyContinue
-    Remove-Item "$installDir\aishell.bat" -ErrorAction SilentlyContinue
-    exit 1
-}
-
-# --- Verify Checksum ---
-Write-Info "Verifying checksum..."
-$expectedHash = (Get-Content "$env:TEMP\aishell.sha256").Split(' ')[0].Trim()
-$actualHash = (Get-FileHash "$installDir\aishell" -Algorithm SHA256).Hash.ToLower()
-
-if ($actualHash -ne $expectedHash) {
-    Write-Error "Checksum verification failed"
-    Write-Host "  Expected: $expectedHash" -ForegroundColor Red
-    Write-Host "  Got:      $actualHash" -ForegroundColor Red
-    Remove-Item "$installDir\aishell" -ErrorAction SilentlyContinue
-    Remove-Item "$installDir\aishell.bat" -ErrorAction SilentlyContinue
-    Remove-Item "$env:TEMP\aishell.sha256" -ErrorAction SilentlyContinue
-    exit 1
-}
-
-# --- Cleanup ---
-Remove-Item "$env:TEMP\aishell.sha256" -ErrorAction SilentlyContinue
 
 # --- PATH Management ---
 $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
@@ -164,7 +148,7 @@ if ($currentPath -notlike "*$installDir*") {
 
 # --- Success Message ---
 Write-Host ""
-Write-Success "Done! Installed aishell to $installDir"
+Write-Success "Done! Installed aishell to $destPath"
 Write-Host ""
 
 if ($pathNeedsUpdate) {
