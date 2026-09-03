@@ -48,7 +48,9 @@ existed only to start the program.
 - **No code signing yet.** curl and PowerShell downloads carry no quarantine
   flag, so the supported paths do not hit Gatekeeper or SmartScreen. Manual
   browser downloads do; the workaround is documented and signing is tracked
-  as an open ticket.
+  as an open ticket. **(Amended: on Apple Silicon the signature is
+  an execution requirement, not only a Gatekeeper prompt. See the second
+  amendment below.)**
 
 ## Considered options
 
@@ -75,3 +77,33 @@ existed only to start the program.
   embedded runtime evaluating user scripts through an aishell subcommand.
 - `bb uberjar` follows `bb.edn`'s `:paths`, which include `test/`; the build
   passes an explicit `src` classpath.
+
+## Amendment: `find-aishell-path` still strips a trailing `.bat`
+
+The decision above says the function stops stripping `.bat`. It does not, on
+purpose. Before migration, `fs/which "aishell"` on Windows resolves the
+`aishell.bat` shim, which is the only part of a v4.0.0 install that sits on
+PATH. Stripping the suffix gives the script beside it, and that script is what
+the plan reads the leading bytes of to tell a script install from a binary one.
+The ADR's point still holds. The plan derives the destination from the
+install *directory*, never from the resolved file name, so
+`aishell.exe` is written to the right place whichever of the two `fs/which`
+returns.
+
+## Amendment: appending to the macOS arm64 binary lands past its code signature
+
+"No code signing yet" reads as a question about Gatekeeper prompts. On Apple
+Silicon it is a harder constraint: arm64 macOS refuses to execute a Mach-O
+whose signature does not verify, and upstream's `macos-aarch64` babashka is
+signed. Appending the jar writes bytes past the `LC_CODE_SIGNATURE` load
+command, which can invalidate that signature, in which case
+`aishell-macos-aarch64` is killed on start rather than shown a prompt a user
+can dismiss. Upstream's binary carries an `LC_CODE_SIGNATURE` that ends
+exactly at the file's end, and the jar adds about 300 KB after it. The other
+four targets do not carry this constraint. Whether trailing data past
+the signature superblob actually invalidates it is decided on real hardware
+and is open, tracked in aix-01m1mjm1vjd8; the smoke matrix's `macos-latest`
+leg is arm64, so the first dry run answers it. If it does break, re-signing
+ad hoc with `codesign -f -s -` costs a macOS runner and with it the
+single-runner build decision above, while `rcodesign` re-signs on Linux and
+keeps it.

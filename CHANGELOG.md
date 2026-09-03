@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **aishell is now a single executable, and Docker is the only thing you install**: every release publishes one binary per platform (`aishell-linux-amd64`, `aishell-linux-aarch64`, `aishell-macos-amd64`, `aishell-macos-aarch64`, `aishell-windows-amd64.exe`) plus a `SHA256SUMS` file listing every asset the build produced. Each binary is the upstream babashka build for that platform with aishell's uberjar appended, so the interpreter ships with the program. `install.sh`, `install.ps1` and `install.bat` no longer download, detect or ask about babashka, and a Windows install is `aishell.exe` with no `.bat` shim beside it. The Linux binaries are statically linked, so they run on musl and on old glibc alike
+
+- **The host runtime is pinned at babashka 1.13.220**: it lives in one constant in the build script, so every install runs the same interpreter rather than whichever `bb` was on the machine. That pin is separate from the foundation image's `BABASHKA_VERSION`, which is the babashka offered inside the sandbox and does not change here. The cost is size: 69 to 88 MB per binary, where the old uberscript was 300 KB
+
+- **Nothing is code-signed yet**: downloads made by curl or PowerShell carry no quarantine flag and are unaffected, but a binary downloaded through a browser needs `xattr -d com.apple.quarantine` on macOS or "Unblock" on Windows, and the README says so. Separately, appending the uberjar puts data past the macOS arm64 binary's own code signature, which may stop `aishell-macos-aarch64` running on Apple Silicon at all; that is open as aix-01m1mjm1vjd8 and the release smoke matrix is what answers it
+
+- **`AISHELL_RELEASE_URL` points every download at an alternate release tree**: the three install scripts, `aishell upgrade` and the background update check all read it, so a release served from a local directory can be installed and upgraded against without reaching GitHub. It defaults to `https://github.com/UniSoma/aishell/releases`
+
+- **`aishell upgrade` shows download progress when you are at a terminal**: 70-odd MB over a slow link looks like a hang otherwise. Attached to a terminal it shows curl's or wget's progress bar; from a script or a CI job it prints one line naming the asset and its size instead, so logs stay readable
+
+- **Running aishell on your own babashka is documented**: `bbin install io.github.UniSoma/aishell` installs from the git repository, which is the route for people who would rather not have a second babashka on disk. The README lists it under Requirements, and `docs/ARCHITECTURE.md` covers it
+
+### Changed
+
+- **`aishell upgrade` fetches the platform binary and converts a 4.0.0 script install in place**: it picks the asset for your OS and CPU architecture, verifies it against the release's `SHA256SUMS` before it replaces anything, and installs it at the path that is already on your PATH, so a script install becomes a binary install without you moving a file. On Windows it writes `aishell.exe` and deletes the old `aishell` and `aishell.bat`, and prints a line saying it did. Windows also cannot overwrite a running executable, so upgrading a binary install parks the current `aishell.exe` as `aishell.exe.old` and the next start of aishell deletes the leftover; if the install then fails, the parked binary goes back, so PATH is never left with nothing on it. The decision behind all of that (asset name, destination path, which files to delete, whether the rename applies) is a pure function with unit tests over all five platforms and both install shapes
+
+- **4.1.0 is a bridging release and still publishes `aishell`, `aishell.bat` and `aishell.sha256`**: an installed v4.0.0 asks for exactly those three names when it upgrades, so they have to exist for it to reach the binary release at all. **4.2.0 stops publishing them.** A v4.0.0 install therefore has to pass through 4.1.0, by running `aishell upgrade` while 4.1.0 is the newest release or `aishell upgrade 4.1.0` afterwards, or else re-run the install script. In the other direction, no version below 4.1.0 can be installed by a binary install's `upgrade`: those releases shipped a script that needs babashka, and their assets do not include a binary for any platform
+
+- **The release workflow builds once, smoke-tests every binary, then publishes**: one Linux job builds all five targets and uploads them, a matrix job on `ubuntu-latest`, `ubuntu-24.04-arm`, `macos-15-intel`, `macos-latest` and `windows-latest` runs `--version --json` for its own target and checks the file against `SHA256SUMS`, and only then does the release job create the GitHub release from the same artifacts the matrix ran. The existing `dry_run` input skips the release job alone, so a workflow change can be exercised end to end without publishing
+
+### Fixed
+
+- **A rejected download no longer destroys a working install**: all three install scripts wrote the download straight onto the install path and compared hashes only afterwards, so a corrupted or tampered file had already replaced a working aishell by the time it was refused, and the cleanup then deleted what was left. Each script now stages the download and the checksum file in a temporary directory of its own, `mktemp -d` in `install.sh` and a randomly named directory under the system temp path in `install.ps1` and `install.bat`, verifies the file there, and moves it onto the install path only once its hash matches. That also retires the fixed `/tmp/aishell.sha256` and `%TEMP%\aishell.sha256` paths, which two installs running at once could tread on
+
 ## [4.0.0] - 2026-09-03
 
 ### Added

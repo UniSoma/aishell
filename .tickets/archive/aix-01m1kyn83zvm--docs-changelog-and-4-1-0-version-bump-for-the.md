@@ -1,12 +1,13 @@
 ---
 id: aix-01m1kyn83zvm
 title: Docs, changelog and 4.1.0 version bump for the binary distribution
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.869877070Z'
-updated: '2026-09-03T15:37:04.869877070Z'
+updated: '2026-09-03T22:08:25.920411449Z'
+closed: '2026-09-03T22:08:25.920411449Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-agent
@@ -28,11 +29,17 @@ Everything a user reads reflects the binary distribution, and the version is set
 
 ### Acceptance criteria
 
-- [ ] README has no babashka prerequisite anywhere
-- [ ] CHANGELOG states the bridging window and the 4.2.0 drop
-- [ ] Version is 4.1.0 in the CLI namespace
-- [ ] `docs/ARCHITECTURE.md` or wherever the platform promise lives mentions the five binaries
+- [x] README has no babashka prerequisite anywhere
+- [x] CHANGELOG states the bridging window and the 4.2.0 drop
+- [x] Version is 4.1.0 in the CLI namespace
+- [x] `docs/ARCHITECTURE.md` or wherever the platform promise lives mentions the five binaries
 
 ### Blocked by
 
 Build script, release workflow, install.sh, Windows installers, upgrade.
+
+## Notes
+
+**2026-09-03T22:08:25.920411449Z**
+
+README, llm.txt, ARCHITECTURE, TROUBLESHOOTING and the CHANGELOG describe the binary distribution: Docker as the only requirement, the bbin route, the browser-download quarantine workarounds, AISHELL_RELEASE_URL, the Windows .exe.old parking, and the 4.1.0 bridging window with the 4.2.0 drop. Version constant is 4.1.0. ADR 0007 amended where this run contradicted it. AGENTS.md's lint rule now names a command that runs.

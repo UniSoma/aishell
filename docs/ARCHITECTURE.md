@@ -2,7 +2,7 @@
 
 This document covers aishell's internal architecture: data flow from host through container, and each namespace's responsibilities.
 
-**Last updated:** v3.8.0
+**Last updated:** v4.1.0
 
 ---
 
@@ -13,6 +13,7 @@ This document covers aishell's internal architecture: data flow from host throug
 - [Namespace Responsibilities](#namespace-responsibilities)
 - [Key Files](#key-files)
 - [Extension System](#extension-system)
+- [Distribution](#distribution)
 - [Cross-Platform Architecture](#cross-platform-architecture)
 
 ---
@@ -532,6 +533,33 @@ See the Dockerfile extension section in the Configuration Reference for details.
 
 ---
 
+## Distribution
+
+aishell ships as one executable per platform. Each one is the upstream babashka binary for that platform with aishell's `bb uberjar` appended to it, so a single file carries both the interpreter and the program. Docker is the only thing a user installs.
+
+**Release assets:**
+
+| Asset | Platform | Notes |
+|-------|----------|-------|
+| `aishell-linux-amd64` | Linux x86-64 | Statically linked, so it runs on glibc and musl distros alike |
+| `aishell-linux-aarch64` | Linux arm64 | Statically linked |
+| `aishell-macos-amd64` | macOS on Intel | |
+| `aishell-macos-aarch64` | macOS on Apple Silicon | |
+| `aishell-windows-amd64.exe` | Windows x86-64 | |
+| `SHA256SUMS` | all | One `hash  filename` line per asset the build produced, the 4.1.0 legacy trio included |
+
+The installers and `aishell upgrade` read the `SHA256SUMS` line for their own asset and refuse a download whose hash differs. Asset names carry no version, so `releases/latest/download/<name>` always names the newest binary. `AISHELL_RELEASE_URL` replaces the release base URL for the installers, for `aishell upgrade` and for the update check, which is how a release tree can be served locally.
+
+The build runs on one Linux runner. For each target it downloads the pinned upstream babashka build, appends the jar, and writes the result under the asset name; concatenation is byte-level, so no target needs a runner of its own. The release workflow then runs `--version --json` on every binary on a matching runner before it creates the release.
+
+**Two babashka pins.** The build script pins the babashka that becomes the host CLI. `BABASHKA_VERSION` in the foundation image pins the babashka available inside the sandbox. They are separate versions and move separately.
+
+The binary starts the appended jar's main class, `aishell.core`, so it runs aishell and is not a general-purpose `bb`. To run aishell on a babashka you already have, install it from the git repository with `bbin install io.github.UniSoma/aishell`; `bb.edn`'s `:bbin/bin` entry names the installed binary and its main opts.
+
+Release 4.1.0 also publishes the pre-4.1.0 assets `aishell`, `aishell.bat` and `aishell.sha256`, because an installed v4.0.0 fetches those names when it upgrades. 4.2.0 stops publishing them. `docs/adr/0007-binary-distribution-by-appending-an-uberjar-to-babashka.md` records the decision and the options considered.
+
+---
+
 ## Cross-Platform Architecture
 
 aishell v3.1.0 adds native Windows support using host-side platform detection with Linux containers via Docker Desktop WSL2 backend.
@@ -567,7 +595,7 @@ Unix systems use `babashka.process/exec` (process replacement, clean process tre
 | **UID/GID** | From `id -u`/`id -g` | Hardcoded `1000:1000` | Phase 55 |
 | **Process exec** | `p/exec` (replaces process) | `p/process` with `:inherit` | Phase 56 |
 | **ANSI colors** | Terminal detection | Respect `NO_COLOR`/`FORCE_COLOR` env vars | Phase 57 |
-| **CLI wrapper** | Bash script (`aishell`) | Batch wrapper (`aishell.bat`) | Phase 58 |
+| **Installed file** | Binary (`aishell`) | Binary (`aishell.exe`) | v4.1.0 |
 
 ### Container Environment
 

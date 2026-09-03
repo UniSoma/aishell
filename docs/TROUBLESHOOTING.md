@@ -1194,29 +1194,25 @@ aishell claude  # No warning for allowlisted files
 4. **Use tilde expansion for portability:**
    aishell automatically expands `~` to `C:/Users/username` on Windows.
 
-### Symptom: "aishell.bat not recognized" in cmd.exe
+### Symptom: "aishell is not recognized" in cmd.exe
 
-**Cause:** aishell.bat not in PATH or has incorrect line endings.
+**Cause:** The directory holding `aishell.exe` is not on PATH, or a leftover `aishell.bat` from a pre-4.1.0 install shadows it.
 
 **Resolution:**
 
-1. **Verify PATH includes aishell directory:**
+1. **Verify PATH includes the aishell directory:**
    ```cmd
    echo %PATH%
-   # Should include directory containing aishell.bat
+   REM Should include the directory containing aishell.exe
    ```
 
 2. **Test direct invocation:**
    ```cmd
-   C:\path\to\aishell.bat --version
+   C:\path\to\aishell.exe --version
    ```
 
-3. **Verify file has CRLF line endings:**
-   aishell.bat requires Windows-style CRLF line endings. If you see "command not recognized" despite being in PATH:
-   ```powershell
-   # Re-download from GitHub Release (ensures correct line endings)
-   Invoke-WebRequest -Uri https://github.com/UniSoma/aishell/releases/latest/download/aishell.bat -OutFile aishell.bat
-   ```
+3. **Remove a leftover wrapper:**
+   Before 4.1.0 Windows installs were an `aishell` script plus an `aishell.bat` wrapper that ran `bb`. The installer and `aishell upgrade` both delete those two files once `aishell.exe` is in place. If one survived, delete it by hand. A `.bat` sitting on PATH ahead of the exe still wins in cmd.exe.
 
 4. **Add to PATH permanently:**
    ```powershell
@@ -1270,7 +1266,7 @@ aishell claude  # No warning for allowlisted files
    cd ~
    git clone <your-repo>
    cd <your-repo>
-   bb -m aishell.core setup --with-claude
+   aishell setup --with-claude
    ```
 
 2. **Check Docker Desktop file sharing settings:**

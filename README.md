@@ -67,8 +67,6 @@ aishell setup --with-opencode
 aishell opencode
 ```
 
-> Babashka is installed automatically if not already present.
-
 ### Windows
 
 **Recommended:** Use WSL2 and follow the Unix/Linux instructions above — it provides the best experience. Otherwise, use PowerShell. CMD works but has limited error handling and no colored output.
@@ -86,8 +84,6 @@ aishell setup --with-opencode
 aishell opencode
 ```
 
-> Babashka is installed automatically if not already present.
-
 #### CMD
 
 ```batch
@@ -98,7 +94,6 @@ aishell setup --with-opencode
 aishell opencode
 ```
 
-> Babashka is installed automatically if not already present.
 > Requires Windows 10 version 1803 or later.
 
 <details>
@@ -106,17 +101,38 @@ aishell opencode
 
 **Requirements:**
 
-- **Linux/macOS:** Docker Engine (Babashka installed automatically)
-- **Windows:** Docker Desktop with WSL2 backend enabled (Babashka installed automatically)
+- **Linux/macOS:** Docker Engine
+- **Windows:** Docker Desktop with WSL2 backend enabled
+
+aishell ships as a single executable carrying its own babashka. Docker is the only thing you install yourself.
 
 **Docker:**
 - Linux/macOS: Install [Docker Engine](https://docs.docker.com/engine/install/)
 - Windows: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and enable WSL2 backend (Settings → General → "Use the WSL 2 based engine")
 
-**Babashka:**
-Babashka is installed automatically by the install scripts. If you prefer to install it manually:
-- Linux/macOS: https://babashka.org
-- Windows: Install via [Scoop](https://scoop.sh) (`scoop install babashka`) or download binary from https://babashka.org
+**Binaries downloaded through a browser:**
+
+The install scripts fetch the binary with curl or PowerShell, and those downloads carry no quarantine flag. A browser download does, and the binaries are not code-signed yet. If you downloaded one from the releases page in a browser, clear the flag before you run it.
+
+macOS:
+
+```bash
+xattr -d com.apple.quarantine ~/Downloads/aishell-macos-aarch64
+```
+
+Windows: right-click the file, open Properties, and check "Unblock". From PowerShell:
+
+```powershell
+Unblock-File .\aishell-windows-amd64.exe
+```
+
+**Running aishell on your own babashka:**
+
+The release binaries carry their own babashka, so you do not need one. To run aishell on the babashka you already have, install it from the git repository with [bbin](https://github.com/babashka/bbin):
+
+```bash
+bbin install io.github.UniSoma/aishell
+```
 
 **PATH configuration:**
 
@@ -126,7 +142,7 @@ Unix/macOS - Add `~/.local/bin` to PATH if not already present:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Windows - After installation, add the directory containing `aishell.bat` to PATH:
+Windows - After installation, add the directory containing `aishell.exe` to PATH:
 
 ```powershell
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$env:LOCALAPPDATA\Programs\aishell", [System.EnvironmentVariableTarget]::User)
@@ -298,8 +314,14 @@ The `~/.vscode-server` directory is mounted into the container, so VSCode server
 aishell upgrade
 
 # Upgrade to a specific version
-aishell upgrade 3.4.0
+aishell upgrade 4.1.0
 ```
+
+`aishell upgrade` downloads the binary for your platform and checks it against the release's `SHA256SUMS` before it replaces anything. At a terminal it shows a progress bar; from a script it prints the download size instead. Asking for a version below 4.1.0 fails the download: those releases published a script that needs babashka, not a binary for your platform.
+
+Upgrading from a 4.0.0 script install replaces the script in place, so your PATH entry stays as it is. On Windows it writes `aishell.exe` and deletes the old `aishell` and `aishell.bat`, and says so.
+
+Windows cannot overwrite a running executable, so upgrade renames the current `aishell.exe` to `aishell.exe.old` and puts the new one in its place. The next time you run aishell, it deletes the leftover.
 
 ### Update harness tools
 
@@ -540,6 +562,7 @@ env:
 | Variable | Purpose | Notes |
 |----------|---------|-------|
 | `AISHELL_SKIP_PERMISSIONS` | Claude permissions | Set to `false` to enable prompts (read on host, not passed to container) |
+| `AISHELL_RELEASE_URL` | Alternate release tree | Base URL for release assets, default `https://github.com/UniSoma/aishell/releases`. The install scripts, `aishell upgrade` and the update check all read it |
 
 ## Reference
 

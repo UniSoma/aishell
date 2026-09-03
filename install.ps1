@@ -64,13 +64,13 @@ try {
     $tmpAsset = Join-Path $tmpDir $asset
     $tmpSums = Join-Path $tmpDir "SHA256SUMS"
 
-    # The asset is ~90 MB; Windows PowerShell 5.1 renders download progress one
+    # The asset is ~70 MB; Windows PowerShell 5.1 renders download progress one
     # write at a time, which dominates the transfer. Restored in the finally
     # below, because "irm | iex" runs this in the caller's own session.
     $previousProgressPreference = $ProgressPreference
     $ProgressPreference = "SilentlyContinue"
 
-    Write-Info "Downloading ${asset} (about 90 MB); this takes a while..."
+    Write-Info "Downloading ${asset} (about 70 MB); this takes a while..."
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpAsset -UseBasicParsing
     } catch {

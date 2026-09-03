@@ -65,7 +65,7 @@
   [bytes]
   (if bytes
     (str (Math/round (double (/ bytes 1024 1024))) " MB")
-    "about 90 MB"))
+    "about 70 MB"))
 
 (defn run-download!
   "Run a download command line, letting its progress meter reach the terminal."
@@ -150,7 +150,7 @@
 
 (defn read-leading-bytes
   "Read at most the first n bytes of a file. Never reads the whole file:
-   the installed aishell may be a 90 MB binary."
+   the installed aishell may be a 70 MB binary."
   [path n]
   (with-open [in (java.io.FileInputStream. (str path))]
     (.readNBytes in n)))
@@ -342,7 +342,7 @@
 
 (defn- staging-dir
   "A temp directory to download into, beside the destination where possible.
-   Same filesystem means installing is a rename, so a 90 MB asset can never be
+   Same filesystem means installing is a rename, so a 70 MB asset can never be
    caught half-written on PATH; the system temp dir is the fallback for an
    install directory we may not create files in."
   [dest-path]

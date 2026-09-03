@@ -449,7 +449,7 @@
 (deftest describe-size-rounds-to-megabytes
   (testing "a known length becomes MB; an unknown one falls back to the ADR's estimate"
     (is (= "90 MB" (upgrade/describe-size (* 90 1024 1024))))
-    (is (= "about 90 MB" (upgrade/describe-size nil)))))
+    (is (= "about 70 MB" (upgrade/describe-size nil)))))
 
 (deftest download-asset!-announces-the-size-when-there-is-no-terminal
   (testing "one line with the asset name and its size, in place of a progress bar"

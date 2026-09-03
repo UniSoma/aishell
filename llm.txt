@@ -4,10 +4,10 @@
 
 aishell runs AI coding agents (Claude Code, OpenCode, Codex CLI, Gemini CLI) inside isolated Docker containers. It preserves paths, forwards git identity, manages configuration and mounts, and scans for secrets — replacing long `docker run` commands.
 
-Version: 3.4.1
+Version: 4.1.0
 License: MIT
 Repository: https://github.com/UniSoma/aishell
-Requirements: Linux, macOS, Windows, or WSL2; Docker; Babashka (https://babashka.org)
+Requirements: Linux, macOS, Windows, or WSL2; Docker. aishell is a single executable with no other prerequisite.
 
 ---
 
@@ -40,7 +40,9 @@ export PATH="$HOME/.local/bin:$PATH"
 irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 ```
 
-Both installers auto-install Babashka if not found.
+Both installers download the executable for the current platform, verify it against the release's `SHA256SUMS`, and install nothing else. Released binaries: `aishell-linux-amd64`, `aishell-linux-aarch64`, `aishell-macos-amd64`, `aishell-macos-aarch64`, `aishell-windows-amd64.exe`.
+
+To run aishell on your own babashka instead, install it from the git repository with bbin: `bbin install io.github.UniSoma/aishell`.
 
 ---
 
@@ -185,11 +187,10 @@ Self-upgrade aishell to the latest version (or a specific version). Downloads fr
 
 ```
 aishell upgrade           # Upgrade to latest version
-aishell upgrade 3.4.0     # Upgrade to specific version
-aishell upgrade 3.2.0     # Downgrade to older version (shows warning)
+aishell upgrade 4.1.0     # Install a specific version
 ```
 
-Requires `curl` or `wget`. On Windows, also updates the `aishell.bat` wrapper.
+Requires `curl` or `wget`. Downloads the binary for the current platform and verifies it against the release's `SHA256SUMS`. An older target version installs with a warning. Versions below 4.1.0 publish no binary for any platform, so asking for one fails the download. Upgrading a 4.0.0 script install replaces the script in place; on Windows it writes `aishell.exe` and removes the old `aishell` and `aishell.bat`. Windows cannot overwrite a running executable, so upgrade parks it as `aishell.exe.old` and the next start deletes it.
 
 ### info
 
@@ -403,6 +404,10 @@ aishell passes these to containers when set on the host:
 - `GITHUB_TOKEN` - GitHub API access
 - `AISHELL_SKIP_PERMISSIONS` - Set to "false" to re-enable Claude Code permission prompts (default: permissions are skipped)
 - `NO_COLOR` - Disable colored output
+
+These stay on the host and are never passed to a container:
+
+- `AISHELL_RELEASE_URL` - Base URL for release assets (default: https://github.com/UniSoma/aishell/releases). Read by the install scripts, `aishell upgrade` and the update check
 
 ---
 
