@@ -300,7 +300,7 @@
           harness-volume-name (ensure-harness-volume state cfg)
 
           ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
-          tty? (some? (System/console))
+          tty? (output/tty?)
 
           ;; Build docker args for exec (conditional TTY, skip pre_start)
           docker-args (docker-run/build-docker-args-for-exec

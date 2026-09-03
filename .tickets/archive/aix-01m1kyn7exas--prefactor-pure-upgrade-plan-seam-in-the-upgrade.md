@@ -1,12 +1,13 @@
 ---
 id: aix-01m1kyn7exas
 title: 'Prefactor: pure upgrade plan seam in the upgrade module'
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.221877097Z'
-updated: '2026-09-03T15:37:04.221877097Z'
+updated: '2026-09-03T20:56:31.114187447Z'
+closed: '2026-09-03T20:56:31.114187447Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-agent
@@ -24,11 +25,17 @@ Also add, with tests, the two helpers the binary slices need: lookup of one asse
 
 ### Acceptance criteria
 
-- [ ] Plan function is pure and unit-tested for the current uberscript shape on Unix and Windows (asset `aishell`, `.bat` refresh on Windows, latest vs pinned URLs)
-- [ ] Checksum-file lookup and script detection unit-tested
-- [ ] `aishell upgrade` end-to-end behaviour unchanged (manual check against the v4.0.0 release)
-- [ ] Tests run via `bb test`; clj-kondo clean
+- [x] Plan function is pure and unit-tested for the current uberscript shape on Unix and Windows (asset `aishell`, `.bat` refresh on Windows, latest vs pinned URLs)
+- [x] Checksum-file lookup and script detection unit-tested
+- [x] `aishell upgrade` end-to-end behaviour unchanged (manual check against the v4.0.0 release)
+- [x] Tests run via `bb test`; clj-kondo clean
 
 ### Blocked by
 
 None (can start immediately).
+
+## Notes
+
+**2026-09-03T20:56:31.114187447Z**
+
+Upgrade decisions moved into a pure seam: upgrade-plan, detect-env, execute-plan, plus checksum-for, shebang? and read-leading-bytes. aishell upgrade still fetches the legacy uberscript; behaviour verified end-to-end against the real v4.0.0 release into a temp dir. 183 tests green, clj-kondo clean.

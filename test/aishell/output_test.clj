@@ -93,3 +93,7 @@
     (is (not= "a" (output/suggest-command "xyz"))))
   (testing "distant garbage gets no suggestion"
     (is (nil? (output/suggest-command "completelyunrelated")))))
+
+(deftest tty?-answers-with-a-boolean
+  (testing "System/console presence, reported as a boolean"
+    (is (boolean? (output/tty?)))))

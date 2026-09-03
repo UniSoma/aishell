@@ -31,6 +31,11 @@
     (println (json/generate-string (error-json-payload msg code))))
   (exit! 1))
 
+(defn tty?
+  "True when the process is attached to an interactive terminal."
+  []
+  (some? (System/console)))
+
 (defn colors-enabled?
   "Detect if ANSI colors should be used in output.
    Priority: NO_COLOR (opt-out) > FORCE_COLOR (opt-in) > auto-detection.
@@ -52,7 +57,7 @@
       :else
       (and
         ;; Must be interactive terminal (null when piped/redirected)
-       (some? (System/console))
+       (tty?)
         ;; Terminal must support colors
        (or
           ;; Explicit color capability (modern terminals)
