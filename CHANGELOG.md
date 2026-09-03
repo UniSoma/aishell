@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-09-03
+
+### Added
+
+- **`aishell --verbose <command>` streams the output that used to hide behind a spinner**: image builds, harness volume population and Pi package installs all ran with their output captured, so a stalled step during `aishell claude` was indistinguishable from a hang — no progress, no error, nothing to read. A leading `--verbose` streams `docker build` and npm output as it happens, and also announces the configured `harness_args` defaults being applied. Only the leading position is consumed: `aishell --verbose claude` turns on aishell's verbosity, while `aishell claude --verbose` forwards the flag through to Claude Code, which has a `--verbose` of its own. `docs/TROUBLESHOOTING.md` covers when to reach for it
+
 ### Removed
 
 - **OpenSpec support is gone**: `--with-openspec` is now rejected as an unknown flag, and OpenSpec has been dropped from setup help, `harness_args` validation, `check`, `info`, the harness volume's npm installs, the `~/.config/openspec` mount and the `OPENSPEC_TELEMETRY=0` env var. A saved state that still carries `:with-openspec`/`:openspec-version` gets one warning on the next `setup`, `update`, or run, and the warning persists the stripped state so it does not repeat; the harness volume repopulates without OpenSpec on its own, because OpenSpec no longer contributes to the volume hash. Users who never enabled it see no change at all — the hash only ever covered enabled harnesses, so their volume does not rebuild. The repo's own `openspec/` change-proposal directory goes too: that workflow is dead, knot replaced it
