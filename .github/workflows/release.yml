@@ -27,7 +27,7 @@ jobs:
       bb_version: ${{ steps.bb.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Single source of truth for the runtime pin: the constant the build
       # script appends its uberjar to. Reading it here is what keeps the
@@ -42,7 +42,7 @@ jobs:
           echo "Pinned babashka: $BB"
 
       - name: Install Babashka
-        uses: DeLaGuardo/setup-clojure@12.5
+        uses: DeLaGuardo/setup-clojure@13.6.1
         with:
           bb: ${{ steps.bb.outputs.version }}
 
@@ -85,7 +85,7 @@ jobs:
           echo "Version $BUILT matches tag $TAG"
 
       - name: Upload dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
@@ -123,7 +123,7 @@ jobs:
             asset: aishell-windows-amd64.exe
     steps:
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
@@ -198,15 +198,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Babashka
-        uses: DeLaGuardo/setup-clojure@12.5
+        uses: DeLaGuardo/setup-clojure@13.6.1
         with:
           bb: ${{ needs.build.outputs.bb_version }}
 
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist

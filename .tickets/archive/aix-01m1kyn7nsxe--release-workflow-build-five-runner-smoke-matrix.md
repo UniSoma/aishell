@@ -1,15 +1,14 @@
 ---
 id: aix-01m1kyn7nsxe
 title: 'Release workflow: build, five-runner smoke matrix, then release'
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.436449350Z'
-updated: '2026-09-03T22:10:14.269928219Z'
+updated: '2026-09-04T00:28:43.751731858Z'
+closed: '2026-09-04T00:28:43.751731858Z'
 parent: aix-01m1kydv7r76
-tags:
-- ready-for-human
 deps:
 - aix-01m1kyn7j5th
 ---
@@ -24,10 +23,20 @@ The release workflow becomes three stages. A build job on ubuntu runs the build 
 
 ### Acceptance criteria
 
-- [ ] A dry-run dispatch builds, smoke-tests on all five runners and creates no release
+- [x] A dry-run dispatch builds, smoke-tests on all five runners and creates no release
 - [x] The tagged path publishes only after the matrix is green
 - [x] bb version in the workflow matches the build script pin
 
 ### Blocked by
 
 The build script ticket.
+
+## Notes
+
+**2026-09-04T00:03:44.192039930Z**
+
+Agent session 2026-09-04: the workflow is complete and the only open criterion is the dry-run dispatch, which needs GitHub access this environment lacks (no `gh`, no token, no SSH key, and `origin/main` is still at v4.0.0 with seven local commits unpushed). To finish: push `main`, run `gh workflow run release.yml -f dry_run=true`, confirm build plus all five smoke legs pass and no release appears, then `knot update aix-01m1kyn7nsxe --ac "A dry-run dispatch builds, smoke-tests on all five runners and creates no release" --done --status closed`.
+
+**2026-09-04T00:28:43.751731858Z**
+
+Dry-run dispatch on 2026-09-04 was green: build, all five smoke legs (including macos-aarch64), release job skipped, no release created.
