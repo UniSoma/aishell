@@ -6,11 +6,20 @@ type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.221877097Z'
-updated: '2026-09-03T20:56:31.114187447Z'
+updated: '2026-09-04T00:33:07.875464064Z'
 closed: '2026-09-03T20:56:31.114187447Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-agent
+acceptance:
+- title: Plan function is pure and unit-tested for the current uberscript shape on Unix and Windows (asset `aishell`, `.bat` refresh on Windows, latest vs pinned URLs)
+  done: true
+- title: Checksum-file lookup and script detection unit-tested
+  done: true
+- title: '`aishell upgrade` end-to-end behaviour unchanged (manual check against the v4.0.0 release)'
+  done: true
+- title: Tests run via `bb test`; clj-kondo clean
+  done: true
 ---
 
 ## Description
@@ -23,16 +32,10 @@ Parent spec: aix-01m1kydv7r76 (ADR 0007). Prefactor only — no user-visible cha
 
 Also add, with tests, the two helpers the binary slices need: lookup of one asset's hash in a multi-line `hash  filename` checksum file (missing asset is an error, hashes compared case-insensitively), and detection of a script install from the installed file's leading `#!` bytes.
 
-### Acceptance criteria
-
-- [x] Plan function is pure and unit-tested for the current uberscript shape on Unix and Windows (asset `aishell`, `.bat` refresh on Windows, latest vs pinned URLs)
-- [x] Checksum-file lookup and script detection unit-tested
-- [x] `aishell upgrade` end-to-end behaviour unchanged (manual check against the v4.0.0 release)
-- [x] Tests run via `bb test`; clj-kondo clean
-
 ### Blocked by
 
 None (can start immediately).
+
 
 ## Notes
 
