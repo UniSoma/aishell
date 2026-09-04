@@ -1,20 +1,19 @@
 ---
 id: aix-01m1mjm1vjd8
 title: Appending the uberjar may invalidate the macOS arm64 code signature
-status: open
+status: closed
 type: bug
 priority: 1
 mode: hitl
 created: '2026-09-03T21:25:57.234664070Z'
-updated: '2026-09-03T21:25:57.234664070Z'
+updated: '2026-09-04T01:37:21.506626877Z'
+closed: '2026-09-04T01:37:21.506626877Z'
 parent: aix-01m1kydv7r76
-tags:
-- needs-triage
 acceptance:
 - title: The dry-run smoke matrix result for macos-latest is recorded here
-  done: false
+  done: true
 - title: If the binary is killed at exec, the build re-signs the macOS arm64 asset and the smoke matrix passes
-  done: false
+  done: true
 ---
 
 ## Description
@@ -49,3 +48,13 @@ Cheapest first:
   "one Linux runner builds all five targets" decision.
 - Re-sign on Linux with `rcodesign` (the Rust apple-codesign tool), keeping the single-runner build.
 - Ship the macOS arm64 asset some other way.
+
+## Notes
+
+**2026-09-04T01:37:12.559587857Z**
+
+Answered on real hardware: Release workflow run 53 (https://github.com/UniSoma/aishell/actions/runs/33822513442) for tag v4.1.0 passed the smoke matrix on all five runners. The macos-latest (arm64) leg ran `aishell-macos-aarch64 --version --json`, got version 4.1.0, and the checksum matched. Trailing data past the LC_CODE_SIGNATURE superblob does not invalidate the signature at exec, so no re-signing is needed. The binary is not notarized, so a browser download still needs the quarantine flag cleared; that is aix-01m1kxchv7n0.
+
+**2026-09-04T01:37:21.506626877Z**
+
+The macos-latest smoke leg of release run 53 (v4.1.0) executed the appended-jar binary; the arm64 signature survives trailing data, no re-signing needed.
