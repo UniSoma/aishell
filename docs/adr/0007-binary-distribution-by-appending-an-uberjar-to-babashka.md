@@ -27,11 +27,11 @@ existed only to start the program.
   and noted in the changelog. It is independent of the foundation image's
   `BABASHKA_VERSION`: one is the host CLI's runtime, the other a tool offered
   inside the sandbox.
-- **Release assets are versionless, platform-suffixed raw binaries**
-  (`aishell-linux-amd64`, `aishell-windows-amd64.exe`, ...) plus one
-  `SHA256SUMS`. Raw rather than archived so that install and upgrade stay a
-  single fetch with no unpack step; versionless so
-  `releases/latest/download/<name>` keeps working.
+- **Release assets are versionless, platform-suffixed archives**
+  (`aishell-linux-amd64.tar.gz`, `aishell-windows-amd64.zip`, ...), each
+  holding one file named `aishell` or `aishell.exe`, plus one `SHA256SUMS`
+  over the archives. Versionless so `releases/latest/download/<name>` keeps
+  working. See the amendment below for why archived rather than raw.
 - **One bridging release** (4.1.0) still publishes the old `aishell` and
   `aishell.bat` assets, because every installed v4.0.0 has an `upgrade`
   command that fetches those names and would otherwise drop a Linux ELF on a
@@ -69,8 +69,9 @@ existed only to start the program.
 
 ## Consequences
 
-- Each binary is about 90 MB instead of 300 KB. `upgrade` shows download
-  progress when attached to a terminal and prints the size otherwise.
+- Each binary is about 90 MB instead of 300 KB, and 20 to 30 MB once
+  archived. `upgrade` shows download progress when attached to a terminal
+  and prints the size otherwise.
 - The binary runs the appended jar's main class, so it is not a general `bb`.
   The orchestration-library question (how user scripts require aishell
   namespaces) can no longer assume a host babashka, but it can consider the
@@ -107,3 +108,25 @@ leg is arm64, so the first dry run answers it. If it does break, re-signing
 ad hoc with `codesign -f -s -` costs a macOS runner and with it the
 single-runner build decision above, while `rcodesign` re-signs on Linux and
 keeps it.
+
+## Amendment: the assets are archives, not raw binaries
+
+The decision above chose raw binaries so that install and upgrade would be a
+single fetch with no unpack step. Measured on the 4.1.0 build, the native
+image compresses to about a third of its size (72 MB to 26 MB for
+`linux-amd64` with gzip), while the appended jar is already deflated and
+contributes nothing either way. Three times the download for one saved
+`tar` invocation was the wrong trade, so the assets are `tar.gz` for Linux
+and macOS and `zip` for Windows, each holding one file under its bare name.
+
+What it costs: `install.sh` and `aishell upgrade` on Linux and macOS depend
+on the system `tar`, which every distribution and macOS ships;
+`install.bat` depends on the `tar` Windows has carried since 10 1803, the
+same release that brought `curl`; `install.ps1` uses `Expand-Archive`, and
+`aishell upgrade` on Windows reads the zip in-process through `babashka.fs`,
+so the CLI itself needs no external tool there. `SHA256SUMS` hashes the
+archives, so verification still happens before anything is written or
+unpacked, and the staged-then-rename install is unchanged: the archive is
+unpacked beside the download and the binary inside is what moves onto
+PATH. The 4.1.0 legacy trio is unaffected; a v4.0.0 `upgrade` never sees
+the archives.

@@ -65,7 +65,7 @@
   [bytes]
   (if bytes
     (str (Math/round (double (/ bytes 1024 1024))) " MB")
-    "about 70 MB"))
+    "about 25 MB"))
 
 (defn run-download!
   "Run a download command line, letting its progress meter reach the terminal."
@@ -186,12 +186,32 @@
   (compare (parse-semver a) (parse-semver b)))
 
 (def supported-targets
-  "Platform table: [os arch] -> the release asset built for it."
-  {[:linux   :amd64]   "aishell-linux-amd64"
-   [:linux   :aarch64] "aishell-linux-aarch64"
-   [:macos   :amd64]   "aishell-macos-amd64"
-   [:macos   :aarch64] "aishell-macos-aarch64"
-   [:windows :amd64]   "aishell-windows-amd64.exe"})
+  "Platform table: [os arch] -> the release archive built for it.
+   Each archive holds one file, `aishell` or `aishell.exe`; the binary inside
+   compresses to about a third of its size, which is why the assets are not
+   the bare executables."
+  {[:linux   :amd64]   "aishell-linux-amd64.tar.gz"
+   [:linux   :aarch64] "aishell-linux-aarch64.tar.gz"
+   [:macos   :amd64]   "aishell-macos-amd64.tar.gz"
+   [:macos   :aarch64] "aishell-macos-aarch64.tar.gz"
+   [:windows :amd64]   "aishell-windows-amd64.zip"})
+
+(defn extract-member!
+  "Unpack the one file a release archive holds into dir; returns its path.
+   A zip is read in-process. A tar.gz goes through the host's tar, which every
+   Linux and macOS ships, so the CLI carries no tar reader of its own."
+  [archive dir member]
+  (if (str/ends-with? (str archive) ".zip")
+    (fs/unzip archive dir {:replace-existing true})
+    (do
+      (when-not (fs/which "tar")
+        (throw (ex-info "tar not found on PATH" {})))
+      (p/shell {:out :string :err :string}
+               "tar" "-xzf" (str archive) "-C" (str dir) member)))
+  (let [path (fs/path dir member)]
+    (when-not (fs/exists? path)
+      (throw (ex-info (str member " is not in " (fs/file-name archive)) {})))
+    (str path)))
 
 (defn- split-dir
   "Split a path into [directory separator file-name].
@@ -228,14 +248,14 @@
   (if-let [asset (get supported-targets [os arch])]
     (let [download-url (fn [name] (str releases-url "/download/v" target-version "/" name))
           windows? (= :windows os)
-          dest-path (if windows?
-                      (sibling install-path "aishell.exe")
-                      (sibling install-path "aishell"))
+          member (if windows? "aishell.exe" "aishell")
+          dest-path (sibling install-path member)
           rename-old? (and windows? (not script-install?))]
       {:asset-name asset
        :asset-url (download-url asset)
        :checksum-url (download-url "SHA256SUMS")
        :checksum-asset asset
+       :member member
        :dest-path dest-path
        :delete-after (if windows?
                        (vec (concat (when script-install? [(sibling install-path "aishell")])
@@ -360,7 +380,7 @@
   [plan downloader]
   (when-let [err (:error plan)]
     (output/error (:message err)))
-  (let [{:keys [asset-name asset-url checksum-url checksum-asset dest-path
+  (let [{:keys [asset-name asset-url checksum-url checksum-asset member dest-path
                 delete-after chmod-x? rename-old? old-path
                 current-version target-version notes]} plan
         releases (:releases-url plan releases-url)]
@@ -401,15 +421,21 @@
                                "  Got:      " actual-hash "\n"
                                "Download may be corrupted. Try again."))))
 
-        ;; Executable before it is installed, never after: dest must not exist
-        ;; for a moment as a file nobody can run.
-        (when chmod-x?
-          (p/shell {:out :string :err :string}
-                   "chmod" "+x" tmp-asset))
+        ;; Unpacked beside the download, so installing stays a rename.
+        (let [tmp-binary (try
+                           (extract-member! tmp-asset tmp-dir member)
+                           (catch Exception e
+                             (output/error (str "Could not unpack " asset-name ": "
+                                                (.getMessage e)))))
+              parked? (and rename-old? old-path (fs/exists? dest-path))]
+          ;; Executable before it is installed, never after: dest must not exist
+          ;; for a moment as a file nobody can run.
+          (when chmod-x?
+            (p/shell {:out :string :err :string}
+                     "chmod" "+x" tmp-binary))
 
-        ;; A running Windows executable cannot be replaced, only renamed:
-        ;; move it aside first and let the next start delete the leftover.
-        (let [parked? (and rename-old? old-path (fs/exists? dest-path))]
+          ;; A running Windows executable cannot be replaced, only renamed:
+          ;; move it aside first and let the next start delete the leftover.
           (when parked?
             (try
               (fs/delete-if-exists old-path)
@@ -423,7 +449,7 @@
           ;; fails anyway, put back what was parked rather than leaving the user
           ;; with nothing on PATH.
           (try
-            (install-file! tmp-asset dest-path)
+            (install-file! tmp-binary dest-path)
             (catch Exception e
               (when parked?
                 (try

@@ -3,14 +3,18 @@
 ;; Build aishell release assets
 ;; Usage: ./scripts/build-release.clj [--target all|host|<platform>]
 ;;
-;; Produces one standalone executable per platform - the upstream babashka
-;; binary with aishell's uberjar appended - plus a SHA256SUMS file:
-;;   dist/aishell-linux-amd64
-;;   dist/aishell-linux-aarch64
-;;   dist/aishell-macos-amd64
-;;   dist/aishell-macos-aarch64
-;;   dist/aishell-windows-amd64.exe
+;; Produces one archive per platform, each holding a single standalone
+;; executable - the upstream babashka binary with aishell's uberjar appended,
+;; named `aishell` or `aishell.exe` - plus a SHA256SUMS file:
+;;   dist/aishell-linux-amd64.tar.gz
+;;   dist/aishell-linux-aarch64.tar.gz
+;;   dist/aishell-macos-amd64.tar.gz
+;;   dist/aishell-macos-aarch64.tar.gz
+;;   dist/aishell-windows-amd64.zip
 ;;   dist/SHA256SUMS
+;;
+;; Archived because the native image compresses to about a third of its size;
+;; the jar inside is already deflated and contributes nothing.
 ;;
 ;; And, while the legacy gate below is on, the pre-4.1.0 trio:
 ;;   dist/aishell        - Executable uberscript with shebang
@@ -42,21 +46,27 @@
 (def sums-file (str output-dir "/SHA256SUMS"))
 
 (def targets
-  "Release targets, keyed by platform. :archive is the upstream babashka asset
-   for the pinned version; :member is the executable inside it."
-  {"linux-amd64"    {:asset "aishell-linux-amd64"
+  "Release targets, keyed by platform. :asset is the archive we publish and
+   :binary the one file inside it. :archive is the upstream babashka asset for
+   the pinned version; :member is the executable inside that."
+  {"linux-amd64"    {:asset "aishell-linux-amd64.tar.gz"
+                     :binary "aishell"
                      :archive (str "babashka-" babashka-version "-linux-amd64-static.tar.gz")
                      :member "bb"}
-   "linux-aarch64"  {:asset "aishell-linux-aarch64"
+   "linux-aarch64"  {:asset "aishell-linux-aarch64.tar.gz"
+                     :binary "aishell"
                      :archive (str "babashka-" babashka-version "-linux-aarch64-static.tar.gz")
                      :member "bb"}
-   "macos-amd64"    {:asset "aishell-macos-amd64"
+   "macos-amd64"    {:asset "aishell-macos-amd64.tar.gz"
+                     :binary "aishell"
                      :archive (str "babashka-" babashka-version "-macos-amd64.tar.gz")
                      :member "bb"}
-   "macos-aarch64"  {:asset "aishell-macos-aarch64"
+   "macos-aarch64"  {:asset "aishell-macos-aarch64.tar.gz"
+                     :binary "aishell"
                      :archive (str "babashka-" babashka-version "-macos-aarch64.tar.gz")
                      :member "bb"}
-   "windows-amd64"  {:asset "aishell-windows-amd64.exe"
+   "windows-amd64"  {:asset "aishell-windows-amd64.zip"
+                     :binary "aishell.exe"
                      :archive (str "babashka-" babashka-version "-windows-amd64.zip")
                      :member "bb.exe"}})
 
@@ -167,20 +177,35 @@
     (with-open [in (io/input-stream (fs/file jar-path))]
       (io/copy in out))))
 
+(defn pack
+  "Archive the one file at binary-path as dist/<asset>, stored under its bare
+   name so an install is an unpack and a move. tar.gz keeps the executable bit;
+   a zip is what Windows can open without a tool."
+  [binary-path asset]
+  (let [out-path (str output-dir "/" asset)
+        dir (str (fs/parent binary-path))
+        name (fs/file-name binary-path)]
+    (fs/delete-if-exists out-path)
+    (if (str/ends-with? asset ".zip")
+      (fs/zip out-path [(str binary-path)] {:root dir})
+      (p/shell "tar" "-czf" out-path "-C" dir name))
+    out-path))
+
 (defn build-target
   "Produce dist/<asset> for one platform. Returns the asset filename."
   [target-key jar work-dir]
   (let [target (get targets target-key)
-        {:keys [asset archive member]} target
+        {:keys [asset binary archive member]} target
         archive-path (fs/path work-dir archive)
-        out-path (str output-dir "/" asset)]
+        binary-path (fs/path work-dir target-key binary)]
     (println (str "Building " asset "..."))
     (download (archive-url target) archive-path)
     (verify-archive (archive-url target) archive-path)
     (let [bb-path (extract-bb archive-path member (fs/path work-dir target-key))]
-      (append-jar bb-path jar out-path))
-    (when-not (or (fs/windows?) (str/ends-with? asset ".exe"))
-      (fs/set-posix-file-permissions out-path "rwxr-xr-x"))
+      (append-jar bb-path jar binary-path))
+    (when-not (or (fs/windows?) (str/ends-with? binary ".exe"))
+      (fs/set-posix-file-permissions binary-path "rwxr-xr-x"))
+    (pack binary-path asset)
     asset))
 
 (defn create-bat-wrapper

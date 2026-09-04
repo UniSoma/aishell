@@ -2,8 +2,9 @@
 setlocal enabledelayedexpansion
 
 REM install.bat - Installer for aishell (Windows CMD)
-REM Downloads the aishell binary from GitHub Releases and verifies it against
-REM the release's SHA256SUMS. Nothing else is installed.
+REM Downloads the aishell archive from GitHub Releases, verifies it against
+REM the release's SHA256SUMS and unpacks the one aishell.exe inside. Nothing
+REM else is installed.
 REM
 REM Usage: curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.bat -o install.bat && install.bat
 REM
@@ -16,13 +17,20 @@ REM --- Configuration ---
 if defined AISHELL_RELEASE_URL (set "RELEASES_URL=%AISHELL_RELEASE_URL%") else (set "RELEASES_URL=https://github.com/UniSoma/aishell/releases")
 if defined VERSION (set "VER=%VERSION%") else (set "VER=latest")
 if defined INSTALL_DIR (set "INST_DIR=%INSTALL_DIR%") else (set "INST_DIR=%LOCALAPPDATA%\Programs\aishell")
-set "ASSET=aishell-windows-amd64.exe"
+set "ASSET=aishell-windows-amd64.zip"
 
-REM --- Check for curl ---
+REM --- Check for curl and tar ---
+REM Both ship with Windows 10 version 1803 and later; tar there reads zip files.
 where curl >nul 2>&1
 if %errorlevel% neq 0 (
     echo Error: curl is required but not found.
     echo curl is included in Windows 10 version 1803 and later.
+    exit /b 1
+)
+where tar >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Error: tar is required to unpack the release archive but was not found.
+    echo tar is included in Windows 10 version 1803 and later.
     exit /b 1
 )
 
@@ -103,9 +111,21 @@ if /i "!ACTUAL_HASH!" neq "!EXPECTED_HASH!" (
 
 echo ==^> Checksum verified.
 
+REM --- Unpack ---
+REM The archive holds one file, aishell.exe; it lands beside the download.
+tar -xf "%TMP_DIR%\%ASSET%" -C "%TMP_DIR%" aishell.exe
+if !errorlevel! neq 0 (
+    echo Error: Failed to unpack %ASSET%
+    goto :fail
+)
+if not exist "%TMP_DIR%\aishell.exe" (
+    echo Error: %ASSET% does not contain aishell.exe
+    goto :fail
+)
+
 REM --- Install ---
 echo ==^> Installing...
-move /y "%TMP_DIR%\%ASSET%" "%INST_DIR%\aishell.exe" >nul
+move /y "%TMP_DIR%\aishell.exe" "%INST_DIR%\aishell.exe" >nul
 if !errorlevel! neq 0 (
     echo Error: Failed to install to %INST_DIR%\aishell.exe
     goto :fail

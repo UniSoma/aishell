@@ -52,8 +52,9 @@ jobs:
       - name: Verify build artifacts
         shell: bash
         run: |
-          for f in aishell-linux-amd64 aishell-linux-aarch64 aishell-macos-amd64 \
-                   aishell-macos-aarch64 aishell-windows-amd64.exe SHA256SUMS; do
+          for f in aishell-linux-amd64.tar.gz aishell-linux-aarch64.tar.gz \
+                   aishell-macos-amd64.tar.gz aishell-macos-aarch64.tar.gz \
+                   aishell-windows-amd64.zip SHA256SUMS; do
             test -f "dist/$f" || { echo "Build failed: dist/$f not found"; exit 1; }
           done
           echo "Build artifacts:"
@@ -65,8 +66,10 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION=$(./dist/aishell-linux-amd64 --version --json | jq -r '.version')
-          test -n "$VERSION" || { echo "Could not read version from dist/aishell-linux-amd64"; exit 1; }
+          mkdir -p unpacked
+          tar -xzf dist/aishell-linux-amd64.tar.gz -C unpacked aishell
+          VERSION=$(./unpacked/aishell --version --json | jq -r '.version')
+          test -n "$VERSION" || { echo "Could not read version from dist/aishell-linux-amd64.tar.gz"; exit 1; }
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Built version: $VERSION"
 
@@ -105,22 +108,27 @@ jobs:
         include:
           - target: linux-amd64
             runs-on: ubuntu-latest
-            asset: aishell-linux-amd64
+            asset: aishell-linux-amd64.tar.gz
+            binary: aishell
           - target: linux-aarch64
             runs-on: ubuntu-24.04-arm
-            asset: aishell-linux-aarch64
+            asset: aishell-linux-aarch64.tar.gz
+            binary: aishell
           # macos-13 was retired; macos-15-intel is the current x64 label.
           - target: macos-amd64
             runs-on: macos-15-intel
-            asset: aishell-macos-amd64
+            asset: aishell-macos-amd64.tar.gz
+            binary: aishell
           # This leg answers aix-01m1mjm1vjd8: appending the jar puts data past
           # the arm64 LC_CODE_SIGNATURE, which may make the binary unrunnable.
           - target: macos-aarch64
             runs-on: macos-latest
-            asset: aishell-macos-aarch64
+            asset: aishell-macos-aarch64.tar.gz
+            binary: aishell
           - target: windows-amd64
             runs-on: windows-latest
-            asset: aishell-windows-amd64.exe
+            asset: aishell-windows-amd64.zip
+            binary: aishell.exe
     steps:
       - name: Download dist
         uses: actions/download-artifact@v8
@@ -128,16 +136,23 @@ jobs:
           name: dist
           path: dist
 
-      # download-artifact does not preserve the executable bit. On Windows this
-      # step is a harmless no-op under Git Bash.
-      - name: Run the binary
+      # Unpack the way a user would: tar for the tarballs, unzip (Git Bash ships
+      # it) for the zip. The tarball carries the executable bit; the zip needs
+      # none on Windows.
+      - name: Unpack and run the binary
         id: run
         shell: bash
         env:
           ASSET: ${{ matrix.asset }}
+          BINARY: ${{ matrix.binary }}
         run: |
-          chmod +x "dist/$ASSET"
-          OUT=$("./dist/$ASSET" --version --json)
+          mkdir -p unpacked
+          case "$ASSET" in
+            *.zip) unzip -o "dist/$ASSET" -d unpacked ;;
+            *) tar -xzf "dist/$ASSET" -C unpacked ;;
+          esac
+          test -f "unpacked/$BINARY" || { echo "$ASSET does not contain $BINARY"; exit 1; }
+          OUT=$("./unpacked/$BINARY" --version --json)
           echo "$OUT"
           VERSION=$(echo "$OUT" | jq -r '.version')
           test -n "$VERSION"
@@ -210,12 +225,6 @@ jobs:
         with:
           name: dist
           path: dist
-
-      # create-release.clj reads the version by running the linux binary, and
-      # download-artifact stripped its executable bit.
-      - name: Restore executable bits
-        shell: bash
-        run: chmod +x dist/aishell-linux-amd64
 
       - name: Create GitHub release
         env:

@@ -537,20 +537,22 @@ See the Dockerfile extension section in the Configuration Reference for details.
 
 aishell ships as one executable per platform. Each one is the upstream babashka binary for that platform with aishell's `bb uberjar` appended to it, so a single file carries both the interpreter and the program. Docker is the only thing a user installs.
 
+Each executable is published inside an archive that holds nothing else: the native image compresses to about a third of its size, so the download is 20 to 30 MB rather than 70 to 90. The file inside is always named `aishell`, or `aishell.exe` on Windows, so an install is an unpack and a move.
+
 **Release assets:**
 
 | Asset | Platform | Notes |
 |-------|----------|-------|
-| `aishell-linux-amd64` | Linux x86-64 | Statically linked, so it runs on glibc and musl distros alike |
-| `aishell-linux-aarch64` | Linux arm64 | Statically linked |
-| `aishell-macos-amd64` | macOS on Intel | |
-| `aishell-macos-aarch64` | macOS on Apple Silicon | |
-| `aishell-windows-amd64.exe` | Windows x86-64 | |
+| `aishell-linux-amd64.tar.gz` | Linux x86-64 | Statically linked, so it runs on glibc and musl distros alike |
+| `aishell-linux-aarch64.tar.gz` | Linux arm64 | Statically linked |
+| `aishell-macos-amd64.tar.gz` | macOS on Intel | |
+| `aishell-macos-aarch64.tar.gz` | macOS on Apple Silicon | |
+| `aishell-windows-amd64.zip` | Windows x86-64 | Holds `aishell.exe` |
 | `SHA256SUMS` | all | One `hash  filename` line per asset the build produced, the 4.1.0 legacy trio included |
 
-The installers and `aishell upgrade` read the `SHA256SUMS` line for their own asset and refuse a download whose hash differs. Asset names carry no version, so `releases/latest/download/<name>` always names the newest binary. `AISHELL_RELEASE_URL` replaces the release base URL for the installers, for `aishell upgrade` and for the update check, which is how a release tree can be served locally.
+The installers and `aishell upgrade` read the `SHA256SUMS` line for their own asset and refuse a download whose hash differs; the hash covers the archive, so verification happens before anything is unpacked. `install.sh` and `aishell upgrade` on Linux and macOS unpack with the system `tar`; `install.ps1` uses `Expand-Archive`, `install.bat` the `tar` Windows ships, and `aishell upgrade` on Windows reads the zip in-process. Asset names carry no version, so `releases/latest/download/<name>` always names the newest binary. `AISHELL_RELEASE_URL` replaces the release base URL for the installers, for `aishell upgrade` and for the update check, which is how a release tree can be served locally.
 
-The build runs on one Linux runner. For each target it downloads the pinned upstream babashka build, appends the jar, and writes the result under the asset name; concatenation is byte-level, so no target needs a runner of its own. The release workflow then runs `--version --json` on every binary on a matching runner before it creates the release.
+The build runs on one Linux runner. For each target it downloads the pinned upstream babashka build, appends the jar, and packs the result into the asset archive; concatenation is byte-level, so no target needs a runner of its own. The release workflow then unpacks every archive on a matching runner and runs `--version --json` on the binary inside before it creates the release.
 
 **Two babashka pins.** The build script pins the babashka that becomes the host CLI. `BABASHKA_VERSION` in the foundation image pins the babashka available inside the sandbox. They are separate versions and move separately.
 

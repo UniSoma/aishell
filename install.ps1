@@ -1,6 +1,7 @@
 # install.ps1 - Installer for aishell (Windows)
-# Downloads the aishell binary from GitHub Releases and verifies it against the
-# release's SHA256SUMS. Nothing else is installed.
+# Downloads the aishell archive from GitHub Releases, verifies it against the
+# release's SHA256SUMS and unpacks the one aishell.exe inside. Nothing else is
+# installed.
 #
 # Usage: irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 #
@@ -15,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $releasesUrl = if ($env:AISHELL_RELEASE_URL) { $env:AISHELL_RELEASE_URL } else { "https://github.com/UniSoma/aishell/releases" }
 $version = if ($env:VERSION) { $env:VERSION } else { "latest" }
 $installDir = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { "$env:LOCALAPPDATA\Programs\aishell" }
-$asset = "aishell-windows-amd64.exe"
+$asset = "aishell-windows-amd64.zip"
 $destPath = Join-Path $installDir "aishell.exe"
 
 # --- Output Functions ---
@@ -64,13 +65,13 @@ try {
     $tmpAsset = Join-Path $tmpDir $asset
     $tmpSums = Join-Path $tmpDir "SHA256SUMS"
 
-    # The asset is ~70 MB; Windows PowerShell 5.1 renders download progress one
+    # The asset is ~25 MB; Windows PowerShell 5.1 renders download progress one
     # write at a time, which dominates the transfer. Restored in the finally
     # below, because "irm | iex" runs this in the caller's own session.
     $previousProgressPreference = $ProgressPreference
     $ProgressPreference = "SilentlyContinue"
 
-    Write-Info "Downloading ${asset} (about 70 MB); this takes a while..."
+    Write-Info "Downloading ${asset} (about 25 MB)..."
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpAsset -UseBasicParsing
     } catch {
@@ -87,7 +88,7 @@ try {
 
     # --- Verify Checksum ---
     Write-Info "Verifying checksum..."
-    # Match the filename token exactly: "aishell" is a prefix of "aishell-windows-amd64.exe".
+    # Match the filename token exactly: "aishell" is a prefix of "aishell-windows-amd64.zip".
     $expectedHash = $null
     foreach ($line in Get-Content $tmpSums) {
         $fields = $line.Trim() -split '\s+'
@@ -111,10 +112,24 @@ try {
         exit 1
     }
 
+    # --- Unpack ---
+    # The archive holds one file, aishell.exe; it lands beside the download.
+    $tmpBinary = Join-Path $tmpDir "aishell.exe"
+    try {
+        Expand-Archive -Path $tmpAsset -DestinationPath $tmpDir -Force
+    } catch {
+        Write-Error "Failed to unpack ${asset}: $_"
+        exit 1
+    }
+    if (-not (Test-Path $tmpBinary)) {
+        Write-Error "${asset} does not contain aishell.exe"
+        exit 1
+    }
+
     # --- Install ---
     Write-Info "Installing..."
     try {
-        Move-Item -Path $tmpAsset -Destination $destPath -Force
+        Move-Item -Path $tmpBinary -Destination $destPath -Force
     } catch {
         Write-Error "Failed to install to ${destPath}: $_"
         exit 1

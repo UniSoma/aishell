@@ -3,13 +3,14 @@
 ;; Create GitHub release with assets
 ;; Usage: ./scripts/create-release.clj
 ;;
-;; Runs the host platform's binary to read the version, then creates the
-;; GitHub release with tag v{version} and every built asset.
+;; Unpacks the host platform's archive and runs the binary inside to read the
+;; version, then creates the GitHub release with tag v{version} and every
+;; built asset.
 ;; Idempotent: safe to run multiple times (skips if release exists)
 ;;
 ;; Prerequisites:
 ;;   - a full ./scripts/build-release.clj run, so dist/ holds the five platform
-;;     binaries, SHA256SUMS and the legacy trio
+;;     archives, SHA256SUMS and the legacy trio
 ;;   - gh CLI must be authenticated
 
 (ns create-release
@@ -20,12 +21,13 @@
 
 (def dist-dir "dist")
 
-(def platform-binaries
-  {"linux-amd64"   "aishell-linux-amd64"
-   "linux-aarch64" "aishell-linux-aarch64"
-   "macos-amd64"   "aishell-macos-amd64"
-   "macos-aarch64" "aishell-macos-aarch64"
-   "windows-amd64" "aishell-windows-amd64.exe"})
+(def platform-archives
+  "Release archive per platform; each holds one file, :binary."
+  {"linux-amd64"   {:asset "aishell-linux-amd64.tar.gz" :binary "aishell"}
+   "linux-aarch64" {:asset "aishell-linux-aarch64.tar.gz" :binary "aishell"}
+   "macos-amd64"   {:asset "aishell-macos-amd64.tar.gz" :binary "aishell"}
+   "macos-aarch64" {:asset "aishell-macos-aarch64.tar.gz" :binary "aishell"}
+   "windows-amd64" {:asset "aishell-windows-amd64.zip" :binary "aishell.exe"}})
 
 ;; Bridging release only - keep in step with legacy-assets? in
 ;; scripts/build-release.clj, and drop both in 4.2.0.
@@ -38,13 +40,13 @@
 
 (defn release-assets []
   (map dist-path
-       (concat (map platform-binaries
+       (concat (map (comp :asset platform-archives)
                     ["linux-amd64" "linux-aarch64" "macos-amd64" "macos-aarch64" "windows-amd64"])
                ["SHA256SUMS"]
                (when legacy-assets? legacy-trio))))
 
-(defn host-binary
-  "The dist binary this machine can run, used to read the version."
+(defn host-archive
+  "The dist archive whose binary this machine can run, used to read the version."
   []
   (let [os (cond
              (fs/windows?) "windows"
@@ -54,7 +56,17 @@
                ("amd64" "x86_64") "amd64"
                ("aarch64" "arm64") "aarch64"
                nil)]
-    (some-> (get platform-binaries (str os "-" arch)) dist-path)))
+    (get platform-archives (str os "-" arch))))
+
+(defn unpack-host-binary
+  "Extract the host archive's binary into a temp dir and return its path."
+  [{:keys [asset binary]}]
+  (let [dir (str (fs/create-temp-dir {:prefix "aishell-release-"}))
+        archive (dist-path asset)]
+    (if (str/ends-with? asset ".zip")
+      (fs/unzip archive dir {:replace-existing true})
+      (p/shell "tar" "-xzf" archive "-C" dir binary))
+    (str (fs/path dir binary))))
 
 (defn exit [code msg]
   (binding [*out* (if (zero? code) *out* *err*)]
@@ -67,10 +79,11 @@
       (exit 1 (str "Error: " asset " not found. Run ./scripts/build-release.clj first.")))))
 
 (defn get-version []
-  (let [dist-binary (or (host-binary)
-                        (exit 1 (str "Error: no dist binary for this platform ("
-                                     (System/getProperty "os.name") "/"
-                                     (System/getProperty "os.arch") ")")))]
+  (let [dist-binary (unpack-host-binary
+                     (or (host-archive)
+                         (exit 1 (str "Error: no dist archive for this platform ("
+                                      (System/getProperty "os.name") "/"
+                                      (System/getProperty "os.arch") ")"))))]
     (try
       (let [result (p/shell {:out :string :err :string}
                             dist-binary "--version" "--json")

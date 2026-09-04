@@ -40,7 +40,7 @@ export PATH="$HOME/.local/bin:$PATH"
 irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 ```
 
-Both installers download the executable for the current platform, verify it against the release's `SHA256SUMS`, and install nothing else. Released binaries: `aishell-linux-amd64`, `aishell-linux-aarch64`, `aishell-macos-amd64`, `aishell-macos-aarch64`, `aishell-windows-amd64.exe`.
+Both installers download the archive for the current platform, verify it against the release's `SHA256SUMS`, unpack the one executable inside (`aishell`, or `aishell.exe` on Windows), and install nothing else. Release assets: `aishell-linux-amd64.tar.gz`, `aishell-linux-aarch64.tar.gz`, `aishell-macos-amd64.tar.gz`, `aishell-macos-aarch64.tar.gz`, `aishell-windows-amd64.zip`. `install.sh` needs `tar`; `install.bat` needs the `tar` that ships with Windows 10 1803 and later.
 
 To run aishell on your own babashka instead, install it from the git repository with bbin: `bbin install io.github.UniSoma/aishell`.
 
@@ -190,7 +190,7 @@ aishell upgrade           # Upgrade to latest version
 aishell upgrade 4.1.0     # Install a specific version
 ```
 
-Requires `curl` or `wget`. Downloads the binary for the current platform and verifies it against the release's `SHA256SUMS`. An older target version installs with a warning. Versions below 4.1.0 publish no binary for any platform, so asking for one fails the download. Upgrading a 4.0.0 script install replaces the script in place; on Windows it writes `aishell.exe` and removes the old `aishell` and `aishell.bat`. Windows cannot overwrite a running executable, so upgrade parks it as `aishell.exe.old` and the next start deletes it.
+Requires `curl` or `wget`, and `tar` on Linux and macOS. Downloads the archive for the current platform, verifies it against the release's `SHA256SUMS`, and unpacks the binary inside. An older target version installs with a warning. Versions below 4.1.0 publish no binary for any platform, so asking for one fails the download. Upgrading a 4.0.0 script install replaces the script in place; on Windows it writes `aishell.exe` and removes the old `aishell` and `aishell.bat`. Windows cannot overwrite a running executable, so upgrade parks it as `aishell.exe.old` and the next start deletes it.
 
 ### info
 

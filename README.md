@@ -117,13 +117,13 @@ The install scripts fetch the binary with curl or PowerShell, and those download
 macOS:
 
 ```bash
-xattr -d com.apple.quarantine ~/Downloads/aishell-macos-aarch64
+xattr -d com.apple.quarantine ~/Downloads/aishell-macos-aarch64.tar.gz
 ```
 
-Windows: right-click the file, open Properties, and check "Unblock". From PowerShell:
+Windows: right-click the downloaded zip, open Properties, and check "Unblock" before you extract it. From PowerShell:
 
 ```powershell
-Unblock-File .\aishell-windows-amd64.exe
+Unblock-File .\aishell-windows-amd64.zip
 ```
 
 **Running aishell on your own babashka:**
@@ -317,7 +317,7 @@ aishell upgrade
 aishell upgrade 4.1.0
 ```
 
-`aishell upgrade` downloads the binary for your platform and checks it against the release's `SHA256SUMS` before it replaces anything. At a terminal it shows a progress bar; from a script it prints the download size instead. Asking for a version below 4.1.0 fails the download: those releases published a script that needs babashka, not a binary for your platform.
+`aishell upgrade` downloads the archive for your platform, checks it against the release's `SHA256SUMS`, and unpacks the binary inside before it replaces anything. Linux and macOS use the system `tar`; on Windows the zip is read in-process. At a terminal it shows a progress bar; from a script it prints the download size instead. Asking for a version below 4.1.0 fails the download: those releases published a script that needs babashka, not a binary for your platform.
 
 Upgrading from a 4.0.0 script install replaces the script in place, so your PATH entry stays as it is. On Windows it writes `aishell.exe` and deletes the old `aishell` and `aishell.bat`, and says so.
 

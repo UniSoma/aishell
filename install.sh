@@ -1,7 +1,8 @@
 #!/bin/bash
 # install.sh - Installer for aishell
-# Downloads the aishell binary for this platform from GitHub Releases and
-# verifies it against the release's SHA256SUMS. Nothing else is installed.
+# Downloads the aishell archive for this platform from GitHub Releases,
+# verifies it against the release's SHA256SUMS and unpacks the one binary
+# inside. Nothing else is installed.
 #
 # Usage: curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
 #
@@ -54,7 +55,7 @@ install_aishell() {
         printf "${yellow}Warning:${nc} %s\n" "$1"
     }
 
-    # --- Check for download tool ---
+    # --- Check for download and unpack tools ---
     local downloader=""
     if command -v curl &>/dev/null; then
         downloader="curl"
@@ -62,6 +63,11 @@ install_aishell() {
         downloader="wget"
     else
         error "Either 'curl' or 'wget' required"
+        exit 1
+    fi
+
+    if ! command -v tar &>/dev/null; then
+        error "'tar' is required to unpack the release archive"
         exit 1
     fi
 
@@ -99,7 +105,7 @@ install_aishell() {
         arch="aarch64"
     fi
 
-    local asset="aishell-${os}-${arch}"
+    local asset="aishell-${os}-${arch}.tar.gz"
 
     # --- Create Install Directory ---
     if ! mkdir -p "$install_dir" 2>/dev/null; then
@@ -133,7 +139,7 @@ install_aishell() {
 
     # --- Verify Checksum ---
     info "Verifying checksum..."
-    # Match the filename token exactly: "aishell" is a prefix of "aishell-linux-amd64".
+    # Match the filename token exactly: "aishell" is a prefix of "aishell-linux-amd64.tar.gz".
     local expected_sha
     expected_sha=$(awk -v name="$asset" '$2 == name || $2 == "*" name {print tolower($1); exit}' \
         "${aishell_tmp_dir}/SHA256SUMS")
@@ -157,9 +163,20 @@ install_aishell() {
         exit 1
     fi
 
+    # --- Unpack ---
+    # The archive holds one file, aishell; it lands beside the download.
+    if ! tar -xzf "${aishell_tmp_dir}/${asset}" -C "${aishell_tmp_dir}" aishell; then
+        error "Failed to unpack ${asset}"
+        exit 1
+    fi
+    if [[ ! -f "${aishell_tmp_dir}/aishell" ]]; then
+        error "${asset} does not contain aishell"
+        exit 1
+    fi
+
     # --- Install ---
     info "Installing..."
-    if ! mv -f "${aishell_tmp_dir}/${asset}" "${install_dir}/aishell"; then
+    if ! mv -f "${aishell_tmp_dir}/aishell" "${install_dir}/aishell"; then
         error "Failed to install to ${install_dir}/aishell"
         exit 1
     fi

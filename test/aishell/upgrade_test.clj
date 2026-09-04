@@ -1,6 +1,7 @@
 (ns aishell.upgrade-test
   (:require [clojure.test :refer [deftest is testing]]
             [babashka.fs :as fs]
+            [babashka.process :as p]
             [clojure.string :as str]
             [aishell.output :as output]
             [aishell.upgrade :as upgrade]))
@@ -83,12 +84,12 @@
   (upgrade/upgrade-plan (merge unix-env (apply hash-map kvs))))
 
 (deftest upgrade-plan-picks-the-asset-for-every-supported-platform
-  (testing "each [os arch] pair maps to its release binary, script or binary install alike"
-    (doseq [[[os arch] asset] {[:linux :amd64] "aishell-linux-amd64"
-                               [:linux :aarch64] "aishell-linux-aarch64"
-                               [:macos :amd64] "aishell-macos-amd64"
-                               [:macos :aarch64] "aishell-macos-aarch64"
-                               [:windows :amd64] "aishell-windows-amd64.exe"}
+  (testing "each [os arch] pair maps to its release archive, script or binary install alike"
+    (doseq [[[os arch] asset] {[:linux :amd64] "aishell-linux-amd64.tar.gz"
+                               [:linux :aarch64] "aishell-linux-aarch64.tar.gz"
+                               [:macos :amd64] "aishell-macos-amd64.tar.gz"
+                               [:macos :aarch64] "aishell-macos-aarch64.tar.gz"
+                               [:windows :amd64] "aishell-windows-amd64.zip"}
             script? [true false]
             pinned? [true false]]
       (let [install-path (if (= :windows os)
@@ -99,6 +100,7 @@
         (is (nil? (:error plan)))
         (is (= asset (:asset-name plan)))
         (is (= asset (:checksum-asset plan)))
+        (is (= (if (= :windows os) "aishell.exe" "aishell") (:member plan)))
         (is (= (str "https://github.com/UniSoma/aishell/releases/download/v4.1.0/" asset)
                (:asset-url plan)))
         (is (= "https://github.com/UniSoma/aishell/releases/download/v4.1.0/SHA256SUMS"
@@ -166,7 +168,7 @@
 (deftest upgrade-plan-honors-a-releases-url-override
   (testing "both URLs come from :releases-url"
     (let [plan (upgrade/upgrade-plan (assoc unix-env :releases-url "http://localhost:8000/releases"))]
-      (is (= "http://localhost:8000/releases/download/v4.1.0/aishell-linux-amd64" (:asset-url plan)))
+      (is (= "http://localhost:8000/releases/download/v4.1.0/aishell-linux-amd64.tar.gz" (:asset-url plan)))
       (is (= "http://localhost:8000/releases/download/v4.1.0/SHA256SUMS" (:checksum-url plan))))))
 
 (deftest upgrade-plan-flags-a-downgrade
@@ -227,39 +229,85 @@
         (is (= "http://localhost/r" (:releases-url env)))))))
 
 (defn- stub-downloads
-  "Serve download-to-file from an in-memory {url content} map."
+  "Serve download-to-file from an in-memory {url content} map.
+   Content is a string, or a byte array for a binary asset such as an archive."
   [responses f]
   (let [serve (fn [url dest]
                 (if-let [content (get responses url)]
-                  (spit dest content)
+                  (if (bytes? content)
+                    (fs/write-bytes dest content)
+                    (spit dest content))
                   (throw (ex-info (str "404 " url) {}))))]
     (with-redefs [upgrade/download-to-file (fn [_ url dest] (serve url dest))
                   upgrade/download-asset! (fn [_ url dest _] (serve url dest))]
       (f))))
 
+(defn- archive-of
+  "Bytes of a release-shaped archive holding one file, `member`, with `body`.
+   kind is :tar-gz or :zip, the two shapes the release publishes."
+  [dir kind member body]
+  (let [src (str (fs/create-dirs (str dir "/archive-src")))
+        out (str dir "/archive" (case kind :tar-gz ".tar.gz" :zip ".zip"))]
+    (spit (str src "/" member) body)
+    (case kind
+      :tar-gz (p/shell {:out :string :err :string}
+                       "tar" "-czf" out "-C" src member)
+      :zip (fs/zip out [(str src "/" member)] {:root src}))
+    (let [b (fs/read-all-bytes out)]
+      (fs/delete-tree src)
+      (fs/delete out)
+      b)))
+
+(defn- sha256-of-bytes
+  "Hash of a byte array as the checksum file would list it."
+  [^bytes b]
+  (let [md (java.security.MessageDigest/getInstance "SHA-256")]
+    (apply str (map #(format "%02x" (bit-and % 0xff)) (.digest md b)))))
+
+(deftest extract-member!-unpacks-a-tar-gz-and-a-zip
+  (testing "the one file inside lands in the directory under its own name"
+    (with-temp-dir
+      (fn [dir]
+        (doseq [[kind file member] [[:tar-gz "a.tar.gz" "aishell"]
+                                    [:zip "a.zip" "aishell.exe"]]]
+          (let [archive (str dir "/" file)
+                out (str (fs/create-dirs (str dir "/out-" (name kind))))]
+            (fs/write-bytes archive (archive-of dir kind member "payload\n"))
+            (is (= (str out "/" member) (upgrade/extract-member! archive out member)))
+            (is (= "payload\n" (slurp (str out "/" member))))))))))
+
+(deftest extract-member!-fails-when-the-member-is-missing
+  (testing "an archive without the expected file is an error, not an empty install"
+    (with-temp-dir
+      (fn [dir]
+        (let [archive (str dir "/a.tar.gz")]
+          (fs/write-bytes archive (archive-of dir :tar-gz "something-else" "x\n"))
+          (is (thrown? Exception (upgrade/extract-member! archive dir "aishell"))))))))
+
 (deftest execute-plan-installs-a-verified-download
-  (testing "asset lands at :dest-path after its hash matches the checksum file"
+  (testing "the file inside the archive lands at :dest-path after the archive's hash matches"
     (with-temp-dir
       (fn [dir]
         (let [dest (str dir "/aishell")
-              body "#!/usr/bin/env bb\n(println :hi)\n"
-              hash (let [tmp (str dir "/probe")]
-                     (spit tmp body)
-                     (let [h (upgrade/compute-sha256-file tmp)] (fs/delete tmp) h))
-              plan {:asset-name "aishell"
-                    :asset-url "http://x/aishell"
-                    :checksum-url "http://x/aishell.sha256"
-                    :checksum-asset "aishell"
+              body "binary\n"
+              archive (archive-of dir :tar-gz "aishell" body)
+              plan {:asset-name "aishell-linux-amd64.tar.gz"
+                    :asset-url "http://x/a"
+                    :checksum-url "http://x/sums"
+                    :checksum-asset "aishell-linux-amd64.tar.gz"
+                    :member "aishell"
                     :dest-path dest
                     :delete-after []
                     :chmod-x? true
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes []}
-              out (stub-downloads {"http://x/aishell" body
-                                   "http://x/aishell.sha256" (str hash "  aishell\n")}
+              out (stub-downloads {"http://x/a" archive
+                                   "http://x/sums" (str (sha256-of-bytes archive)
+                                                        "  aishell-linux-amd64.tar.gz\n")}
                                   #(with-out-str (upgrade/execute-plan plan :curl)))]
           (is (= body (slurp dest)))
+          (is (fs/executable? dest))
           (is (str/includes? out "Upgrading aishell: v4.0.0 -> v4.1.0"))
           (is (str/includes? out "Upgraded aishell: v4.0.0 -> v4.1.0")))))))
 
@@ -271,10 +319,11 @@
               _ (spit dest "original\n")
               err (java.io.StringWriter.)
               exits (atom [])
-              plan {:asset-name "aishell"
-                    :asset-url "http://x/aishell"
-                    :checksum-url "http://x/aishell.sha256"
-                    :checksum-asset "aishell"
+              plan {:asset-name "aishell-linux-amd64.tar.gz"
+                    :asset-url "http://x/a"
+                    :checksum-url "http://x/sums"
+                    :checksum-asset "aishell-linux-amd64.tar.gz"
+                    :member "aishell"
                     :dest-path dest
                     :delete-after []
                     :chmod-x? false
@@ -288,8 +337,9 @@
                                        (swap! exits conj c)
                                        (throw (ex-info "exit" {:code c})))]
             (try
-              (stub-downloads {"http://x/aishell" "tampered\n"
-                               "http://x/aishell.sha256" (str (apply str (repeat 64 "a")) "  aishell\n")}
+              (stub-downloads {"http://x/a" (archive-of dir :tar-gz "aishell" "tampered\n")
+                               "http://x/sums" (str (apply str (repeat 64 "a"))
+                                                    "  aishell-linux-amd64.tar.gz\n")}
                               #(binding [*err* err]
                                  (with-out-str (upgrade/execute-plan plan :curl))))
               (catch clojure.lang.ExceptionInfo _ nil)))
@@ -304,14 +354,12 @@
       (fn [dir]
         (let [dest (str dir "/aishell.exe")
               stale (str dir "/aishell")
-              body "binary\n"
-              hash (let [tmp (str dir "/probe")]
-                     (spit tmp body)
-                     (let [h (upgrade/compute-sha256-file tmp)] (fs/delete tmp) h))
-              plan {:asset-name "aishell"
-                    :asset-url "http://x/aishell"
+              archive (archive-of dir :zip "aishell.exe" "binary\n")
+              plan {:asset-name "aishell-windows-amd64.zip"
+                    :asset-url "http://x/a"
                     :checksum-url "http://x/sums"
-                    :checksum-asset "aishell"
+                    :checksum-asset "aishell-windows-amd64.zip"
+                    :member "aishell.exe"
                     :dest-path dest
                     :delete-after [stale (str dir "/never-existed")]
                     :chmod-x? false
@@ -319,8 +367,8 @@
                     :target-version "4.1.0"
                     :notes []}]
           (spit stale "old script\n")
-          (stub-downloads {"http://x/aishell" body
-                           "http://x/sums" (str hash "  aishell\n")}
+          (stub-downloads {"http://x/a" archive
+                           "http://x/sums" (str (sha256-of-bytes archive) "  aishell-windows-amd64.zip\n")}
                           #(with-out-str (upgrade/execute-plan plan :curl)))
           (is (true? (fs/exists? dest)))
           (is (false? (fs/exists? stale))))))))
@@ -330,22 +378,20 @@
     (with-temp-dir
       (fn [dir]
         (let [dest (str dir "/aishell")
-              body "x\n"
-              hash (let [tmp (str dir "/probe")]
-                     (spit tmp body)
-                     (let [h (upgrade/compute-sha256-file tmp)] (fs/delete tmp) h))
-              plan {:asset-name "aishell"
-                    :asset-url "http://x/aishell"
+              archive (archive-of dir :tar-gz "aishell" "x\n")
+              plan {:asset-name "aishell-linux-amd64.tar.gz"
+                    :asset-url "http://x/a"
                     :checksum-url "http://x/sums"
-                    :checksum-asset "aishell"
+                    :checksum-asset "aishell-linux-amd64.tar.gz"
+                    :member "aishell"
                     :dest-path dest
                     :delete-after []
                     :chmod-x? false
                     :current-version "4.0.0"
                     :target-version "4.1.0"
                     :notes ["Removed the old aishell script."]}
-              out (stub-downloads {"http://x/aishell" body
-                                   "http://x/sums" (str hash "  aishell\n")}
+              out (stub-downloads {"http://x/a" archive
+                                   "http://x/sums" (str (sha256-of-bytes archive) "  aishell-linux-amd64.tar.gz\n")}
                                   #(with-out-str (upgrade/execute-plan plan :curl)))]
           (is (str/includes? out "Removed the old aishell script.")))))))
 
@@ -361,31 +407,24 @@
     (is (zero? (upgrade/version-compare "4.1.0" "4.1.0")))
     (is (pos? (upgrade/version-compare "4.10.0" "4.9.0")))))
 
-(defn- sha256-of
-  "Hash of `body` as the checksum file would list it."
-  [dir body]
-  (let [tmp (str dir "/probe")]
-    (spit tmp body)
-    (let [h (upgrade/compute-sha256-file tmp)]
-      (fs/delete tmp)
-      h)))
-
 (deftest execute-plan-renames-the-running-binary-before-installing-over-it
   (testing "Windows locks a running exe: the old file moves to .old, the new one takes its place"
     (with-temp-dir
       (fn [dir]
         (let [dest (str dir "/aishell.exe")
               old (str dest ".old")
-              body "new binary\n"]
+              body "new binary\n"
+              archive (archive-of dir :zip "aishell.exe" body)]
           (spit dest "running binary\n")
-          (stub-downloads {"http://x/a" body
-                           "http://x/sums" (str (sha256-of dir body) "  aishell-windows-amd64.exe\n")}
+          (stub-downloads {"http://x/a" archive
+                           "http://x/sums" (str (sha256-of-bytes archive) "  aishell-windows-amd64.zip\n")}
                           #(with-out-str
                              (upgrade/execute-plan
-                              {:asset-name "aishell-windows-amd64.exe"
+                              {:asset-name "aishell-windows-amd64.zip"
                                :asset-url "http://x/a"
                                :checksum-url "http://x/sums"
-                               :checksum-asset "aishell-windows-amd64.exe"
+                               :checksum-asset "aishell-windows-amd64.zip"
+                               :member "aishell.exe"
                                :dest-path dest
                                :delete-after []
                                :rename-old? true
@@ -409,10 +448,11 @@
                               #(binding [*err* err]
                                  (with-out-str
                                    (upgrade/execute-plan
-                                    {:asset-name "aishell-macos-aarch64"
+                                    {:asset-name "aishell-macos-aarch64.tar.gz"
                                      :asset-url "http://x/a"
                                      :checksum-url "http://x/sums"
-                                     :checksum-asset "aishell-macos-aarch64"
+                                     :checksum-asset "aishell-macos-aarch64.tar.gz"
+                                     :member "aishell"
                                      :dest-path (str dir "/aishell")
                                      :delete-after []
                                      :chmod-x? false
@@ -449,7 +489,7 @@
 (deftest describe-size-rounds-to-megabytes
   (testing "a known length becomes MB; an unknown one falls back to the ADR's estimate"
     (is (= "90 MB" (upgrade/describe-size (* 90 1024 1024))))
-    (is (= "about 70 MB" (upgrade/describe-size nil)))))
+    (is (= "about 25 MB" (upgrade/describe-size nil)))))
 
 (deftest download-asset!-announces-the-size-when-there-is-no-terminal
   (testing "one line with the asset name and its size, in place of a progress bar"
@@ -538,10 +578,12 @@
               err (java.io.StringWriter.)
               exits (atom [])
               body "installed\n"
-              plan {:asset-name "aishell-windows-amd64.exe"
-                    :asset-url "http://x/aishell-windows-amd64.exe"
+              archive (archive-of dir :zip "aishell.exe" "new\n")
+              plan {:asset-name "aishell-windows-amd64.zip"
+                    :asset-url "http://x/aishell-windows-amd64.zip"
                     :checksum-url "http://x/SHA256SUMS"
-                    :checksum-asset "aishell-windows-amd64.exe"
+                    :checksum-asset "aishell-windows-amd64.zip"
+                    :member "aishell.exe"
                     :dest-path dest
                     :delete-after []
                     :chmod-x? false
@@ -554,16 +596,16 @@
           (with-redefs [output/exit! (fn [c]
                                        (swap! exits conj c)
                                        (throw (ex-info "exit" {:code c})))
-                        ;; only the staged asset fails to install; putting the
-                        ;; parked binary back must still work
+                        ;; only the unpacked binary fails to install; putting the
+                        ;; parked one back must still work
                         upgrade/install-file! (fn [src dst]
-                                                (if (str/ends-with? (str src) "aishell-windows-amd64.exe")
+                                                (if (not= (fs/parent src) (fs/parent dst))
                                                   (throw (ex-info "disk full" {}))
                                                   (fs/move src dst {:replace-existing true})))]
             (try
-              (stub-downloads {"http://x/aishell-windows-amd64.exe" "new\n"
-                               "http://x/SHA256SUMS" (str (sha256-of dir "new\n")
-                                                          "  aishell-windows-amd64.exe\n")}
+              (stub-downloads {"http://x/aishell-windows-amd64.zip" archive
+                               "http://x/SHA256SUMS" (str (sha256-of-bytes archive)
+                                                          "  aishell-windows-amd64.zip\n")}
                               #(binding [*err* err]
                                  (with-out-str (upgrade/execute-plan plan :curl))))
               (catch clojure.lang.ExceptionInfo _ nil)))
