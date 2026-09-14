@@ -12,7 +12,8 @@
             [aishell.config :as config]
             [aishell.docker.volume :as vol]
             [aishell.harness :as harness]
-            [aishell.output :as output]))
+            [aishell.output :as output]
+            [aishell.validation :as validation]))
 
 (defn check-vscode!
   "Check that 'code' CLI is available on PATH. Exit with error if not found."
@@ -130,7 +131,9 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
    Extra code-args are passed through to the 'code' CLI, merged after
    harness_args.vscode defaults from config."
   [& [{:keys [detach? code-args]}]]
-  ;; 1. Check prerequisites
+  ;; 1. Check prerequisites; the project-dir guard runs before anything
+  ;;    walks the tree
+  (validation/check-project-dir! (System/getProperty "user.dir"))
   (check-vscode!)
   (docker/check-docker!)
 

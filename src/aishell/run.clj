@@ -137,6 +137,9 @@
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings)"
   [cmd harness-args & [opts]]
+  ;; Refuse a home-containing root before anything walks the tree
+  (validation/check-project-dir! (System/getProperty "user.dir"))
+
   ;; Check Docker available
   (docker/check-docker!)
 
@@ -285,6 +288,9 @@
    Auto-detects TTY. Uses all standard mounts/env from config.
    Skips detection warnings and pre_start hooks for fast execution."
   [cmd-args]
+  ;; Refuse a home-containing root before anything walks the tree
+  (validation/check-project-dir! (System/getProperty "user.dir"))
+
   ;; Check Docker available
   (docker/check-docker!)
 

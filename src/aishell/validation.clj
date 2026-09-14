@@ -1,8 +1,10 @@
 (ns aishell.validation
   "Security validation for Docker configurations.
    Checks for dangerous patterns and provides advisory warnings."
-  (:require [clojure.string :as str]
-            [aishell.output :as output]))
+  (:require [babashka.fs :as fs]
+            [clojure.string :as str]
+            [aishell.output :as output]
+            [aishell.util :as util]))
 
 ;; Dangerous docker_args patterns from v1.2 bash implementation
 ;; These reduce container isolation and should be used with caution
@@ -185,3 +187,46 @@
       (println)
       (println "These mounts may expose sensitive host data. Use only if necessary.")
       (println))))
+
+(defn- canonical-path
+  "Absolute, normalized form of `path` with symlinks resolved when the
+   path exists. A missing path still normalizes, so a dangling HOME cannot
+   turn the guard off."
+  [path]
+  (let [p (fs/absolutize path)]
+    (str (if (fs/exists? p)
+           (fs/canonicalize p)
+           (fs/normalize p)))))
+
+(defn home-dir-conflict
+  "Why `project-dir` may not be a sandbox root given `home`, or nil when it
+   may. The root must not equal or contain the user's home: sandboxing it
+   would expose ~/.ssh, credentials, and every other project to the
+   harness, and the container start mutates files under the mounted home.
+   Both paths are canonicalized first, so symlinks and trailing slashes
+   do not change the answer."
+  [project-dir home]
+  (let [project (canonical-path project-dir)
+        home (canonical-path home)
+        root? (= project (str (fs/path project "/")))
+        ancestor? (or root?
+                      (str/starts-with? home (str project java.io.File/separator)))]
+    (cond
+      (= project home)
+      (str project " is your home directory")
+
+      ancestor?
+      (str project " contains your home directory (" home ")"))))
+
+(defn check-project-dir!
+  "Refuse to launch a sandbox rooted at `project-dir` when it is, or
+   contains, the user's home directory. Exits 1 through output/error;
+   --unsafe does not apply, and the message says so. Call it before any
+   work that walks the project tree."
+  [project-dir]
+  (when-let [reason (home-dir-conflict project-dir (util/get-home))]
+    (output/error
+     (str "Refusing to sandbox: " reason ".\n"
+          "A sandbox rooted there would expose your SSH keys, credentials, and\n"
+          "every project to the harness, and starting it writes into your home.\n"
+          "--unsafe does not override this. cd into a project directory and retry."))))

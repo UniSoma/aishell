@@ -418,6 +418,8 @@ For CI or other automation, skip the confirmation prompt:
 aishell claude --unsafe  # Skip confirmation prompts
 ```
 
+aishell refuses to start from your home directory or any directory above it, and `--unsafe` does not change that: a sandbox rooted there would hand the harness your SSH keys, credentials, and every project at once.
+
 ### Gitleaks (optional)
 
 Gitleaks is opt-in. Enable it at build time:

@@ -1,27 +1,28 @@
 ---
 id: aix-01m11j1v639z
 title: Refuse to sandbox a directory that contains the user's home
-status: open
+status: closed
 type: bug
 priority: 1
 mode: afk
 created: '2026-08-27T12:10:26.371143499Z'
-updated: '2026-08-27T12:10:30.798100087Z'
+updated: '2026-09-14T12:26:34.924135916Z'
+closed: '2026-09-14T12:26:34.924135916Z'
 acceptance:
 - title: Running any sandbox-launching command (run/shell, harness subcommands, exec, vscode) from $HOME exits 1 with an error naming the directory and the reason
-  done: false
+  done: true
 - title: The same refusal fires from any ancestor of $HOME (e.g. /home, /), after canonicalizing symlinks and trailing slashes
-  done: false
+  done: true
 - title: The guard runs before the sensitive-file scan, extension-image resolution, and docker run — no filesystem walk happens first
-  done: false
+  done: true
 - title: --unsafe does not bypass the guard; the error message says so
-  done: false
+  done: true
 - title: Read-only commands (info, check, attach) are unaffected
-  done: false
+  done: true
 - title: Unit tests cover home, ancestor-of-home, symlinked home, and a normal project dir
-  done: false
+  done: true
 - title: README documents the limit in one sentence
-  done: false
+  done: true
 tags:
 - ready-for-agent
 ---
@@ -40,3 +41,9 @@ Decision: refuse rather than optimize. A sandbox whose root contains the user's 
 Rule: the sandbox root (cwd) must not equal or be an ancestor of the user's home directory, compared after canonicalization. That single check covers `$HOME`, `/home`, and `/`.
 
 Place the guard at the top of every launch path, before any work that touches the tree. Error text should name the offending directory, say why, and suggest `cd` into a project.
+
+## Notes
+
+**2026-09-14T12:26:34.924135916Z**
+
+Shipped in 1abb852: validation/check-project-dir! refuses a root equal to or containing $HOME on every launch path (harness commands, shell mode, exec, vscode), before docker checks or any tree walk. --unsafe does not apply. Tests in validation_test.clj; README sentence under Sensitive file detection.
