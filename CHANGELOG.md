@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **The bridging assets `aishell`, `aishell.bat` and `aishell.sha256` are no longer published**: 4.1.0 and 4.2.0 kept building the pre-4.1.0 uberscript beside the platform archives so that an installed v4.0.0, whose `upgrade` fetches exactly those three names, could reach a binary release. The build script and the release-creation checks now produce and require only the five platform archives and `SHA256SUMS`. The consequence for a v4.0.0 install is that its `aishell upgrade` breaks against this and every later release, since the assets it asks for no longer exist: re-run the install script, or run `aishell upgrade 4.2.0` first and then `aishell upgrade` again. Installs at 4.1.0 or later are unaffected
+
 ### Changed
 
 - **The host runtime moves to babashka 1.13.222**: the build script's pin goes up two patch releases. `bb uberjar` is now built on tools.build rather than depstar, with the same exclusions, so the aishell uberjar that gets appended to each platform binary is produced by a different code path than in 4.2.0; the new uberjar was built and run as an appended linux-amd64 binary before the pin moved, and the remaining four targets are for the release smoke matrix to confirm. Clojure itself moves to 1.12.6, and the binary is a little smaller because the bundled Clojure sources are now stored gzipped

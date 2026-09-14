@@ -548,7 +548,7 @@ Each executable is published inside an archive that holds nothing else: the nati
 | `aishell-macos-amd64.tar.gz` | macOS on Intel | |
 | `aishell-macos-aarch64.tar.gz` | macOS on Apple Silicon | |
 | `aishell-windows-amd64.zip` | Windows x86-64 | Holds `aishell.exe` |
-| `SHA256SUMS` | all | One `hash  filename` line per asset the build produced, the legacy trio included while it is still built |
+| `SHA256SUMS` | all | One `hash  filename` line per asset the build produced |
 
 The installers and `aishell upgrade` read the `SHA256SUMS` line for their own asset and refuse a download whose hash differs; the hash covers the archive, so verification happens before anything is unpacked. `install.sh` and `aishell upgrade` on Linux and macOS unpack with the system `tar`; `install.ps1` uses `Expand-Archive`, `install.bat` the `tar` Windows ships, and `aishell upgrade` on Windows reads the zip in-process. Asset names carry no version, so `releases/latest/download/<name>` always names the newest binary. `AISHELL_RELEASE_URL` replaces the release base URL for the installers, for `aishell upgrade` and for the update check, which is how a release tree can be served locally.
 
@@ -558,7 +558,7 @@ The build runs on one Linux runner. For each target it downloads the pinned upst
 
 The binary starts the appended jar's main class, `aishell.core`, so it runs aishell and is not a general-purpose `bb`. To run aishell on a babashka you already have, install it from the git repository with `bbin install io.github.UniSoma/aishell`; `bb.edn`'s `:bbin/bin` entry names the installed binary and its main opts.
 
-Releases 4.1.0 and 4.2.0 also publish the pre-4.1.0 assets `aishell`, `aishell.bat` and `aishell.sha256`, because an installed v4.0.0 fetches those names when it upgrades. 4.3.0 stops publishing them. `docs/adr/0007-binary-distribution-by-appending-an-uberjar-to-babashka.md` records the decision and the options considered.
+Releases 4.1.0 and 4.2.0 also published the pre-4.1.0 assets `aishell`, `aishell.bat` and `aishell.sha256`, because an installed v4.0.0 fetches those names when it upgrades. 4.3.0 stopped publishing them, so a v4.0.0 install now has to re-run the installer or run `aishell upgrade 4.2.0` before a plain `aishell upgrade` works. `docs/adr/0007-binary-distribution-by-appending-an-uberjar-to-babashka.md` records the decision and the options considered.
 
 ---
 

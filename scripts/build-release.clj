@@ -16,11 +16,6 @@
 ;; Archived because the native image compresses to about a third of its size;
 ;; the jar inside is already deflated and contributes nothing.
 ;;
-;; And, while the legacy gate below is on, the pre-4.1.0 trio:
-;;   dist/aishell        - Executable uberscript with shebang
-;;   dist/aishell.bat    - Windows CMD wrapper
-;;   dist/aishell.sha256 - SHA256 checksum of dist/aishell
-;;
 ;; Version is defined in src/aishell/cli.clj - update there before release.
 
 (ns build-release
@@ -34,15 +29,7 @@
 ;; one is the CLI's own runtime, the other a tool offered inside the sandbox.
 (def babashka-version "1.13.222")
 
-;; Bridging releases only: v4.0.0 installs run an `upgrade` that fetches the
-;; legacy asset names. 4.2.0 shipped with this gate still on. Remove it, the
-;; code it guards and the assets themselves in 4.3.0 (aix-01m1kyn87b1a).
-(def legacy-assets? true)
-
 (def output-dir "dist")
-(def legacy-script (str output-dir "/aishell"))
-(def legacy-bat (str legacy-script ".bat"))
-(def legacy-checksum (str legacy-script ".sha256"))
 (def sums-file (str output-dir "/SHA256SUMS"))
 
 (def targets
@@ -208,32 +195,6 @@
     (pack binary-path asset)
     asset))
 
-(defn create-bat-wrapper
-  "Generate Windows .bat wrapper following neil pattern.
-   Uses explicit CRLF line endings for Windows CMD compatibility."
-  [script-name]
-  (spit legacy-bat (str "@echo off\r\n"
-                        "set ARGS=%*\r\n"
-                        "set SCRIPT=%~dp0" script-name "\r\n"
-                        "bb -f %SCRIPT% -- %ARGS%\r\n")))
-
-(defn build-legacy-trio
-  "Pre-4.1.0 assets: the uberscript, its CMD wrapper and its checksum file.
-   Returns the asset filenames. Removed in 4.3.0."
-  []
-  (println "Building legacy uberscript (bridging release)...")
-  (fs/delete-if-exists legacy-script)
-  (fs/delete-if-exists legacy-bat)
-  (p/shell "bb" "uberscript" legacy-script "-m" "aishell.core")
-  (let [content (slurp legacy-script)]
-    (spit legacy-script (str "#!/usr/bin/env bb\n" content)))
-  (when-not (fs/windows?)
-    (p/shell "chmod" "+x" legacy-script))
-  (create-bat-wrapper "aishell")
-  ;; Format: {hash}  {filename} (two spaces, relative filename)
-  (spit legacy-checksum (str (compute-sha256 legacy-script) "  aishell\n"))
-  ["aishell" "aishell.bat" "aishell.sha256"])
-
 (defn write-sums
   "SHA256SUMS lists every asset produced by this run, in `hash  filename` form."
   [assets]
@@ -247,9 +208,7 @@
     (try
       (fs/create-dirs output-dir)
       (let [jar (build-uberjar work-dir)
-            binaries (doall (for [k target-keys] (build-target k jar work-dir)))
-            legacy (when legacy-assets? (build-legacy-trio))
-            assets (concat binaries legacy)]
+            assets (doall (for [k target-keys] (build-target k jar work-dir)))]
         (write-sums assets)
         (println)
         (println "Build complete!")

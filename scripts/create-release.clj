@@ -10,7 +10,7 @@
 ;;
 ;; Prerequisites:
 ;;   - a full ./scripts/build-release.clj run, so dist/ holds the five platform
-;;     archives, SHA256SUMS and the legacy trio
+;;     archives and SHA256SUMS
 ;;   - gh CLI must be authenticated
 
 (ns create-release
@@ -29,12 +29,6 @@
    "macos-aarch64" {:asset "aishell-macos-aarch64.tar.gz" :binary "aishell"}
    "windows-amd64" {:asset "aishell-windows-amd64.zip" :binary "aishell.exe"}})
 
-;; Bridging release only - keep in step with legacy-assets? in
-;; scripts/build-release.clj, and drop both in 4.2.0.
-(def legacy-assets? true)
-
-(def legacy-trio ["aishell" "aishell.bat" "aishell.sha256"])
-
 (defn dist-path [asset]
   (str dist-dir "/" asset))
 
@@ -42,8 +36,7 @@
   (map dist-path
        (concat (map (comp :asset platform-archives)
                     ["linux-amd64" "linux-aarch64" "macos-amd64" "macos-aarch64" "windows-amd64"])
-               ["SHA256SUMS"]
-               (when legacy-assets? legacy-trio))))
+               ["SHA256SUMS"])))
 
 (defn host-archive
   "The dist archive whose binary this machine can run, used to read the version."

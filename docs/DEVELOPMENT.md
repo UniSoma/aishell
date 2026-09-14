@@ -502,34 +502,6 @@ bb -m aishell.core --help
 
 **Why it matters:** Windows has varied terminal support (cmd.exe, PowerShell 5.1, PowerShell 7+, Windows Terminal). Priority: `NO_COLOR` > `FORCE_COLOR` > auto-detection.
 
-#### 5. Batch Wrapper Generation
-
-**What to test:** Release build generates aishell.bat with correct format
-
-**How to test:**
-```powershell
-# Generate release build
-bb scripts/build-release.clj
-
-# Verify .bat wrapper exists
-Test-Path dist/aishell.bat
-# Should return True
-
-# Verify content (should be 4 lines)
-Get-Content dist/aishell.bat
-# Expected:
-#   @echo off
-#   setlocal
-#   bb -f "%~dp0aishell" %*
-#   exit /b %ERRORLEVEL%
-
-# Verify CRLF line endings (Windows requirement)
-(Get-Content dist/aishell.bat -Raw) -match "`r`n"
-# Should return True
-```
-
-**Why it matters:** Windows cmd.exe requires `.bat` wrapper with CRLF endings. This test ensures Windows users can run `aishell` from cmd.exe/PowerShell.
-
 ### Cross-Platform Development Patterns
 
 When contributing features that touch platform-specific code, follow these patterns:
