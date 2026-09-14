@@ -93,21 +93,14 @@ aishell opencode
 <details>
 <summary>Prerequisites and troubleshooting</summary>
 
-Requirements:
-
-- Linux and macOS require Docker Engine.
-- Windows requires Docker Desktop with the WSL2 backend enabled.
-
-aishell ships as a single executable carrying its own babashka. Docker is the only thing you install yourself.
-
-Docker installation:
+Docker is the only requirement. aishell ships as a single executable with no runtime to install.
 
 - On Linux or macOS, install [Docker Engine](https://docs.docker.com/engine/install/).
 - On Windows, install [Docker Desktop](https://www.docker.com/products/docker-desktop/). Enable "Use the WSL 2 based engine" under Settings > General.
 
 Browser downloads:
 
-The install scripts download the binary without a quarantine flag. Browsers add this flag, and aishell binaries are not code-signed. Clear the flag before you run a browser download.
+macOS and Windows mark files that a browser downloads, and they block a marked executable that has no code signature. aishell is not code-signed. The install scripts use curl or PowerShell, which do not set the mark. If you downloaded the archive with a browser, remove the mark before you extract it.
 
 macOS:
 
@@ -119,14 +112,6 @@ On Windows, right-click the downloaded zip and open Properties. Select "Unblock"
 
 ```powershell
 Unblock-File .\aishell-windows-amd64.zip
-```
-
-Use an existing babashka installation:
-
-The release binaries carry their own babashka, so you do not need one. To run aishell on the babashka you already have, install it from the git repository with [bbin](https://github.com/babashka/bbin):
-
-```bash
-bbin install io.github.UniSoma/aishell
 ```
 
 PATH configuration:
@@ -144,16 +129,6 @@ On Windows, add the directory that contains `aishell.exe` to `PATH`:
 ```
 
 Then restart your terminal.
-
-Update harness tools:
-
-```bash
-# Unix/macOS/Linux
-aishell update
-
-# Windows (PowerShell or cmd.exe)
-aishell update
-```
 
 </details>
 
@@ -317,9 +292,7 @@ aishell upgrade
 aishell upgrade 4.1.0
 ```
 
-`aishell upgrade` downloads the archive for your platform and verifies it against the release's `SHA256SUMS`. It unpacks the binary before replacing the installed version. Linux and macOS use the system `tar`. Windows reads the zip in the aishell process. A terminal shows a progress bar, while a script receives the download size. Versions before 4.1.0 contain a babashka script instead of platform binaries and cannot use this command.
-
-An upgrade from a 4.0.0 script installation replaces the script in place, so its `PATH` entry remains valid. On Windows, aishell writes `aishell.exe` and reports that it deleted the old `aishell` and `aishell.bat` files.
+`aishell upgrade` downloads the archive for your platform, verifies it against the release's `SHA256SUMS`, and replaces the installed binary. A terminal shows a progress bar, while a script receives the download size. Installs older than 4.1.0 cannot use this command. Re-run the install script instead.
 
 Windows cannot overwrite a running executable. The upgrade renames the current `aishell.exe` to `aishell.exe.old` and installs the new file. aishell deletes the old file the next time it runs.
 
