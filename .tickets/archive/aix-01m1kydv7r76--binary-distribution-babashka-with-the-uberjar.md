@@ -1,23 +1,24 @@
 ---
 id: aix-01m1kydv7r76
 title: 'Binary distribution: babashka with the uberjar appended, one executable per platform'
-status: open
+status: closed
 type: feature
 priority: 1
 mode: afk
 created: '2026-09-03T15:33:02.328332646Z'
-updated: '2026-09-03T22:11:04.632312951Z'
+updated: '2026-09-14T12:34:57.365005736Z'
+closed: '2026-09-14T12:34:57.365005736Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: Build script produces five platform binaries plus SHA256SUMS, and still the legacy aishell/aishell.bat/aishell.sha256 for the bridging release
   done: true
 - title: Release workflow smoke-tests every binary with --version --json on a matching runner before creating the release
-  done: false
+  done: true
 - title: install.sh, install.ps1 and install.bat download the platform binary, verify it against SHA256SUMS, and no longer install babashka
-  done: false
+  done: true
 - title: aishell upgrade fetches the platform binary, migrates a script install in place, and replaces a running aishell.exe via rename-to-.old
-  done: false
+  done: true
 - title: Upgrade plan is a pure function with unit tests covering every platform and both install shapes
   done: true
 - title: README, CHANGELOG and ADR 0007 describe the new install shape, the bridging release and the manual-download quarantine workaround
@@ -121,3 +122,9 @@ The build script, installers and workflow are not unit-tested; the CI smoke matr
 Verified locally with bb 1.13.220: `bb uberjar` of `aishell.core` concatenated onto the bb binary yields a 90 MB executable that passes arguments through and answers `--version --json` correctly. The jar's manifest main class is what the appended-jar loader runs, so the uberjar must be built with `--main aishell.core`.
 
 Hard rules from AGENTS.md apply: lint with clj-kondo before commit, no AI attribution in commits.
+
+## Notes
+
+**2026-09-14T12:34:57.365005736Z**
+
+All nine child tickets closed. Binary distribution shipped: five platform binaries with SHA256SUMS, installers and upgrade verified on Linux and Windows, release workflow smoke matrix green on the latest push.

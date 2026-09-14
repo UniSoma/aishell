@@ -1,12 +1,13 @@
 ---
 id: aix-01m1kyn7zqy6
 title: aishell upgrade fetches the binary and migrates script installs in place
-status: open
+status: closed
 type: task
 priority: 1
 mode: afk
 created: '2026-09-03T15:37:04.754678901Z'
-updated: '2026-09-04T00:33:06.545392045Z'
+updated: '2026-09-14T12:32:24.970410532Z'
+closed: '2026-09-14T12:32:24.970410532Z'
 parent: aix-01m1kydv7r76
 tags:
 - ready-for-human
@@ -18,7 +19,7 @@ acceptance:
 - title: Script install on Linux upgrades in place to a working binary (manual check)
   done: true
 - title: 'Windows: `.bat` and old script removed, `aishell.exe` installed, `.old` dance works while running, `.old` cleaned on next start'
-  done: false
+  done: true
 - title: Checksum mismatch aborts before touching the install
   done: true
 - title: Progress bar on a TTY, size notice otherwise
@@ -39,3 +40,8 @@ Parent spec: aix-01m1kydv7r76 (ADR 0007).
 
 The upgrade plan seam prefactor.
 
+## Notes
+
+**2026-09-14T12:32:24.970410532Z**
+
+Verified on Windows: upgrade migrates a script install to aishell.exe, removes the .bat and old script, handles the .exe.old rename while running and cleans it on next start. Linux in-place migration, checksum abort, and progress output verified earlier.
