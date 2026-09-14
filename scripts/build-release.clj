@@ -32,7 +32,7 @@
 ;; The one place the host CLI's babashka runtime is pinned. Independent of the
 ;; foundation image's BABASHKA_VERSION (src/aishell/docker/templates.clj):
 ;; one is the CLI's own runtime, the other a tool offered inside the sandbox.
-(def babashka-version "1.13.220")
+(def babashka-version "1.13.222")
 
 ;; Bridging releases only: v4.0.0 installs run an `upgrade` that fetches the
 ;; legacy asset names. 4.2.0 shipped with this gate still on. Remove it, the

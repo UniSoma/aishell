@@ -125,7 +125,7 @@ RUN set -eux; \\
 FROM debian:trixie-slim
 
 # Build arguments for developer tools
-ARG BABASHKA_VERSION=1.13.220
+ARG BABASHKA_VERSION=1.13.222
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.17.1
 ARG UV_VERSION=0.11.29

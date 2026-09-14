@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The host runtime moves to babashka 1.13.222**: the build script's pin goes up two patch releases. `bb uberjar` is now built on tools.build rather than depstar, with the same exclusions, so the aishell uberjar that gets appended to each platform binary is produced by a different code path than in 4.2.0; the new uberjar was built and run as an appended linux-amd64 binary before the pin moved, and the remaining four targets are for the release smoke matrix to confirm. Clojure itself moves to 1.12.6, and the binary is a little smaller because the bundled Clojure sources are now stored gzipped
+
+- **Babashka in the foundation image moves to 1.13.222**: the pin follows upstream. Dependency resolution no longer starts a JVM by default, so `bb` scripts in the Sandbox that use `:deps` resolve faster and no longer need Java on the image to do it — `BABASHKA_DEPS_RESOLVER=jvm` restores the old behavior. `bb nrepl-server` now binds `127.0.0.1` instead of `0.0.0.0`, so an nREPL server started inside a Sandbox is no longer reachable from the host unless you ask for it with `bb --nrepl-server 0.0.0.0:1667`; it also writes `.nrepl-port` on start, and the new `bb repl --connect` reads that file. amd64 stays on the dynamically linked build: 1.13.222 still needs only libc, libdl and libpthread, and its highest versioned symbol is still `GLIBC_2.27`, under the image's 2.39 floor. Rebuild is automatic via the foundation-content hash: one rebuild on your next `setup` or `update`, with the usual stale warning until then
+
 ## [4.2.0] - 2026-09-09
 
 ### Added
