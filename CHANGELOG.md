@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.3.0] - 2026-09-14
+
+### Fixed
+
+- **The host terminal is restored when a docker session dies**: when the Owning session exits, every Attached session's `docker exec` goes with it, and the harness inside is killed before it can undo the terminal modes it enabled. Those modes live in the host terminal emulator, so mouse reports printed as text at the prompt and typing went nowhere. On Linux and macOS, `aishell run` and `aishell exec` now go through a `sh` wrapper that saves the tty, runs docker, and replays the reset escapes and restores the tty on exit; the exit status still propagates. Windows replays the escapes only, since there is no `stty` equivalent. `CONTEXT.md` names the Owning session and Attached session distinction the fix turns on
 
 ### Removed
 
