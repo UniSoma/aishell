@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0] - 2026-09-24
+
+### Changed
+
+- **OpenCode installs V2 from npm as `@opencode/cli`**: V2 is not published to GitHub releases, whose newest release is v1.18.32, so the tarball download could never reach it. OpenCode now goes through the same npm install as the other Harnesses, which also picks the right binary on arm64 hosts. `--with-opencode=VERSION` pins must now be 2.x, since V1 releases live under a different package. An existing unpinned volume keeps V1 until `aishell update` rebuilds it. OpenCode was the only `:binary-tarball` Harness, so that install kind is gone
+
+- **aishell refuses to sandbox the home directory or any of its ancestors**: running aishell from `$HOME` hung for ten minutes or more, because the sensitive-file scan and the container's chown of `~/.local` both walked the whole home tree. A Sandbox rooted there exposes `~/.ssh`, credentials and every other project, and is never what was meant, so every launch path (Harness commands, shell mode, `exec`, `vscode`) now exits 1 before touching the tree. `--unsafe` does not bypass the check. Paths are canonicalized first, so symlinks and trailing slashes do not slip past it
+
 ## [4.3.0] - 2026-09-14
 
 ### Fixed
