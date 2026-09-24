@@ -167,12 +167,9 @@ aishell/
 3. **npm installation:**
    - Sets `NPM_CONFIG_PREFIX=/tools/npm`
    - Runs `npm install -g @anthropic-ai/claude-code@{version}`
-   - Repeats for each enabled npm harness (claude, codex, copilot, gemini, pi)
-4. **Binary download (OpenCode):**
-   - Downloads `curl -L https://github.com/anomalyco/opencode/releases/.../opencode-linux-x64.tar.gz`
-   - Extracts to `/tools/bin`
-5. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
-6. **Container exits:** Volume is populated; Docker auto-removes the temporary container
+   - Repeats for each enabled npm harness (claude, opencode, codex, copilot, gemini, pi)
+4. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
+5. **Container exits:** Volume is populated; Docker auto-removes the temporary container
 
 **On failure:**
 - The system deletes the volume (rollback)
@@ -280,8 +277,7 @@ the harness's own documentation names it. The behavioral runtime-env tests in
 inventory beside them is one more expectation to extend, like the tables below.
 
 Install kinds: `:npm` (`{:kind :npm :package "..."}`, pinned by semver
-through `--with-<id>=VERSION`), `:binary-tarball` (see OpenCode) and
-`:image-baked` (see gitleaks). A new kind needs a branch in
+through `--with-<id>=VERSION`) and `:image-baked` (see gitleaks). A new kind needs a branch in
 `volume/build-install-commands`.
 
 ### Step 2: Contract tests

@@ -21,9 +21,8 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 
 **Volume layout:**
 - npm packages install to `/tools/npm`
-- Go binaries download to `/tools/bin`
 - Containers mount the volume read-only at `/tools` (immutable toolchain)
-- PATH includes `/tools/npm/bin` and `/tools/bin`
+- PATH includes `/tools/npm/bin`
 
 **Benefits:**
 - **Fast updates:** `aishell update` refreshes tools without rebuilding the foundation image
@@ -190,14 +189,14 @@ Build aishell with OpenCode support:
 aishell setup --with-opencode
 
 # Specific version
-aishell setup --with-opencode=0.2.3
+aishell setup --with-opencode=2.0.16
 ```
 
-**Note:** OpenCode installs as a Go binary (not an npm package), downloaded from GitHub releases to `/tools/bin`.
+**Note:** OpenCode V2 installs from npm as `@opencode/cli`, the same package its official installer downloads. The package picks the right binary for the container's platform. Version pins must be 2.x; V1 releases are published under a different package.
 
 **Updating OpenCode:**
 ```bash
-aishell update  # Deletes the volume and reinstalls the OpenCode binary
+aishell update  # Deletes the volume and reinstalls OpenCode
 ```
 
 ### Authentication

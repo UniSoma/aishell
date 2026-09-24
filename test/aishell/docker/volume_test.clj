@@ -121,9 +121,6 @@
 ;; Install commands
 ;; ---------------------------------------------------------------------------
 
-(def ^:private opencode-latest-url
-  "https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-x64.tar.gz")
-
 (deftest install-commands-for-npm-harnesses
   (testing "a single pinned npm harness"
     (is (= (str "export NPM_CONFIG_PREFIX=/tools/npm"
@@ -144,29 +141,24 @@
              (vol/build-install-commands (cond-> {:with-copilot true}
                                            version (assoc :copilot-version version))))))))
 
-(deftest install-commands-for-the-opencode-tarball
-  (testing "unpinned OpenCode downloads the latest release asset"
+(deftest install-commands-for-opencode
+  (testing "unpinned OpenCode installs the latest @opencode/cli"
     (is (= (str "export NPM_CONFIG_PREFIX=/tools/npm"
-                " && mkdir -p /tools/bin && curl -fsSL " opencode-latest-url
-                " | tar -xz -C /tools/bin"
+                " && npm install -g @opencode/cli@latest"
                 " && chmod -R a+rwX /tools")
            (vol/build-install-commands {:with-opencode true}))))
-  (testing "a pinned OpenCode version uses the versioned release URL"
+  (testing "a pinned OpenCode version pins the npm package"
     (is (= (str "export NPM_CONFIG_PREFIX=/tools/npm"
-                " && mkdir -p /tools/bin && curl -fsSL "
-                "https://github.com/anomalyco/opencode/releases/download/v0.4.5/opencode-linux-x64.tar.gz"
-                " | tar -xz -C /tools/bin"
+                " && npm install -g @opencode/cli@2.0.16"
                 " && chmod -R a+rwX /tools")
-           (vol/build-install-commands {:with-opencode true :opencode-version "0.4.5"})))))
+           (vol/build-install-commands {:with-opencode true :opencode-version "2.0.16"})))))
 
 (deftest install-commands-cover-every-volume-participant
-  (testing "npm packages keep registry order, the tarball follows them"
+  (testing "npm packages keep registry order"
     (is (= (str "export NPM_CONFIG_PREFIX=/tools/npm"
                 " && npm install -g @anthropic-ai/claude-code@latest"
-                " @openai/codex@latest @google/gemini-cli@latest"
-                " @earendil-works/pi-coding-agent@latest"
-                " && mkdir -p /tools/bin && curl -fsSL " opencode-latest-url
-                " | tar -xz -C /tools/bin"
+                " @opencode/cli@latest @openai/codex@latest"
+                " @google/gemini-cli@latest @earendil-works/pi-coding-agent@latest"
                 " && chmod -R a+rwX /tools")
            (vol/build-install-commands {:with-claude true :with-opencode true
                                         :with-codex true :with-gemini true

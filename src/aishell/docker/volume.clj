@@ -179,18 +179,6 @@
     (when (seq packages)
       (str "npm install -g " (str/join " " packages)))))
 
-(defn- tarball-install-command
-  "Command downloading and unpacking one binary-tarball harness release.
-   An unpinned harness uses the release's `latest` URL; a pinned one fills the
-   version into the descriptor's versioned URL template."
-  [state {:keys [install] :as descriptor}]
-  (let [{:keys [latest-url versioned-url-template install-dir]} install
-        version (harness-version state descriptor)
-        url (if (= version "latest")
-              latest-url
-              (format versioned-url-template version))]
-    (str "mkdir -p " install-dir " && curl -fsSL " url " | tar -xz -C " install-dir)))
-
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
 
@@ -201,20 +189,15 @@
    Returns: Shell command string that:
             1. Sets NPM_CONFIG_PREFIX to /tools/npm
             2. Installs enabled npm-backed harnesses in registry order
-            3. Installs enabled binary-tarball harnesses
-            4. Sets world-writable permissions with chmod
+            3. Sets world-writable permissions with chmod
 
    Install kinds come from each harness descriptor; image-baked harnesses
    (gitleaks) never reach the volume. Nil versions become \"latest\"."
   [state]
   (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
-        npm-install (npm-install-command state enabled)
-        tarball-installs (->> enabled
-                              (filter #(= :binary-tarball (get-in % [:install :kind])))
-                              (map #(tarball-install-command state %)))]
+        npm-install (npm-install-command state enabled)]
     (str "export NPM_CONFIG_PREFIX=/tools/npm"
          (when npm-install (str " && " npm-install))
-         (str/join (map #(str " && " %) tarball-installs))
          " && chmod -R a+rwX /tools")))
 
 (defn list-harness-volumes
@@ -290,7 +273,6 @@
 
    Notes:
    - Uses foundation image from build/foundation-image-tag
-   - OpenCode excluded (Go binary, not npm package)
    - Volume must exist before calling this function"
   [volume-name state & [opts]]
   (let [install-commands (build-install-commands state)

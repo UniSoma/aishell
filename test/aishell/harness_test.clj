@@ -53,10 +53,6 @@
    {:name "npm installs name their package"
     :when #(= :npm (get-in % [:install :kind]))
     :require [[:install :package]]}
-   {:name "binary-tarball installs carry both URL shapes and a target dir"
-    :when #(= :binary-tarball (get-in % [:install :kind]))
-    :require [[:install :latest-url] [:install :versioned-url-template]
-              [:install :install-dir]]}
    {:name "image-baked installs pin the version built into the image"
     :when #(= :image-baked (get-in % [:install :kind]))
     :require [[:install :version]]}
@@ -96,7 +92,7 @@
 
 (deftest install-kinds-are-explicit
   (testing "each harness declares how it is installed"
-    (is (= {:claude :npm :opencode :binary-tarball :codex :npm :copilot :npm
+    (is (= {:claude :npm :opencode :npm :codex :npm :copilot :npm
             :gemini :npm :pi :npm :gitleaks :image-baked}
            (into {} (map (juxt :id #(get-in % [:install :kind]))) harness/registry)))))
 

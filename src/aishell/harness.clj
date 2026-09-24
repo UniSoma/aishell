@@ -38,7 +38,7 @@
 ;;   :secret-scanner?          the harness is itself a secret scanner, so
 ;;                             aishell's own sensitive-file scan and its
 ;;                             scan-freshness warning stand down while it runs
-;;   :install                  {:kind :npm|:binary-tarball|:image-baked, …}
+;;   :install                  {:kind :npm|:image-baked, …}
 ;;   :config-paths             [{:path [".claude"] :type :dir|:file} …], home-relative
 ;;   :credentials-file-env     env var naming a host credentials file to mount
 ;;                             read-only; absent when the harness has none
@@ -79,10 +79,7 @@
     :accepts-config-defaults? true
     :volume-participant? true
     :alias {:always? false}
-    :install {:kind :binary-tarball
-              :latest-url "https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-x64.tar.gz"
-              :versioned-url-template "https://github.com/anomalyco/opencode/releases/download/v%s/opencode-linux-x64.tar.gz"
-              :install-dir "/tools/bin"}
+    :install {:kind :npm :package "@opencode/cli"}
     :config-paths [{:path [".config" "opencode"] :type :dir}
                    {:path [".local" "share" "opencode"] :type :dir}]
     :env-passthrough ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
