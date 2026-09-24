@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.1] - 2026-09-24
+
+### Changed
+
+- **`aishell upgrade` on Windows prints the installer command instead of upgrading**: the upgrade always failed there with "Could not move the running aishell.exe aside", because the running `aishell.exe` keeps its own file open to read the appended uberjar, without delete sharing, so it can be neither replaced nor renamed from inside. The command now prints `irm .../install.ps1 | iex` and exits 0; `aishell upgrade VERSION` prefixes it with `$env:VERSION = "VERSION";`. Installs at 4.4.0 or earlier still run the old upgrade code, so reaching 4.4.1 on Windows means re-running the install script once
+
 ## [4.4.0] - 2026-09-24
 
 ### Changed
