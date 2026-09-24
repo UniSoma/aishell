@@ -613,3 +613,24 @@
           (is (str/includes? (str err) "previous version was put back"))
           (is (= body (slurp dest))
               "the parked binary is back where PATH expects it"))))))
+
+(deftest do-upgrade-on-windows-points-at-the-installer
+  (testing "no download is attempted; the installer command is printed instead"
+    (let [exits (atom [])
+          downloads (atom 0)
+          out (with-redefs [fs/windows? (constantly true)
+                            output/exit! (fn [c]
+                                           (swap! exits conj c)
+                                           (throw (ex-info "exit" {:code c})))
+                            upgrade/find-downloader (fn [] (swap! downloads inc) :curl)]
+                (with-out-str
+                  (try
+                    (upgrade/do-upgrade "4.3.0" nil)
+                    (catch clojure.lang.ExceptionInfo _ nil))))]
+      (is (= [0] @exits))
+      (is (zero? @downloads))
+      (is (str/includes? out (str "irm " upgrade/install-ps1-url " | iex")))
+      (is (not (str/includes? out "$env:VERSION")))))
+  (testing "a pinned version is passed to the installer"
+    (is (str/includes? (upgrade/windows-upgrade-message "4.2.0")
+                       (str "$env:VERSION = \"4.2.0\"; irm " upgrade/install-ps1-url)))))

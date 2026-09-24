@@ -477,11 +477,29 @@
         (finally
           (fs/delete-tree tmp-dir))))))
 
+(def install-ps1-url
+  (str "https://raw.githubusercontent.com/" github-repo "/main/install.ps1"))
+
+(defn windows-upgrade-message
+  "What `aishell upgrade` prints on Windows instead of upgrading.
+   The running aishell.exe keeps its own file open (babashka reads the appended
+   uberjar from it) without delete sharing, so it can be neither replaced nor
+   renamed from inside; the installer runs in another process."
+  [target-version]
+  (str "aishell cannot replace itself while it is running on Windows.\n"
+       "To upgrade, run the installer again in PowerShell:\n\n"
+       "  " output/CYAN
+       (when target-version (str "$env:VERSION = \"" target-version "\"; "))
+       "irm " install-ps1-url " | iex" output/NC))
+
 (defn do-upgrade
   "Main upgrade entry point.
    current-version: current aishell version string (e.g. \"3.3.0\")
    target-version: specific version to upgrade to, or nil for latest"
   [current-version target-version]
+  (when (fs/windows?)
+    (println (windows-upgrade-message target-version))
+    (output/exit! 0))
   (let [downloader (find-downloader)
         base-url (release-base-url nil)]
     (when-not downloader
