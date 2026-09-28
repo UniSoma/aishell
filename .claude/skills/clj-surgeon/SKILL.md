@@ -1,6 +1,6 @@
 ---
 name: clj-surgeon
-description: Structural reads and edits on existing Clojure/ClojureScript/CLJC source via the `clj-surgeon` CLI — reach for it instead of Read, Edit, grep, sed, or cat on a `.clj`/`.cljs`/`.cljc` file, and instead of an Explore agent over Clojure code. Use when locating or reading a form and its callers, changing a nested value across forms or files, splitting a file or extracting forms into a new namespace, eliminating a declare, reordering defns, renaming a namespace prefix, merging or splitting CLJC, or mapping the API surface of a repo or a tree of repos.
+description: Structural reads and edits on existing Clojure/ClojureScript/CLJC source via the `clj-surgeon` CLI — reach for it instead of Read, Edit, grep, sed, or cat on a `.clj`/`.cljs`/`.cljc` file, and instead of an Explore agent over Clojure code. Also use when extracting forms into a new namespace, eliminating a declare, reordering defns, renaming a namespace prefix, merging or splitting CLJC, or mapping the API surface of a repo or a tree of repos.
 ---
 
 # clj-surgeon
@@ -15,9 +15,8 @@ a whole request — ambiguous selector, count mismatch, stale hash, overlap, par
 Refusals are the safety model: nothing partial is ever read or written. Treat one as
 information about your selector, and narrow it.
 
-Upstream docs and `--help` route through an MCP entrance (`inspect_clojure`,
-`apply_clojure_changes`). Use it when this session lists those tools; otherwise only the CLI
-is installed and every instruction below is the CLI route.
+`--help` prefers an MCP entrance (`inspect_clojure`, `apply_clojure_changes`). Use it only
+when this session lists those tools; otherwise the CLI below is the only route.
 
 ## Route a read
 
@@ -38,18 +37,24 @@ clj-surgeon :op :ls-tree :dir ~/projects :grep "postgres|jdbc"
 ```
 
 `:cat` is the first source read whenever an owner name or distinctive text is known — it
-replaces a reconstructed `sed` range, and it never dumps a whole file. Save `:ls` for a file
-you know nothing about. `:match` takes a Clojure form pattern, not a regex: `_` matches
+replaces a reconstructed `sed` range, and it never dumps a whole file. `:match` takes a Clojure form pattern, not a regex: `_` matches
 exactly one subtree, and arity is exact, so a two-argument loop is `(loop _ _)`.
+
+`:ls`, `:declares`, and `:fix-declares` run clj-kondo behind an analyzer gate and refuse a
+file it does not pass: `:forward-reference-analysis-failed` with `:exit 2` (warnings) or
+`:exit 3` (errors) reports lint findings, not a broken tool. Lint the file to see them. For
+a file whose findings are not yours to fix, `:ls-tree :dir <its directory>` outlines the same
+forms with line ranges and skips the analyzer.
 
 ## Route a write
 
 | Situation | Use |
 |---|---|
-| One nested edit, exact before-state known | `:edit … :expect '<before>'` — verifies and applies in one call |
-| One nested edit, replacement computed from the source | `:edit … :plan-out plan.edn`, review the diff, then `:replace-subform! :plan plan.edn` |
+| One nested edit, exact before-state known, owner named | `:edit … :expect '<before>'` — verifies and applies in one call |
+| One nested edit rooted at `(line N)`, or replacement computed from the source | `:edit … :plan-out plan.edn`, review the diff, then `:replace-subform! :plan plan.edn` |
 | Several exact changes across owners or files | one `:change! :spec-file -` transaction |
-| A whole top-level form | native Edit |
+| Whole top-level forms to delete | the same transaction, `:do [:delete true]` |
+| A whole top-level form to replace | native Edit |
 | A new file | native Write |
 | Non-Clojure, prose, comments, top-level insertion | native Write/Edit |
 
@@ -59,15 +64,15 @@ clj-surgeon :op :edit :file src/state.clj \
   :expect '(assoc state :status :done)'
 ```
 
-- Plan and apply are separate shell actions: generate the plan, read the returned diff, then
-  apply it with `:replace-subform!`. To change a plan, generate a new one.
+- Plan and apply are separate shell actions. To change a plan, generate a new one.
 - The returned diff and hashes are the review evidence — act on them directly. A verified
   write is settled; the next command moves on to formatting.
-- `:expect` means two different things. On `:edit` it is the literal before-state form above.
-  In a `:change`/`:change!` spec it is a count map — declare the counts the task already
-  fixes (`:expect {:matches 2 :each-form 1}`), and a wrong count buys you a refusal instead
-  of a silent half-edit.
-- `:mv` writes unless `:dry-run true` — preview first.
+- `:expect` means two different things. On `:edit` it is the literal before-state form above,
+  and it needs a `(form 'NAME)` root — a `(line N)` root refuses with
+  `:positional-mutation-authority-refused` and takes the plan route. In a `:change`/`:change!`
+  spec it is a count map — declare the counts the task already fixes
+  (`:expect {:matches 2 :each-form 1}`), and a wrong count buys you a refusal instead of a
+  silent half-edit.
 
 Structural path DSL, `:xray`, cross-file manifests, transaction specs:
 [structural paths](references/structural-paths.md). Extraction, declares, moves, renames,
@@ -80,10 +85,10 @@ structural write is done when all four hold:
 
 1. `clj-paren-repair <files>` — formats via cljfmt.
 2. `clj-kondo --lint <files>` — clean.
-3. `clj-nrepl-eval -p 7888 "(require 'my.ns :reload)"` — reloads.
+3. Reload each namespace the write touched, through the project's REPL: `(require 'my.ns :reload)`.
 4. The project's tests pass.
 
-`:extract!`, `:fix-declares!`, `:mv`, and `:rename-ns!` move code across owners, files, and
-namespaces, where the compiler is what catches a stranded reference. Reload and test those
-every time. `:extract!` and `:rename-ns!` each leave known manual work behind in 0.1.0 — see
-[advanced operations](references/advanced-operations.md) before running either.
+Step 3 is what catches a reference stranded by `:extract!`, `:fix-declares!`, `:mv`, or
+`:rename-ns!`. `:extract!` leaves the require it adds unindented, which step 1 settles.
+`:rename-ns!` leaves the files on their old paths — see
+[advanced operations](references/advanced-operations.md) before running it.

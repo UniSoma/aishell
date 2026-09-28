@@ -1,0 +1,3 @@
+interface:
+  display_name: "clj-surgeon"
+  short_description: "Structural Clojure reads and edits through the clj-surgeon CLI"

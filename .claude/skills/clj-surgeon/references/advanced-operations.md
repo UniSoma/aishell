@@ -13,8 +13,7 @@ clj-surgeon :op :ls-tree :dir . :format :edn
 Discovers projects via `deps.edn` / `project.clj` / `bb.edn`, reads their `:paths`, and
 outlines every `.clj/.cljs/.cljc` file: ns names, requires, form signatures. `:grep` (a
 regex, via ripgrep) picks candidate files before parsing, which is what makes a cross-repo
-sweep cheap. It answers "which repo does X?" in one command — the job you would otherwise
-give an Explore agent over several directories.
+sweep cheap. It answers "which repo does X?" in one command.
 
 ## Dependencies and extraction
 
@@ -24,7 +23,7 @@ Inspect before extracting:
 clj-surgeon :op :deps        :file src/state.clj :form sync-draft!   # intra-ns call graph
 clj-surgeon :op :ls-deps     :file src/state.clj :form transition!   # transitive tree
 clj-surgeon :op :ls-extract  :file src/state.clj :form rebuild!      # form + exclusive helpers
-clj-surgeon :op :declares    :file src/state.clj
+clj-surgeon :op :declares    :file src/state.clj                     # analyzer gate: lint-clean file
 clj-surgeon :op :topo        :file src/state.clj                     # optimal form ordering
 ```
 
@@ -33,21 +32,24 @@ yours. Preview the extraction, then execute it:
 
 ```bash
 clj-surgeon :op :extract  :file src/state.clj :forms '[distill refine helper]' :to src/state/distillery.clj
-clj-surgeon :op :extract! :file src/state.clj :forms '[distill refine helper]' :to src/state/distillery.clj
+clj-surgeon :op :extract! :file src/state.clj :forms '[distill refine helper]' :to src/state/distillery.clj :receipt-out /tmp/distillery.edn
+clj-surgeon :op :undo-extract! :receipt /tmp/distillery.edn
 ```
 
-`:extract!` creates the new namespace with forms in topological order, copies the source
-`(ns …)` as a template (over-including requires, which is safe), removes the forms from the
-source, and reports callers that may need updating.
+`:to` must not exist yet. The preview is the review: `target-requires` and
+`omitted-target-requires` are the header it proved for the new namespace,
+`remaining-source-callers` the source owners still calling a moved var,
+`quoted-var-references` the `#'name` / `(var name)` callers a text search misses, and
+`callers-to-review` other files to check. `:extract!` writes the new namespace with forms in
+topological order, removes them from the source, and splices a require for the new namespace
+into the source `ns` with `:refer` for the moved vars still called there — so remaining
+source callers keep working unqualified, and other namespaces are yours to migrate.
 
-**Its `{:action :add-require …}` log entry is not trustworthy in 0.1.0 — fix the source `ns`
-by hand after every `:extract!`.** Two observed failures: with an existing `(:require …)` the
-alias is spliced in as a sibling of that list rather than inside it, producing an ns form
-Clojure rejects (`clj-kondo`: *Unknown ns option*); with no `(:require …)` at all the entry
-is logged and nothing is written. Every extracted call site is also left unqualified. So:
-read the source `ns` form, place the require correctly yourself, qualify the bare references
-the compiler finds (or pass them as parameters), and keep the dependency acyclic. The
-`clj-kondo` and reload steps in `SKILL.md` are what catch this — do not skip them here.
+The default `:require-policy :minimal` proves that header and refuses a require shape it
+cannot prove — side-effect-only, reader-conditional, prefix-list, or comment-bearing.
+`:require-policy :copy-all` then copies the whole source header under the new name: move
+first, prune requires as a later change. `:receipt-out` makes the move reversible while both
+result files still match the receipt.
 
 ## Declares
 
@@ -69,7 +71,7 @@ skips unsafe moves with a warning rather than guessing.
 clj-surgeon :op :mv :file src/my/ns.clj :form foo :before bar :dry-run true
 ```
 
-- On `:ok true`, review `:plan`/`:diff`, then rerun the same command without `:dry-run`.
+- On `:ok true`, review `:plan`/`:diff`, then run the returned `:apply-command`.
 - On `:would-strand-dependencies`, run the returned `:recommended-command` — it previews
   `:mv-with-deps` (exactly `:mv :with-deps true`). Review `:requested-forms`, `:added-forms`,
   `:move-order`, and `:diff`, and consent to every added form before applying. The alias
@@ -87,9 +89,9 @@ clj-surgeon :op :rename-ns  :from old.prefix :to new.prefix :root .
 clj-surgeon :op :rename-ns! :from old.prefix :to new.prefix :root .
 ```
 
-**This rewrites `ns` forms and requires only; it does not move files.** In 0.1.0 the plan
-reports `:file-moves []` even when the prefix change implies a new directory, so the sources
-stay on the old path and nothing loads. Move them yourself as the second half of the rename:
+**This rewrites `ns` forms and requires only; it does not move files.** The plan reports
+`:file-moves []` even when the prefix change implies a new directory, so the sources stay on
+the old path and nothing loads. Move them yourself as the second half of the rename:
 
 ```bash
 git mv src/old/prefix src/new/prefix     # mirror for test/ and any other :paths root
@@ -119,5 +121,6 @@ string requires to `:cljs`, emits identical bodies once, and wraps differing bod
 body-count mismatch means the source holds something it declines to rewrite silently: fix
 that by hand and retry.
 
-Round-trip a merge through `:cljc-split` before deleting the originals.
-`:cljc-add-require` refuses an alias collision; npm requires take a string, `:ns "react"`.
+Round-trip a merge through `:cljc-split` before deleting the originals; a difference confined
+to the `ns` require layout is the split's own formatting. `:cljc-add-require` refuses an
+alias collision; npm requires take a string, `:ns "react"`.

@@ -5,7 +5,8 @@ For reads and edits aimed at something *nested* inside an owner. Arguments live 
 
 ## Path primer
 
-A path starts at `(form 'NAME)` or `(line N)`. Navigation skips whitespace and comments:
+A path starts at `(form 'NAME)` or `(line N)`. A `(line N)` root reads, X-rays, and plans;
+a direct `:expect` edit needs the `(form …)` root. Navigation skips whitespace and comments:
 
 - `right` — next structural sibling.
 - `left` — previous structural sibling.
@@ -14,12 +15,12 @@ A path starts at `(form 'NAME)` or `(line N)`. Navigation skips whitespace and c
 - `(match :href) right` — selects the value paired with a map key.
 - `span 2` — selects adjacent structural peers.
 - `partition-all 2` — groups the remaining sibling run into pairs.
-- `outermost` — keeps selected nodes with no selected ancestor. Use `up` before `outermost`.
+- `outermost` — keeps selected nodes with no selected ancestor. `up` before `outermost`
+  promotes nested matches to disjoint owners.
 - `initializer` — selects a `def` right-hand side without evaluating it.
 
 A `case` clause, `cond` branch, map entry, or binding pair is **sibling syntax**, not a
-wrapper list: target the value, and let the key or guard beside it be your selector. Use
-`:up :outermost`, not `:outermost :up`, to promote nested matches to disjoint owners.
+wrapper list: target the value, and let the key or guard beside it be your selector.
 
 ## Cross-file reads
 
@@ -62,7 +63,8 @@ keep analysis bounded. X-ray is read-only: source and plans stay untouched.
 `:expect` declares the exact before-state of a literal replacement and applies it in the same
 call. Whitespace is ignored; comments, metadata, and reader syntax must match. When the
 replacement is computed instead, `transform` runs pure Clojure over the selected syntax and
-stores its concrete result in a plan — plan-only, since the generated after-state needs review:
+stores its concrete result in a plan — plan-only, since the generated after-state needs
+review:
 
 ```bash
 clj-surgeon :op :edit :file src/policy.clj \
@@ -93,9 +95,24 @@ clj-surgeon :op :change! :spec-file - :receipt-out /tmp/api-change.edn <<'EDN'
 EDN
 ```
 
+`:do` takes one of two operators. Literal `[:replace SOURCE]` pairs with a `:find`.
+`[:delete true]` removes whole owners: it needs named `:forms`, omits `:find`, and counts one
+match per owner, so nothing else in the file moves:
+
+```bash
+clj-surgeon :op :change! :spec-file - :receipt-out /tmp/delete.edn <<'EDN'
+{:changes [{:id :obsolete
+            :in ["src/app.clj"]
+            :forms [old-handler old-test]
+            :do [:delete true]
+            :expect {:matches 2 :each-form 1}}]
+ :expect {:changes 1 :edits 2 :files 1}}
+EDN
+```
+
 Every named owner must resolve exactly once. `:each-form` and `:each-file` guard the
-distribution a bare total would hide. The supported scoped operator is literal
-`[:replace SOURCE]`; legacy exact `:intents` still parse, but one document holds one schema.
+distribution a bare total would hide. Legacy exact `:intents` still parse, but one document
+holds one schema.
 
 `:change` compiles and previews the same spec without writing. `:change!` rechecks hashes,
 commits every file, verifies read-back, and publishes an inverse receipt last. Pass that

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Knot"
+  short_description: "Ticket tracking through the knot CLI"
