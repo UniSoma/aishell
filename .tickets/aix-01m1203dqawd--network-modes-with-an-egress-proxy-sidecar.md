@@ -6,7 +6,7 @@ type: feature
 priority: 1
 mode: afk
 created: '2026-08-27T16:15:58.186299017Z'
-updated: '2026-08-27T16:17:26.782182777Z'
+updated: '2026-10-07T19:53:58.360687681Z'
 acceptance:
 - title: network accepts open|restricted|allowlist|none from config and CLI
   done: false
@@ -43,3 +43,9 @@ Sidecar lifecycle: started lazily by the first sandbox that needs it, named with
 Verification task inside this ticket: confirm each harness (Claude Code, Codex, OpenCode, Gemini, pi) and each tool in the foundation image that fetches (npm, pip/uv, git, apt, curl, gh) honors the proxy variables; document the ones that do not in `docs/CONFIGURATION.md`.
 
 Ships after `aix-security-profiles` so `strict` can select `allowlist`. Decision record: ADR 0006.
+
+## Notes
+
+**2026-10-07T19:53:58.360687681Z**
+
+Compared nono (nono.sh), a Landlock/Seatbelt sandbox for AI agents, against this design: docs/research/nono-sandbox.md. Its network filter doesn't replace the sidecar. Landlock network rules match the port only, not the destination host, and leave UDP unrestricted below ABI 10. The container in our probe reports ABI 8. nono can run inside the container as a second layer, with its upstream_proxy setting pointed at the squid sidecar. Its per-port filtering needs kernel 6.7+, so it likely won't work under Docker Desktop on WSL2 (6.6).
