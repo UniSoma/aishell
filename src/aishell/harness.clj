@@ -81,7 +81,8 @@
     :alias {:always? false}
     :install {:kind :npm :package "@opencode/cli"}
     :config-paths [{:path [".config" "opencode"] :type :dir}
-                   {:path [".local" "share" "opencode"] :type :dir}]
+                   {:path [".local" "share" "opencode"] :type :dir}
+                   {:path [".agents" "skills"] :type :dir}]
     :env-passthrough ["OPENAI_API_KEY" "ANTHROPIC_API_KEY" "GROQ_API_KEY"
                       "OPENCODE_API_KEY" "AZURE_OPENAI_API_KEY" "AZURE_OPENAI_ENDPOINT"]}
 

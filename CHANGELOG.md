@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Babashka in the foundation image moves to 1.13.222**: the pin follows upstream. Dependency resolution no longer starts a JVM by default, so `bb` scripts in the Sandbox that use `:deps` resolve faster and no longer need Java on the image to do it — `BABASHKA_DEPS_RESOLVER=jvm` restores the old behavior. `bb nrepl-server` now binds `127.0.0.1` instead of `0.0.0.0`, so an nREPL server started inside a Sandbox is no longer reachable from the host unless you ask for it with `bb --nrepl-server 0.0.0.0:1667`; it also writes `.nrepl-port` on start, and the new `bb repl --connect` reads that file. amd64 stays on the dynamically linked build: 1.13.222 still needs only libc, libdl and libpthread, and its highest versioned symbol is still `GLIBC_2.27`, under the image's 2.39 floor. Rebuild is automatic via the foundation-content hash: one rebuild on your next `setup` or `update`, with the usual stale warning until then
 
+### Added
+
+- **OpenCode Sandboxes mount the host `~/.agents/skills`**: with OpenCode enabled, the folder is bind-mounted read-write at the same path, and created on the host first when missing, like OpenCode's other config paths. No other Harness gets this mount
+
 ## [4.2.0] - 2026-09-09
 
 ### Added

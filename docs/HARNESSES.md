@@ -199,6 +199,10 @@ aishell setup --with-opencode=2.0.16
 aishell update  # Deletes the volume and reinstalls OpenCode
 ```
 
+### Skills
+
+The host `~/.agents/skills` folder is mounted read-write into the Sandbox at the same path, so OpenCode sees your skills and skills installed from inside the Sandbox persist. aishell creates the folder on the host if it is missing. Only OpenCode gets this mount, and only `~/.agents/skills`, not the whole `~/.agents`.
+
 ### Authentication
 
 OpenCode authentication varies by provider. Set the environment variable for your chosen provider.
