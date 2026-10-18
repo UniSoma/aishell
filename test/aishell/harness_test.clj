@@ -7,9 +7,9 @@
 ;; Registry membership and order
 ;; ---------------------------------------------------------------------------
 
-(deftest registry-holds-seven-descriptors-in-display-order
+(deftest registry-holds-eight-descriptors-in-display-order
   (testing "the registry is the closed, ordered set of harnesses"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi :gitleaks]
+    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp :gitleaks]
            (mapv :id harness/registry))))
   (testing "descriptors are pure data — no functions in any row"
     (is (empty? (for [d harness/registry
@@ -31,6 +31,7 @@
             :copilot "GitHub Copilot CLI"
             :gemini "Gemini CLI"
             :pi "Pi coding agent"
+            :omp "oh-my-pi (omp)"
             :gitleaks "Gitleaks"}
            (into {} (map (juxt :id :label)) harness/registry)))))
 
@@ -53,6 +54,10 @@
    {:name "npm installs name their package"
     :when #(= :npm (get-in % [:install :kind]))
     :require [[:install :package]]}
+   {:name "github-release installs name the repo, asset, binary, tag prefix and checksum file"
+    :when #(= :github-release (get-in % [:install :kind]))
+    :require [[:install :repo] [:install :asset] [:install :binary]
+              [:install :tag-prefix] [:install :checksums]]}
    {:name "image-baked installs pin the version built into the image"
     :when #(= :image-baked (get-in % [:install :kind]))
     :require [[:install :version]]}
@@ -87,13 +92,15 @@
     (is (seq (descriptor-violations (dissoc (harness/descriptor :gemini) :version-key)))))
   (testing "an npm install missing its package is caught"
     (is (seq (descriptor-violations (update (harness/descriptor :claude) :install dissoc :package)))))
+  (testing "a github-release install missing its checksum file is caught"
+    (is (seq (descriptor-violations (update (harness/descriptor :omp) :install dissoc :checksums)))))
   (testing "an alias emitter missing :always? is caught"
     (is (seq (descriptor-violations (update (harness/descriptor :codex) :alias dissoc :always?))))))
 
 (deftest install-kinds-are-explicit
   (testing "each harness declares how it is installed"
     (is (= {:claude :npm :opencode :npm :codex :npm :copilot :npm
-            :gemini :npm :pi :npm :gitleaks :image-baked}
+            :gemini :npm :pi :npm :omp :github-release :gitleaks :image-baked}
            (into {} (map (juxt :id #(get-in % [:install :kind]))) harness/registry)))))
 
 ;; ---------------------------------------------------------------------------
@@ -112,11 +119,11 @@
         (is (= (keyword (str (name (:id d)) "-version")) (:version-key d)))))))
 
 (deftest volume-participants-exclude-gitleaks
-  (testing "the six installable harnesses participate in the harness volume"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi]
+  (testing "the seven installable harnesses participate in the harness volume"
+    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
            (mapv :id (harness/volume-participants)))))
   (testing "sorted participant ids are the hash membership set"
-    (is (= [:claude :codex :copilot :gemini :opencode :pi]
+    (is (= [:claude :codex :copilot :gemini :omp :opencode :pi]
            (sort (map :id (harness/volume-participants))))))
   (testing "gitleaks is baked into the image, not the volume"
     (is (false? (:volume-participant? (harness/descriptor :gitleaks))))))
@@ -127,15 +134,16 @@
 
 (deftest subcommand-set-covers-every-harness
   (testing "every harness is reachable as a pass-through subcommand"
-    (is (= ["claude" "opencode" "codex" "copilot" "gemini" "pi" "gitleaks"]
+    (is (= ["claude" "opencode" "codex" "copilot" "gemini" "pi" "omp" "gitleaks"]
            (harness/subcommands)))))
 
 (deftest alias-emitters-and-their-unconditional-flag
   (testing "gitleaks emits no shell alias"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi]
+    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
            (mapv :id (harness/alias-emitters)))))
   (testing "claude, codex and copilot always emit; the rest only when they carry args"
-    (is (= {:claude true :opencode false :codex true :copilot true :gemini false :pi false}
+    (is (= {:claude true :opencode false :codex true :copilot true :gemini false :pi false
+            :omp false}
            (into {} (map (juxt :id #(get-in % [:alias :always?]))) (harness/alias-emitters))))))
 
 (deftest launch-shape-capabilities
@@ -180,6 +188,13 @@
            (:env-passthrough (harness/descriptor :copilot))))
     (is (= {"COPILOT_AUTO_UPDATE" "false"}
            (:runtime-env (harness/descriptor :copilot)))))
+  (testing "omp mounts all of ~/.omp and leaves pi's directory variables behind"
+    (is (= [{:path [".omp"] :type :dir}]
+           (:config-paths (harness/descriptor :omp))))
+    (is (= "OMP_PROFILE" (first (:env-passthrough (harness/descriptor :omp)))))
+    (is (not-any? #{"PI_CODING_AGENT_DIR" "PI_CONFIG_DIR"}
+                  (:env-passthrough (harness/descriptor :omp))))
+    (is (nil? (:runtime-env (harness/descriptor :omp)))))
   (testing "gitleaks has neither config paths nor passthrough env vars"
     (is (nil? (:config-paths (harness/descriptor :gitleaks))))
     (is (nil? (:env-passthrough (harness/descriptor :gitleaks))))))
@@ -213,6 +228,7 @@
     (is (= ["copilot"] (argv :copilot {:skip-permissions? true})))
     (is (= ["gemini"] (argv :gemini {:skip-permissions? true})))
     (is (= ["pi"] (argv :pi {:skip-permissions? true})))
+    (is (= ["omp"] (argv :omp {:skip-permissions? true})))
     (is (= ["gitleaks"] (argv :gitleaks {:skip-permissions? true}))))
   (testing "skip-permissions off only affects claude"
     (is (= ["claude"] (argv :claude {:skip-permissions? false})))
@@ -221,6 +237,7 @@
     (is (= ["copilot"] (argv :copilot {:skip-permissions? false})))
     (is (= ["gemini"] (argv :gemini {:skip-permissions? false})))
     (is (= ["pi"] (argv :pi {:skip-permissions? false})))
+    (is (= ["omp"] (argv :omp {:skip-permissions? false})))
     (is (= ["gitleaks"] (argv :gitleaks {:skip-permissions? false}))))
   (testing "omitted skip-permissions is treated as off, not as the env default"
     (is (= ["claude"] (argv :claude {})))
@@ -276,7 +293,7 @@
 
 (deftest versioned-harnesses-are-those-with-a-version-key
   (testing "gitleaks is image-baked and carries no pinnable version"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi]
+    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
            (mapv :id (harness/versioned))))))
 
 (deftest setup-flag-descriptions

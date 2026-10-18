@@ -37,7 +37,7 @@ graph TB
 
     subgraph Docker["Docker Container"]
         Entry[Entrypoint<br/>entrypoint.sh]
-        Harness[AI Harness/Tools<br/>claude/opencode/codex/copilot/gemini/pi/vscode]
+        Harness[AI Harness/Tools<br/>claude/opencode/codex/copilot/gemini/pi/omp/vscode]
         Project[Project Files<br/>mounted at same path]
         Tools[Dev Tools<br/>node, git, bb, etc.]
     end
@@ -134,6 +134,7 @@ Docker volumes store harness tools and mount them into containers:
 
 **Contents:**
 - `/tools/npm` - npm global packages (@anthropic-ai/claude-code, @opencode/cli, @openai/codex, @github/copilot, @google/gemini-cli, @earendil-works/pi-coding-agent)
+- `/tools/bin` - prebuilt release binaries downloaded from GitHub and checked against the release's checksum file (omp; see [ADR 0009](adr/0009-github-release-binary-install-kind.md))
 
 **Volume naming:** `aishell-harness-{12-char-hash}` where hash is computed from:
 - Enabled harnesses (which flags passed to build)
@@ -305,7 +306,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 **Data mounts:**
 
 - Project directory → Mounted at same path as host (read-write)
-- Harness config directories -> Per-harness (e.g., `~/.claude`, `~/.codex`, `~/.pi`)
+- Harness config directories -> Per-harness (e.g., `~/.claude`, `~/.codex`, `~/.pi`, `~/.omp`)
 - Additional mounts from `config.yaml` (e.g., `~/.ssh`, `~/.gitconfig`)
 
 ### Config Merge Strategy
@@ -435,14 +436,18 @@ Each namespace handles one concern:
 {:with-claude true                       ; boolean: Claude Code enabled?
  :with-opencode false                    ; boolean: OpenCode enabled?
  :with-codex false                       ; boolean: Codex CLI enabled?
+ :with-copilot false                     ; boolean: GitHub Copilot CLI enabled?
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-pi false                         ; boolean: Pi coding agent enabled?
+ :with-omp false                         ; boolean: oh-my-pi (omp) enabled?
  :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
  :codex-version "0.89.0"                 ; string or nil: pinned version
+ :copilot-version nil                    ; string or nil: pinned version
  :gemini-version nil                     ; string or nil: pinned version
  :pi-version nil                        ; string or nil: pinned version
+ :omp-version nil                        ; string or nil: pinned release (tag without the "v")
  :image-tag "aishell:foundation"         ; string: Docker image tag
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
  :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)

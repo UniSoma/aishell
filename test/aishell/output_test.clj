@@ -56,15 +56,15 @@
 
 (deftest suggestion-vocabulary-covers-every-subcommand
   (testing "every harness subcommand, including pi, can be suggested"
-    (is (= #{"claude" "opencode" "codex" "copilot" "gemini" "pi" "gitleaks"}
+    (is (= #{"claude" "opencode" "codex" "copilot" "gemini" "pi" "omp" "gitleaks"}
            (set/intersection output/known-commands
-                             #{"claude" "opencode" "codex" "copilot" "gemini" "pi" "gitleaks"}))))
+                             #{"claude" "opencode" "codex" "copilot" "gemini" "pi" "omp" "gitleaks"}))))
   (testing "the attach alias 'a' is part of the vocabulary"
     (is (contains? output/known-commands "a")))
   (testing "the vocabulary is exactly aishell's command surface"
     (is (= #{"setup" "update" "check" "exec" "ps" "volumes" "attach" "a"
              "vscode" "upgrade" "info"
-              "claude" "opencode" "codex" "copilot" "gemini" "pi" "gitleaks"}
+              "claude" "opencode" "codex" "copilot" "gemini" "pi" "omp" "gitleaks"}
            output/known-commands))))
 
 (deftest suggests-the-nearest-command

@@ -137,7 +137,8 @@ aishell/
  :opencode-version nil  ; treated as "latest"
  :with-codex false
  :with-gemini false
- :with-pi false}
+ :with-pi false
+ :with-omp false}
 ```
 
 **Algorithm:**
@@ -168,8 +169,13 @@ aishell/
    - Sets `NPM_CONFIG_PREFIX=/tools/npm`
    - Runs `npm install -g @anthropic-ai/claude-code@{version}`
    - Repeats for each enabled npm harness (claude, opencode, codex, copilot, gemini, pi)
-4. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
-5. **Container exits:** Volume is populated; Docker auto-removes the temporary container
+4. **GitHub-release installation** (omp):
+   - Picks the asset for `uname -m` (`x86_64` to `x64`, `aarch64` to `arm64`; any other architecture fails)
+   - Downloads the asset and the release's checksum file with `curl`, from `releases/latest/download/` or the pinned tag
+   - Checks the asset with `sha256sum -c` and exits non-zero on a mismatch
+   - Installs the binary to `/tools/bin/{binary}`
+5. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
+6. **Container exits:** Volume is populated; Docker auto-removes the temporary container
 
 **On failure:**
 - The system deletes the volume (rollback)
@@ -226,7 +232,8 @@ config mounts, environment passthrough, shell aliases and launch argv. Adding
 a harness means adding one descriptor there, then proving it through the
 existing contract tests. No harness-specific branch belongs in `cli.clj`,
 `run.clj` or `volume.clj`; the Copilot integration (`:copilot`) is the
-reference for an npm harness added this way.
+reference for an npm harness added this way, and omp (`:omp`) for a
+GitHub-release harness.
 
 ### Step 1: Descriptor
 
@@ -276,9 +283,19 @@ the harness's own documentation names it. The behavioral runtime-env tests in
 `run_test.clj` iterate every descriptor carrying `:runtime-env`; the literal
 inventory beside them is one more expectation to extend, like the tables below.
 
-Install kinds: `:npm` (`{:kind :npm :package "..."}`, pinned by semver
-through `--with-<id>=VERSION`) and `:image-baked` (see gitleaks). A new kind needs a branch in
-`volume/build-install-commands`.
+Install kinds:
+
+- `:npm`: `{:kind :npm :package "..."}`, pinned by semver through
+  `--with-<id>=VERSION`
+- `:github-release`: `{:kind :github-release :repo :asset :binary :tag-prefix
+  :checksums}`, for a harness that ships prebuilt binaries but no
+  npm package the foundation image can run ([ADR 0009](adr/0009-github-release-binary-install-kind.md)).
+  `:asset` holds an `{arch}` placeholder (`x64` or `arm64`), `:tag-prefix` is
+  prepended to the pinned version to form the release tag, and `:checksums`
+  names the release's SHA-256 file. See the omp descriptor
+- `:image-baked`: see gitleaks
+
+A new kind needs a branch in `volume/build-install-commands`.
 
 ### Step 2: Contract tests
 
@@ -624,7 +641,7 @@ Use try/catch for recoverable errors:
 
 ### Before Submitting
 
-- [ ] Code follows existing patterns (compare to the claude, codex, copilot, gemini and pi descriptors)
+- [ ] Code follows existing patterns (compare to the claude, codex, copilot, gemini, pi and omp descriptors)
 - [ ] Docstrings added to new functions
 - [ ] Tested locally (build, run, config mount, env passthrough)
 - [ ] Documentation updated (README, HARNESSES, TROUBLESHOOTING)

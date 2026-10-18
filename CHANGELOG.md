@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **oh-my-pi (omp) is a Harness**: `aishell setup --with-omp[=VERSION]` installs omp, Stencil Labs' fork of Pi, and `aishell omp` launches it. omp's npm package needs Bun, which the foundation image does not have, so aishell downloads the prebuilt glibc binary for the container's architecture from the GitHub release into `/tools/bin/omp` and checks it with `sha256sum -c` against the release's `SHA256SUMS.txt`. A mismatch fails the volume build. This is a new `:github-release` install kind ([ADR 0009](docs/adr/0009-github-release-binary-install-kind.md)). Unpinned installs follow the latest release, and `aishell update` refreshes them; `--with-omp=18.12.1` pins tag `v18.12.1`. Host `~/.omp` is mounted whole, and `OMP_PROFILE` plus eight provider API keys pass through. `PI_CODING_AGENT_DIR` and `PI_CONFIG_DIR` are left out because omp reads pi's names. omp runs without permission prompts by default, and its update check can only be turned off in its own config (`startup.checkUpdate: false`)
+
 ## [4.4.1] - 2026-09-24
 
 ### Changed

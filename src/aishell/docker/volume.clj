@@ -179,6 +179,37 @@
     (when (seq packages)
       (str "npm install -g " (str/join " " packages)))))
 
+(defn- github-release-install-command
+  "Shell snippet installing one `:github-release` harness into /tools/bin
+   (ADR 0009). It picks the glibc asset for the container's architecture,
+   checks it against the release's own checksum file and exits non-zero on a
+   mismatch, so a corrupt download fails the volume build."
+  [state {:keys [subcommand install] :as descriptor}]
+  (let [{:keys [repo asset binary tag-prefix checksums]} install
+        version (harness-version state descriptor)
+        base (if (= "latest" version)
+               (str "https://github.com/" repo "/releases/latest/download/")
+               (str "https://github.com/" repo "/releases/download/" tag-prefix version "/"))
+        asset-file (str/replace asset "{arch}" "$arch")]
+    (str "("
+         "case \"$(uname -m)\" in"
+         " x86_64) arch=x64 ;;"
+         " aarch64) arch=arm64 ;;"
+         " *) echo \"" subcommand ": unsupported architecture $(uname -m)\" >&2; exit 1 ;;"
+         " esac"
+         " && dl=$(mktemp -d)"
+         " && curl -fsSL -o \"$dl/" asset-file "\" \"" base asset-file "\""
+         " && curl -fsSL -o \"$dl/" checksums "\" \"" base checksums "\""
+         " || { echo \"" subcommand ": download from " base " failed\" >&2; exit 1; }"
+         "; (cd \"$dl\" && awk -v f=\"" asset-file "\" '$2 == f || $2 == \"*\" f' " checksums
+         " | sha256sum -c -)"
+         " || { echo \"" subcommand ": checksum verification failed for " asset-file
+         " against " checksums "\" >&2; exit 1; }"
+         "; mkdir -p /tools/bin"
+         " && install -m 0755 \"$dl/" asset-file "\" /tools/bin/" binary
+         " && rm -rf \"$dl\""
+         ")")))
+
 (defn build-install-commands
   "Build shell command string for installing harness tools into volume.
 
@@ -189,15 +220,21 @@
    Returns: Shell command string that:
             1. Sets NPM_CONFIG_PREFIX to /tools/npm
             2. Installs enabled npm-backed harnesses in registry order
-            3. Sets world-writable permissions with chmod
+            3. Downloads enabled GitHub-release harnesses into /tools/bin,
+               each checked against its release's checksum file
+            4. Sets world-writable permissions with chmod
 
    Install kinds come from each harness descriptor; image-baked harnesses
    (gitleaks) never reach the volume. Nil versions become \"latest\"."
   [state]
   (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
-        npm-install (npm-install-command state enabled)]
+        npm-install (npm-install-command state enabled)
+        release-installs (->> enabled
+                              (filter #(= :github-release (get-in % [:install :kind])))
+                              (map #(github-release-install-command state %)))]
     (str "export NPM_CONFIG_PREFIX=/tools/npm"
          (when npm-install (str " && " npm-install))
+         (apply str (map #(str " && " %) release-installs))
          " && chmod -R a+rwX /tools")))
 
 (defn list-harness-volumes

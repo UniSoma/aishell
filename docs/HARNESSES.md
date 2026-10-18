@@ -14,6 +14,7 @@ Harnesses are AI CLI tools that aishell runs in isolated containers. Each harnes
 - **GitHub Copilot CLI** - GitHub's terminal Harness for coding
 - **Gemini CLI** - Google's Gemini models for development
 - **Pi** - Mario Zechner's autonomous coding agent
+- **oh-my-pi (omp)** - Stencil Labs' fork of Pi
 
 ### How Harnesses Install (v2.8.0+)
 
@@ -21,8 +22,9 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 
 **Volume layout:**
 - npm packages install to `/tools/npm`
+- Release binaries (omp) install to `/tools/bin`
 - Containers mount the volume read-only at `/tools` (immutable toolchain)
-- PATH includes `/tools/npm/bin`
+- PATH includes `/tools/npm/bin` and `/tools/bin`
 
 **Benefits:**
 - **Fast updates:** `aishell update` refreshes tools without rebuilding the foundation image
@@ -43,14 +45,14 @@ aishell volumes prune
 
 ## Harness Comparison
 
-| Feature | Claude Code | OpenCode | Codex CLI | GitHub Copilot CLI | Gemini CLI | Pi |
-|---------|-------------|----------|-----------|--------------------|------------|-----|
-| Provider | Anthropic | Multiple | OpenAI | GitHub | Google | Mario Zechner |
-| Auth Methods | OAuth, API Key | Per-provider | OAuth, API Key | Device OAuth, token | OAuth, API Key | API Key |
-| Container Auth | Copy-paste URL | Standard | Device code | Device code | Auth on host first | Standard |
-| Vertex AI | No | Yes | No | No | Yes | No |
-| Config Dir | ~/.claude | ~/.config/opencode | ~/.codex | ~/.copilot | ~/.gemini | ~/.pi |
-| Best For | Autonomous coding | Multi-model flexibility | ChatGPT integration | GitHub Copilot workflows | Gemini models | Autonomous coding |
+| Feature | Claude Code | OpenCode | Codex CLI | GitHub Copilot CLI | Gemini CLI | Pi | omp |
+|---------|-------------|----------|-----------|--------------------|------------|-----|-----|
+| Provider | Anthropic | Multiple | OpenAI | GitHub | Google | Mario Zechner | Multiple |
+| Auth Methods | OAuth, API Key | Per-provider | OAuth, API Key | Device OAuth, token | OAuth, API Key | API Key | Per-provider |
+| Container Auth | Copy-paste URL | Standard | Device code | Device code | Auth on host first | Standard | Standard |
+| Vertex AI | No | Yes | No | No | Yes | No | No |
+| Config Dir | ~/.claude | ~/.config/opencode | ~/.codex | ~/.copilot | ~/.gemini | ~/.pi | ~/.omp |
+| Best For | Autonomous coding | Multi-model flexibility | ChatGPT integration | GitHub Copilot workflows | Gemini models | Autonomous coding | Pi fork |
 
 ## Claude Code
 
@@ -680,13 +682,82 @@ A volume mount preserves config across container restarts.
 3. **Session handling:** Each `aishell pi` invocation starts a new session
 4. **File operations:** Pi has full filesystem access within the container
 
+## oh-my-pi (omp)
+
+omp is a fork of Pi by Stencil Labs, MIT-licensed, with its own config
+directory and command. Docs: https://omp.sh/docs. Source:
+https://github.com/can1357/oh-my-pi.
+
+### Installation
+
+```bash
+aishell setup --with-omp                     # latest GitHub release
+aishell setup --with-omp=18.12.1             # release tag v18.12.1
+```
+
+omp's npm package needs Bun, which the foundation image does not have. aishell
+downloads the prebuilt glibc binary from the GitHub release instead
+(`omp-linux-x64` or `omp-linux-arm64`, picked by `uname -m`) and installs it
+into the Harness volume at `/tools/bin/omp`. Other architectures fail the
+volume build. See [ADR 0009](adr/0009-github-release-binary-install-kind.md).
+
+aishell checks the binary with `sha256sum -c` against the release's
+`SHA256SUMS.txt`. A mismatch fails the volume build with
+`omp: checksum verification failed for ...`. The checksum file comes from the
+same release, so the check catches a corrupt or truncated download, not a
+tampered release.
+
+An unpinned install follows GitHub's `releases/latest/download/` redirect, and
+`aishell update` moves it to the newest release.
+
+### Authentication and persistence
+
+When omp is enabled, aishell mounts the whole host `~/.omp` directory. That
+includes the `agent.db` credentials store and the `wt/` worktrees, so logins
+and sessions persist.
+
+If present on the host, these variables pass through when omp is enabled:
+`OMP_PROFILE`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`,
+`OPENROUTER_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY`, `MISTRAL_API_KEY` and
+`DEEPSEEK_API_KEY`. Forward any other provider variable omp reads (see
+https://omp.sh/docs/env) through the `env:` configuration.
+
+aishell does not pass `PI_CODING_AGENT_DIR` or `PI_CONFIG_DIR` for omp. omp
+reads pi's variable names, so a host value meant for pi would point omp at the
+wrong directory. Passthrough covers every enabled Harness for the whole Sandbox,
+though: with pi also enabled, pi brings `PI_CODING_AGENT_DIR` in and omp reads
+it.
+
+### Usage
+
+```bash
+aishell omp
+aishell omp --help
+```
+
+Arguments under `harness_args.omp` are prepended to command-line arguments.
+Inside an interactive Sandbox, aishell defines an `omp` shell alias only when
+`harness_args.omp` has entries; otherwise `omp` runs the binary directly.
+
+omp runs without permission prompts by default, so aishell adds no
+skip-permissions flag.
+
+### Update check
+
+aishell sets no environment variables for omp, because omp's update check can
+only be turned off in its config file. The check shows a notice and nothing
+else: `/tools` is mounted read-only, so omp cannot update itself. To hide the
+notice, set `startup.checkUpdate: false` in omp's config.
+
+omp's browser tool needs Chromium, which the foundation image does not ship.
+
 ## Multi-Container Workflow
 
 Run multiple named containers simultaneously and reconnect to them.
 
 ### Starting Named Containers
 
-Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `vscode`, `shell`). Override with `--name`:
+Each container gets a default name matching its harness (`claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `omp`, `vscode`, `shell`). Override with `--name`:
 
 ```bash
 # Start Claude (default name: claude)
@@ -772,7 +843,7 @@ docker stop aishell-<hash>-claude
 
 Containers follow the naming pattern `aishell-{project-hash}-{name}`:
 - **project-hash**: First 8 characters of the SHA-256 of your project directory path
-- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `vscode`, `shell`); override with `--name`
+- **name**: Defaults to the harness name (`claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `omp`, `vscode`, `shell`); override with `--name`
 
 ## Running Multiple Harnesses
 
@@ -788,7 +859,7 @@ aishell setup --with-claude --with-opencode
 aishell setup --with-claude --with-opencode --with-codex --with-copilot
 
 # All harnesses
-aishell setup --with-claude --with-opencode --with-codex --with-copilot --with-gemini --with-pi
+aishell setup --with-claude --with-opencode --with-codex --with-copilot --with-gemini --with-pi --with-omp
 ```
 
 Each added harness increases image size.
@@ -812,6 +883,9 @@ aishell gemini "implement feature W"
 
 # Use Pi
 aishell pi "implement feature V"
+
+# Use omp
+aishell omp "implement feature U"
 ```
 
 Each invocation runs in its own container.
@@ -864,6 +938,7 @@ harnesses:
 | Codex CLI | Device code flow | ✓ Good with `--device-auth` |
 | Gemini CLI | Host auth required | ✓ Requires host setup |
 | Pi | Config-based | ✓ Standard |
+| omp | Config-based (`~/.omp/agent.db`) | ✓ Standard |
 
 ### API Key Authentication
 
@@ -876,6 +951,7 @@ harnesses:
 | Codex CLI | `OPENAI_API_KEY` (chat) or `CODEX_API_KEY` (exec) | https://platform.openai.com/api-keys |
 | Gemini CLI | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | https://aistudio.google.com/app/apikey |
 | Pi | (config-based auth) | See pi documentation |
+| omp | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` and others | https://omp.sh/docs/env |
 
 ### Vertex AI Authentication
 

@@ -94,12 +94,14 @@
   (let [out (with-out-str (check-harnesses {:with-claude true
                                             :with-codex true :codex-version "1.2.3"
                                             :with-copilot true :copilot-version "0.0.339"
+                                            :with-omp true :omp-version "18.12.1"
                                             :with-gitleaks true}))]
     (testing "every harness is reported, by its canonical label"
       (is (str/includes? out "Claude Code installed"))
       (is (str/includes? out "Codex CLI installed (1.2.3)"))
       (is (str/includes? out "GitHub Copilot CLI installed (0.0.339)"))
       (is (str/includes? out "Pi coding agent not installed"))
+      (is (str/includes? out "oh-my-pi (omp) installed (18.12.1)"))
       (is (str/includes? out "Gemini CLI not installed"))
       (is (str/includes? out "OpenCode not installed"))
       (is (str/includes? out "Gitleaks installed")))

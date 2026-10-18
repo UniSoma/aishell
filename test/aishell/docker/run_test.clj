@@ -339,7 +339,8 @@
 
 (def ^:private all-enabled
   {:with-claude true :with-opencode true :with-codex true
-   :with-copilot true :with-gemini true :with-pi true :with-gitleaks true})
+   :with-copilot true :with-gemini true :with-pi true :with-omp true
+   :with-gitleaks true})
 
 (defn- alias-value
   "The value of HARNESS_ALIAS_<NAME> in a -e flag vector, or nil when absent."
@@ -358,7 +359,8 @@
    :codex ["--full-auto"]
    :copilot ["--model" "gpt-5"]
    :gemini ["-d"]
-   :pi ["-y"]})
+   :pi ["-y"]
+   :omp ["--model" "sonnet"]})
 
 (deftest alias-argv-is-byte-identical-to-container-launch-argv
   (doseq [skip? [true false]
@@ -382,7 +384,7 @@
     (testing "claude, codex and copilot always emit; the rest only when they carry args"
       (is (= ["claude" "codex" "copilot"] (alias-names (alias-env-args {} all-enabled)))))
     (testing "config defaults make the remaining harnesses emit"
-      (is (= ["claude" "opencode" "codex" "copilot" "gemini" "pi"]
+      (is (= ["claude" "opencode" "codex" "copilot" "gemini" "pi" "omp"]
              (alias-names (alias-env-args {:harness_args every-harness-args} all-enabled)))))
     (testing "gitleaks has no alias even with config defaults"
       (is (nil? (alias-value (alias-env-args {:harness_args {:gitleaks ["--redact"]}} all-enabled)
@@ -434,10 +436,12 @@
             :with-codex    [[".codex"]]
             :with-copilot  [[".copilot"]]
             :with-gemini   [[".gemini"]]
-            :with-pi       [[".pi"]]}
+            :with-pi       [[".pi"]]
+            :with-omp      [[".omp"]]}
            run/harness-config-dirs)))
   (testing "iteration order is preserved for mount and info output"
-    (is (= [:with-claude :with-opencode :with-codex :with-copilot :with-gemini :with-pi]
+    (is (= [:with-claude :with-opencode :with-codex :with-copilot :with-gemini :with-pi
+            :with-omp]
            (vec (keys run/harness-config-dirs)))))
   (testing "gitleaks mounts no host config"
     (is (nil? (get run/harness-config-dirs :with-gitleaks)))))
@@ -455,7 +459,10 @@
             :with-copilot  ["COPILOT_GITHUB_TOKEN" "COPILOT_GH_HOST"]
             :with-gemini   ["GEMINI_API_KEY" "GOOGLE_API_KEY" "GOOGLE_CLOUD_PROJECT"
                             "GOOGLE_CLOUD_LOCATION" "GOOGLE_APPLICATION_CREDENTIALS"]
-            :with-pi       ["PI_CODING_AGENT_DIR"]}
+            :with-pi       ["PI_CODING_AGENT_DIR"]
+            :with-omp      ["OMP_PROFILE" "ANTHROPIC_API_KEY" "OPENAI_API_KEY"
+                            "GEMINI_API_KEY" "OPENROUTER_API_KEY" "GROQ_API_KEY"
+                            "XAI_API_KEY" "MISTRAL_API_KEY" "DEEPSEEK_API_KEY"]}
            run/harness-api-keys)))
   (testing "gitleaks passes no API keys through"
     (is (nil? (get run/harness-api-keys :with-gitleaks)))))
@@ -471,6 +478,17 @@
       (with-redefs [run/host-env host]
         (is (= ["-e" "COPILOT_GITHUB_TOKEN=scoped" "-e" "COPILOT_GH_HOST=ghe.example.com"]
                (api-env-args {:with-copilot true})))))))
+
+(deftest omp-alone-leaves-pi-directory-vars-on-the-host
+  (let [host {"PI_CODING_AGENT_DIR" "/host/pi" "PI_CONFIG_DIR" ".pi-alt"
+              "OMP_PROFILE" "work" "OPENROUTER_API_KEY" "or"}]
+    (with-redefs [run/host-env host]
+      (testing "with only omp enabled, pi's directory variables stay out of the Sandbox"
+        (is (= ["-e" "OMP_PROFILE=work" "-e" "OPENROUTER_API_KEY=or"]
+               (api-env-args {:with-omp true}))))
+      (testing "enabling pi as well brings PI_CODING_AGENT_DIR in for the whole Sandbox"
+        (is (some #{"PI_CODING_AGENT_DIR=/host/pi"}
+                  (api-env-args {:with-omp true :with-pi true})))))))
 
 (deftest api-env-args-only-cover-enabled-harnesses
   (testing "a disabled harness contributes no -e flag even when the var is set"

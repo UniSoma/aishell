@@ -2,7 +2,7 @@
 
 > Docker sandbox for running AI coding agents in ephemeral containers.
 
-aishell runs AI coding agents (Claude Code, OpenCode, Codex CLI, GitHub Copilot CLI, Gemini CLI, Pi) inside isolated Docker containers. It preserves paths, forwards git identity, manages configuration and mounts, and scans for secrets — replacing long `docker run` commands.
+aishell runs AI coding agents (Claude Code, OpenCode, Codex CLI, GitHub Copilot CLI, Gemini CLI, Pi, omp) inside isolated Docker containers. It preserves paths, forwards git identity, manages configuration and mounts, and scans for secrets — replacing long `docker run` commands.
 
 Version: 4.1.0
 License: MIT
@@ -57,6 +57,7 @@ aishell setup --with-claude
 aishell setup --with-claude --with-opencode
 aishell setup --with-claude=2.0.22
 aishell setup --with-copilot=1.2.3
+aishell setup --with-omp=18.12.1
 ```
 
 Options:
@@ -65,6 +66,7 @@ Options:
 - `--with-codex[=VERSION]` - Install Codex CLI.
 - `--with-copilot[=VERSION]` - Install GitHub Copilot CLI. Optionally pin a version.
 - `--with-gemini[=VERSION]` - Install Gemini CLI.
+- `--with-omp[=VERSION]` - Install oh-my-pi (omp) from its GitHub release binary. VERSION is the release tag without the `v`.
 - `--with-gitleaks` - Include Gitleaks secret scanner.
 - `--force` - Rebuild everything, bypass Docker cache.
 - `--verbose`, `-v` - Show full Docker build output.
@@ -80,6 +82,7 @@ aishell opencode
 aishell codex
 aishell copilot
 aishell gemini
+aishell omp
 aishell gitleaks detect --verbose
 ```
 
@@ -331,6 +334,9 @@ harness_args:
   copilot:
     - "--model"
     - "gpt-5"
+  omp:
+    - "--model"
+    - "sonnet"
 ```
 
 Argument order: [global defaults] + [project defaults] + [CLI args].
@@ -388,12 +394,13 @@ aishell passes these to containers when set on the host:
 
 ### Harness Authentication
 
-- `ANTHROPIC_API_KEY` - Claude Code API access
-- `OPENAI_API_KEY` - Codex CLI login, OpenCode
+- `ANTHROPIC_API_KEY` - Claude Code API access, omp
+- `OPENAI_API_KEY` - Codex CLI login, OpenCode, omp
 - `CODEX_API_KEY` - Codex CLI (exec mode only)
-- `GEMINI_API_KEY` - Gemini CLI
+- `GEMINI_API_KEY` - Gemini CLI, omp
 - `GOOGLE_API_KEY` - Gemini / Vertex AI
-- `GROQ_API_KEY` - Groq API
+- `GROQ_API_KEY` - Groq API, omp
+- `OMP_PROFILE`, `OPENROUTER_API_KEY`, `XAI_API_KEY`, `MISTRAL_API_KEY`, `DEEPSEEK_API_KEY` - omp
 
 ### Cloud Providers
 
@@ -419,7 +426,7 @@ aishell sets these itself in every sandbox where the harness is enabled, whateve
 - `COPILOT_AUTO_UPDATE=false` - GitHub Copilot CLI, self-update off
 - `PI_SKIP_VERSION_CHECK=true` - pi, startup version check off
 
-Codex CLI gets the same policy through argv (`-c check_for_update_on_startup=false`). Gemini CLI and OpenCode expose the setting only in their config files (`general.enableAutoUpdate`, `autoupdate`), so aishell sets nothing for them.
+Codex CLI gets the same policy through argv (`-c check_for_update_on_startup=false`). Gemini CLI and OpenCode expose the setting only in their config files (`general.enableAutoUpdate`, `autoupdate`), so aishell sets nothing for them. omp is the same: set `startup.checkUpdate: false` in its config.
 
 These stay on the host and are never passed to a container:
 
@@ -455,12 +462,20 @@ Each harness authenticates differently:
 - aishell forces `COPILOT_AUTO_UPDATE=false`; update or change the npm version/tag with `aishell update` or `aishell setup`.
 - `harness_args.copilot` applies to both direct launches and the in-Sandbox alias. No `--allow-all` or `--yolo` is injected.
 
+### oh-my-pi (omp)
+
+- Installed from the GitHub release binary (`omp-linux-x64` or `omp-linux-arm64`) into `/tools/bin/omp`, checked against the release's `SHA256SUMS.txt`. A mismatch fails the volume build.
+- Host `~/.omp` is mounted whole when omp is enabled, including `agent.db` credentials and `wt/` worktrees.
+- `OMP_PROFILE`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY`, `MISTRAL_API_KEY` and `DEEPSEEK_API_KEY` pass through automatically. Other provider variables need an `env` entry.
+- `PI_CODING_AGENT_DIR` and `PI_CONFIG_DIR` are not passed for omp, but pi brings `PI_CODING_AGENT_DIR` in when pi is also enabled, and omp reads it.
+- omp runs without permission prompts by default; aishell adds no flag. The `omp` alias exists in the Sandbox only when `harness_args.omp` has entries.
+
 ### Gemini CLI
 
 - **OAuth:** Authenticate on the host first (`gemini login`), then run `aishell gemini`. Gemini CLI lacks device code flow in containers.
 - **API key:** Set `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
 
-Harness config directories (`~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`, `~/.config/opencode`) mount from the host, so authentication persists between sessions.
+Harness config directories (`~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`, `~/.omp`, `~/.config/opencode`) mount from the host, so authentication persists between sessions.
 
 ---
 
@@ -662,7 +677,7 @@ aishell handles this automatically. If you mount your host `~/.gitconfig`, the s
 
 ### Credentials not persisting between sessions
 
-Verify harness config directories exist on the host (`~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`, `~/.config/opencode`).
+Verify harness config directories exist on the host (`~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`, `~/.omp`, `~/.config/opencode`).
 
 ### Port not accessible from host
 

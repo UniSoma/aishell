@@ -213,6 +213,9 @@ harness_args:
   pi:
     - "--print"
     - "hello"
+  omp:
+    - "--model"
+    - "sonnet"
   vscode:
     - "--profile"
     - "Work"
@@ -653,7 +656,7 @@ pre_start: "echo 'Step 1' && echo 'Step 2'"
 
 **Type:** Map of harness name to list (or string)
 
-**Harness names:** `claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `vscode`
+**Harness names:** `claude`, `opencode`, `codex`, `copilot`, `gemini`, `pi`, `omp`, `vscode`
 
 **Example:**
 
@@ -690,6 +693,11 @@ harness_args:
     - "--print"
     - "hello"
 
+  # oh-my-pi (omp) defaults
+  omp:
+    - "--model"
+    - "sonnet"
+
   # VSCode defaults (passed to 'code' CLI)
   vscode:
     - "--profile"
@@ -713,6 +721,9 @@ harness_args:
 - Claude- and pi-enabled Sandboxes force `DISABLE_AUTOUPDATER=1` and
   `PI_SKIP_VERSION_CHECK=true` the same way, and Codex CLI launches with
   `-c check_for_update_on_startup=false`
+- omp gets no fixed variables or arguments: its update check can only be
+  turned off in its own config (`startup.checkUpdate: false`). The `omp` alias
+  inside an interactive Sandbox exists only when `harness_args.omp` has entries
 
 **Merge behavior:** Per-harness lists concatenate (global defaults + project defaults).
 
@@ -751,6 +762,7 @@ claude --verbose --model sonnet --workspace /workspace
 | GitHub Copilot CLI | `--model gpt-5` | Default model |
 | Gemini | `--model gemini-2.0-flash-exp` | Specific model |
 | Pi | `--print hello` | Default prompt |
+| omp | `--model sonnet` | Default model |
 
 ---
 
@@ -1342,7 +1354,7 @@ harness_args:
 aishell setup --with-claude
 
 # Multiple harnesses
-aishell setup --with-claude --with-opencode --with-codex --with-copilot --with-pi
+aishell setup --with-claude --with-opencode --with-codex --with-copilot --with-pi --with-omp
 
 # With version pinning
 aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501 --with-copilot=1.2.3
@@ -1355,6 +1367,7 @@ aishell setup --with-claude=2.0.22 --with-codex=0.1.2025062501 --with-copilot=1.
 - `--with-copilot` - GitHub Copilot CLI
 - `--with-gemini` - Google Gemini CLI
 - `--with-pi` - Mario Zechner's Pi coding agent
+- `--with-omp` - oh-my-pi (omp), Stencil Labs' fork of Pi
 
 **Version pinning:**
 Use `=VERSION` syntax to pin specific versions:
@@ -1362,6 +1375,7 @@ Use `=VERSION` syntax to pin specific versions:
 --with-claude=2.0.22
 --with-codex=0.1.2025062501
 --with-copilot=1.2.3
+--with-omp=18.12.1     # GitHub release tag v18.12.1
 ```
 
 Omit version for latest:

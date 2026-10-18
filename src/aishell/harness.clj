@@ -38,7 +38,10 @@
 ;;   :secret-scanner?          the harness is itself a secret scanner, so
 ;;                             aishell's own sensitive-file scan and its
 ;;                             scan-freshness warning stand down while it runs
-;;   :install                  {:kind :npm|:image-baked, …}
+;;   :install                  {:kind :npm|:github-release|:image-baked, …}
+;;                             :github-release names :repo, :asset (with an
+;;                             {arch} placeholder), :binary, :tag-prefix and
+;;                             :checksums (ADR 0009)
 ;;   :config-paths             [{:path [".claude"] :type :dir|:file} …], home-relative
 ;;   :credentials-file-env     env var naming a host credentials file to mount
 ;;                             read-only; absent when the harness has none
@@ -145,6 +148,29 @@
     :config-paths [{:path [".pi"] :type :dir}]
     :env-passthrough ["PI_CODING_AGENT_DIR"]
     :runtime-env {"PI_SKIP_VERSION_CHECK" "true"}}
+
+   {:id :omp
+    :label "oh-my-pi (omp)"
+    :subcommand "omp"
+    :state-key :with-omp
+    :version-key :omp-version
+    :interactive? true
+    :pre-start? true
+    :accepts-config-defaults? true
+    :volume-participant? true
+    :alias {:always? false}
+    :install {:kind :github-release
+              :repo "can1357/oh-my-pi"
+              :asset "omp-linux-{arch}"
+              :binary "omp"
+              :tag-prefix "v"
+              :checksums "SHA256SUMS.txt"}
+    :config-paths [{:path [".omp"] :type :dir}]
+    ;; Leaves out PI_CODING_AGENT_DIR and PI_CONFIG_DIR: omp reads pi's names,
+    ;; so a host value meant for pi would redirect omp's config.
+    :env-passthrough ["OMP_PROFILE" "ANTHROPIC_API_KEY" "OPENAI_API_KEY"
+                      "GEMINI_API_KEY" "OPENROUTER_API_KEY" "GROQ_API_KEY"
+                      "XAI_API_KEY" "MISTRAL_API_KEY" "DEEPSEEK_API_KEY"]}
 
    {:id :gitleaks
     :label "Gitleaks"
