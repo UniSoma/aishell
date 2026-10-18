@@ -169,11 +169,15 @@
   [state {:keys [version-key]}]
   (or (get state version-key) "latest"))
 
+(defn- of-install-kind
+  "The descriptors in `descriptors` whose install kind is `kind`."
+  [kind descriptors]
+  (filter #(= kind (get-in % [:install :kind])) descriptors))
+
 (defn- npm-install-command
   "npm command installing every enabled npm-backed harness, or nil if none."
   [state descriptors]
-  (let [packages (->> descriptors
-                      (filter #(= :npm (get-in % [:install :kind])))
+  (let [packages (->> (of-install-kind :npm descriptors)
                       (map #(str (get-in % [:install :package])
                                  "@" (harness-version state %))))]
     (when (seq packages)
@@ -197,17 +201,17 @@
          " aarch64) arch=arm64 ;;"
          " *) echo \"" subcommand ": unsupported architecture $(uname -m)\" >&2; exit 1 ;;"
          " esac"
-         " && dl=$(mktemp -d)"
-         " && curl -fsSL -o \"$dl/" asset-file "\" \"" base asset-file "\""
-         " && curl -fsSL -o \"$dl/" checksums "\" \"" base checksums "\""
+         " && tmpdir=$(mktemp -d)"
+         " && curl -fsSL -o \"$tmpdir/" asset-file "\" \"" base asset-file "\""
+         " && curl -fsSL -o \"$tmpdir/" checksums "\" \"" base checksums "\""
          " || { echo \"" subcommand ": download from " base " failed\" >&2; exit 1; }"
-         "; (cd \"$dl\" && awk -v f=\"" asset-file "\" '$2 == f || $2 == \"*\" f' " checksums
+         "; (cd \"$tmpdir\" && awk -v f=\"" asset-file "\" '$2 == f || $2 == \"*\" f' " checksums
          " | sha256sum -c -)"
          " || { echo \"" subcommand ": checksum verification failed for " asset-file
          " against " checksums "\" >&2; exit 1; }"
          "; mkdir -p /tools/bin"
-         " && install -m 0755 \"$dl/" asset-file "\" /tools/bin/" binary
-         " && rm -rf \"$dl\""
+         " && install -m 0755 \"$tmpdir/" asset-file "\" /tools/bin/" binary
+         " && rm -rf \"$tmpdir\""
          ")")))
 
 (defn build-install-commands
@@ -229,8 +233,7 @@
   [state]
   (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
         npm-install (npm-install-command state enabled)
-        release-installs (->> enabled
-                              (filter #(= :github-release (get-in % [:install :kind])))
+        release-installs (->> (of-install-kind :github-release enabled)
                               (map #(github-release-install-command state %)))]
     (str "export NPM_CONFIG_PREFIX=/tools/npm"
          (when npm-install (str " && " npm-install))

@@ -263,6 +263,14 @@
                       "sh" "-c" cmd)
              :root root))))
 
+(defn- with-omp-install
+  "Call `f` with the result of `run-omp-install`, then delete its temp root."
+  [assets machine f]
+  (let [{:keys [root] :as result} (run-omp-install assets machine)]
+    (try
+      (f result)
+      (finally (fs/delete-tree root)))))
+
 (defn- sha256-hex [^String s]
   (let [digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
                         (.getBytes s "UTF-8"))]
@@ -273,35 +281,25 @@
         sums (str (sha256-hex binary) "  omp-linux-x64\n"
                   (sha256-hex "musl") "  omp-linux-musl-x64\n")]
     (testing "a matching download is installed as an executable /tools/bin/omp"
-      (let [{:keys [exit root]} (run-omp-install {"omp-linux-x64" binary
-                                                   "SHA256SUMS.txt" sums}
-                                                  "x86_64")
-            installed (fs/path root "tools" "bin" "omp")]
-        (try
-          (is (zero? exit))
-          (is (= binary (slurp (str installed))))
-          (is (fs/executable? installed))
-          (finally (fs/delete-tree root)))))
+      (with-omp-install {"omp-linux-x64" binary "SHA256SUMS.txt" sums} "x86_64"
+        (fn [{:keys [exit root]}]
+          (let [installed (fs/path root "tools" "bin" "omp")]
+            (is (zero? exit))
+            (is (= binary (slurp (str installed))))
+            (is (fs/executable? installed))))))
     (testing "a truncated download fails with a checksum error and installs nothing"
-      (let [{:keys [exit err root]} (run-omp-install {"omp-linux-x64" "#!/bin/sh\n"
-                                                       "SHA256SUMS.txt" sums}
-                                                      "x86_64")]
-        (try
+      (with-omp-install {"omp-linux-x64" "#!/bin/sh\n" "SHA256SUMS.txt" sums} "x86_64"
+        (fn [{:keys [exit err root]}]
           (is (not (zero? exit)))
           (is (str/includes? err "omp: checksum verification failed for omp-linux-x64"))
-          (is (not (fs/exists? (fs/path root "tools" "bin" "omp"))))
-          (finally (fs/delete-tree root)))))
+          (is (not (fs/exists? (fs/path root "tools" "bin" "omp")))))))
     (testing "an asset missing from the checksum file fails the same way"
-      (let [{:keys [exit err root]} (run-omp-install {"omp-linux-arm64" binary
-                                                       "SHA256SUMS.txt" sums}
-                                                      "aarch64")]
-        (try
+      (with-omp-install {"omp-linux-arm64" binary "SHA256SUMS.txt" sums} "aarch64"
+        (fn [{:keys [exit err]}]
           (is (not (zero? exit)))
-          (is (str/includes? err "omp: checksum verification failed for omp-linux-arm64"))
-          (finally (fs/delete-tree root)))))
+          (is (str/includes? err "omp: checksum verification failed for omp-linux-arm64")))))
     (testing "an unsupported architecture fails before downloading"
-      (let [{:keys [exit err root]} (run-omp-install {} "riscv64")]
-        (try
+      (with-omp-install {} "riscv64"
+        (fn [{:keys [exit err]}]
           (is (not (zero? exit)))
-          (is (str/includes? err "omp: unsupported architecture riscv64"))
-          (finally (fs/delete-tree root)))))))
+          (is (str/includes? err "omp: unsupported architecture riscv64")))))))
