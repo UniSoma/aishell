@@ -5,8 +5,8 @@ Docker sandbox for AI coding harnesses: each project runs its harness (Claude Co
 ## Language
 
 **Harness**:
-An AI coding CLI (Claude Code, OpenCode, Codex, Gemini, GitHub Copilot CLI, pi) that aishell installs and runs inside a sandbox container.
-_Avoid_: agent, tool, AI
+An AI coding CLI (Claude Code, OpenCode, Codex, Gemini, GitHub Copilot CLI, pi, omp) that aishell installs and runs inside a sandbox container. omp (oh-my-pi) is a fork of pi but a separate Harness; the two can be enabled side by side.
+_Avoid_: agent, tool, AI; pi (for omp)
 
 **Harness descriptor**:
 The pure-data record of one Harness's facts: identity, canonical label, state and version keys, capabilities (subcommand, launch command, shell alias, harness-volume participation), install source, config paths, passthrough environment variables, and fixed runtime environment policy.
