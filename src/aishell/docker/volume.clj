@@ -185,9 +185,10 @@
 
 (defn- github-release-install-command
   "Shell snippet installing one `:github-release` harness into /tools/bin
-   (ADR 0009). It picks the glibc asset for the container's architecture,
-   checks it against the release's own checksum file and exits non-zero on a
-   mismatch, so a corrupt download fails the volume build."
+   (ADR 0009). It fills the container's architecture into the descriptor's
+   asset name, checks the download against the release's own checksum file
+   and exits non-zero on a mismatch, so a corrupt download fails the volume
+   build."
   [state {:keys [subcommand install] :as descriptor}]
   (let [{:keys [repo asset binary tag-prefix checksums]} install
         version (harness-version state descriptor)
@@ -301,14 +302,14 @@
    Returns: {:success true :volume volume-name} on success
 
    Process:
-   1. Generate npm install commands based on enabled harnesses
+   1. Generate install commands (npm and GitHub-release) for enabled harnesses
    2. Run temporary container mounting volume at /tools
    3. Execute install commands inside container
-   4. Set world-readable permissions for non-root execution
+   4. Set world-writable permissions for non-root execution
    5. Container is automatically removed (--rm flag)
 
    Output handling:
-   - :verbose true -> Show all npm output
+   - :verbose true -> Show all install output
    - :verbose false -> Show spinner, suppress output
 
    Notes:

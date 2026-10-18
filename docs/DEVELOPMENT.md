@@ -174,7 +174,7 @@ aishell/
    - Downloads the asset and the release's checksum file with `curl`, from `releases/latest/download/` or the pinned tag
    - Checks the asset with `sha256sum -c` and exits non-zero on a mismatch
    - Installs the binary to `/tools/bin/{binary}`
-5. **Set permissions:** `chmod -R a+rX /tools` (world-readable)
+5. **Set permissions:** `chmod -R a+rwX /tools`
 6. **Container exits:** Volume is populated; Docker auto-removes the temporary container
 
 **On failure:**

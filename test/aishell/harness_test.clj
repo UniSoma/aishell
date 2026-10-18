@@ -7,7 +7,7 @@
 ;; Registry membership and order
 ;; ---------------------------------------------------------------------------
 
-(deftest registry-holds-eight-descriptors-in-display-order
+(deftest registry-holds-every-descriptor-in-display-order
   (testing "the registry is the closed, ordered set of harnesses"
     (is (= [:claude :opencode :codex :copilot :gemini :pi :omp :gitleaks]
            (mapv :id harness/registry))))
@@ -119,7 +119,7 @@
         (is (= (keyword (str (name (:id d)) "-version")) (:version-key d)))))))
 
 (deftest volume-participants-exclude-gitleaks
-  (testing "the seven installable harnesses participate in the harness volume"
+  (testing "every installable harness participates in the harness volume"
     (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
            (mapv :id (harness/volume-participants)))))
   (testing "sorted participant ids are the hash membership set"

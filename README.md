@@ -1,6 +1,6 @@
 # aishell
 
-aishell runs AI coding agents in ephemeral Docker containers. It supports Claude Code, OpenCode, Codex CLI, GitHub Copilot CLI, Gemini CLI, Pi, and oh-my-pi (omp).
+aishell runs AI coding harnesses in ephemeral Docker containers. It supports Claude Code, OpenCode, Codex CLI, GitHub Copilot CLI, Gemini CLI, Pi, and oh-my-pi (omp).
 
 ## Why Docker?
 

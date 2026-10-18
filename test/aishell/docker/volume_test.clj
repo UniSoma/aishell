@@ -276,7 +276,7 @@
                         (.getBytes s "UTF-8"))]
     (apply str (map #(format "%02x" %) digest))))
 
-(deftest github-release-install-runs-against-a-release
+(deftest github-release-install-runs-against-stubbed-downloads
   (let [binary "#!/bin/sh\necho omp\n"
         sums (str (sha256-hex binary) "  omp-linux-x64\n"
                   (sha256-hex "musl") "  omp-linux-musl-x64\n")]
