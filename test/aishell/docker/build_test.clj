@@ -29,7 +29,7 @@
     (is (str/includes? (build/foundation-stale-warning "yesterday" now)
                        "aishell update --force"))))
 
-(deftest build-timestamp-for-a-rebuild
+(deftest build-timestamp-by-build-kind
   (testing "a forced build bypasses the layer cache, so it is stamped now"
     (is (= (str now) (build/build-timestamp {:force? true :image-exists? true
                                              :previous "2026-01-01T00:00:00Z"

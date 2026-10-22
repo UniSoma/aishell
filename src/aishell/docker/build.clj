@@ -12,7 +12,6 @@
             [aishell.output :as output])
   (:import [java.time Duration Instant]))
 
-;; Label keys for cache tracking
 (def dockerfile-hash-label "aishell.dockerfile.hash")
 (def foundation-image-tag "aishell:foundation")
 (def build-timestamp-label "aishell.build.timestamp")
@@ -24,8 +23,8 @@
 (defn foundation-stale-warning
   "The warning for a foundation built at `built-at` (the ISO-8601 value of
    `build-timestamp-label`), or nil when it is at most `stale-after-days`
-   old at `now`. A missing or unparseable label counts as stale: the image
-   predates the label."
+   old at `now`. A missing label means the image predates the label and
+   counts as stale; so does an unparseable one."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
         age-days (when built (.toDays (Duration/between built now)))
@@ -39,9 +38,9 @@
 
 (defn build-timestamp
   "The `build-timestamp-label` value for a foundation build, or nil for
-   none. Only a build that bypasses the layer cache gets a fresh stamp: a
-   cached rebuild reuses the old apt layer, so it keeps the previous stamp,
-   or stays unstamped when the image it replaces had none."
+   none. A forced build (`--no-cache`) and a first build are stamped `now`.
+   A cached rebuild may reuse the old apt layer, so it keeps the previous
+   stamp, or stays unstamped when the image it replaces had none."
   [{:keys [force? image-exists? previous now]}]
   (cond
     force? (str now)
@@ -84,7 +83,7 @@
   "Construct docker build argument vector."
   [{:keys [with-gitleaks]} dockerfile-hash built-at]
   (cond-> []
-    ;; Gitleaks is opt-out, so we always pass the arg (true or false)
+    ;; Passed even when false so the build cache sees the same args every time
     true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))
     built-at (conj "--label" (str build-timestamp-label "=" built-at))))
@@ -126,30 +125,29 @@
         (zero? exit)))))
 
 (defn build-foundation-image
-  "Build the foundation Docker image with embedded templates.
+  "Build the foundation image from the embedded templates, unless its
+   content hash is unchanged and `:force` is unset.
 
-   Foundation image contains only system dependencies (Debian, Node.js, babashka, uv, gosu, gitleaks).
-   Harness tools are installed separately via volume injection (Phase 36).
+   The foundation holds OS packages, runtimes and shared tooling;
+   volume-installed harnesses live in the harness volume instead.
 
    Options:
    - :with-gitleaks - Include Gitleaks (default false, opt-in)
-   - :force - Bypass cache check
+   - :force - Rebuild with `--no-cache` and stamp a fresh build timestamp
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors
 
-   Returns {:success true :image tag} on success, exits on failure."
+   Returns {:success true :image tag}, plus `:cached true` when no build
+   ran. Exits the process when the build fails."
   [{:keys [force verbose quiet] :as opts}]
-  ;; Verify Docker is available
   (docker/check-docker!)
 
-  ;; Check cache - early return if no rebuild needed
   (if-not (needs-rebuild? foundation-image-tag force)
     (do
       (when-not quiet
         (println (str "Image " foundation-image-tag " is up to date (use --force to rebuild)")))
       {:success true :image foundation-image-tag :cached true})
 
-    ;; Create temp build directory and build
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
           dockerfile-hash (get-dockerfile-hash)
           image-exists? (docker/image-exists? foundation-image-tag)
@@ -163,10 +161,8 @@
           docker-args (build-docker-args opts dockerfile-hash built-at)
           start-time (System/currentTimeMillis)]
       (try
-        ;; Write template files
         (write-build-files build-dir)
 
-        ;; Build with appropriate output mode
         (let [success? (cond
                          verbose
                          (run-build build-dir foundation-image-tag docker-args true force)
@@ -190,6 +186,5 @@
                :size size})
             (output/error "Build failed")))
         (finally
-          ;; Cleanup temp directory
           (fs/delete-tree build-dir))))))
 

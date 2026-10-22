@@ -78,8 +78,9 @@
 
 (defn warn-if-foundation-stale!
   "Warn when the foundation under `image-tag` is older than
-   `build/stale-after-days`. The build-timestamp label is inherited through
-   FROM, so the base and extension images carry it too. Advisory only."
+   `build/stale-after-days` or carries no build timestamp. The label is
+   inherited through FROM, so base and extension images carry it too.
+   Advisory only: never blocks the run."
   [image-tag]
   (when-let [msg (build/foundation-stale-warning
                   (docker/get-image-label image-tag build/build-timestamp-label)
@@ -147,49 +148,44 @@
    Arguments:
    - cmd: nil for a shell, else a harness subcommand from the registry
    - harness-args: Extra arguments to pass to harness (vector)
-   - opts: Optional map with :unsafe (skip detection warnings)"
+   - opts: Optional map with :unsafe (skip detection warnings),
+     :container-name (overrides the name part) and :skip-pre-start
+
+   Does not return: exits with the container's exit code, or on Unix
+   replaces the process."
   [cmd harness-args & [opts]]
   ;; Refuse a home-containing root before anything walks the tree
   (validation/check-project-dir! (System/getProperty "user.dir"))
 
-  ;; Check Docker available
   (docker/check-docker!)
 
   ;; Announce removed harnesses once, before state is read
   (state/warn-removed-harnesses!)
 
-  ;; Read state (contains build info)
   (let [state (state/read-state)]
-    ;; Verify build exists
     (when-not state
       (output/error-no-setup))
 
-    ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
           base-tag base/base-image-tag
           cfg (config/load-config project-dir)
 
-          ;; Resolve container name: --name override or harness name (or "shell" for shell mode)
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
                                (naming/container-name project-dir name-part))
 
           ;; Pre-flight conflict check: error if running, auto-remove if stopped
           _ (naming/ensure-name-available! container-name-str (or (:container-name opts) cmd "shell"))
 
-          ;; Log container name for verification
           _ (output/verbose (str "Container name: " container-name-str))
 
-          ;; Ensure harness volume ready (lazy population)
           harness-volume-name (ensure-harness-volume state cfg)
 
-          ;; Install Pi packages if configured (global config only)
+          ;; Pi packages come from the global config only
           _ (pi/ensure-pi-packages! cfg state harness-volume-name)]
 
-      ;; Verify harness if requested
       (when-let [descriptor (harness-for cmd)]
         (verify-harness-available descriptor state))
 
-      ;; Resolve final image (may auto-build extension)
       (let [descriptor (harness-for cmd)
             ;; A harness that is itself a secret scanner stands in for aishell's
             ;; own scanning: no sensitive-file scan, no scan-freshness nag.
@@ -197,14 +193,10 @@
             image-tag (resolve-image-tag base-tag project-dir false)
             git-id (docker-run/read-git-identity project-dir)
 
-            ;; Extract defaults for this harness (if any)
             defaults (when (and cfg cmd)
                        (get-in cfg [:harness_args (keyword cmd)] []))
-
-            ;; Ensure defaults is a vector
             defaults-vec (vec (or defaults []))
 
-            ;; Verbose output (when we add --verbose support)
             _ (when cfg
                 (output/verbose (str "Loaded config from: "
                                      (name (config/config-source project-dir)))))
@@ -213,36 +205,28 @@
                                      " <" (:email git-id) ">")))
             _ (report-harness-defaults! cmd defaults-vec)
 
-            ;; Check for stale image (advisory warning)
             _ (check-dockerfile-stale state)
             _ (warn-if-foundation-stale! image-tag)
 
-            ;; Warn about dangerous docker_args (advisory warning)
             _ (when-let [docker-args (:docker_args cfg)]
                 (validation/warn-dangerous-args docker-args))
 
-            ;; Warn about dangerous mount paths (advisory warning)
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
 
-            ;; Scan for sensitive files (unless --unsafe or a secret scanner)
-            ;; Uses project-dir already bound at line 71
             _ (when-not (or (:unsafe opts) secret-scanner?)
                 (let [detection-config (get cfg :detection {})
                       allowlist (:allowlist detection-config [])
                       ;; scan-project checks :enabled and uses :custom_patterns
                       findings (detection/scan-project project-dir detection-config)
-                      ;; filter out allowlisted files
                       filtered-findings (detection/filter-allowlisted findings allowlist project-dir)]
                   (when (seq filtered-findings)
                     (detection/display-warnings project-dir filtered-findings)
                     (detection/confirm-if-needed filtered-findings))))
 
-            ;; Display gitleaks freshness warning only if gitleaks is installed
             _ (when (and (:with-gitleaks state) (not secret-scanner?))
                 (gitleaks-warnings/display-freshness-warning project-dir cfg))
 
-            ;; Build docker args
             docker-args (docker-run/build-docker-args
                          {:project-dir project-dir
                           :image-tag image-tag
@@ -255,7 +239,6 @@
                           :container-name container-name-str
                           :harness-volume-name harness-volume-name})
 
-            ;; Determine command to run in container
             skip-perms? (harness/skip-permissions?
                          (System/getenv harness/skip-permissions-env-var))
 
@@ -304,32 +287,26 @@
   ;; Refuse a home-containing root before anything walks the tree
   (validation/check-project-dir! (System/getProperty "user.dir"))
 
-  ;; Check Docker available
   (docker/check-docker!)
 
-  ;; Read state (contains build info)
   (let [state (state/read-state)]
-    ;; Verify build exists
     (when-not state
       (output/error-no-setup))
 
-    ;; Get project-dir FIRST (needed for extension resolution)
     (let [project-dir (System/getProperty "user.dir")
           base-tag base/base-image-tag
 
-          ;; Resolve final image (may auto-build extension, ensures base image up to date)
           image-tag (resolve-image-tag base-tag project-dir false)
           _ (warn-if-foundation-stale! image-tag)
           cfg (config/load-config project-dir)
           git-id (docker-run/read-git-identity project-dir)
 
-          ;; Ensure harness volume ready (lazy population)
           harness-volume-name (ensure-harness-volume state cfg)
 
-          ;; Auto-detect TTY: true if running in terminal, false if piped/scripted
+          ;; False when piped or scripted
           tty? (output/tty?)
 
-          ;; Build docker args for exec (conditional TTY, skip pre_start)
+          ;; Skips pre_start
           docker-args (docker-run/build-docker-args-for-exec
                        {:project-dir project-dir
                         :image-tag image-tag
@@ -339,13 +316,10 @@
                         :tty? tty?
                         :harness-volume-name harness-volume-name})
 
-          ;; Command to run in container (user's command)
           container-cmd cmd-args
 
-          ;; Execute command with inherited stdin/stdout/stderr
           ;; :continue true prevents exception on non-zero exit
           result (apply p/shell {:inherit true :continue true}
                         (concat docker-args container-cmd))]
 
-      ;; Propagate exit code to caller
       (System/exit (:exit result)))))

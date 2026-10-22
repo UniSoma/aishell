@@ -131,25 +131,21 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
    Extra code-args are passed through to the 'code' CLI, merged after
    harness_args.vscode defaults from config."
   [& [{:keys [detach? code-args]}]]
-  ;; 1. Check prerequisites; the project-dir guard runs before anything
-  ;;    walks the tree
+  ;; Refuse a home-containing root before anything walks the tree
   (validation/check-project-dir! (System/getProperty "user.dir"))
   (check-vscode!)
   (docker/check-docker!)
 
-  ;; 2. Read state
   (let [state (state/read-state)
         project-dir (System/getProperty "user.dir")]
     (when-not state
       (output/error-no-setup))
 
-    ;; 3. Resolve image tag (handles extensions like aishell claude does)
     (let [base-tag (or (:image-tag state) build/foundation-image-tag)
           image-tag (run/resolve-image-tag base-tag project-dir false)
           _ (run/warn-if-foundation-stale! image-tag)
           cfg (config/load-config project-dir)
 
-          ;; 4. Merge harness_args.vscode defaults with CLI args
           defaults (vec (or (get-in cfg [:harness_args :vscode]) []))
           extra-args (vec (concat defaults (or code-args [])))
           _ (when (seq defaults)
@@ -157,10 +153,8 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
           _ (when (seq extra-args)
               (output/verbose (str "Passing to code CLI: " (pr-str extra-args))))]
 
-      ;; 5. Write per-image config (advisory, non-blocking)
       (ensure-imageconfig! image-tag)
 
-      ;; 6. Start container and launch VSCode
       (let [container-name (start-container! state project-dir image-tag)]
         (if detach?
           (do
