@@ -7,6 +7,7 @@
             [clojure.string :as str]
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
+            [aishell.docker.build :as build]
             [aishell.docker.naming :as naming]
             [aishell.docker.run :as docker-run]
             [aishell.docker.hash :as hash]
@@ -203,6 +204,7 @@
 
             ;; Check for stale image (advisory warning)
             _ (check-dockerfile-stale state)
+            _ (build/warn-if-foundation-stale!)
 
             ;; Warn about dangerous docker_args (advisory warning)
             _ (when-let [docker-args (:docker_args cfg)]

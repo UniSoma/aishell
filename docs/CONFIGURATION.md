@@ -1541,6 +1541,6 @@ Use `aishell setup --reuse-config` when you want setup semantics:
 - **After npm publish:** A new harness version was released
 
 **When to use update --force:**
-- **System package updates:** Debian/Node.js security patches
+- **System package updates:** Debian/Node.js security patches. Starting a sandbox warns when the foundation image is more than 30 days old, or was built before aishell recorded build dates.
 - **Foundation changes:** After an aishell version upgrade
 - **Troubleshooting:** The foundation image behaves unexpectedly

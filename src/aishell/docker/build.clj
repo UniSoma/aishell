@@ -9,11 +9,41 @@
             [aishell.docker.hash :as hash]
             [aishell.docker.spinner :as spinner]
             [aishell.docker.templates :as templates]
-            [aishell.output :as output]))
+            [aishell.output :as output])
+  (:import [java.time Duration Instant]))
 
 ;; Label keys for cache tracking
 (def dockerfile-hash-label "aishell.dockerfile.hash")
 (def foundation-image-tag "aishell:foundation")
+(def build-timestamp-label "aishell.build.timestamp")
+
+(def stale-after-days
+  "Age past which a foundation image's OS packages are worth refreshing."
+  30)
+
+(defn foundation-stale-warning
+  "The warning for a foundation built at `built-at` (the ISO-8601 value of
+   `build-timestamp-label`), or nil when it is at most `stale-after-days`
+   old at `now`. A missing or unparseable label counts as stale: the image
+   predates the label."
+  [built-at now]
+  (let [built (try (Instant/parse built-at) (catch Exception _ nil))
+        age-days (when built (.toDays (Duration/between built now)))]
+    (cond
+      (nil? built)
+      "Foundation image has no build date. Run 'aishell update --force' to refresh its OS packages."
+
+      (> age-days stale-after-days)
+      (str "Foundation image is " age-days " days old. Run 'aishell update --force' to refresh its OS packages."))))
+
+(defn warn-if-foundation-stale!
+  "Warn when the local foundation image is older than `stale-after-days`.
+   Advisory only."
+  []
+  (when-let [msg (foundation-stale-warning
+                  (docker/get-image-label foundation-image-tag build-timestamp-label)
+                  (Instant/now))]
+    (output/warn msg)))
 
 (defn get-dockerfile-hash
   "Compute hash of every file baked into the foundation image — the
@@ -49,11 +79,12 @@
 
 (defn- build-docker-args
   "Construct docker build argument vector."
-  [{:keys [with-gitleaks]} dockerfile-hash]
+  [{:keys [with-gitleaks]} dockerfile-hash built-at]
   (cond-> []
     ;; Gitleaks is opt-out, so we always pass the arg (true or false)
     true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
-    true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))))
+    true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))
+    true (conj "--label" (str build-timestamp-label "=" built-at))))
 
 (defn- format-duration
   "Format milliseconds as human-readable duration."
@@ -118,7 +149,7 @@
     ;; Create temp build directory and build
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
           dockerfile-hash (get-dockerfile-hash)
-          docker-args (build-docker-args opts dockerfile-hash)
+          docker-args (build-docker-args opts dockerfile-hash (Instant/now))
           start-time (System/currentTimeMillis)]
       (try
         ;; Write template files
