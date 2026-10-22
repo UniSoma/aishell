@@ -1,25 +1,26 @@
 ---
 id: aix-01m57xyfsykv
 title: Add omp (oh-my-pi) harness with a GitHub-release binary install kind
-status: open
+status: closed
 type: feature
 priority: 2
 mode: afk
 created: '2026-10-18T16:36:33.213097600Z'
-updated: '2026-10-18T16:37:10.355772518Z'
+updated: '2026-10-22T21:18:19.237137026Z'
+closed: '2026-10-22T21:18:19.237137026Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: '`aishell setup --with-omp` and `--with-omp=18.12.1` install `omp` into the harness volume, verified against the release''s `SHA256SUMS.txt`, and `aishell omp` launches it in the Sandbox.'
-  done: false
+  done: true
 - title: A tampered or truncated download (checksum mismatch) fails the volume build with a clear error.
-  done: false
+  done: true
 - title: '`aishell update` refreshes an unpinned omp to the newest release.'
-  done: false
+  done: true
 - title: '`clj-kondo --lint src test` is clean and the test suite passes.'
-  done: false
+  done: true
 - title: With only omp enabled, a host `PI_CODING_AGENT_DIR` or `PI_CONFIG_DIR` is not passed into the Sandbox.
-  done: false
+  done: true
 ---
 
 ## Description
@@ -59,3 +60,9 @@ Add omp (oh-my-pi, https://omp.sh/docs, MIT, a fork of pi by Stencil Labs) as a 
 - The `cli.clj` help examples, if they list harnesses.
 - Tests: each harness table in `test/aishell/{harness,info,check,cli,output}_test.clj` and `test/aishell/docker/{run,volume}_test.clj`. Add volume tests for the github-release snippet: pinned vs latest URLs, arch mapping, checksum step, PATH.
 - Docs: `docs/HARNESSES.md` (mention that omp is yolo by default and the `startup.checkUpdate: false` tip), `docs/CONFIGURATION.md`, `docs/ARCHITECTURE.md`, `README.md`, `llm.txt`, `CHANGELOG.md`.
+
+## Notes
+
+**2026-10-22T21:18:19.237137026Z**
+
+omp harness landed (691701a, 49838b1, 3676f85); Jonas verified setup and launch end to end on 2026-10-22.
