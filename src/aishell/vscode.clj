@@ -146,6 +146,7 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
     ;; 3. Resolve image tag (handles extensions like aishell claude does)
     (let [base-tag (or (:image-tag state) build/foundation-image-tag)
           image-tag (run/resolve-image-tag base-tag project-dir false)
+          _ (run/warn-if-foundation-stale! image-tag)
           cfg (config/load-config project-dir)
 
           ;; 4. Merge harness_args.vscode defaults with CLI args

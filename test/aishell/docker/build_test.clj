@@ -28,3 +28,24 @@
   (testing "an unparseable label counts as stale"
     (is (str/includes? (build/foundation-stale-warning "yesterday" now)
                        "aishell update --force"))))
+
+(deftest build-timestamp-for-a-rebuild
+  (testing "a forced build bypasses the layer cache, so it is stamped now"
+    (is (= (str now) (build/build-timestamp {:force? true :image-exists? true
+                                             :previous "2026-01-01T00:00:00Z"
+                                             :now now}))))
+  (testing "a cached rebuild keeps the previous stamp, since its apt layer may be reused"
+    (is (= "2026-01-01T00:00:00Z"
+           (build/build-timestamp {:force? false :image-exists? true
+                                   :previous "2026-01-01T00:00:00Z"
+                                   :now now}))))
+  (testing "a cached rebuild of an image built before the label stays unstamped"
+    (is (nil? (build/build-timestamp {:force? false :image-exists? true
+                                      :previous nil :now now}))))
+  (testing "a first build is stamped now"
+    (is (= (str now) (build/build-timestamp {:force? false :image-exists? false
+                                             :previous nil :now now})))))
+
+(deftest build-args-without-a-timestamp-omit-the-label
+  (let [args (#'build/build-docker-args {} "abc123" nil)]
+    (is (not-any? #(str/starts-with? % build/build-timestamp-label) args))))

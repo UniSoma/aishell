@@ -28,22 +28,25 @@
    predates the label."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
-        age-days (when built (.toDays (Duration/between built now)))]
+        age-days (when built (.toDays (Duration/between built now)))
+        remedy " Run 'aishell update --force' to refresh its OS packages."]
     (cond
       (nil? built)
-      "Foundation image has no build date. Run 'aishell update --force' to refresh its OS packages."
+      (str "Foundation image has no build date." remedy)
 
       (> age-days stale-after-days)
-      (str "Foundation image is " age-days " days old. Run 'aishell update --force' to refresh its OS packages."))))
+      (str "Foundation image is " age-days " days old." remedy))))
 
-(defn warn-if-foundation-stale!
-  "Warn when the local foundation image is older than `stale-after-days`.
-   Advisory only."
-  []
-  (when-let [msg (foundation-stale-warning
-                  (docker/get-image-label foundation-image-tag build-timestamp-label)
-                  (Instant/now))]
-    (output/warn msg)))
+(defn build-timestamp
+  "The `build-timestamp-label` value for a foundation build, or nil for
+   none. Only a build that bypasses the layer cache gets a fresh stamp: a
+   cached rebuild reuses the old apt layer, so it keeps the previous stamp,
+   or stays unstamped when the image it replaces had none."
+  [{:keys [force? image-exists? previous now]}]
+  (cond
+    force? (str now)
+    image-exists? previous
+    :else (str now)))
 
 (defn get-dockerfile-hash
   "Compute hash of every file baked into the foundation image — the
@@ -84,7 +87,7 @@
     ;; Gitleaks is opt-out, so we always pass the arg (true or false)
     true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))
-    true (conj "--label" (str build-timestamp-label "=" built-at))))
+    built-at (conj "--label" (str build-timestamp-label "=" built-at))))
 
 (defn- format-duration
   "Format milliseconds as human-readable duration."
@@ -149,7 +152,15 @@
     ;; Create temp build directory and build
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
           dockerfile-hash (get-dockerfile-hash)
-          docker-args (build-docker-args opts dockerfile-hash (Instant/now))
+          image-exists? (docker/image-exists? foundation-image-tag)
+          built-at (build-timestamp
+                    {:force? force
+                     :image-exists? image-exists?
+                     :previous (when image-exists?
+                                 (docker/get-image-label foundation-image-tag
+                                                         build-timestamp-label))
+                     :now (Instant/now)})
+          docker-args (build-docker-args opts dockerfile-hash built-at)
           start-time (System/currentTimeMillis)]
       (try
         ;; Write template files
