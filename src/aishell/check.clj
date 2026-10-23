@@ -80,7 +80,7 @@
       (print-status :ok "Base image: custom (~/.aishell/Dockerfile)"))
     (print-status :ok "Base image: default (foundation alias)")))
 
-(defn- check-dockerfile-staleness
+(defn- check-foundation-staleness
   "Report whether the content hash recorded at setup matches this
    aishell's embedded content (the Dockerfile and every COPY'd file). A
    mismatch means the foundation image is stale."
@@ -266,7 +266,7 @@
               (reset! critical-fail? true))
 
             ;; Dockerfile staleness
-            (check-dockerfile-staleness state)
+            (check-foundation-staleness state)
 
             ;; Base image customization status
             (check-base-image-custom)

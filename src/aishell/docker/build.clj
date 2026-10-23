@@ -62,12 +62,11 @@
     :else (str now)))
 
 (defn get-dockerfile-hash
-  "Compute hash of every file baked into the foundation image — the
-   Dockerfile plus all files COPY'd in (entrypoint.sh, bashrc.aishell,
-   profile.d-aishell.sh, etc-profile). The image label is named
-   `aishell.dockerfile.hash` for backwards compatibility, but the hash
-   covers the full COPY surface so an entrypoint-only edit still
-   invalidates the cache."
+  "Compute the hash of all embedded foundation content: the Dockerfile
+   and every file it COPYs in (entrypoint.sh, bashrc.aishell,
+   profile.d-aishell.sh, etc-profile). The image label keeps the name
+   `aishell.dockerfile.hash` for backwards compatibility, but an
+   entrypoint-only edit still changes the hash."
   []
   (hash/compute-hash templates/foundation-content))
 
@@ -77,7 +76,7 @@
    Returns true if:
    - force? is true
    - Image doesn't exist
-   - Dockerfile hash changed since build"
+   - The embedded content hash differs from the image's label"
   [image-tag force?]
   (or force?
       (not (docker/image-exists? image-tag))
@@ -159,7 +158,7 @@
   (if-not (needs-rebuild? foundation-image-tag force)
     (do
       (when-not quiet
-        (println (str "Image " foundation-image-tag " is up to date (use --force to rebuild)")))
+        (println (str "Image " foundation-image-tag " matches its embedded Dockerfile (use --force to rebuild)")))
       {:success true :image foundation-image-tag :cached true})
 
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})

@@ -70,3 +70,10 @@
 (deftest build-args-without-a-build-date-omit-the-label
   (let [args (#'build/build-docker-args {} "abc123" nil)]
     (is (not-any? #(str/starts-with? % build/build-date-label) args))))
+
+(deftest a-cached-foundation-build-reports-a-content-match
+  (with-redefs [docker/check-docker! (fn [])
+                build/needs-rebuild? (fn [_ _] false)]
+    (let [out (with-out-str (build/build-foundation-image {}))]
+      (is (str/includes? out "Image aishell:foundation matches its embedded Dockerfile (use --force to rebuild)"))
+      (is (not (str/includes? out "up to date"))))))

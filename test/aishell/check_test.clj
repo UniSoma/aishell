@@ -112,6 +112,6 @@
 
 (deftest staleness-check-passes-a-foundation-built-from-current-content
   (let [out (with-out-str
-              (#'check/check-dockerfile-staleness
+              (#'check/check-foundation-staleness
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
