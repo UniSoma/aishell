@@ -16,16 +16,16 @@
 
 (def dockerfile-hash-label "aishell.dockerfile.hash")
 (def foundation-image-tag "aishell:foundation")
-(def build-timestamp-label "aishell.build.timestamp")
+(def build-date-label "aishell.build.timestamp")
 
-(def out-of-date-after-days
+(def ^:private out-of-date-after-days
   "Age in days past which a foundation image is out of date: Docker's layer
    cache keeps its OS packages as they were at its build date."
   30)
 
-(defn foundation-out-of-date-warning
+(defn- foundation-out-of-date-warning
   "Return the out-of-date warning for a foundation built at `built-at`.
-   `built-at` is the ISO-8601 value of `build-timestamp-label`. Returns nil
+   `built-at` is the ISO-8601 value of `build-date-label`. Returns nil
    when the foundation is at most `out-of-date-after-days` old at `now`. A
    missing label means the image predates the label and counts as out of
    date; so does an unparseable one."
@@ -47,12 +47,12 @@
    Advisory only: never stops the command."
   [image-tag]
   (when-let [msg (foundation-out-of-date-warning
-                  (docker/get-image-label image-tag build-timestamp-label)
+                  (docker/get-image-label image-tag build-date-label)
                   (Instant/now))]
     (output/warn msg)))
 
-(defn build-timestamp
-  "The `build-timestamp-label` value for a foundation build, or nil for
+(defn foundation-build-date
+  "The `build-date-label` value for a foundation build, or nil for
    none. A forced build (`--no-cache`) and a first build are stamped `now`.
    A cached rebuild may reuse the old apt layer, so it keeps the previous
    stamp, or stays unstamped when the image it replaces had none."
@@ -101,7 +101,7 @@
     ;; Passed even when false so the build cache sees the same args every time
     true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
     true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))
-    built-at (conj "--label" (str build-timestamp-label "=" built-at))))
+    built-at (conj "--label" (str build-date-label "=" built-at))))
 
 (defn- format-duration
   "Format milliseconds as human-readable duration."
@@ -148,7 +148,7 @@
 
    Options:
    - :with-gitleaks - Include Gitleaks (default false, opt-in)
-   - :force - Rebuild with `--no-cache` and stamp a fresh build timestamp
+   - :force - Rebuild with `--no-cache` and stamp a fresh build date
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors
 
@@ -166,12 +166,12 @@
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
           dockerfile-hash (get-dockerfile-hash)
           image-exists? (docker/image-exists? foundation-image-tag)
-          built-at (build-timestamp
+          built-at (foundation-build-date
                     {:force? force
                      :image-exists? image-exists?
                      :previous (when image-exists?
                                  (docker/get-image-label foundation-image-tag
-                                                         build-timestamp-label))
+                                                         build-date-label))
                      :now (Instant/now)})
           docker-args (build-docker-args opts dockerfile-hash built-at)
           start-time (System/currentTimeMillis)]

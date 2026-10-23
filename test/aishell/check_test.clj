@@ -4,7 +4,9 @@
             [babashka.fs :as fs]
             [aishell.util :as util]
             [aishell.docker.naming :as naming]
-            [aishell.check :as check]))
+            [aishell.check :as check]
+            [aishell.docker.hash :as hash]
+            [aishell.docker.templates :as templates]))
 
 (def ^:private check-isolation #'check/check-claude-isolation)
 (def ^:private check-harnesses #'check/check-harnesses)
@@ -107,3 +109,9 @@
       (is (str/includes? out "Gitleaks installed")))
     (testing "the version-less harness reports no version"
       (is (not (str/includes? out "Gitleaks installed ("))))))
+
+(deftest dockerfile-check-reports-a-matching-foundation
+  (let [out (with-out-str
+              (#'check/check-dockerfile-staleness
+               {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
+    (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))

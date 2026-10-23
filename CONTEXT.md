@@ -21,12 +21,12 @@ The upstream OS image the Foundation image is built FROM — `debian:trixie-slim
 _Avoid_: base image, OS image
 
 **Foundation image**:
-`aishell:foundation` — the bottom image layer, built from a Dockerfile embedded in aishell itself and identical for every user and project. Holds the OS packages, runtimes and shared tooling. Users never edit it; it rebuilds when its embedded content hash changes.
+`aishell:foundation` — the bottom image layer, built from a Dockerfile embedded in aishell itself and identical for every user and project. Holds the OS packages, runtimes and shared tooling. Users never edit it; it rebuilds when its embedded content hash changes. A Foundation image built from embedded content other than the running aishell's is *stale*.
 _Avoid_: base (for this layer), system image
 
 **Foundation build date**:
 When the Foundation image's OS packages were last fetched fresh: the time of its first or forced build, carried unchanged through cached rebuilds. A Foundation image whose build date is past the age limit, or unknown, is *out of date*.
-_Avoid_: build time, last build, image age, stale
+_Avoid_: build time, last build, image age, stale (that is a content mismatch, not age)
 
 **Base image**:
 `aishell:base` — the per-user layer between the Foundation image and a project's own extension, built from `~/.aishell/Dockerfile` when one exists and otherwise a plain tag alias of the Foundation image. This is where a user's own machine-wide customizations go.

@@ -87,7 +87,7 @@
   (if-let [stored-hash (:dockerfile-hash state)]
     (let [current-hash (hash/compute-hash templates/foundation-content)]
       (if (= stored-hash current-hash)
-        (print-status :ok "Base Dockerfile is up to date")
+        (print-status :ok "Foundation image matches its embedded Dockerfile")
         (print-status :warn (str "Image may be stale. Run " output/CYAN "aishell update" output/NC " to rebuild"))))
     (print-status :warn "No Dockerfile hash stored (old build format)")))
 
