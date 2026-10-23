@@ -2,7 +2,7 @@
   "Docker image building with caching and progress display.
 
    Builds images from embedded templates, with cache invalidation based
-   on Dockerfile content hash. Supports verbose, quiet, and spinner modes.
+   on the embedded content hash. Supports verbose, quiet, and spinner modes.
    Also warns when a foundation image is out of date; see
    `warn-if-foundation-out-of-date!`."
   (:require [babashka.process :as p]
@@ -24,11 +24,10 @@
   30)
 
 (defn- foundation-out-of-date-warning
-  "Return the out-of-date warning for a foundation built at `built-at`.
-   `built-at` is the ISO-8601 value of `build-date-label`. Returns nil
-   when the foundation is at most `out-of-date-after-days` old at `now`. A
-   missing label means the image predates the label and counts as out of
-   date; so does an unparseable one."
+  "Return the out-of-date warning for a foundation whose `build-date-label`
+   value is `built-at`, an ISO-8601 instant, or nil when it is at most
+   `out-of-date-after-days` old at `now`. A missing label (the image
+   predates the label) or an unparseable one counts as out of date."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
         age-days (when built (.toDays (Duration/between built now)))
@@ -52,7 +51,7 @@
     (output/warn msg)))
 
 (defn foundation-build-date
-  "The `build-date-label` value for a foundation build, or nil for
+  "Return the `build-date-label` value for a foundation build, or nil for
    none. A forced build (`--no-cache`) and a first build are stamped `now`.
    A cached rebuild may reuse the old apt layer, so it keeps the previous
    stamp, or stays unstamped when the image it replaces had none."
@@ -95,7 +94,7 @@
   (spit (str (fs/path build-dir "etc-profile")) templates/etc-profile-content))
 
 (defn- build-docker-args
-  "Construct docker build argument vector."
+  "Return the docker build argument vector."
   [{:keys [with-gitleaks]} dockerfile-hash built-at]
   (cond-> []
     ;; Passed even when false so the build cache sees the same args every time

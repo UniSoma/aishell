@@ -110,7 +110,7 @@
     (testing "the version-less harness reports no version"
       (is (not (str/includes? out "Gitleaks installed ("))))))
 
-(deftest dockerfile-check-reports-a-matching-foundation
+(deftest staleness-check-passes-a-foundation-built-from-current-content
   (let [out (with-out-str
               (#'check/check-dockerfile-staleness
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]

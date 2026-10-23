@@ -1,25 +1,26 @@
 ---
 id: aix-01m5kc23x2sd
 title: Finish the foundation out-of-date terminology
-status: in_progress
+status: closed
 type: chore
 priority: 3
 mode: afk
 created: '2026-10-23T03:14:50.914855004Z'
-updated: '2026-10-23T03:15:08.757356465Z'
+updated: '2026-10-23T03:19:58.724177299Z'
+closed: '2026-10-23T03:19:58.724177299Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: foundation-out-of-date-warning and out-of-date-after-days are private
-  done: false
+  done: true
 - title: No code name says timestamp for the build date; the label string aishell.build.timestamp is unchanged
-  done: false
+  done: true
 - title: CONTEXT.md defines stale as a content mismatch and the avoid line says so
-  done: false
+  done: true
 - title: aishell check reports Foundation image matches its embedded Dockerfile
-  done: false
+  done: true
 - title: bb test passes and clj-kondo --lint src test is clean
-  done: false
+  done: true
 ---
 
 ## Description
@@ -32,3 +33,9 @@ Follow-up to aix-01m5k46ypnn6 (ac6791d, 7a820e4, 2775f63), approved by Jonas on 
 4. check.clj:89: reword "Base Dockerfile is up to date" to "Foundation image matches its embedded Dockerfile" (update any test asserting the old text).
 
 No behaviour change beyond the check message text.
+
+## Notes
+
+**2026-10-23T03:19:58.724177299Z**
+
+Made the out-of-date helpers private, renamed timestamp code names to build date (label string unchanged), defined stale in CONTEXT.md, and reworded the check message to 'Foundation image matches its embedded Dockerfile'.

@@ -81,8 +81,9 @@
     (print-status :ok "Base image: default (foundation alias)")))
 
 (defn- check-dockerfile-staleness
-  "Check if any baked-in foundation content (Dockerfile or any COPY'd
-   file) changed since build."
+  "Report whether the content hash recorded at setup matches this
+   aishell's embedded content (the Dockerfile and every COPY'd file). A
+   mismatch means the foundation image is stale."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
     (let [current-hash (hash/compute-hash templates/foundation-content)]
