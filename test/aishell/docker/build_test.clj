@@ -1,6 +1,7 @@
 (ns aishell.docker.build-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
+            [aishell.docker :as docker]
             [aishell.docker.build :as build])
   (:import [java.time Instant]))
 
@@ -15,19 +16,38 @@
 
 (deftest foundation-age-warning
   (testing "a foundation built today gets no warning"
-    (is (nil? (build/foundation-stale-warning (str now) now))))
+    (is (nil? (build/foundation-out-of-date-warning (str now) now))))
   (testing "a foundation built exactly 30 days ago gets no warning"
-    (is (nil? (build/foundation-stale-warning (days-before 30) now))))
+    (is (nil? (build/foundation-out-of-date-warning (days-before 30) now))))
   (testing "a foundation older than 30 days gets a warning naming the fix"
-    (let [msg (build/foundation-stale-warning (days-before 31) now)]
+    (let [msg (build/foundation-out-of-date-warning (days-before 31) now)]
       (is (str/includes? msg "31 days"))
       (is (str/includes? msg "aishell update --force"))))
-  (testing "a foundation without the label counts as stale"
-    (let [msg (build/foundation-stale-warning nil now)]
+  (testing "a foundation without the label counts as out of date"
+    (let [msg (build/foundation-out-of-date-warning nil now)]
       (is (str/includes? msg "aishell update --force"))))
-  (testing "an unparseable label counts as stale"
-    (is (str/includes? (build/foundation-stale-warning "yesterday" now)
+  (testing "an unparseable label counts as out of date"
+    (is (str/includes? (build/foundation-out-of-date-warning "yesterday" now)
                        "aishell update --force"))))
+
+(defn- warning-for-label [label]
+  (with-redefs [docker/get-image-label
+                (fn [tag key]
+                  (is (= "aishell:base" tag))
+                  (is (= build/build-timestamp-label key))
+                  label)]
+    (with-out-str
+      (binding [*err* *out*]
+        (build/warn-if-foundation-out-of-date! "aishell:base")))))
+
+(deftest warn-if-foundation-out-of-date!-reads-the-image-label
+  (testing "a foundation built just now prints nothing"
+    (is (= "" (warning-for-label (str (Instant/now))))))
+  (testing "a foundation built in 2020 prints the warning"
+    (is (str/includes? (warning-for-label "2020-01-01T00:00:00Z")
+                       "aishell update --force")))
+  (testing "an image without the label prints the warning"
+    (is (str/includes? (warning-for-label nil) "no build date"))))
 
 (deftest build-timestamp-by-build-kind
   (testing "a forced build bypasses the layer cache, so it is stamped now"

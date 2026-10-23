@@ -23,8 +23,7 @@
             [aishell.detection.core :as detection]
             [aishell.gitleaks.warnings :as gitleaks-warnings]
             [aishell.gitleaks.scan-state :as scan-state]
-            [aishell.pi :as pi])
-  (:import [java.time Instant]))
+            [aishell.pi :as pi]))
 
 (defn- harness-for
   "The registry descriptor for a run command name, or nil in shell mode."
@@ -75,17 +74,6 @@
     (let [current-hash (hash/compute-hash templates/foundation-content)]
       (when (not= stored-hash current-hash)
         (output/warn "Image may be stale. Run 'aishell update' to rebuild.")))))
-
-(defn warn-if-foundation-stale!
-  "Warn when the foundation under `image-tag` is older than
-   `build/stale-after-days` or carries no build timestamp. The label is
-   inherited through FROM, so base and extension images carry it too.
-   Advisory only: never blocks the run."
-  [image-tag]
-  (when-let [msg (build/foundation-stale-warning
-                  (docker/get-image-label image-tag build/build-timestamp-label)
-                  (Instant/now))]
-    (output/warn msg)))
 
 (defn- ensure-harness-volume
   "Ensure harness volume exists and is up-to-date.
@@ -206,7 +194,7 @@
             _ (report-harness-defaults! cmd defaults-vec)
 
             _ (check-dockerfile-stale state)
-            _ (warn-if-foundation-stale! image-tag)
+            _ (build/warn-if-foundation-out-of-date! image-tag)
 
             _ (when-let [docker-args (:docker_args cfg)]
                 (validation/warn-dangerous-args docker-args))
@@ -297,7 +285,7 @@
           base-tag base/base-image-tag
 
           image-tag (resolve-image-tag base-tag project-dir false)
-          _ (warn-if-foundation-stale! image-tag)
+          _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)
           git-id (docker-run/read-git-identity project-dir)
 

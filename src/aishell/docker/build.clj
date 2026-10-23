@@ -16,15 +16,15 @@
 (def foundation-image-tag "aishell:foundation")
 (def build-timestamp-label "aishell.build.timestamp")
 
-(def stale-after-days
+(def out-of-date-after-days
   "Age past which a foundation image's OS packages are worth refreshing."
   30)
 
-(defn foundation-stale-warning
+(defn foundation-out-of-date-warning
   "The warning for a foundation built at `built-at` (the ISO-8601 value of
-   `build-timestamp-label`), or nil when it is at most `stale-after-days`
-   old at `now`. A missing label means the image predates the label and
-   counts as stale; so does an unparseable one."
+   `build-timestamp-label`), or nil when it is at most
+   `out-of-date-after-days` old at `now`. A missing label means the image
+   predates the label and counts as out of date; so does an unparseable one."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
         age-days (when built (.toDays (Duration/between built now)))
@@ -33,8 +33,19 @@
       (nil? built)
       (str "Foundation image has no build date." remedy)
 
-      (> age-days stale-after-days)
+      (> age-days out-of-date-after-days)
       (str "Foundation image is " age-days " days old." remedy))))
+
+(defn warn-if-foundation-out-of-date!
+  "Warn when the foundation under `image-tag` is older than
+   `out-of-date-after-days` or carries no build timestamp. The label is
+   inherited through FROM, so base and extension images carry it too.
+   Advisory only: never blocks the run."
+  [image-tag]
+  (when-let [msg (foundation-out-of-date-warning
+                  (docker/get-image-label image-tag build-timestamp-label)
+                  (Instant/now))]
+    (output/warn msg)))
 
 (defn build-timestamp
   "The `build-timestamp-label` value for a foundation build, or nil for

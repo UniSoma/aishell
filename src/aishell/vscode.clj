@@ -143,7 +143,7 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 
     (let [base-tag (or (:image-tag state) build/foundation-image-tag)
           image-tag (run/resolve-image-tag base-tag project-dir false)
-          _ (run/warn-if-foundation-stale! image-tag)
+          _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)
 
           defaults (vec (or (get-in cfg [:harness_args :vscode]) []))
