@@ -36,9 +36,10 @@
                   (is (= "aishell:base" tag))
                   (is (= build/build-timestamp-label key))
                   label)]
-    (with-out-str
-      (binding [*err* *out*]
-        (build/warn-if-foundation-out-of-date! "aishell:base")))))
+    (let [err (java.io.StringWriter.)]
+      (binding [*err* err]
+        (build/warn-if-foundation-out-of-date! "aishell:base"))
+      (str err))))
 
 (deftest warn-if-foundation-out-of-date!-reads-the-image-label
   (testing "a foundation built just now prints nothing"
