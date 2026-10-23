@@ -1541,6 +1541,6 @@ Use `aishell setup --reuse-config` when you want setup semantics:
 - **After npm publish:** A new harness version was released
 
 **When to use update --force:**
-- **System package updates:** Debian/Node.js security patches. Starting a sandbox warns that the foundation image is out of date when it is more than 30 days old, or was built before aishell recorded build dates. Only `--force` resets the date: a plain `update` may reuse the cached OS package layer, so the build keeps its old date.
+- **System package updates:** Debian/Node.js security patches. Starting a sandbox warns that the foundation image is out of date when it is more than 30 days old, or was built before aishell recorded build dates. Only `--force` resets the date: a plain `update` may reuse the cached OS package layer, so the image keeps its old build date.
 - **Foundation changes:** After an aishell version upgrade
 - **Troubleshooting:** The foundation image behaves unexpectedly

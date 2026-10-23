@@ -14,7 +14,7 @@
   (let [args (#'build/build-docker-args {} "abc123" now)]
     (is (some #{(str build/build-timestamp-label "=2026-10-22T12:00:00Z")} args))))
 
-(deftest foundation-age-warning
+(deftest foundation-out-of-date-warning-by-build-date
   (testing "a foundation built today gets no warning"
     (is (nil? (build/foundation-out-of-date-warning (str now) now))))
   (testing "a foundation built exactly 30 days ago gets no warning"

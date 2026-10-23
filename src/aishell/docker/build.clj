@@ -2,7 +2,9 @@
   "Docker image building with caching and progress display.
 
    Builds images from embedded templates, with cache invalidation based
-   on Dockerfile content hash. Supports verbose, quiet, and spinner modes."
+   on Dockerfile content hash. Supports verbose, quiet, and spinner modes.
+   Also warns when a foundation image is out of date; see
+   `warn-if-foundation-out-of-date!`."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [aishell.docker :as docker]
@@ -17,14 +19,16 @@
 (def build-timestamp-label "aishell.build.timestamp")
 
 (def out-of-date-after-days
-  "Age past which a foundation image's OS packages are worth refreshing."
+  "Age in days past which a foundation image is out of date: Docker's layer
+   cache keeps its OS packages as they were at its build date."
   30)
 
 (defn foundation-out-of-date-warning
-  "The warning for a foundation built at `built-at` (the ISO-8601 value of
-   `build-timestamp-label`), or nil when it is at most
-   `out-of-date-after-days` old at `now`. A missing label means the image
-   predates the label and counts as out of date; so does an unparseable one."
+  "Return the out-of-date warning for a foundation built at `built-at`.
+   `built-at` is the ISO-8601 value of `build-timestamp-label`. Returns nil
+   when the foundation is at most `out-of-date-after-days` old at `now`. A
+   missing label means the image predates the label and counts as out of
+   date; so does an unparseable one."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
         age-days (when built (.toDays (Duration/between built now)))
@@ -37,10 +41,10 @@
       (str "Foundation image is " age-days " days old." remedy))))
 
 (defn warn-if-foundation-out-of-date!
-  "Warn when the foundation under `image-tag` is older than
-   `out-of-date-after-days` or carries no build timestamp. The label is
+  "Warn on stderr when the foundation under `image-tag` is out of date:
+   older than `out-of-date-after-days`, or with no build date. The label is
    inherited through FROM, so base and extension images carry it too.
-   Advisory only: never blocks the run."
+   Advisory only: never stops the command."
   [image-tag]
   (when-let [msg (foundation-out-of-date-warning
                   (docker/get-image-label image-tag build-timestamp-label)
