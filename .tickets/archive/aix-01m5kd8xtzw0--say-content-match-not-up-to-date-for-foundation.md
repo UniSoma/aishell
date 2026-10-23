@@ -1,23 +1,24 @@
 ---
 id: aix-01m5kd8xtzw0
 title: Say content match, not up to date, for foundation staleness
-status: in_progress
+status: closed
 type: chore
 priority: 4
 mode: afk
 created: '2026-10-23T03:36:02.655669305Z'
-updated: '2026-10-23T03:36:15.441268466Z'
+updated: '2026-10-23T03:39:29.819106988Z'
+closed: '2026-10-23T03:39:29.819106988Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: The foundation build no longer says up to date for a content match
-  done: false
+  done: true
 - title: check-dockerfile-staleness is renamed check-foundation-staleness
-  done: false
+  done: true
 - title: get-dockerfile-hash and needs-rebuild? docstrings describe the hash as covering all embedded content
-  done: false
+  done: true
 - title: bb test passes and clj-kondo --lint src test is clean
-  done: false
+  done: true
 ---
 
 ## Description
@@ -29,3 +30,9 @@ Follow-up to aix-01m5kc23x2sd (0c51cb5, 6187bdb), approved by Jonas on 2026-10-2
 3. Fix docstrings: `get-dockerfile-hash` (remove the em dash) and `needs-rebuild?` (says "Dockerfile hash changed since build"; the hash covers all embedded content).
 
 No behaviour change beyond the one message text.
+
+## Notes
+
+**2026-10-23T03:39:29.819106988Z**
+
+A cached foundation build now prints 'Image aishell:foundation matches its embedded Dockerfile (use --force to rebuild)' in place of 'is up to date'. check-dockerfile-staleness is renamed check-foundation-staleness. The get-dockerfile-hash and needs-rebuild? docstrings now describe the hash as covering all embedded content.

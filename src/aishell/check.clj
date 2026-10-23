@@ -81,9 +81,10 @@
     (print-status :ok "Base image: default (foundation alias)")))
 
 (defn- check-foundation-staleness
-  "Report whether the content hash recorded at setup matches this
-   aishell's embedded content (the Dockerfile and every COPY'd file). A
-   mismatch means the foundation image is stale."
+  "Report whether the content hash recorded in state matches this
+   aishell's embedded content (the Dockerfile and every file it COPYs
+   from the build context). A mismatch means the foundation image is
+   stale."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
     (let [current-hash (hash/compute-hash templates/foundation-content)]
@@ -238,8 +239,8 @@
       (print-status :ok "Claude isolation: shared (host ~/.claude mounted wholesale)"))))
 
 (defn run-check
-  "Run all pre-flight checks and report status.
-   Returns exit code: 0 if all critical checks pass, 1 if any fail."
+  "Run all pre-flight checks and report status. Exit the process with
+   status 1 when any critical check fails."
   []
   (let [project-dir (System/getProperty "user.dir")
         critical-fail? (atom false)]
@@ -249,64 +250,52 @@
     (println (apply str (repeat 40 "-")))
     (println)
 
-    ;; Docker
     (println (str output/BOLD "Docker" output/NC))
     (when (= :fail (check-docker))
       (reset! critical-fail? true))
     (println)
 
-    ;; Build state
     (println (str output/BOLD "Setup" output/NC))
     (let [state (check-setup-state)]
       (if state
         (do
-          ;; Base image
           (let [base-tag (check-base-image state)]
             (when-not base-tag
               (reset! critical-fail? true))
 
-            ;; Dockerfile staleness
             (check-foundation-staleness state)
 
-            ;; Base image customization status
             (check-base-image-custom)
 
-            ;; Extension
             (when base-tag
               (check-extension project-dir base-tag)))
 
           (println)
 
-          ;; Harnesses
           (println (str output/BOLD "Harnesses" output/NC))
           (check-harnesses state))
         (reset! critical-fail? true)))
     (println)
 
-    ;; Configuration
     (println (str output/BOLD "Configuration" output/NC))
     (let [cfg (check-config project-dir)]
       (println)
 
-      ;; Mounts
       (println (str output/BOLD "Mounts" output/NC))
       (if (seq (:mounts cfg))
         (check-mounts cfg)
         (print-status :ok "No mounts configured"))
       (println)
 
-      ;; Security
       (println (str output/BOLD "Security" output/NC))
       (check-security cfg)
       (check-sensitive-files project-dir cfg)
       (check-gitleaks-freshness project-dir cfg (state/read-state))
 
-      ;; Claude isolation
       (check-claude-isolation project-dir cfg (state/read-state)))
 
     (println)
 
-    ;; Tools
     (println (str output/BOLD "Tools" output/NC))
     (if (fs/which "code")
       (do

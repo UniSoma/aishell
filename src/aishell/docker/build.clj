@@ -63,20 +63,17 @@
 
 (defn get-dockerfile-hash
   "Compute the hash of all embedded foundation content: the Dockerfile
-   and every file it COPYs in (entrypoint.sh, bashrc.aishell,
-   profile.d-aishell.sh, etc-profile). The image label keeps the name
-   `aishell.dockerfile.hash` for backwards compatibility, but an
-   entrypoint-only edit still changes the hash."
+   and every file it COPYs from the build context (entrypoint.sh,
+   bashrc.aishell, profile.d-aishell.sh, etc-profile). The image label
+   keeps the name `aishell.dockerfile.hash` for backwards compatibility,
+   but an entrypoint-only edit still changes the hash."
   []
   (hash/compute-hash templates/foundation-content))
 
 (defn needs-rebuild?
-  "Check if image needs rebuilding.
-
-   Returns true if:
-   - force? is true
-   - Image doesn't exist
-   - The embedded content hash differs from the image's label"
+  "Return true when `image-tag` needs a rebuild: `force?` is set, the
+   image is missing, or its hash label differs from the embedded content
+   hash."
   [image-tag force?]
   (or force?
       (not (docker/image-exists? image-tag))
