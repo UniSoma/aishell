@@ -1486,32 +1486,28 @@ aishell setup --with-claude --force
 
 ### aishell update
 
-**Purpose:** Refresh harness tools to latest versions. The foundation image is rebuilt only when it is missing or stale.
+**Purpose:** Refresh harness tools to latest versions. The Foundation image is rebuilt only when it is missing or stale.
 
 **Usage:**
 ```bash
 # Refresh harness tools
 aishell update
 
-# Also rebuild the foundation image with --no-cache, even when current
+# Also rebuild the Foundation image with --no-cache, even when current
 aishell update --force
 ```
 
 **Default behavior (no flags):**
-1. Rebuilds the foundation image only when it is missing or stale
+1. Rebuilds the Foundation image only when it is missing or stale
 2. Refreshes the Base image
-3. Deletes the existing harness volume
-4. Creates a new harness volume
-5. Populates the volume with harness tools (npm install, binary download)
-6. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
+3. With a harness enabled, deletes the harness volume, recreates it and populates it with harness tools (npm install, binary download)
+4. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
 
 **With --force:**
-1. Rebuilds the foundation image with `--no-cache`
+1. Rebuilds the Foundation image with `--no-cache`
 2. Rebuilds a custom Base image (`~/.aishell/Dockerfile`) even when it is current
-3. Deletes the existing harness volume
-4. Creates a new harness volume
-5. Populates the volume with harness tools
-6. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
+3. With a harness enabled, deletes, recreates and repopulates the harness volume
+4. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
 
 **Preserved from the last build:**
 - Enabled harnesses (`--with-claude`, etc.)
