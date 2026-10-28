@@ -72,14 +72,14 @@
 
 (defn foundation-stale?
   "Return true when `recorded-hash`, read from state or an image label,
-   differs from the hash of the embedded content. A nil hash is stale."
+   differs from `get-dockerfile-hash`. A nil hash is stale."
   [recorded-hash]
   (not= recorded-hash (get-dockerfile-hash)))
 
 (defn needs-rebuild?
   "Return true when `image-tag` needs a rebuild: `force?` is set, the
-   image is missing, or its hash label differs from the embedded content
-   hash."
+   image is missing, or its hash label is missing or differs from
+   `get-dockerfile-hash`."
   [image-tag force?]
   (or force?
       (not (docker/image-exists? image-tag))

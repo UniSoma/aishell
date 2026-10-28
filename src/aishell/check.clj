@@ -81,10 +81,8 @@
     (print-status :ok "Base image: default (alias of the Foundation image)")))
 
 (defn- check-foundation-staleness
-  "Report whether the content hash recorded in state matches this
-   aishell's embedded content (the Dockerfile and every file it COPYs
-   from the build context). A mismatch means the Foundation image is
-   stale."
+  "Report whether the hash recorded in `state` marks the Foundation image
+   stale (`build/foundation-stale?`). Warns when `state` holds no hash."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
     (if (build/foundation-stale? stored-hash)

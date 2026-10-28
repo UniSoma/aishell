@@ -91,6 +91,6 @@
     (testing "a label matching the embedded content needs no rebuild"
       (with-redefs [docker/get-image-label (fn [_ _] (build/get-dockerfile-hash))]
         (is (false? (build/needs-rebuild? "aishell:foundation" false)))))
-    (testing "an outdated label needs a rebuild"
+    (testing "a stale label needs a rebuild"
       (with-redefs [docker/get-image-label (fn [_ _] "old")]
         (is (true? (build/needs-rebuild? "aishell:foundation" false)))))))
