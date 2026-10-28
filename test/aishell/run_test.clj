@@ -91,5 +91,8 @@
                          "Image may be stale")))
     (testing "a matching hash prints nothing"
       (is (= "" (captured-err #(warn-stale {:dockerfile-hash current})))))
+    (testing "the v2.8.0 key wins over the older one"
+      (is (= "" (captured-err #(warn-stale {:foundation-hash current
+                                            :dockerfile-hash "old"})))))
     (testing "state without a stored hash prints nothing"
       (is (= "" (captured-err #(warn-stale {})))))))

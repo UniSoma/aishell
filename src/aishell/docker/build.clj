@@ -61,25 +61,24 @@
     image-exists? previous
     :else (str now)))
 
-(defn get-dockerfile-hash
+(defn foundation-content-hash
   "Compute the hash of the Foundation image's embedded content: the
    Dockerfile and every file it COPYs from the build context (entrypoint.sh,
    bashrc.aishell, profile.d-aishell.sh, etc-profile). The image label
-   keeps the name `aishell.dockerfile.hash` for backwards compatibility,
-   but an entrypoint-only edit still changes the hash."
+   keeps the name `aishell.dockerfile.hash` for backwards compatibility."
   []
   (hash/compute-hash templates/foundation-content))
 
 (defn foundation-stale?
   "Return true when `recorded-hash`, read from state or an image label,
-   differs from `get-dockerfile-hash`. A nil hash is stale."
+   differs from `foundation-content-hash`. A nil hash is stale."
   [recorded-hash]
-  (not= recorded-hash (get-dockerfile-hash)))
+  (not= recorded-hash (foundation-content-hash)))
 
 (defn needs-rebuild?
   "Return true when `image-tag` needs a rebuild: `force?` is set, the
    image is missing, or its hash label is missing or differs from
-   `get-dockerfile-hash`."
+   `foundation-content-hash`."
   [image-tag force?]
   (or force?
       (not (docker/image-exists? image-tag))
@@ -164,7 +163,7 @@
       {:success true :image foundation-image-tag :cached true})
 
     (let [build-dir (fs/create-temp-dir {:prefix "aishell-build-"})
-          dockerfile-hash (get-dockerfile-hash)
+          dockerfile-hash (foundation-content-hash)
           image-exists? (docker/image-exists? foundation-image-tag)
           built-at (foundation-build-date
                     {:force? force

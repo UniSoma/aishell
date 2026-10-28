@@ -68,7 +68,7 @@
    Foundation image stale (`build/foundation-stale?`). Silent when `state`
    holds no stored hash. Advisory only: it does not block execution."
   [state]
-  (when-let [stored-hash (:dockerfile-hash state)]
+  (when-let [stored-hash (state/foundation-hash state)]
     (when (build/foundation-stale? stored-hash)
       (output/warn "Image may be stale. Run 'aishell update' to rebuild."))))
 

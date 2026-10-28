@@ -8,9 +8,7 @@
             [aishell.docker.base :as base]
             [aishell.docker.bootstrap :as bootstrap]
             [aishell.docker.build :as build]
-            [aishell.docker.hash :as hash]
             [aishell.docker.naming :as naming]
-            [aishell.docker.templates :as templates]
             [aishell.docker.volume :as vol]
             [aishell.output :as output]
             [aishell.harness :as harness]
@@ -488,8 +486,8 @@
       (state/write-state
        (assoc state-map
               :build-time (str (java.time.Instant/now))
-              :dockerfile-hash (hash/compute-hash templates/foundation-content)  ; v2.7.0 name, still read by check and run
-              :foundation-hash (hash/compute-hash templates/foundation-content)  ; v2.8.0 name for the same hash; nothing reads it yet
+              :dockerfile-hash (build/foundation-content-hash)  ; v2.7.0 name, kept for older aishell versions
+              :foundation-hash (build/foundation-content-hash)  ; v2.8.0 name; see state/foundation-hash
               :harness-volume-hash harness-hash
               :harness-volume-name volume-name)))))
 
@@ -612,8 +610,8 @@
         (state/write-state
          (assoc state
                 :build-time (str (java.time.Instant/now))
-                :dockerfile-hash (hash/compute-hash templates/foundation-content)
-                :foundation-hash (hash/compute-hash templates/foundation-content)))))))
+                :dockerfile-hash (build/foundation-content-hash)
+                :foundation-hash (build/foundation-content-hash)))))))
 
 (defn- prompt-yn
   "Prompt user for yes/no confirmation."

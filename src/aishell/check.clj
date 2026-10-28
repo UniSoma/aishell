@@ -84,7 +84,7 @@
   "Report whether the hash recorded in `state` marks the Foundation image
    stale (`build/foundation-stale?`). Warns when `state` holds no hash."
   [state]
-  (if-let [stored-hash (:dockerfile-hash state)]
+  (if-let [stored-hash (state/foundation-hash state)]
     (if (build/foundation-stale? stored-hash)
       (print-status :warn (str "Image may be stale. Run " output/CYAN "aishell update" output/NC " to rebuild"))
       (print-status :ok "Foundation image matches its embedded Dockerfile"))

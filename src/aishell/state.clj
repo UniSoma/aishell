@@ -45,6 +45,13 @@
          "Its setup flag and state are gone, and the harness volume "
          "repopulates without it on the next setup or update.")))
 
+(defn foundation-hash
+  "Return the Foundation content hash recorded in `state`: `:foundation-hash`,
+   or `:dockerfile-hash` for state written before v2.8.0. Nil when neither
+   is present."
+  [state]
+  (or (:foundation-hash state) (:dockerfile-hash state)))
+
 (defn write-state
   "Write state to file, creating directory if needed.
 
@@ -66,8 +73,8 @@
     :pi-version nil              ; string or nil
     :omp-version nil             ; string or nil
     :build-time \"2026-01-20...\" ; ISO-8601 string
-    :dockerfile-hash \"abc123def456\"  ; 12-char SHA-256 of the Foundation image's content; check and run read it
-    :foundation-hash \"abc123def456\"  ; same hash, written alongside; nothing reads it
+    :foundation-hash \"abc123def456\"  ; 12-char SHA-256 of the Foundation image's content; see foundation-hash
+    :dockerfile-hash \"abc123def456\"  ; same hash under its pre-v2.8.0 name, kept for older aishell versions
     :harness-volume-hash \"def789ghi012\" ; 12-char SHA-256 of enabled harnesses+versions
     :harness-volume-name \"aishell-harness-def789ghi012\"} ; Docker volume name for runtime mounting"
   [state]

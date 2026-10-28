@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`check` and `run` read the `foundation-hash` state key**: v2.8.0 deprecated `dockerfile-hash` in `~/.aishell/state.edn` in favour of `foundation-hash` and wrote both, but the staleness checks still read the old key. They now read `foundation-hash`, falling back to `dockerfile-hash` for state written before v2.8.0. Both keys are still written
+
 - **`aishell update --help` says when the Foundation image is rebuilt**: the help said update rebuilds the Foundation image only with `--force`. Update rebuilds it whenever it is missing or stale, and `--force` rebuilds it with `--no-cache` even when it is current. The help now says so
 
 - **`aishell check` reports the Base image, not the Foundation image**: setup recorded the Foundation image tag in state, and `check` reported that tag as the Base image (`Base image exists: aishell:foundation`). It also compared the Extended image against the Foundation image, so with a custom Base image (`~/.aishell/Dockerfile`) `check` said an up-to-date Extended image needed a rebuild. `check` now checks `aishell:base` for both. Setup no longer writes `:image-tag` to `~/.aishell/state.edn`. State files that still have it load as before, update leaves the key where it is, and nothing reads it

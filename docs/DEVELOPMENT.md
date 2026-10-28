@@ -188,15 +188,15 @@ aishell/
 
 **New fields:**
 ```clojure
-{:foundation-hash "abc123def"                    ; Foundation content hash; nothing reads it
+{:foundation-hash "abc123def"                    ; Foundation content hash; check and run read it
  :harness-volume-hash "def456ghi"                ; Harness config hash
  :harness-volume-name "aishell-harness-def456ghi" ; Volume name
- :dockerfile-hash "abc123def"}                   ; Same hash; the key check and run read
+ :dockerfile-hash "abc123def"}                   ; Same hash, pre-v2.8.0 name; the fallback
 ```
 
 **Backward compatibility:**
 - Old aishell versions ignore unknown keys because EDN is schemaless
-- New aishell writes both `:dockerfile-hash` and `:foundation-hash`
+- New aishell writes both `:dockerfile-hash` and `:foundation-hash`, and reads `:foundation-hash` first (`state/foundation-hash`)
 - Migration is additive: missing fields default to nil, with no migration code
 
 **State writes:**

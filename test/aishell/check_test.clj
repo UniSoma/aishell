@@ -123,6 +123,13 @@
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
 
+(deftest staleness-check-reads-the-v2-8-key-first
+  (let [out (with-out-str
+              (#'check/check-foundation-staleness
+               {:foundation-hash (hash/compute-hash templates/foundation-content)
+                :dockerfile-hash "old"}))]
+    (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
+
 (deftest base-image-check-looks-up-the-base-image-tag
   (let [checked (atom nil)]
     (with-redefs [base/base-image-tag "aishell:base-under-test"

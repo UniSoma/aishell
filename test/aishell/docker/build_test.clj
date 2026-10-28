@@ -80,7 +80,7 @@
 
 (deftest foundation-stale-compares-a-hash-with-the-embedded-content
   (testing "the embedded content's own hash is current"
-    (is (false? (build/foundation-stale? (build/get-dockerfile-hash)))))
+    (is (false? (build/foundation-stale? (build/foundation-content-hash)))))
   (testing "any other hash is stale"
     (is (true? (build/foundation-stale? "old"))))
   (testing "a missing hash is stale"
@@ -89,7 +89,7 @@
 (deftest needs-rebuild-follows-the-image-hash-label
   (with-redefs [docker/image-exists? (constantly true)]
     (testing "a label matching the embedded content needs no rebuild"
-      (with-redefs [docker/get-image-label (fn [_ _] (build/get-dockerfile-hash))]
+      (with-redefs [docker/get-image-label (fn [_ _] (build/foundation-content-hash))]
         (is (false? (build/needs-rebuild? "aishell:foundation" false)))))
     (testing "a stale label needs a rebuild"
       (with-redefs [docker/get-image-label (fn [_ _] "old")]
