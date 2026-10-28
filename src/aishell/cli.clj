@@ -1084,10 +1084,10 @@
    be a leading-only flag.
 
    --json semantics:
-   - After a pass-through harness (claude, opencode, etc.) or `exec` the flag
-     is forwarded verbatim, never consumed. A leading `--json exec` is
-     aishell's and is refused as unsupported. The same holds after `--` for
-     `attach` and `vscode`.
+   - After a pass-through harness (claude, opencode, etc.) or `exec`, and
+     after `--` for `attach` and `vscode`, the flag is forwarded verbatim,
+     never consumed. A --json before `exec` or before that `--` is aishell's
+     and is refused as unsupported, unless a --help there wins.
    - Otherwise --json is stripped here, and the command is classified:
        :unknown     -> emit unknown_command error and exit 1
        :unsupported -> emit unsupported_json error and exit 1
@@ -1102,7 +1102,8 @@
         parsed (assoc parsed :args args)]
     (if json-mode?
       ;; A --help or --version in the forwarded part is the command's, so
-      ;; classify on aishell's part plus the subcommand that owns the rest.
+      ;; classify on aishell's part plus the first forwarded arg: the `exec`
+      ;; that owns the rest, or the `--`.
       (case (classify-json-command (into own (take 1 forwarded)))
         :unknown     (output/emit-error-json
                       (str "Unknown command: " (first args))

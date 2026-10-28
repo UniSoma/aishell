@@ -565,7 +565,8 @@
 
 (defn- attached-or-opened
   "Run cli/dispatch on args with attach and vscode stubbed. Returns
-   [:attach name command-argv], [:vscode opts], [:error msg], or nil."
+   [:attach name command-argv], [:vscode opts], [:vscode-stop],
+   [:error stderr], or nil."
   [args]
   (let [calls (atom nil)]
     (with-redefs [update-check/maybe-check-for-update (fn [& _])
