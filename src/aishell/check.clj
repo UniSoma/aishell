@@ -65,12 +65,11 @@
   "Print whether the Base image exists. Returns its tag, or nil when it is
    missing."
   []
-  (let [tag base/base-image-tag]
-    (if (docker/image-exists? tag)
-      (do (print-status :ok (str "Base image exists: " tag))
-          tag)
-      (do (print-status :fail (str "Base image not found: " tag))
-          nil))))
+  (if (docker/image-exists? base/base-image-tag)
+    (do (print-status :ok (str "Base image exists: " base/base-image-tag))
+        base/base-image-tag)
+    (do (print-status :fail (str "Base image not found: " base/base-image-tag))
+        nil)))
 
 (defn- check-base-image-custom
   "Print whether ~/.aishell/Dockerfile exists and, when it does, whether

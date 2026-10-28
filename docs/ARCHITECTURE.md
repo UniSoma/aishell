@@ -455,7 +455,7 @@ Each namespace handles one concern:
  :dockerfile-hash "abc123def"}           ; DEPRECATED: use :foundation-hash (kept for backward compat)
 ```
 
-State files from older setups may also carry `:image-tag`. Nothing reads it, and setup and update no longer write it.
+State files from older setups may also carry `:image-tag`. Nothing reads it. Setup no longer writes it, and update leaves an existing one in place.
 
 ---
 
