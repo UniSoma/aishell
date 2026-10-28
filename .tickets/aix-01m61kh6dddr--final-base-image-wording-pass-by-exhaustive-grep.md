@@ -6,7 +6,7 @@ type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:54:47.070477986Z'
-updated: '2026-10-28T16:01:58.605675906Z'
+updated: '2026-10-28T16:08:20.999801959Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -36,3 +36,7 @@ CHANGELOG.md and .planning/ are historical and stay as they are.
 **2026-10-28T16:01:58.605675906Z**
 
 Also (small, from aix-01m61jhk8bz9 at 8888d25): add ["a" "x" "--" "cmd" "--json"] to flags-after-attach-separator-belong-to-the-command in cli_test.clj so the attach alias is covered.
+
+**2026-10-28T16:08:20.999801959Z**
+
+Also (from aix-01m61k2j7rx3 at 2937b39): include lowercase 'foundation image' in the patterns (docs/CONFIGURATION.md:358, 1101, 1159 known); and qualify the update help line 'Deletes and recreates the harness volume for a clean slate', since handle-update does this only when a harness is enabled (CHANGELOG line).
