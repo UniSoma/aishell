@@ -32,7 +32,7 @@
       (is (re-find #"OpenSpec" msg))
       (is (re-find #"removed" msg)))))
 
-(deftest foundation-hash-prefers-the-v2-8-key
+(deftest foundation-hash-reads-foundation-hash-then-dockerfile-hash
   (testing "state with both keys reads :foundation-hash"
     (is (= "new" (state/foundation-hash {:foundation-hash "new" :dockerfile-hash "old"}))))
   (testing "state written before v2.8.0 falls back to :dockerfile-hash"

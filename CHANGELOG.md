@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`check` and `run` read the `foundation-hash` state key**: v2.8.0 deprecated `dockerfile-hash` in `~/.aishell/state.edn` in favour of `foundation-hash` and wrote both, but the staleness checks still read the old key. They now read `foundation-hash`, falling back to `dockerfile-hash` for state written before v2.8.0. Both keys are still written
+- **`check` and `run` read the `foundation-hash` state key**: v2.8.0 deprecated `dockerfile-hash` in `~/.aishell/state.edn` in favor of `foundation-hash` and wrote both, but the staleness checks still read the old key. They now read `foundation-hash`, falling back to `dockerfile-hash` for state written before v2.8.0. Both keys are still written
 
 - **`aishell update --help` says when the Foundation image is rebuilt**: the help said update rebuilds the Foundation image only with `--force`. Update rebuilds it whenever it is missing or stale, and `--force` rebuilds it with `--no-cache` even when it is current. The help now says so
 

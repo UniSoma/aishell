@@ -191,7 +191,7 @@ aishell/
 {:foundation-hash "abc123def"                    ; Foundation content hash; check and run read it
  :harness-volume-hash "def456ghi"                ; Harness config hash
  :harness-volume-name "aishell-harness-def456ghi" ; Volume name
- :dockerfile-hash "abc123def"}                   ; Same hash, pre-v2.8.0 name; the fallback
+ :dockerfile-hash "abc123def"}                   ; Same hash, pre-v2.8.0 name; read when :foundation-hash is missing
 ```
 
 **Backward compatibility:**

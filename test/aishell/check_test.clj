@@ -123,7 +123,7 @@
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
 
-(deftest staleness-check-reads-the-v2-8-key-first
+(deftest staleness-check-prefers-foundation-hash-over-dockerfile-hash
   (let [out (with-out-str
               (#'check/check-foundation-staleness
                {:foundation-hash (hash/compute-hash templates/foundation-content)

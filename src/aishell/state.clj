@@ -53,8 +53,8 @@
   (or (:foundation-hash state) (:dockerfile-hash state)))
 
 (defn assoc-foundation-hash
-  "Record `content-hash` in `state` under both `:dockerfile-hash`, the key
-   aishell read before this version, and `:foundation-hash`, the key
+  "Record `content-hash` in `state` under both `:dockerfile-hash`, the only
+   key older aishell versions read, and `:foundation-hash`, the key
    `foundation-hash` reads first."
   [state content-hash]
   (assoc state
