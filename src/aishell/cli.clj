@@ -934,12 +934,12 @@
                                (output/error err)
                                (attach/attach-to-container (:name parsed)
                                                            :command-argv (:command-argv parsed))))))
-        "vscode" (let [[rest-args after-separator] (split-at-separator (rest args))
+        "vscode" (let [[before-separator after-separator] (split-at-separator (rest args))
                        own-flags #{"--detach" "--stop" "-h" "--help"}
-                       code-args (into (vec (remove own-flags rest-args))
+                       code-args (into (vec (remove own-flags before-separator))
                                        (rest after-separator))]
                    (cond
-                     (some #{"-h" "--help"} rest-args)
+                     (some #{"-h" "--help"} before-separator)
                      (do
                        (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS] [-- CODE_ARGS...]"))
                        (println)
@@ -979,11 +979,11 @@
                        (println (str "  " output/CYAN "aishell vscode --disable-gpu" output/NC "           Pass --disable-gpu to code"))
                        (println (str "  " output/CYAN "aishell vscode --detach --profile Work" output/NC " Detach with a code profile")))
 
-                     (some #{"--stop"} rest-args)
+                     (some #{"--stop"} before-separator)
                      (vscode/stop-vscode)
 
                      :else
-                     (let [detach? (some #{"--detach"} rest-args)]
+                     (let [detach? (some #{"--detach"} before-separator)]
                        (vscode/open-vscode {:detach? (boolean detach?)
                                             :code-args code-args}))))
         "upgrade" (let [rest-args (vec (rest args))]
@@ -1097,10 +1097,13 @@
   (let [{:keys [args] :as parsed} (parse-global-flags argv)
         [own forwarded] (split-json-scope args)
         json-mode? (boolean (some #{"--json"} own))
-        args (if json-mode? (into (vec (remove #{"--json"} own)) forwarded) args)
+        own (vec (remove #{"--json"} own))
+        args (if json-mode? (into own forwarded) args)
         parsed (assoc parsed :args args)]
     (if json-mode?
-      (case (classify-json-command args)
+      ;; A --help or --version in the forwarded part is the command's, so
+      ;; classify on aishell's part plus the subcommand that owns the rest.
+      (case (classify-json-command (into own (take 1 forwarded)))
         :unknown     (output/emit-error-json
                       (str "Unknown command: " (first args))
                       "unknown_command")

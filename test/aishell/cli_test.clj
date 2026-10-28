@@ -551,9 +551,10 @@
     (is (= [:exec ["jq" "--json"] {:base-image false}]
            (dispatched ["exec" "jq" "--json"]))))
   (testing "a --json before exec is refused"
-    (let [[kind msg] (dispatched ["--json" "exec" "jq" "--json"])]
-      (is (= :error kind))
-      (is (str/includes? msg "unsupported_json")))))
+    (doseq [args [["--json" "exec" "jq" "--json"] ["--json" "exec" "jq" "--help"]]]
+      (let [[kind msg] (dispatched args)]
+        (is (= :error kind) (str/join " " args))
+        (is (str/includes? (str msg) "unsupported_json") (str/join " " args))))))
 
 (deftest json-before-or-after-ps-emits-json
   (with-redefs [update-check/maybe-check-for-update (fn [& _])
@@ -589,7 +590,9 @@
     (is (= [:attach "x" ["cmd" "--help"]]
            (attached-or-opened ["attach" "x" "--" "cmd" "--help"]))))
   (testing "a --json before the separator is refused"
-    (doseq [args [["attach" "x" "--json" "--" "cmd"] ["--json" "attach" "x" "--" "cmd"]]]
+    (doseq [args [["attach" "x" "--json" "--" "cmd"] ["--json" "attach" "x" "--" "cmd"]
+                  ["attach" "x" "--json" "--" "cmd" "--help"]
+                  ["attach" "x" "--json" "--" "cmd" "--version"]]]
       (let [[kind msg] (attached-or-opened args)]
         (is (= :error kind) (str/join " " args))
         (is (str/includes? (str msg) "unsupported_json") (str/join " " args))))))
@@ -605,6 +608,7 @@
     (is (= [:vscode {:detach? true :code-args ["--disable-gpu" "--json"]}]
            (attached-or-opened ["vscode" "--detach" "--disable-gpu" "--" "--json"]))))
   (testing "a --json before the separator is refused"
-    (let [[kind msg] (attached-or-opened ["vscode" "--json" "--" "x"])]
-      (is (= :error kind))
-      (is (str/includes? (str msg) "unsupported_json")))))
+    (doseq [args [["vscode" "--json" "--" "x"] ["vscode" "--json" "--" "--help"]]]
+      (let [[kind msg] (attached-or-opened args)]
+        (is (= :error kind) (str/join " " args))
+        (is (str/includes? (str msg) "unsupported_json") (str/join " " args))))))
