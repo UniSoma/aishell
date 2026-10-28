@@ -107,28 +107,56 @@
       ;; Return volume name regardless
       volume-name)))
 
+(defn base-image-notice
+  "Startup line for a --base-image launch. dockerfile is the skipped
+   Project extension's path, or nil when the project has none."
+  [dockerfile]
+  (if dockerfile
+    (str "Starting on the Base image: Project extension " dockerfile " skipped, and pre_start with it.")
+    (str "Starting on the Base image: no Project extension to skip; pre_start skipped.")))
+
+(defn skip-pre-start?
+  "Whether a launch with these run-container opts skips the pre_start hook.
+   --base-image skips it: pre_start is what most likely needs the Project
+   extension's tools."
+  [opts]
+  (boolean (or (:skip-pre-start opts) (:base-image opts))))
+
 (defn resolve-image-tag
   "Determine which image to use: extended if project has a <active-dir>/Dockerfile, else base.
    Ensures base image is up to date before extension resolution.
    Auto-builds extension if needed (matches bash behavior).
+   With :base-image? the Project extension is ignored and a notice printed.
    Builds stream their docker output when output/*verbose* is bound (--verbose);
    otherwise they run behind a spinner."
-  [_base-tag project-dir force?]
+  [_base-tag project-dir force? & [{:keys [base-image?]}]]
   ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
   (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
-  (if-let [_dockerfile (ext/project-dockerfile project-dir)]
-    ;; Project has extension — builds FROM aishell:base
-    (let [extended-tag (ext/compute-extended-tag project-dir)]
-      (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
-        (ext/build-extended-image
-         {:project-dir project-dir
-          :foundation-tag base/base-image-tag
-          :extended-tag extended-tag
-          :force force?
-          :verbose output/*verbose*}))
-      extended-tag)
-    ;; No extension, use base
-    base/base-image-tag))
+  (let [dockerfile (ext/project-dockerfile project-dir)]
+    (cond
+      base-image?
+      (do
+        (when-not output/*json-output*
+          (binding [*out* *err*]
+            (println (base-image-notice
+                      (when dockerfile (str (fs/relativize project-dir dockerfile)))))))
+        base/base-image-tag)
+
+      dockerfile
+      ;; Project has extension — builds FROM aishell:base
+      (let [extended-tag (ext/compute-extended-tag project-dir)]
+        (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
+          (ext/build-extended-image
+           {:project-dir project-dir
+            :foundation-tag base/base-image-tag
+            :extended-tag extended-tag
+            :force force?
+            :verbose output/*verbose*}))
+        extended-tag)
+
+      ;; No extension, use base
+      :else
+      base/base-image-tag)))
 
 (defn run-container
   "Run docker container for shell or harness.
@@ -137,7 +165,8 @@
    - cmd: nil for a shell, else a harness subcommand from the registry
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings),
-     :container-name (overrides the name part) and :skip-pre-start
+     :container-name (overrides the name part), :skip-pre-start and
+     :base-image (start on the Base image, without the Project extension)
 
    Does not return: exits with the container's exit code, or on Unix
    replaces the process."
@@ -178,7 +207,8 @@
             ;; A harness that is itself a secret scanner stands in for aishell's
             ;; own scanning: no sensitive-file scan, no scan-freshness nag.
             secret-scanner? (boolean (:secret-scanner? descriptor))
-            image-tag (resolve-image-tag base-tag project-dir false)
+            image-tag (resolve-image-tag base-tag project-dir false
+                                         {:base-image? (:base-image opts)})
             git-id (docker-run/read-git-identity project-dir)
 
             defaults (when (and cfg cmd)
@@ -221,7 +251,7 @@
                           :config cfg
                           :state state
                           :git-identity git-id
-                          :skip-pre-start (:skip-pre-start opts)
+                          :skip-pre-start (skip-pre-start? opts)
                           :skip-interactive (boolean (and descriptor
                                                           (not (:interactive? descriptor))))
                           :container-name container-name-str
@@ -268,10 +298,12 @@
 
    Arguments:
    - cmd-args: Vector of command + arguments (e.g., [\"ls\" \"-la\"])
+   - opts: Optional map with :base-image (start on the Base image,
+     without the Project extension)
 
    Auto-detects TTY. Uses all standard mounts/env from config.
    Skips detection warnings and pre_start hooks for fast execution."
-  [cmd-args]
+  [cmd-args & [opts]]
   ;; Refuse a home-containing root before anything walks the tree
   (validation/check-project-dir! (System/getProperty "user.dir"))
 
@@ -284,7 +316,8 @@
     (let [project-dir (System/getProperty "user.dir")
           base-tag base/base-image-tag
 
-          image-tag (resolve-image-tag base-tag project-dir false)
+          image-tag (resolve-image-tag base-tag project-dir false
+                                       {:base-image? (:base-image opts)})
           _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)
           git-id (docker-run/read-git-identity project-dir)

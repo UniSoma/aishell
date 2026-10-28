@@ -5,7 +5,9 @@
             [clojure.string :as str]
             [aishell.harness :as harness]
             [aishell.output :as output]
+            [aishell.run :as run]
             [aishell.state :as state]
+            [aishell.update-check :as update-check]
             [aishell.cli :as cli]))
 
 (deftest resolve-setup-state-plain-setup-is-declarative
@@ -383,3 +385,52 @@
     (is (= [true []] (cli/split-leading-verbose ["--verbose"]))))
   (testing "absent flag leaves args as they were"
     (is (= [false ["exec" "ls"]] (cli/split-leading-verbose ["exec" "ls"])))))
+
+(deftest split-leading-flag-only-consumes-the-flag-before-the-subcommand
+  (testing "before the harness it is aishell's flag"
+    (is (= [true ["claude" "-p" "x"]]
+           (cli/split-leading-flag "--base-image" ["--base-image" "claude" "-p" "x"]))))
+  (testing "after the harness it is forwarded untouched"
+    (is (= [false ["claude" "--base-image"]]
+           (cli/split-leading-flag "--base-image" ["claude" "--base-image"])))))
+
+(defn- dispatched
+  "Run cli/dispatch on args with launches and the update check stubbed.
+   Returns the recorded launch call, or [:error msg] when aishell errors."
+  [args]
+  (let [calls (atom nil)]
+    (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                  run/run-container (fn [& a] (reset! calls (into [:run] a)))
+                  run/run-exec (fn [& a] (reset! calls (into [:exec] a)))
+                  output/exit! (fn [_] (throw (ex-info "exit" {})))]
+      (let [err (java.io.StringWriter.)]
+        (binding [*err* err]
+          (try (cli/dispatch args)
+               (catch clojure.lang.ExceptionInfo _
+                 (reset! calls [:error (str err)]))))))
+    @calls))
+
+(deftest base-image-flag-reaches-every-sandbox-launch
+  (testing "a harness launch gets :base-image and keeps its own args"
+    (let [[kind cmd args opts] (dispatched ["--base-image" "claude" "-p" "x"])]
+      (is (= [:run "claude" ["-p" "x"]] [kind cmd args]))
+      (is (true? (:base-image opts)))))
+  (testing "after the harness it is the harness's flag"
+    (let [[_ cmd args opts] (dispatched ["claude" "--base-image"])]
+      (is (= ["claude" ["--base-image"]] [cmd args]))
+      (is (not (:base-image opts)))))
+  (testing "alone it starts a shell"
+    (let [[kind cmd args opts] (dispatched ["--base-image"])]
+      (is (= [:run nil []] [kind cmd args]))
+      (is (true? (:base-image opts)))))
+  (testing "exec gets it and keeps the command untouched"
+    (is (= [:exec ["ls" "--base-image"] {:base-image true}]
+           (dispatched ["--base-image" "exec" "ls" "--base-image"])))))
+
+(deftest base-image-flag-is-refused-where-no-sandbox-is-created
+  (doseq [cmd ["attach" "vscode" "ps" "setup" "update" "check"]]
+    (testing cmd
+      (let [[kind msg] (dispatched ["--base-image" cmd])]
+        (is (= :error kind))
+        (is (str/includes? msg "--base-image"))
+        (is (str/includes? msg cmd))))))

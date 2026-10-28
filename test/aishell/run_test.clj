@@ -1,6 +1,8 @@
 (ns aishell.run-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
+            [aishell.docker.base :as base]
+            [aishell.docker.extension :as ext]
             [aishell.output :as output]
             [aishell.run :as run]))
 
@@ -50,3 +52,32 @@
                   (report-defaults "shell" ["-x"])))]
       (is (str/includes? out "Applying shell defaults: -x"))
       (is (not (str/includes? out "Warning"))))))
+
+(deftest base-image-skips-the-project-extension
+  (let [built (atom false)]
+    (with-redefs [base/ensure-base-image (fn [& _])
+                  ext/project-dockerfile (fn [_] "/p/.aishell/Dockerfile")
+                  ext/needs-extended-rebuild? (fn [& _] true)
+                  ext/build-extended-image (fn [& _] (reset! built true))]
+      (testing "with :base-image? the Base image is used and nothing is built"
+        (let [out (captured-err
+                   #(is (= "aishell:base"
+                           (run/resolve-image-tag nil "/p" false {:base-image? true}))))]
+          (is (false? @built))
+          (is (str/includes? out "Project extension"))
+          (is (str/includes? out "skipped"))))
+      (testing "without it the Extended image is still built"
+        (run/resolve-image-tag nil "/p" false)
+        (is (true? @built))))))
+
+(deftest base-image-notice-names-what-was-skipped
+  (testing "with a Project extension"
+    (is (str/includes? (run/base-image-notice ".aishell/Dockerfile")
+                       ".aishell/Dockerfile")))
+  (testing "without one"
+    (is (str/includes? (run/base-image-notice nil) "no Project extension"))))
+
+(deftest base-image-launch-skips-pre-start
+  (is (true? (run/skip-pre-start? {:base-image true})))
+  (is (true? (run/skip-pre-start? {:skip-pre-start true})))
+  (is (not (run/skip-pre-start? {}))))

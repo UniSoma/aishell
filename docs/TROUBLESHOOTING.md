@@ -552,6 +552,18 @@ Pruning removes only volumes not referenced by current state. The active volume 
 - Subsequent updates: 20-40 seconds (npm cache helps)
 - Slower on slow networks or with large harness packages
 
+### Symptom: "Extension build failed" and no sandbox starts
+
+**Cause:** The project's `.aishell/Dockerfile` does not build, and every launch in the project builds it first.
+
+**Resolution:** Start on the Base image, which skips the project Dockerfile, and fix it from inside:
+
+```bash
+aishell --base-image claude
+```
+
+The flag must come before the harness name; after it, the flag goes to the harness. `config.yaml` still applies except `pre_start`, which is skipped. Once the Dockerfile builds, launch normally.
+
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
 **Note:** As of the global base image customization feature, `FROM aishell:base` is now valid and recommended for project `.aishell/Dockerfile` files. The `aishell:base` tag always exists -- either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.

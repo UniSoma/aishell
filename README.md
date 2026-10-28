@@ -336,6 +336,14 @@ FROM aishell:foundation
 RUN apt-get update && apt-get install -y postgresql-client
 ```
 
+If that Dockerfile stops building, no sandbox for the project starts. To get one anyway, for example to fix the Dockerfile with a harness, put `--base-image` before the command:
+
+```bash
+aishell --base-image claude
+```
+
+The sandbox runs on `aishell:base` instead. `config.yaml` still applies, except `pre_start`, which is skipped. The flag also works with `aishell --base-image` (shell) and `aishell --base-image exec ...`.
+
 ### Runtime configuration
 
 Create `.aishell/config.yaml` to configure container runtime:

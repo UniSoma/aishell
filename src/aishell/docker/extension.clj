@@ -124,6 +124,14 @@
          ;; No changes detected
          :else false)))))
 
+(defn build-failure-message
+  "Error text for a failed Extended image build. detail is the captured
+   build output, nil when it already streamed to the terminal."
+  [config-dir detail]
+  (str "Extension build failed" (when detail (str ":\n" detail))
+       "\nTo start without the Project extension and fix " config-dir "/Dockerfile from inside,"
+       " run: aishell --base-image <harness>"))
+
 (defn build-extended-image
   "Build extended image from project Dockerfile.
 
@@ -166,9 +174,12 @@
                      "docker" "build" (conj build-args project-dir))]
           (if (zero? exit)
             {:success true :image extended-tag}
-            (output/error "Extension build failed")))
+            (output/error (build-failure-message
+                           (util/resolve-project-config-dir project-dir) nil))))
         ;; Non-verbose: use spinner
         (let [result (spinner/with-spinner "Building project extension" build-fn)]
           (if (:success result)
             result
-            (output/error (str "Extension build failed:\n" (:error result)))))))))
+            (output/error (build-failure-message
+                           (util/resolve-project-config-dir project-dir)
+                           (:error result)))))))))

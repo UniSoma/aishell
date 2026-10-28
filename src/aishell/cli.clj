@@ -38,7 +38,9 @@
    :json    {:coerce :boolean
              :desc "Emit JSON for: ps, --version"}
    :verbose {:coerce :boolean
-             :desc "Show image build and install output (run commands)"}})
+             :desc "Show image build and install output (run commands)"}
+   :base-image {:coerce :boolean
+                :desc "Run on the Base image, skipping the Project extension and pre_start"}})
 
 ;; Version validation patterns
 (def semver-pattern
@@ -337,7 +339,7 @@
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
   (println (cli/format-opts {:spec global-spec
-                             :order [:help :version :json :verbose]}))
+                             :order [:help :version :json :verbose :base-image]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "     Set up with Claude Code"))
@@ -346,6 +348,7 @@
   (println (str "  " output/CYAN "aishell ps" output/NC "                       List containers"))
   (println (str "  " output/CYAN "aishell claude" output/NC "                  Run Claude Code"))
   (println (str "  " output/CYAN "aishell --verbose claude" output/NC "        Run Claude Code, showing build output"))
+  (println (str "  " output/CYAN "aishell --base-image claude" output/NC "     Run Claude Code without .aishell/Dockerfile"))
   (println (str "  " output/CYAN "aishell codex" output/NC "                   Run Codex CLI"))
   (println (str "  " output/CYAN "aishell" output/NC "                         Enter shell")))
 
@@ -848,7 +851,12 @@
     "--json requires a supported command (ps, volumes list, info, check, --version)"
     (str "--json is not supported for: " (first args))))
 
-(defn- do-dispatch* [args verbose?]
+(def ^:private base-image-commands
+  "aishell's own subcommands that create a Sandbox and so accept --base-image.
+   Harness subcommands and the bare default accept it too."
+  #{"exec"})
+
+(defn- do-dispatch* [args verbose? base-image?]
   ;; Extract --unsafe flag before pass-through (used by detection framework)
   (let [unsafe? (boolean (some #{"--unsafe"} args))
         clean-args (vec (remove #{"--unsafe"} args))
@@ -880,18 +888,25 @@
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
+    (let [first-arg (first clean-args)]
+      (when (and base-image?
+                 (contains? output/non-harness-commands first-arg)
+                 (not (contains? base-image-commands first-arg)))
+        (output/error (str "--base-image only applies to commands that start a sandbox, not '"
+                           first-arg "'. Try: aishell --base-image <harness>"))))
     ;; Harness pass-through: a harness subcommand launches its container with
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape — such as whether the project's pre_start hook runs — is
     ;; read from the harness descriptor, not spelled per harness here.
     (if-let [descriptor (harness/for-subcommand (first clean-args))]
       (run/run-container (:subcommand descriptor) (vec (rest clean-args))
-                         (cond-> {:unsafe unsafe? :container-name container-name-override}
+                         (cond-> {:unsafe unsafe? :container-name container-name-override
+                                  :base-image base-image?}
                            (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))
       (case (first clean-args)
         "info" (info/run-info (vec (rest clean-args)))
         "check" (check/run-check)
-        "exec" (run/run-exec (vec (rest clean-args)))
+        "exec" (run/run-exec (vec (rest clean-args)) {:base-image base-image?})
         "ps" (handle-ps nil)
         "volumes" (handle-volumes (vec (rest clean-args)))
         ("attach" "a") (let [rest-args (vec (rest clean-args))]
@@ -1010,29 +1025,35 @@
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
         ;; Standard dispatch for other commands (setup, update, help)
-        (if (or unsafe? verbose? container-name-override)
-          ;; --unsafe, --verbose or --name with no harness command -> shell mode
-          (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override})
+        (if (or unsafe? verbose? container-name-override base-image?)
+          ;; --unsafe, --verbose, --name or --base-image with no harness command -> shell mode
+          (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override
+                                     :base-image base-image?})
           ;; Normal dispatch
           (cli/dispatch dispatch-table args {:error-fn handle-error
                                              :restrict true}))))))
 
-(defn split-leading-verbose
-  "Consume `--verbose` from the flags that precede the subcommand.
-   Returns [verbose? args-without-it]. Only the leading position counts:
+(defn split-leading-flag
+  "Consume `flag` from the flags that precede the subcommand.
+   Returns [present? args-without-it]. Only the leading position counts:
    `aishell --verbose claude` is aishell's flag, `aishell claude --verbose`
    belongs to Claude Code (which has a --verbose of its own) and is forwarded."
-  [args]
+  [flag args]
   (let [leading (take-while #(str/starts-with? % "-") args)
         trailing (drop (count leading) args)]
-    (if (some #{"--verbose"} leading)
-      [true (vec (concat (remove #{"--verbose"} leading) trailing))]
+    (if (some #{flag} leading)
+      [true (vec (concat (remove #{flag} leading) trailing))]
       [false (vec args)])))
 
-(defn- do-dispatch [args]
+(defn split-leading-verbose
+  "Consume a leading `--verbose`; see split-leading-flag."
+  [args]
+  (split-leading-flag "--verbose" args))
+
+(defn- do-dispatch [args base-image?]
   (let [[verbose? args] (split-leading-verbose args)]
     (binding [output/*verbose* (or verbose? output/*verbose*)]
-      (do-dispatch* args verbose?))))
+      (do-dispatch* args verbose? base-image?))))
 
 (defn- subcommand-of
   "Return the first non-flag token in args, or nil. Used to decide whether
@@ -1052,7 +1073,9 @@
        :help        -> normal flow with colors (--help wins)
        :supported   -> bind *json-output* and zero out ANSI vars, normal flow"
   [args]
-  (let [args (vec args)
+  (let [;; Taken before the harness hoist below, which would otherwise move
+        ;; it behind the harness name and forward it to the harness.
+        [base-image? args] (split-leading-flag "--base-image" (vec args))
         sub (subcommand-of args)
         json-pass-through? (contains? pass-through-harnesses sub)
         ;; When --json is pre-position and the subcommand is a pass-through harness,
@@ -1072,12 +1095,12 @@
         :unsupported (output/emit-error-json
                       (json-error-message args)
                       "unsupported_json")
-        :help        (do-dispatch args)
+        :help        (do-dispatch args base-image?)
         :supported   (binding [output/*json-output* true
                                output/RED ""
                                output/YELLOW ""
                                output/CYAN ""
                                output/BOLD ""
                                output/NC ""]
-                       (do-dispatch args)))
-      (do-dispatch args))))
+                       (do-dispatch args base-image?)))
+      (do-dispatch args base-image?))))
