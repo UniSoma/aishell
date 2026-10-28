@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`--unsafe` and `--name` must come before the command**: aishell used to take them from anywhere in the arguments, so `aishell claude --unsafe` skipped the sensitive-file checks and `aishell claude --name reviewer` named the container. Now, like `--verbose` and `--base-image`, they are aishell's flags only before the command (`aishell --unsafe claude`, `aishell --name reviewer claude`). After the harness name they are forwarded to the harness untouched, because harnesses own the arguments after their name. Scripts that put either flag after the harness name need to move it. `aishell --name` with no value now exits 1 with an error
+- **`--unsafe` and `--name` must come before the command**: aishell used to take them from anywhere in the arguments, so `aishell claude --unsafe` skipped the sensitive-file checks and `aishell claude --name reviewer` named the container. Now, like `--verbose` and `--base-image`, they are aishell's flags only before the command (`aishell --unsafe claude`, `aishell --name reviewer claude`). After the harness name they are forwarded to the harness untouched, because harnesses own the arguments after their name. Scripts that put either flag after the harness name need to move it. `aishell --name` with no value, or followed by another flag, now exits 1 with an error. `aishell --help` lists both flags
 
 ### Added
 

@@ -502,9 +502,16 @@
     (is (= [[] true] (dispatched-verbosity ["--verbose"])))))
 
 (deftest leading-name-needs-a-value
-  (let [[kind msg] (dispatched ["--name"])]
-    (is (= :error kind))
-    (is (str/includes? msg "--name"))))
+  (doseq [args [["--name"] ["--name" "--verbose" "claude"]]]
+    (testing (str/join " " args)
+      (let [[kind msg] (dispatched args)]
+        (is (= :error kind))
+        (is (str/includes? msg "--name"))))))
+
+(deftest help-lists-every-leading-global-flag
+  (let [out (with-out-str (cli/print-help))]
+    (doseq [flag ["--verbose" "--base-image" "--unsafe" "--name"]]
+      (is (str/includes? out flag) flag))))
 
 (defn- dispatched-command
   "Run cli/dispatch on args with setup, update and launches stubbed.

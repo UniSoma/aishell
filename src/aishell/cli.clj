@@ -40,7 +40,11 @@
    :verbose {:coerce :boolean
              :desc "Show image build and install output (run commands)"}
    :base-image {:coerce :boolean
-                :desc "Run on the Base image, skipping the Project extension and pre_start"}})
+                :desc "Run on the Base image, skipping the Project extension and pre_start"}
+   :unsafe  {:coerce :boolean
+             :desc "Skip the sensitive-file confirmation (run commands)"}
+   :name    {:ref "<name>"
+             :desc "Name the container instead of using the harness name"}})
 
 ;; Version validation patterns
 (def semver-pattern
@@ -339,7 +343,7 @@
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
   (println (cli/format-opts {:spec global-spec
-                             :order [:help :version :json :verbose :base-image]}))
+                             :order [:help :version :json :verbose :base-image :unsafe :name]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "     Set up with Claude Code"))
@@ -856,20 +860,21 @@
    --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
-(defn- do-dispatch* [{:keys [verbose? base-image? unsafe? name args]}]
-  (let [first-arg (first args)]
+(defn- do-dispatch* [{:keys [verbose? base-image? unsafe? args] container-name :name}]
+  (let [first-arg (first args)
+        has-subcommand? (contains? output/non-harness-commands first-arg)
+        launch-opts {:unsafe unsafe? :container-name container-name
+                     :base-image base-image?}]
     (when (and base-image?
-               (contains? output/non-harness-commands first-arg)
+               has-subcommand?
                (not (contains? base-image-commands first-arg)))
       (output/error (str "--base-image only applies to commands that start a sandbox, not '"
-                         first-arg "'. Try: aishell --base-image <harness>"))))
+                         first-arg "'. Try: aishell --base-image <harness>")))
     ;; Check for newer version (skip for help/version/upgrade to avoid startup delay).
     ;; -v/--version is ambiguous: top-level it means version, but on subcommands
     ;; (setup -v, update -v) it means verbose. Only skip the update check when
     ;; there's no subcommand — i.e. the args will route to handle-default.
-    (let [first-arg (first args)
-          has-subcommand? (contains? output/non-harness-commands first-arg)
-          skip? (or (some #{"--help" "-h"} args)
+    (let [skip? (or (some #{"--help" "-h"} args)
                     (and (not has-subcommand?)
                          (some #{"-v" "--version"} args))
                     (= "upgrade" first-arg))]
@@ -879,12 +884,11 @@
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape — such as whether the project's pre_start hook runs — is
     ;; read from the harness descriptor, not spelled per harness here.
-    (if-let [descriptor (harness/for-subcommand (first args))]
+    (if-let [descriptor (harness/for-subcommand first-arg)]
       (run/run-container (:subcommand descriptor) (vec (rest args))
-                         (cond-> {:unsafe unsafe? :container-name name
-                                  :base-image base-image?}
+                         (cond-> launch-opts
                            (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))
-      (case (first args)
+      (case first-arg
         "info" (info/run-info (vec (rest args)))
         "check" (check/run-check)
         "exec" (run/run-exec (vec (rest args)) {:base-image base-image?})
@@ -1008,12 +1012,11 @@
         ;; Global flags with nothing after them start a shell. Anything else
         ;; (setup, update, --help, a typo) goes to normal dispatch, where a
         ;; leading --verbose becomes the command's own --verbose.
-        (if (and (empty? args) (or unsafe? verbose? name base-image?))
-          (run/run-container nil [] {:unsafe unsafe? :container-name name
-                                     :base-image base-image?})
+        (if (and (empty? args) (or unsafe? verbose? container-name base-image?))
+          (run/run-container nil [] launch-opts)
           (cli/dispatch dispatch-table args
                         (cond-> {:error-fn handle-error :restrict true}
-                          verbose? (assoc :exec-args {:verbose true})))))))
+                          verbose? (assoc :exec-args {:verbose true}))))))))
 
 (defn parse-global-flags
   "Read aishell's global flags from the front of argv, before the subcommand.
@@ -1028,19 +1031,19 @@
   [argv]
   (loop [[a & more :as argv] (vec argv)
          flags {:verbose? false :base-image? false :unsafe? false :name nil}
-         other []]
+         unowned-flags []]
     (case a
-      "--verbose"    (recur more (assoc flags :verbose? true) other)
-      "--base-image" (recur more (assoc flags :base-image? true) other)
-      "--unsafe"     (recur more (assoc flags :unsafe? true) other)
-      "--name"       (if (seq more)
-                       (recur (rest more) (assoc flags :name (first more)) other)
+      "--verbose"    (recur more (assoc flags :verbose? true) unowned-flags)
+      "--base-image" (recur more (assoc flags :base-image? true) unowned-flags)
+      "--unsafe"     (recur more (assoc flags :unsafe? true) unowned-flags)
+      "--name"       (if (and (seq more) (not (str/starts-with? (first more) "-")))
+                       (recur (rest more) (assoc flags :name (first more)) unowned-flags)
                        (output/error "--name requires a container name. Try: aishell --name <name> <harness>"))
       (if (and a (str/starts-with? a "-"))
-        (recur more flags (conj other a))
+        (recur more flags (conj unowned-flags a))
         (assoc flags :args (vec (if (contains? pass-through-harnesses a)
-                                  (concat [a] other more)
-                                  (concat other argv))))))))
+                                  (concat [a] unowned-flags more)
+                                  (concat unowned-flags argv))))))))
 
 (defn- do-dispatch [parsed]
   (binding [output/*verbose* (or (:verbose? parsed) output/*verbose*)]
