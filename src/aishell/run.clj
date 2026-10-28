@@ -119,9 +119,9 @@
    Project extension (<active-dir>/Dockerfile), else the Base image.
    Builds or re-tags the Base image first when it needs it, and builds the
    Extended image when it needs a rebuild.
-   With :base-image returns the Base image and prints to stderr (not in
-   JSON mode) which Project extension it skipped; the Project extension is
-   not built.
+   With :base-image in opts, returns the Base image without building the
+   Extended image, and prints to stderr (not in JSON mode) the Project
+   extension it skipped, or that the project has none.
    Builds stream their docker output when output/*verbose* is bound (--verbose);
    otherwise they run behind a spinner."
   [_base-tag project-dir force? & [{:keys [base-image]}]]

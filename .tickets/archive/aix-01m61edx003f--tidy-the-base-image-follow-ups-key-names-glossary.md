@@ -1,25 +1,26 @@
 ---
 id: aix-01m61edx003f
 title: 'Tidy the --base-image follow-ups: key names, glossary terms, README example'
-status: in_progress
+status: closed
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T14:25:36.250583130Z'
-updated: '2026-10-28T14:26:06.199879188Z'
+updated: '2026-10-28T14:31:21.445002159Z'
+closed: '2026-10-28T14:31:21.445002159Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: resolve-image-tag, run-container and run-exec share the :base-image key; no caller translates it
-  done: false
+  done: true
 - title: base-image-notice is folded into resolve-image-tag and both notice cases are tested through it
-  done: false
+  done: true
 - title: :foundation-tag is renamed :base-tag in build-extended-image and its caller
-  done: false
+  done: true
 - title: README Project customization extends aishell:base
-  done: false
+  done: true
 - title: No 'project image' or 'Building project extension' remains in src
-  done: false
+  done: true
 links:
 - aix-01m61c17fyb8
 ---
@@ -35,3 +36,9 @@ Follow-ups from the reviews of aix-01m61c17fyb8 (`--base-image`, landed at 7462c
 5. Glossary terms: the spinner label "Building project extension" in extension.clj becomes "Building Extended image". The `base-image-commands` docstring in cli.clj drops "project image": "aishell's own subcommands that start a container and so accept --base-image." (Decided 2026-10-28: an `exec` container is not a Sandbox; it is unnamed and runs no harness.)
 
 Out of scope: inlining `split-leading-verbose` (goes with the global-flag parsing ticket) and renaming `get-foundation-image-id` (own ticket).
+
+## Notes
+
+**2026-10-28T14:31:21.445002159Z**
+
+resolve-image-tag takes the :base-image opts key directly and prints the --base-image notice itself; build-extended-image takes :base-tag; the spinner says 'Building Extended image'; README and TROUBLESHOOTING use FROM aishell:base.

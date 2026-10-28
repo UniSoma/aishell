@@ -169,14 +169,12 @@
                            {:success true :image extended-tag}
                            {:success false :error (str out "\n" err)})))]
         (if verbose
-          ;; Verbose: show output directly
           (let [{:keys [exit]}
                 (apply p/shell {:continue true :dir project-dir}
                        "docker" "build" (conj build-args project-dir))]
             (if (zero? exit)
               {:success true :image extended-tag}
               (output/error (build-failure-message config-dir nil))))
-          ;; Non-verbose: use spinner
           (let [result (spinner/with-spinner "Building Extended image" build-fn)]
             (if (:success result)
               result

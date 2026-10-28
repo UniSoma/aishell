@@ -1320,7 +1320,7 @@ aishell restores the terminal itself on both the attach and the run paths. On ol
    ```bash
    # Inside container or WSL2
    cat .aishell/Dockerfile
-   # Verify first line: FROM aishell:base (aishell:foundation also works)
+   # Verify first line: FROM aishell:base (aishell:foundation also builds, without your ~/.aishell/Dockerfile additions)
    ```
 
 ---

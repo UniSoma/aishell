@@ -68,7 +68,7 @@
       (testing "without it the Extended image is still built"
         (run/resolve-image-tag nil "/p" false)
         (is (true? @built)))))
-  (testing "with :base-image and no Project extension the notice says so"
+  (testing "with :base-image and no Project extension it reports none to skip"
     (with-redefs [base/ensure-base-image (fn [& _])
                   ext/project-dockerfile (fn [_] nil)]
       (let [out (captured-err
