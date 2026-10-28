@@ -125,25 +125,26 @@
          :else false)))))
 
 (defn build-failure-message
-  "Error text for a failed Extended image build. detail is the captured
-   build output, nil when it already streamed to the terminal."
+  "Return the error text for a failed Extended image build. detail is the
+   captured build output, nil when it already streamed to the terminal."
   [config-dir detail]
   (str "Extension build failed" (when detail (str ":\n" detail))
        "\nTo start without the Project extension and fix " config-dir "/Dockerfile from inside,"
        " run: aishell --base-image <harness>"))
 
 (defn build-extended-image
-  "Build extended image from project Dockerfile.
+  "Build the Extended image from the Project extension.
 
    Arguments (map):
    - project-dir: Path to project directory
-   - foundation-tag: Tag for base image (aishell:base)
-   - extended-tag: Tag for extended image
+   - foundation-tag: Tag of the Base image (aishell:base)
+   - extended-tag: Tag for the Extended image
    - force: Force rebuild (--no-cache)
    - verbose: Show detailed build output
 
-   Returns: {:success true :image extended-tag} or nil if no extension,
-            exits on error"
+   Warns on stderr when the Dockerfile's filename casing is wrong (Windows).
+   Returns: {:success true :image extended-tag} or nil if no Project
+            extension; exits on error with build-failure-message"
   [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
     (let [config-dir (util/resolve-project-config-dir project-dir)]

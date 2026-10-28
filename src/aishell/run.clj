@@ -108,29 +108,31 @@
       volume-name)))
 
 (defn base-image-notice
-  "Startup line for a --base-image launch. dockerfile is the skipped
-   Project extension's path, or nil when the project has none."
+  "Return the startup line for a --base-image launch. dockerfile is the
+   skipped Project extension's path, or nil when the project has none."
   [dockerfile]
   (if dockerfile
     (str "Starting on the Base image: Project extension " dockerfile " skipped, and pre_start with it.")
     "Starting on the Base image: no Project extension to skip; pre_start skipped."))
 
 (defn skip-pre-start?
-  "Whether a launch with these run-container opts skips the pre_start hook.
-   --base-image skips it: pre_start is what most likely needs the Project
-   extension's tools."
+  "Return true when a launch with these run-container opts skips the
+   pre_start hook. --base-image skips it: pre_start is what most likely
+   needs the Project extension's tools."
   [opts]
   (boolean (or (:skip-pre-start opts) (:base-image opts))))
 
 (defn resolve-image-tag
-  "Determine which image to use: extended if project has a <active-dir>/Dockerfile, else base.
-   Ensures base image is up to date before extension resolution.
-   Auto-builds extension if needed (matches bash behavior).
-   With :base-image? the Project extension is ignored and a notice printed.
+  "Return the image tag to run: the Extended image if the project has a
+   Project extension (<active-dir>/Dockerfile), else the Base image.
+   Builds or re-tags the Base image first when it needs it, and builds the
+   Extended image when it needs a rebuild.
+   With :base-image? returns the Base image and prints base-image-notice
+   to stderr (not in JSON mode); the Project extension is not built.
    Builds stream their docker output when output/*verbose* is bound (--verbose);
    otherwise they run behind a spinner."
   [_base-tag project-dir force? & [{:keys [base-image?]}]]
-  ;; Ensure base image is up to date (lazy build from ~/.aishell/Dockerfile)
+  ;; Lazy build from ~/.aishell/Dockerfile, or a re-tag of the Foundation image
   (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
   (let [dockerfile (ext/project-dockerfile project-dir)]
     (cond
@@ -143,7 +145,6 @@
         base/base-image-tag)
 
       dockerfile
-      ;; Project has extension — builds FROM aishell:base
       (let [extended-tag (ext/compute-extended-tag project-dir)]
         (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
           (ext/build-extended-image
@@ -154,7 +155,6 @@
             :verbose output/*verbose*}))
         extended-tag)
 
-      ;; No extension, use base
       :else
       base/base-image-tag)))
 
@@ -166,7 +166,8 @@
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings),
      :container-name (overrides the name part), :skip-pre-start and
-     :base-image (start on the Base image, without the Project extension)
+     :base-image (start on the Base image, without the Project extension
+     or pre_start)
 
    Does not return: exits with the container's exit code, or on Unix
    replaces the process."

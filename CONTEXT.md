@@ -29,15 +29,15 @@ When the Foundation image's OS packages were last fetched fresh: the time of its
 _Avoid_: build time, last build, image age, stale (that is a content mismatch, not age)
 
 **Base image**:
-`aishell:base` — the per-user layer between the Foundation image and a project's Project extension, built from `~/.aishell/Dockerfile` when one exists and otherwise a plain tag alias of the Foundation image. This is where a user's own machine-wide customizations go.
+`aishell:base` — the per-user layer between the Foundation image and the Project extension, built from `~/.aishell/Dockerfile` when one exists and otherwise a plain tag alias of the Foundation image. This is where a user's own machine-wide customizations go.
 _Avoid_: foundation, global image
 
 **Project extension**:
-A project's optional own Dockerfile, `.aishell/Dockerfile` (or `.sandbox/Dockerfile`), which extends the Base image with what that one project needs.
+A project's optional Dockerfile, `.aishell/Dockerfile` (or `.sandbox/Dockerfile`), which extends the Base image with what that one project needs.
 _Avoid_: project image, custom image, project Dockerfile
 
 **Extended image**:
-The per-project image built from a Project extension on top of the Base image, keyed by Project hash. A project without a Project extension runs on the Base image directly.
+The per-project image built from a Project extension on top of the Base image, one per project. A project without a Project extension runs on the Base image directly.
 _Avoid_: project image, custom image
 
 **Project hash**:

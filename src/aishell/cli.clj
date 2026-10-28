@@ -852,8 +852,8 @@
     (str "--json is not supported for: " (first args))))
 
 (def ^:private base-image-commands
-  "aishell's own subcommands that create a Sandbox and so accept --base-image.
-   Harness subcommands and the bare default accept it too."
+  "aishell's own subcommands that start a container on the project image and
+   so accept --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
 (defn- do-dispatch* [args verbose? base-image?]
@@ -1025,11 +1025,11 @@
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
         ;; Standard dispatch for other commands (setup, update, help)
-        ;; --base-image alone is a shell; with --help or a typo it falls
-        ;; through to normal dispatch, which already dropped the flag
+        ;; --unsafe, --verbose or --name with no harness command -> shell mode.
+        ;; --base-image alone is a shell; with --help or an unknown command it
+        ;; goes to normal dispatch, which never sees the flag.
         (if (or unsafe? verbose? container-name-override
                 (and base-image? (empty? clean-args)))
-          ;; --unsafe, --verbose, --name or --base-image with no harness command -> shell mode
           (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override
                                      :base-image base-image?})
           ;; Normal dispatch
@@ -1070,7 +1070,8 @@
   (first (remove (fn [a] (str/starts-with? a "-")) args)))
 
 (defn dispatch
-  "Public dispatch entry. Handles --json gating before delegating to do-dispatch.
+  "Public dispatch entry. Consumes a leading --base-image and handles --json
+   gating before delegating to do-dispatch.
 
    --json semantics:
    - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded

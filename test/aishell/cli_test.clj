@@ -396,7 +396,8 @@
 
 (defn- dispatched
   "Run cli/dispatch on args with launches and the update check stubbed.
-   Returns the recorded launch call, or [:error msg] when aishell errors."
+   Returns the recorded launch call, [:error msg] when aishell errors, or
+   nil when nothing launches."
   [args]
   (let [calls (atom nil)]
     (with-redefs [update-check/maybe-check-for-update (fn [& _])

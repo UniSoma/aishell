@@ -556,7 +556,7 @@ Pruning removes only volumes not referenced by current state. The active volume 
 
 **Cause:** The project's `.aishell/Dockerfile` does not build, and every launch in the project builds it first.
 
-**Resolution:** Start on the Base image, which skips the project Dockerfile, and fix it from inside:
+**Resolution:** Start on the Base image, which leaves out `.aishell/Dockerfile`, and fix the file from inside:
 
 ```bash
 aishell --base-image claude
