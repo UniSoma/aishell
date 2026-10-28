@@ -1,6 +1,7 @@
 (ns aishell.cli-test
   (:require [clojure.test :refer [deftest is testing]]
             [babashka.fs :as fs]
+            [aishell.attach :as attach]
             [clojure.set :as set]
             [clojure.string :as str]
             [aishell.docker.bootstrap :as bootstrap]
@@ -10,6 +11,7 @@
             [aishell.run :as run]
             [aishell.state :as state]
             [aishell.update-check :as update-check]
+            [aishell.vscode :as vscode]
             [aishell.cli :as cli]))
 
 (deftest resolve-setup-state-plain-setup-is-declarative
@@ -559,3 +561,50 @@
                 bootstrap/attach-bootstrap! identity]
     (doseq [args [["ps" "--json"] ["--json" "ps"]]]
       (is (= "[]\n" (with-out-str (cli/dispatch args))) (str/join " " args)))))
+
+(defn- attached-or-opened
+  "Run cli/dispatch on args with attach and vscode stubbed. Returns
+   [:attach name command-argv], [:vscode opts], [:error msg], or nil."
+  [args]
+  (let [calls (atom nil)]
+    (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                  attach/attach-to-container (fn [name & {:keys [command-argv]}]
+                                               (reset! calls [:attach name command-argv]))
+                  vscode/open-vscode (fn [opts] (reset! calls [:vscode opts]))
+                  vscode/stop-vscode (fn [] (reset! calls [:vscode-stop]))
+                  output/exit! (fn [_] (throw (ex-info "exit" {})))]
+      (let [err (java.io.StringWriter.)]
+        (binding [*err* err]
+          (with-out-str
+            (try (cli/dispatch args)
+                 (catch clojure.lang.ExceptionInfo _
+                   (reset! calls [:error (str err)])))))))
+    @calls))
+
+(deftest flags-after-attach-separator-belong-to-the-command
+  (testing "--json reaches the command untouched"
+    (is (= [:attach "x" ["cmd" "--json"]]
+           (attached-or-opened ["attach" "x" "--" "cmd" "--json"]))))
+  (testing "--help reaches the command instead of printing attach help"
+    (is (= [:attach "x" ["cmd" "--help"]]
+           (attached-or-opened ["attach" "x" "--" "cmd" "--help"]))))
+  (testing "a --json before the separator is refused"
+    (doseq [args [["attach" "x" "--json" "--" "cmd"] ["--json" "attach" "x" "--" "cmd"]]]
+      (let [[kind msg] (attached-or-opened args)]
+        (is (= :error kind) (str/join " " args))
+        (is (str/includes? (str msg) "unsupported_json") (str/join " " args))))))
+
+(deftest flags-after-vscode-separator-belong-to-code
+  (testing "--json reaches code without the separator"
+    (is (= [:vscode {:detach? false :code-args ["--json"]}]
+           (attached-or-opened ["vscode" "--" "--json"]))))
+  (testing "aishell's own flags after the separator go to code"
+    (is (= [:vscode {:detach? false :code-args ["--detach" "--stop" "--help"]}]
+           (attached-or-opened ["vscode" "--" "--detach" "--stop" "--help"]))))
+  (testing "aishell's flags before the separator stay aishell's"
+    (is (= [:vscode {:detach? true :code-args ["--disable-gpu" "--json"]}]
+           (attached-or-opened ["vscode" "--detach" "--disable-gpu" "--" "--json"]))))
+  (testing "a --json before the separator is refused"
+    (let [[kind msg] (attached-or-opened ["vscode" "--json" "--" "x"])]
+      (is (= :error kind))
+      (is (str/includes? (str msg) "unsupported_json")))))

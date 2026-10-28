@@ -854,6 +854,11 @@
    --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
+(defn- split-at-separator
+  "Split args at the first `--` into [before, from the `--` on]."
+  [args]
+  (mapv vec (split-with #(not= "--" %) args)))
+
 (defn- do-dispatch* [{:keys [verbose? base-image? unsafe? args] container-name :name}]
   (let [first-arg (first args)
         own-subcommand? (contains? output/non-harness-commands first-arg)
@@ -888,9 +893,10 @@
         "exec" (run/run-exec (vec (rest args)) {:base-image base-image?})
         "ps" (handle-ps nil)
         "volumes" (handle-volumes (vec (rest args)))
-        ("attach" "a") (let [rest-args (vec (rest args))]
+        ("attach" "a") (let [rest-args (vec (rest args))
+                             [before-separator _] (split-at-separator rest-args)]
                          (cond
-                           (some #{"-h" "--help"} rest-args)
+                           (some #{"-h" "--help"} before-separator)
                            (do
                              (println (str output/BOLD "Usage:" output/NC " aishell attach [name] [-- <command> [args...]]"))
                              (println)
@@ -928,9 +934,10 @@
                                (output/error err)
                                (attach/attach-to-container (:name parsed)
                                                            :command-argv (:command-argv parsed))))))
-        "vscode" (let [rest-args (vec (rest args))
+        "vscode" (let [[rest-args after-separator] (split-at-separator (rest args))
                        own-flags #{"--detach" "--stop" "-h" "--help"}
-                       code-args (vec (remove own-flags rest-args))]
+                       code-args (into (vec (remove own-flags rest-args))
+                                       (rest after-separator))]
                    (cond
                      (some #{"-h" "--help"} rest-args)
                      (do
@@ -1051,16 +1058,23 @@
    aishell reads --json only from the flags before them."
   (conj pass-through-harnesses "exec"))
 
+(def ^:private separator-subcommands
+  "Subcommands whose argv after `--` belongs to the attached command or the
+   `code` CLI."
+  #{"attach" "a" "vscode"})
+
 (defn- split-json-scope
   "Split args into [aishell's part, forwarded part] for reading --json.
    When the subcommand is in argv-owning-subcommands, only the flags before
-   it are aishell's and the rest is forwarded untouched; after any other
-   subcommand, or none, all of args is aishell's."
+   it are aishell's and the rest is forwarded untouched. When it is in
+   separator-subcommands, the args from the first `--` on are forwarded
+   untouched. After any other subcommand, or none, all of args is aishell's."
   [args]
   (let [[leading [subcommand & _ :as from-subcommand]] (split-with #(str/starts-with? % "-") args)]
-    (if (contains? argv-owning-subcommands subcommand)
-      [(vec leading) (vec from-subcommand)]
-      [(vec args) []])))
+    (cond
+      (contains? argv-owning-subcommands subcommand) [(vec leading) (vec from-subcommand)]
+      (contains? separator-subcommands subcommand) (split-at-separator args)
+      :else [(vec args) []])))
 
 (defn dispatch
   "Parse aishell's global flags and gate --json, then delegate to do-dispatch.
@@ -1072,7 +1086,8 @@
    --json semantics:
    - After a pass-through harness (claude, opencode, etc.) or `exec` the flag
      is forwarded verbatim, never consumed. A leading `--json exec` is
-     aishell's and is refused as unsupported.
+     aishell's and is refused as unsupported. The same holds after `--` for
+     `attach` and `vscode`.
    - Otherwise --json is stripped here, and the command is classified:
        :unknown     -> emit unknown_command error and exit 1
        :unsupported -> emit unsupported_json error and exit 1
