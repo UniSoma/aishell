@@ -6,10 +6,12 @@ type: chore
 priority: 2
 mode: hitl
 created: '2026-05-07T14:24:33.535210443Z'
-updated: '2026-07-15T02:44:18.299308037Z'
+updated: '2026-10-28T14:25:36.344326078Z'
 tags:
 - needs-triage
 - codebase-design
+links:
+- aix-01m61edx3fdb
 ---
 
 ## Description

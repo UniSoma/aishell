@@ -6,7 +6,7 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-10-28T13:43:43.870372842Z'
-updated: '2026-10-28T14:19:36.043805024Z'
+updated: '2026-10-28T14:25:36.344326078Z'
 closed: '2026-10-28T14:19:36.043805024Z'
 tags:
 - ready-for-agent
@@ -29,6 +29,8 @@ acceptance:
   done: true
 links:
 - aix-01m61dyzmayj
+- aix-01m61edx003f
+- aix-01m61edx3fdb
 ---
 
 ## Description
