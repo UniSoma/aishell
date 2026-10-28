@@ -40,7 +40,7 @@
       (str "Foundation image is " age-days " days old." remedy))))
 
 (defn warn-if-foundation-out-of-date!
-  "Warn on stderr when the foundation under `image-tag` is out of date:
+  "Warn on stderr when the Foundation image under `image-tag` is out of date:
    older than `out-of-date-after-days`, or with no build date. The label is
    inherited through FROM, so the Base and Extended images carry it too.
    Advisory only: never stops the command."
@@ -51,7 +51,7 @@
     (output/warn msg)))
 
 (defn foundation-build-date
-  "Return the `build-date-label` value for a foundation build, or nil for
+  "Return the `build-date-label` value for a Foundation image build, or nil for
    none. A forced build (`--no-cache`) and a first build are stamped `now`.
    A cached rebuild may reuse the old apt layer, so it keeps the previous
    stamp, or stays unstamped when the image it replaces had none."
@@ -138,7 +138,7 @@
   "Build the Foundation image from the embedded templates, unless its
    content hash is unchanged and `:force` is unset.
 
-   The foundation holds OS packages, runtimes and shared tooling;
+   The Foundation image holds OS packages, runtimes and shared tooling;
    volume-installed harnesses live in the harness volume instead.
 
    Options:

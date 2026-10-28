@@ -203,7 +203,7 @@ aishell/
 - `cli/handle-setup`: After foundation build + volume population
 - `cli/handle-update`: Updates build-time, `dockerfile-hash` and `foundation-hash`
 
-### Extension Cache Invalidation
+### Extended Image Cache Invalidation
 
 **Source:** `docker/extension/needs-extended-rebuild?`, `docker/extension/build-extended-image`
 

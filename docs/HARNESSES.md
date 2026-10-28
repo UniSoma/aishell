@@ -29,7 +29,7 @@ Harnesses install into **Docker volumes**, not into the Foundation image. This e
 **Benefits:**
 - **Fast updates:** `aishell update` refreshes tools without rebuilding the Foundation image
 - **Shared volumes:** Projects with identical harness configs share a volume
-- **Stable cache:** Harness updates leave the Docker extension cache intact
+- **Stable cache:** Harness updates leave the Extended image cache intact
 
 **Base image customization:**
 Advanced users can customize the Base image, shared by all projects, via `~/.aishell/Dockerfile` (extra system packages, shell config, dev tools). Project extensions (`.aishell/Dockerfile`) should use `FROM aishell:base` (recommended) to inherit the Base image customizations. See [Configuration](CONFIGURATION.md#base-image-customization) for details.

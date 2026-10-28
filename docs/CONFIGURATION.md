@@ -1193,7 +1193,7 @@ To revert to the default Base image:
 
 ```bash
 aishell check
-# Shows: "Base image: custom (~/.aishell/Dockerfile)" or "Base image: default (alias of the Foundation image)"
+# Shows: "Base image: built from ~/.aishell/Dockerfile" or "Base image: default (alias of the Foundation image)"
 ```
 
 ### Build Failures

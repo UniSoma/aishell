@@ -366,7 +366,7 @@
                              :order setup-option-order}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell setup" output/NC "                      Build the Foundation and Base images"))
+  (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up the Foundation and Base images"))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "        Include Claude Code (latest)"))
   (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
@@ -515,7 +515,7 @@
     ::start-shell))
 
 (def update-spec
-  {:force   {:coerce :boolean :desc "Force-rebuild the Foundation image and the Base image"}
+  {:force   {:coerce :boolean :desc "Force-rebuild the Foundation image, and the Base image when ~/.aishell/Dockerfile exists"}
    :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
    :help    {:alias :h :coerce :boolean :desc "Show update help"}})
 
@@ -541,7 +541,7 @@
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools"))
-  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also force-rebuild the Foundation and Base images"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also force-rebuild the images"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update

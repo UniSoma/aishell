@@ -282,7 +282,8 @@
   (let [out (with-out-str (cli/print-update-help))]
     (is (not (str/includes? out "NOT rebuilt unless --force")))
     (is (str/includes? out "Rebuilds the Foundation image when it is missing or stale"))
-    (is (str/includes? out "Force-rebuild the Foundation image and the Base image"))))
+    (is (= "Force-rebuild the Foundation image, and the Base image when ~/.aishell/Dockerfile exists"
+           (get-in cli/update-spec [:force :desc])))))
 
 (deftest update-help-says-the-harness-volume-is-recreated-only-with-a-harness
   (let [out (with-out-str (cli/print-update-help))]
@@ -293,7 +294,7 @@
   (testing "setup help says setup builds the Foundation and Base images"
     (let [out (with-out-str (cli/print-setup-help))]
       (is (not (str/includes? out "base image")))
-      (is (str/includes? out "Build the Foundation and Base images"))))
+      (is (str/includes? out "Set up the Foundation and Base images"))))
   (testing "update help names the Base image without 'custom'"
     (let [out (with-out-str (cli/print-update-help))]
       (is (not (re-find #"(?i)custom base" out))))))

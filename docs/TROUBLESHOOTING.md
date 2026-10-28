@@ -121,7 +121,7 @@ sudo aishell setup --with-claude
 
 ### Symptom: "Image setup fails" with Docker syntax errors
 
-**Cause:** Custom `.aishell/Dockerfile` has invalid syntax or references a missing resource.
+**Cause:** The Project extension (`.aishell/Dockerfile`) has invalid syntax or references a missing resource.
 
 **Resolution:**
 
@@ -141,7 +141,7 @@ sudo aishell setup --with-claude
    # Build the Foundation and Base images first
    aishell setup --with-claude
 
-   # Then try your custom Dockerfile
+   # Then try the Project extension
    docker build -f .aishell/Dockerfile -t test .
    ```
 
@@ -565,9 +565,9 @@ aishell --base-image claude
 
 The flag must come before the harness name; after it, the flag goes to the harness. `config.yaml` still applies except `pre_start`, which is skipped. Once the Dockerfile builds, launch normally.
 
-### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
+### Symptom: "Legacy FROM aishell:base error" in the Project extension
 
-**Note:** `FROM aishell:base` is valid and recommended in a Project extension (`.aishell/Dockerfile`). The `aishell:base` tag always exists, either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
+**Note:** `FROM aishell:base` is valid and recommended in a Project extension (`.aishell/Dockerfile`). The `aishell:base` tag always exists, either as an image built from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
 
 If you see this error on an older version of aishell, update aishell to the latest version:
 
@@ -1288,7 +1288,7 @@ aishell restores the terminal itself on both the attach and the run paths. On ol
 - `FORCE_COLOR=1` enables colors even if terminal not detected
 - Auto-detection (default)
 
-### Symptom: Permission errors when building custom .aishell/Dockerfile on Windows
+### Symptom: Permission errors when building the Project extension (.aishell/Dockerfile) on Windows
 
 **Cause:** File permissions not set correctly or Docker buildx path mapping issue.
 

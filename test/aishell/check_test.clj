@@ -130,6 +130,13 @@
       (with-out-str (#'check/check-base-image)))
     (is (= "aishell:base-under-test" @checked))))
 
+(deftest base-dockerfile-check-says-the-base-image-is-built-from-it
+  (with-redefs [base/base-dockerfile-exists? (constantly true)
+                base/needs-base-rebuild? (constantly false)]
+    (let [out (with-out-str (#'check/check-base-dockerfile))]
+      (is (not (str/includes? out "custom")))
+      (is (str/includes? out "Base image: built from ~/.aishell/Dockerfile")))))
+
 (defn- state-as-setup-writes-it
   "Run cli/handle-setup with Docker stubbed out and return the state map it
    writes."

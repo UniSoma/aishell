@@ -71,14 +71,14 @@
     (do (print-status :fail (str "Base image not found: " base/base-image-tag))
         nil)))
 
-(defn- check-base-image-custom
+(defn- check-base-dockerfile
   "Print whether ~/.aishell/Dockerfile exists and, when it does, whether
    the Base image needs a rebuild from it."
   []
   (if (base/base-dockerfile-exists?)
     (if (base/needs-base-rebuild?)
-      (print-status :warn "Base image: custom (~/.aishell/Dockerfile) — needs rebuild")
-      (print-status :ok "Base image: custom (~/.aishell/Dockerfile)"))
+      (print-status :warn "Base image: built from ~/.aishell/Dockerfile — needs rebuild")
+      (print-status :ok "Base image: built from ~/.aishell/Dockerfile"))
     (print-status :ok "Base image: default (alias of the Foundation image)")))
 
 (defn- check-foundation-staleness
@@ -124,7 +124,7 @@
   [state project-dir]
   (let [base-tag (check-base-image)]
     (check-foundation-staleness state)
-    (check-base-image-custom)
+    (check-base-dockerfile)
     (when base-tag
       (check-extension project-dir base-tag))
     base-tag))

@@ -149,7 +149,7 @@ Docker volumes store harness tools and mount them into containers:
 - Missing volume
 - Hash mismatch (different harness config)
 
-**Why separate:** Harness updates skip multi-gigabyte Foundation image rebuilds and Docker extension cache invalidation.
+**Why separate:** Harness updates skip multi-gigabyte Foundation image rebuilds and Extended image cache invalidation.
 
 ### Runtime Wiring
 
@@ -176,7 +176,7 @@ Mounted read-only for toolchain integrity.
 **Image tag change:**
 - Old: `aishell:base` (was the only image)
 - New: `aishell:foundation` (the Foundation image)
-- `aishell:base` is now the intermediate layer (always exists as alias or custom build)
+- `aishell:base` is now the intermediate layer (always exists, as an alias or built from `~/.aishell/Dockerfile`)
 
 **Project `.aishell/Dockerfile` FROM line:**
 Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepted. Using `FROM aishell:base` inherits any machine-wide customizations from `~/.aishell/Dockerfile`.
@@ -462,7 +462,7 @@ State files from older setups may also carry `:image-tag`. Nothing reads it. Set
 
 ## Extension System
 
-Projects extend the Base image with custom Dockerfile layers, forming the third tier of the image chain.
+Projects extend the Base image with a Project extension, forming the third tier of the image chain.
 
 **Extension flow (three-tier chain):**
 

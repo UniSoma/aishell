@@ -227,7 +227,7 @@
     (println (str output/BOLD "Base Image" output/NC " (aishell:base)"))
     (println "--------------------------------------")
     (if (base/base-dockerfile-exists?)
-      (println "  Custom (~/.aishell/Dockerfile)")
+      (println "  Built from ~/.aishell/Dockerfile")
       (println "  Default (alias of the Foundation image)"))
     (println)
 

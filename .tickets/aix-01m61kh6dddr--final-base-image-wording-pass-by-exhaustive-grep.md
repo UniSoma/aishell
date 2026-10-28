@@ -54,7 +54,7 @@ Case-sensitive. The glossary terms are capitalized, so a lowercase form means th
 Case-insensitive (_Avoid_ terms and their variants):
 
 ```
-global (dockerfile|packages|customi[sz]ations?|images?|base)|extension images?|project (images?|dockerfiles?)|custom( (base|images?)|-built)|system image|lazy build
+global (dockerfile|packages|customi[sz]ations?|images?|base)|extension images?|project (images?|dockerfiles?)|extension cache|custom( (base|images?|builds?|[(`.~/a-z]*dockerfile)|-built)|system image|lazy build
 ```
 
 The leading character class keeps identifiers and flags (`--base-image`, `base-image-tag`, `#base-image-customization`, `aishell:foundation`) from matching. Title Case headings ("Base Image Issues") are not hits.
@@ -63,5 +63,7 @@ Legitimate remaining hits:
 - docs/ARCHITECTURE.md:137 "npm global packages": npm's own `-g` term, not the Base image.
 - src/aishell/docker/templates.clj:8 "stable foundation layer": a comment inside the embedded Foundation Dockerfile. Editing it changes the Foundation image's content hash and makes every user rebuild.
 - test/aishell/cli_test.clj: three negative assertions that check output does not contain "base image", "custom base" or "foundation alias".
+
+The review added `extension cache` and the `custom (builds?|...dockerfile)` alternatives, which caught "Docker extension cache" and "custom Dockerfile" for the Project extension.
 
 Known gap: grep runs one line at a time, so a term split across lines (the ARCHITECTURE.md diagram's "+ global" / "packages") needs a check by hand or a multi-line matcher.

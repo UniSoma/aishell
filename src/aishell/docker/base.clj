@@ -49,7 +49,7 @@
            "docker" "tag" build/foundation-image-tag base-image-tag)
   {:success true :image base-image-tag :alias true})
 
-(defn- has-custom-base-label?
+(defn- built-from-base-dockerfile?
   "Check if the current Base image was built from ~/.aishell/Dockerfile
    (has the Dockerfile hash label)."
   []
@@ -166,7 +166,7 @@
         {:success true :image base-image-tag :cached true}))
     ;; No Dockerfile: alias path
     (if (or (not (docker/image-exists? base-image-tag))
-            (has-custom-base-label?)
+            (built-from-base-dockerfile?)
             (not (base-matches-foundation?)))
       (tag-foundation-as-base)
       {:success true :image base-image-tag :alias true})))
