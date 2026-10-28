@@ -6,7 +6,7 @@ type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:24:09.765025058Z'
-updated: '2026-10-28T15:24:09.765025058Z'
+updated: '2026-10-28T15:46:47.556535847Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -18,8 +18,6 @@ acceptance:
   done: false
 - title: No project-dockerfile or get-extension-dockerfile-hash remains in src or test
   done: false
-deps:
-- aix-01m61hs429e6
 links:
 - aix-01m61gkfh089
 ---
