@@ -208,8 +208,8 @@ aishell/
 **Source:** `docker/extension/build-project-extension`
 
 **Three-tier model (current):**
-- Extensions track the base image ID via `aishell.base.id` label
-- When `aishell:base` changes (global Dockerfile modified or foundation updated), extensions auto-rebuild
+- Extended images track the Base image ID via the `aishell.base.id` label
+- When `aishell:base` changes (`~/.aishell/Dockerfile` modified or the Foundation image updated), Extended images rebuild
 - The `docker/base.clj` module handles the base layer; callers pass `base/base-image-tag` to extension functions to avoid circular dependencies
 
 **Previous behavior (v2.8.0):**
@@ -218,8 +218,8 @@ aishell/
 
 **Lazy build pattern:**
 - `ensure-base-image` is called at multiple entry points (run-container, run-exec, resolve-image-tag) for defense-in-depth
-- The base image builds lazily on first container run, not during `aishell setup`
-- This pattern ensures the base image exists before any extension build or container launch
+- `aishell setup` and `aishell update` build the Base image, and each run checks it again
+- This pattern ensures the Base image exists before any Extended image build or container launch
 
 ---
 
