@@ -59,8 +59,8 @@
   "Check if base image is the same image as foundation (alias is current).
    Compares actual Docker image IDs."
   []
-  (let [base-id (ext/get-foundation-image-id base-image-tag)
-        foundation-id (ext/get-foundation-image-id "aishell:foundation")]
+  (let [base-id (ext/image-id base-image-tag)
+        foundation-id (ext/image-id "aishell:foundation")]
     (and base-id foundation-id (= base-id foundation-id))))
 
 (defn needs-base-rebuild?
@@ -83,7 +83,7 @@
 
     ;; Foundation image changed
     (not= (docker/get-image-label base-image-tag base-foundation-id-label)
-          (ext/get-foundation-image-id "aishell:foundation"))
+          (ext/image-id "aishell:foundation"))
     true
 
     :else false))
@@ -99,7 +99,7 @@
             Exits on failure (hard-stop per decision)."
   [{:keys [force verbose]}]
   (let [dockerfile-path (global-dockerfile-path)
-        foundation-id (ext/get-foundation-image-id "aishell:foundation")
+        foundation-id (ext/image-id "aishell:foundation")
         df-hash (global-dockerfile-hash)
         build-dir (str (fs/parent dockerfile-path))
         build-args (cond-> ["-f" dockerfile-path

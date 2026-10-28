@@ -47,11 +47,12 @@
                                (not= % "Dockerfile"))
                       %)))))))
 
-(defn get-foundation-image-id
-  "Get Docker image ID for foundation image.
+(defn image-id
+  "Get the Docker image ID for an image tag, such as the Base image or
+   the Foundation image.
 
    Arguments:
-   - image-tag: Docker image tag (e.g., \"aishell:foundation\")
+   - image-tag: Docker image tag (e.g., \"aishell:base\" or \"aishell:foundation\")
 
    Returns: Image ID string or nil on error"
   [image-tag]
@@ -109,7 +110,7 @@
      ;; Check base image ID (base-tag is typically "aishell:base")
      :else
      (let [stored-base-id (docker/get-image-label extended-tag base-image-id-label)
-           current-base-id (get-foundation-image-id base-tag)]
+           current-base-id (image-id base-tag)]
        (cond
          ;; Base image changed (or extension has no base label - triggers rebuild for migration)
          (not= stored-base-id current-base-id)
@@ -153,7 +154,7 @@
          (str config-dir "/" actual " has non-canonical casing. "
               "Docker Desktop's Linux daemon is case-sensitive and will fail "
               "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
-      (let [base-id (get-foundation-image-id base-tag)
+      (let [base-id (image-id base-tag)
             extension-hash (get-extension-dockerfile-hash project-dir)
             build-args (cond-> ["-f" dockerfile-path
                                 "-t" extended-tag
