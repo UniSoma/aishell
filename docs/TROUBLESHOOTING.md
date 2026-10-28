@@ -138,7 +138,7 @@ sudo aishell setup --with-claude
 
 3. **Test manually:**
    ```bash
-   # Build just the base image first
+   # Build the Foundation and Base images first
    aishell setup --with-claude
 
    # Then try your custom Dockerfile
@@ -146,7 +146,7 @@ sudo aishell setup --with-claude
    ```
 
 4. **Isolate the problem:**
-   Temporarily rename `.aishell/Dockerfile` and rebuild to verify the base image works.
+   Temporarily rename `.aishell/Dockerfile` and rebuild to verify the Base image works.
 
 ### Symptom: "Version not found" for harness
 
@@ -191,7 +191,7 @@ sudo aishell setup --with-claude
 
 **Resolution:**
 
-1. **Read the build output:** aishell shows the full Docker build error output when the base image build fails (hard-stop behavior).
+1. **Read the build output:** aishell shows the full Docker build error output when the Base image build fails (hard-stop behavior).
 
 2. **Fix the Dockerfile:**
    ```bash
@@ -1047,7 +1047,7 @@ aishell restores the terminal itself on both the attach and the run paths. On ol
 
 **Symptom:** `aishell exec mycommand` fails with "command not found".
 
-**Cause:** The command is not installed in the base image or in your project extension.
+**Cause:** The command is not installed in the Base image or in your project extension.
 
 **Solution:**
 1. Use full path: `aishell exec /usr/bin/mycommand`

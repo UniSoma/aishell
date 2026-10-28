@@ -151,7 +151,7 @@
         out (with-redefs [docker/image-exists? (constantly true)
                           base/base-dockerfile-exists? (constantly true)
                           base/needs-base-rebuild? (constantly false)
-                          ext/project-dockerfile (constantly "/project/.aishell/Dockerfile")
+                          ext/project-extension-path (constantly "/project/.aishell/Dockerfile")
                           ext/compute-extended-tag (constantly "aishell:ext-under-test")
                           ext/needs-extended-rebuild?
                           (fn [_extended-tag base-tag _project-dir]
@@ -169,7 +169,7 @@
   (let [checked (atom [])]
     (with-redefs [docker/image-exists? (fn [tag] (swap! checked conj tag) true)
                   base/base-dockerfile-exists? (constantly false)
-                  ext/project-dockerfile (constantly nil)]
+                  ext/project-extension-path (constantly nil)]
       (with-out-str (#'check/check-images {:image-tag build/foundation-image-tag}
                                           "/project")))
     (is (= [base/base-image-tag] @checked))))

@@ -107,7 +107,7 @@
   "Print whether the project has a Project extension and whether its
    Extended image needs a rebuild."
   [project-dir base-tag]
-  (if-let [_dockerfile (ext/project-dockerfile project-dir)]
+  (if-let [_dockerfile (ext/project-extension-path project-dir)]
     (let [extended-tag (ext/compute-extended-tag project-dir)]
       (if (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (print-status :warn "Project extension needs rebuild")

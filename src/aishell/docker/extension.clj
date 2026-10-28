@@ -18,7 +18,7 @@
 (def base-image-id-label "aishell.base.id")
 (def extension-hash-label "aishell.extension.hash")
 
-(defn project-dockerfile
+(defn project-extension-path
   "Get path to the Project extension if it exists.
 
    Arguments:
@@ -58,7 +58,7 @@
   [project-dir]
   (str "aishell:ext-" (hash/compute-hash project-dir)))
 
-(defn get-extension-dockerfile-hash
+(defn project-extension-hash
   "Compute hash of the Project extension's content.
 
    Arguments:
@@ -66,7 +66,7 @@
 
    Returns: 12-char hash string, or nil if there is no Project extension"
   [project-dir]
-  (when-let [dockerfile-path (project-dockerfile project-dir)]
+  (when-let [dockerfile-path (project-extension-path project-dir)]
     (hash/compute-hash (slurp dockerfile-path))))
 
 (defn needs-extended-rebuild?
@@ -98,9 +98,9 @@
          (not= stored-base-id current-base-id)
          true
 
-         (and project-dir (project-dockerfile project-dir))
+         (and project-dir (project-extension-path project-dir))
          (let [stored-hash (docker/get-image-label extended-tag extension-hash-label)
-               current-hash (get-extension-dockerfile-hash project-dir)]
+               current-hash (project-extension-hash project-dir)]
            (not= stored-hash current-hash))
 
          :else false)))))
@@ -127,7 +127,7 @@
    Returns: {:success true :image extended-tag} or nil if no Project
             extension; exits on error with build-failure-message"
   [{:keys [project-dir base-tag extended-tag force verbose]}]
-  (when-let [dockerfile-path (project-dockerfile project-dir)]
+  (when-let [dockerfile-path (project-extension-path project-dir)]
     (let [config-dir (util/resolve-project-config-dir project-dir)]
       (when-let [actual (miscased-dockerfile project-dir)]
         (output/warn
@@ -135,7 +135,7 @@
               "Docker Desktop's Linux daemon is case-sensitive and will fail "
               "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
       (let [base-id (docker/image-id base-tag)
-            extension-hash (get-extension-dockerfile-hash project-dir)
+            extension-hash (project-extension-hash project-dir)
             build-args (cond-> ["-f" dockerfile-path
                                 "-t" extended-tag
                                 (str "--label=" base-image-id-label "=" base-id)

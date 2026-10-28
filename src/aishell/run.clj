@@ -127,7 +127,7 @@
   [_base-tag project-dir force? & [{:keys [base-image]}]]
   ;; Lazy build from ~/.aishell/Dockerfile, or a re-tag of the Foundation image
   (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
-  (let [dockerfile (ext/project-dockerfile project-dir)]
+  (let [dockerfile (ext/project-extension-path project-dir)]
     (cond
       base-image
       (do

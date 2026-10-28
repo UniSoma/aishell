@@ -1098,7 +1098,7 @@ claude_shared_paths:
 
 ## Base Image Customization
 
-Advanced users can customize the base Docker image used by all projects. This adds a layer between the foundation image and per-project extensions, forming a three-tier image chain:
+Advanced users can customize the Base image used by all projects. This adds a layer between the Foundation image and per-project extensions, forming a three-tier image chain:
 
 ```
 aishell:foundation -> aishell:base -> aishell:ext-{hash}
@@ -1106,17 +1106,17 @@ aishell:foundation -> aishell:base -> aishell:ext-{hash}
 
 See [ARCHITECTURE.md](ARCHITECTURE.md#three-tier-image-chain--harness-volume) for the full image chain diagram.
 
-### Creating a Global Dockerfile
+### Creating `~/.aishell/Dockerfile`
 
-Create `~/.aishell/Dockerfile` to customize the base image:
+Create `~/.aishell/Dockerfile` to customize the Base image:
 
 ```dockerfile
 FROM aishell:foundation
 
-# Your global customizations here
+# Your machine-wide customizations here
 ```
 
-The recommended `FROM` line is `FROM aishell:foundation`, but this is not enforced. Changes are detected automatically -- the base image rebuilds on the next `aishell` run.
+The recommended `FROM` line is `FROM aishell:foundation`, but this is not enforced. Changes are detected automatically -- the Base image rebuilds on the next `aishell` run.
 
 ### Use Case Examples
 
@@ -1156,9 +1156,9 @@ RUN pip3 install httpie --break-system-packages && \
 
 ### How It Works
 
-- **Lazy build:** The base image is built on first container run when `~/.aishell/Dockerfile` is detected, not during `aishell setup`.
-- **Auto-detection:** aishell hashes the Dockerfile content and compares it to the existing base image label. Changes trigger a rebuild.
-- **Cascade rebuilds:** When the base image changes, all per-project extension images rebuild on their next run.
+- **Build timing:** `aishell setup` and `aishell update` build the Base image from `~/.aishell/Dockerfile`. A later run rebuilds it when the Dockerfile has changed.
+- **Auto-detection:** aishell hashes the Dockerfile content and compares it to the existing Base image label. Changes trigger a rebuild.
+- **Cascade rebuilds:** When the Base image changes, all per-project extension images rebuild on their next run.
 - **Default behavior:** When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishell:foundation` (zero overhead).
 
 ### Project Extension Compatibility
@@ -1166,14 +1166,14 @@ RUN pip3 install httpie --break-system-packages && \
 Per-project `.aishell/Dockerfile` files can use either base:
 
 ```dockerfile
-# Recommended: inherits global customizations
+# Recommended: inherits machine-wide customizations
 FROM aishell:base
 
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
 ```
 
 ```dockerfile
-# Also valid: skips global customizations
+# Also valid: skips machine-wide customizations
 FROM aishell:foundation
 
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
@@ -1183,11 +1183,11 @@ Using `FROM aishell:base` is recommended because it inherits any packages, tools
 
 ### Removing Customizations
 
-To revert to the default base image:
+To revert to the default Base image:
 
 1. Delete `~/.aishell/Dockerfile`
 2. On the next run, `aishell:base` reverts to a foundation alias
-3. Run `aishell volumes prune` to clean up the orphaned custom base image
+3. Run `aishell volumes prune` to clean up the orphaned custom-built Base image
 
 ### Status Check
 

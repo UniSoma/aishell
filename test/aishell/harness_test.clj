@@ -317,6 +317,6 @@
     ;; Two spellings of one fact, so pin them together: bumping either alone
     ;; fails here rather than silently reporting a version that was not built.
     (let [declared (get-in (harness/descriptor :gitleaks) [:install :version])
-          built (second (re-find #"ARG GITLEAKS_VERSION=(\S+)" templates/base-dockerfile))]
+          built (second (re-find #"ARG GITLEAKS_VERSION=(\S+)" templates/foundation-dockerfile))]
       (is (some? built) "the Dockerfile should still pin GITLEAKS_VERSION")
       (is (= declared built)))))

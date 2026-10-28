@@ -10,12 +10,12 @@
   (testing "the bbin install layer rewrites the gensym form to a per-user name"
     ;; The form sits inside a Clojure string literal in bbin, so its quotes
     ;; are backslash-escaped there and the sed has to match them escaped.
-    (is (str/includes? templates/base-dockerfile
+    (is (str/includes? templates/foundation-dockerfile
                        "sed -i 's|(gensym \\\\\"bbin\\\\\")|(gensym (str \\\\\"bbin-\\\\\" (System/getProperty \\\\\"user.name\\\\\") \\\\\"-\\\\\"))|g' /usr/local/bin/bbin")))
   (testing "the same layer fails the build unless exactly five forms were patched"
-    (is (str/includes? templates/base-dockerfile
+    (is (str/includes? templates/foundation-dockerfile
                        "test \"$(grep -o 'gensym (str \\\\\"bbin-\\\\\"' /usr/local/bin/bbin | wc -l)\" -eq 5"))
-    (is (str/includes? templates/base-dockerfile "WORKAROUND(bbin-gensym-tmp)")))
+    (is (str/includes? templates/foundation-dockerfile "WORKAROUND(bbin-gensym-tmp)")))
   (testing "the entrypoint clears leftover shim temp files beside the sentinels"
     (is (str/includes? templates/entrypoint-script "rm -f /tmp/bbin*"))
     (is (str/includes? templates/entrypoint-script "WORKAROUND(bbin-gensym-tmp)"))))

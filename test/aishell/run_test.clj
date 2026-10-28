@@ -56,7 +56,7 @@
 (deftest base-image-skips-the-project-extension
   (let [built (atom false)]
     (with-redefs [base/ensure-base-image (fn [& _])
-                  ext/project-dockerfile (fn [_] "/p/.aishell/Dockerfile")
+                  ext/project-extension-path (fn [_] "/p/.aishell/Dockerfile")
                   ext/needs-extended-rebuild? (fn [& _] true)
                   ext/build-extended-image (fn [& _] (reset! built true))]
       (testing "with :base-image the Base image is used and nothing is built"
@@ -70,7 +70,7 @@
         (is (true? @built)))))
   (testing "with :base-image and no Project extension it reports none to skip"
     (with-redefs [base/ensure-base-image (fn [& _])
-                  ext/project-dockerfile (fn [_] nil)]
+                  ext/project-extension-path (fn [_] nil)]
       (let [out (captured-err
                  #(is (= "aishell:base"
                          (run/resolve-image-tag nil "/p" false {:base-image true}))))]

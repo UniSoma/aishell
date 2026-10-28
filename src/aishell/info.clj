@@ -134,7 +134,7 @@
    Returns the extended tag (aishell:ext-XXXXXXXXXXXX) when a project
    extension Dockerfile exists, otherwise the base tag (aishell:base)."
   [project-dir]
-  (if (ext/project-dockerfile project-dir)
+  (if (ext/project-extension-path project-dir)
     (ext/compute-extended-tag project-dir)
     base/base-image-tag))
 
@@ -167,11 +167,11 @@
     (System/exit 0))
 
   (when (some #{"--foundation"} args)
-    (print templates/base-dockerfile)
+    (print templates/foundation-dockerfile)
     (flush)
     (System/exit 0))
 
-  (let [dockerfile templates/base-dockerfile
+  (let [dockerfile templates/foundation-dockerfile
         packages (parse-packages dockerfile)
         distro (parse-distro dockerfile)
         [node-tag node-version] (parse-node-tag dockerfile)
@@ -231,7 +231,7 @@
 
     (println (str output/BOLD "Project Extension" output/NC))
     (println "--------------------------------------")
-    (if (ext/project-dockerfile project-dir)
+    (if (ext/project-extension-path project-dir)
       (println (str "  Configured (" (util/resolve-project-config-dir project-dir) "/Dockerfile)"))
       (println "  Not configured"))
     (println)

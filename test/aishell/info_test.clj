@@ -12,7 +12,7 @@
 (def ^:private parse-node-tag #'info/parse-node-tag)
 
 (deftest package-list-comes-from-the-main-stage-apt-block
-  (let [packages (parse-packages templates/base-dockerfile)]
+  (let [packages (parse-packages templates/foundation-dockerfile)]
     (testing "the main-stage packages are found"
       (is (some #{"git"} packages))
       (is (some #{"ripgrep"} packages)))
@@ -28,15 +28,15 @@
     (testing "the JRE bbin needs is the one trixie ships"
       (is (some #{"openjdk-21-jre-headless"} packages)))
     (testing "libsqlite3-0 is never removed — the shadow relies on ldconfig order"
-      (is (not (str/includes? templates/base-dockerfile "apt-get remove"))))))
+      (is (not (str/includes? templates/foundation-dockerfile "apt-get remove"))))))
 
 (deftest sqlite-version-is-parsed-from-the-pinned-arg
   (is (re-matches #"\d+\.\d+\.\d+"
-                  (parse-sqlite-version templates/base-dockerfile))))
+                  (parse-sqlite-version templates/foundation-dockerfile))))
 
 (deftest distro-comes-from-the-final-from-line
   (testing "the reported distro is the main stage's, not a builder stage's"
-    (is (= "debian:trixie-slim" (parse-distro templates/base-dockerfile))))
+    (is (= "debian:trixie-slim" (parse-distro templates/foundation-dockerfile))))
   (testing "a builder stage never wins, even when it comes first"
     (is (= "debian:other-slim"
            (parse-distro (str "FROM debian:trixie-slim AS sqlite-source\n"
@@ -47,7 +47,7 @@
                               "FROM debian:final-slim\n"))))))
 
 (deftest node-tag-is-parsed-without-anchoring-on-a-suite
-  (let [[tag major] (parse-node-tag templates/base-dockerfile)]
+  (let [[tag major] (parse-node-tag templates/foundation-dockerfile)]
     (is (= "24" major))
     (is (= "24-trixie-slim" tag)))
   (testing "a different suite still parses"
@@ -56,13 +56,13 @@
 
 (deftest the-distro-image-is-trixie-everywhere
   (testing "no bookworm remains in the template"
-    (is (not (str/includes? templates/base-dockerfile "bookworm"))))
+    (is (not (str/includes? templates/foundation-dockerfile "bookworm"))))
   (testing "the build asserts the glibc floor the policy promises"
-    (is (str/includes? templates/base-dockerfile "GNU_LIBC_VERSION"))
+    (is (str/includes? templates/foundation-dockerfile "GNU_LIBC_VERSION"))
     ;; The floor number is asserted inside the comparison, not just mentioned
     ;; in the comment above it: the two drifting apart is the failure this
     ;; guards.
-    (is (str/includes? templates/base-dockerfile
+    (is (str/includes? templates/foundation-dockerfile
                        "dpkg --compare-versions \"${glibcVersion}\" ge 2.39"))))
 
 (deftest harness-lines-use-canonical-labels

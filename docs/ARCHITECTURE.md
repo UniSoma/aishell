@@ -54,10 +54,10 @@ graph TB
 
 **Architectural principles:**
 
-1. **Three-Tier Image Chain:** Foundation image (stable system tools) -> Base image (optional global customization) -> Extension image (per-project)
+1. **Three-Tier Image Chain:** Foundation image (stable system tools) -> Base image (optional machine-wide customization) -> Extended image (per-project)
 2. **Volume-Based Harness Tools:** npm packages and binaries mounted read-only at `/tools`
-3. **Global Base Customization:** Optional `~/.aishell/Dockerfile` customizes the base image for all projects
-4. **Project Extension:** Optional per-project `.aishell/Dockerfile` extends the base image
+3. **Base Image Customization:** Optional `~/.aishell/Dockerfile` customizes the Base image for all projects
+4. **Project Extension:** Optional per-project `.aishell/Dockerfile` extends the Base image
 5. **Configuration Merge:** Global and project configs combine with defined semantics
 6. **Stateless Containers:** No data persists in container; all work is in mounted project dir
 7. **Security Layers:** Detection (filename patterns) + Gitleaks (opt-in content scanning) before launch
@@ -73,7 +73,7 @@ aishell:foundation -> aishell:base -> aishell:ext-{hash}
 ```
 
 - **`aishell:foundation`** -- Stable system dependencies (Debian, Node.js, tools). Rebuilt rarely.
-- **`aishell:base`** -- Either a tag alias for foundation (default) or a custom build from `~/.aishell/Dockerfile`. Enables global customization (extra packages, shell config, dev tools) shared across all projects.
+- **`aishell:base`** -- Either a tag alias for foundation (default) or a custom build from `~/.aishell/Dockerfile`. Holds machine-wide customizations (extra packages, shell config, dev tools) shared across all projects.
 - **`aishell:ext-{hash}`** -- Per-project extension built from `.aishell/Dockerfile`. Adds project-specific layers on top of `aishell:base`.
 
 Base image changes cascade automatically: when `aishell:base` is rebuilt, all project extension images rebuild on their next run.
@@ -100,7 +100,7 @@ The foundation image contains stable system components that change rarely:
 
 ### Base Image (`aishell:base`)
 
-The base image is the intermediate layer between foundation and project extensions. It always exists as a valid Docker tag.
+The Base image is the intermediate layer between foundation and project extensions. It always exists as a valid Docker tag.
 
 **Default behavior (no `~/.aishell/Dockerfile`):**
 - `aishell:base` is a tag alias for `aishell:foundation` (via `docker tag`)
@@ -108,8 +108,8 @@ The base image is the intermediate layer between foundation and project extensio
 
 **Custom behavior (with `~/.aishell/Dockerfile`):**
 - Built from `~/.aishell/Dockerfile` (recommended: `FROM aishell:foundation`)
-- Applies global customizations shared by all projects
-- Built lazily on first container run, not during `aishell setup`
+- Applies machine-wide customizations shared by all projects
+- Built during `aishell setup` and `aishell update`, and rebuilt on the next run when `~/.aishell/Dockerfile` changes
 
 **Cache tracking via Docker labels:**
 - `aishell.base.dockerfile.hash` -- 12-char SHA-256 of `~/.aishell/Dockerfile` content
@@ -121,12 +121,12 @@ The base image is the intermediate layer between foundation and project extensio
 - `aishell:base` image missing
 - Explicit `aishell setup --force` or `aishell update --force`
 
-**Cascade effect:** When `aishell:base` is rebuilt, all project extension images (`aishell:ext-{hash}`) auto-rebuild on their next run. Extensions track the base image ID via labels, so a new base image invalidates their cache.
+**Cascade effect:** When `aishell:base` is rebuilt, all project extension images (`aishell:ext-{hash}`) auto-rebuild on their next run. Extensions track the Base image ID via labels, so a new Base image invalidates their cache.
 
 **Reset procedure:**
 1. Delete `~/.aishell/Dockerfile`
 2. On next run, `aishell:base` reverts to a foundation alias
-3. Run `aishell volumes prune` to clean up the orphaned custom base image
+3. Run `aishell volumes prune` to clean up the orphaned custom-built Base image
 
 ### Harness Volume (`aishell-harness-{hash}`)
 
@@ -178,7 +178,7 @@ Mounted read-only for toolchain integrity.
 - `aishell:base` is now the intermediate layer (always exists as alias or custom build)
 
 **Project `.aishell/Dockerfile` FROM line:**
-Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepted. Using `FROM aishell:base` inherits any global customizations from `~/.aishell/Dockerfile`.
+Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepted. Using `FROM aishell:base` inherits any machine-wide customizations from `~/.aishell/Dockerfile`.
 
 **State schema evolution:**
 - New fields: `foundation-hash`, `harness-volume-hash`, `harness-volume-name`
@@ -461,7 +461,7 @@ State files from older setups may also carry `:image-tag`. Nothing reads it. Set
 
 ## Extension System
 
-Projects extend the base image with custom Dockerfile layers, forming the third tier of the image chain.
+Projects extend the Base image with custom Dockerfile layers, forming the third tier of the image chain.
 
 **Extension flow (three-tier chain):**
 
@@ -485,8 +485,8 @@ When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishe
 **Extension behavior:**
 
 1. **Auto-build:** If `.aishell/Dockerfile` exists, the extension builds automatically before run
-2. **Cache:** Extended image tagged by content hash; rebuilt only on Dockerfile or base image changes
-3. **Base dependency:** Extension builds on `aishell:base` (which inherits any global customizations)
+2. **Cache:** Extended image tagged by content hash; rebuilt only on Dockerfile or Base image changes
+3. **Base dependency:** Extension builds on `aishell:base` (which inherits any machine-wide customizations)
 4. **Cascade rebuilds:** When `aishell:base` changes, extensions auto-rebuild on next run
 5. **Persistence:** Extended images persist locally and are shared across runs
 
@@ -503,7 +503,7 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 RUN apt-get update && apt-get install -y python3-pip && rm -rf /var/lib/apt/lists/*
 ```
 
-Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepted. Using `FROM aishell:base` inherits any global customizations from `~/.aishell/Dockerfile`.
+Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepted. Using `FROM aishell:base` inherits any machine-wide customizations from `~/.aishell/Dockerfile`.
 
 See the Dockerfile extension section in the Configuration Reference for details.
 

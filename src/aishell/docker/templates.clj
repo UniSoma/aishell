@@ -4,7 +4,7 @@
    Contains the Dockerfile, entrypoint.sh, and bashrc.aishell content
    as multiline strings. These match the bash version heredocs exactly.")
 
-(def base-dockerfile
+(def foundation-dockerfile
   "# Aishell Foundation Image
 # Debian-based container with dynamic user creation, gosu for user switching,
 # and stable foundation layer with system dependencies.
@@ -735,11 +735,11 @@ fi
   "Concatenation of every file baked into the foundation image at build
    time — the Dockerfile plus all files COPY'd in by `write-build-files`.
 
-   Hashing this (rather than just `base-dockerfile`) is what lets cache
+   Hashing this (rather than just `foundation-dockerfile`) is what lets cache
    invalidation pick up an entrypoint or bashrc edit. If you add a new
    COPY in the Dockerfile, append the corresponding template here in the
    same order so the hash stays stable."
-  (str base-dockerfile
+  (str foundation-dockerfile
        entrypoint-script
        bashrc-content
        profile-d-script

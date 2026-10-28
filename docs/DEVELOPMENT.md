@@ -120,7 +120,7 @@ aishell/
 
 1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the Dockerfile template
 2. **Compare hash:** If foundation-hash matches state, skip rebuild (unless `--force`)
-3. **Generate Dockerfile:** `docker/templates/base-dockerfile` produces the template
+3. **Generate Dockerfile:** `docker/templates/foundation-dockerfile` produces the template
 4. **Write to temp dir:** `/tmp/aishell-build-{uuid}/Dockerfile`
 5. **Docker build:** `docker build --tag aishell:foundation`
 6. **Label image:** Embed the foundation hash in image metadata
