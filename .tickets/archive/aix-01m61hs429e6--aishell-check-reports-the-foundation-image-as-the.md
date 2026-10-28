@@ -1,19 +1,20 @@
 ---
 id: aix-01m61hs429e6
 title: aishell check reports the Foundation image as the Base image
-status: in_progress
+status: closed
 type: bug
 priority: 2
 mode: afk
 created: '2026-10-28T15:24:09.659520871Z'
-updated: '2026-10-28T15:46:47.665033327Z'
+updated: '2026-10-28T17:38:41.661000586Z'
+closed: '2026-10-28T17:38:41.661000586Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: After setup, aishell check reports the Base image as aishell:base
   done: true
 - title: check-extension compares against the Base image, so a current Extended image on a custom Base image is not reported as needing a rebuild
-  done: false
+  done: true
 - title: A test covers check with state as setup writes it
   done: true
 links:
@@ -32,3 +33,11 @@ Direction: the Base image check and the extension check should use `base/base-im
 **2026-10-28T15:46:04.571067288Z**
 
 AC2 needs a host with Docker (none on the landing host). The fix passes aishell:base to needs-extended-rebuild? (covered by image-checks-on-setup-state-check-the-base-image, with the rebuild check stubbed). To verify for real: put a Dockerfile at ~/.aishell/Dockerfile (e.g. FROM aishell:foundation + RUN true), run 'aishell setup', then in a project with .aishell/Dockerfile run 'aishell claude' (or any harness) once to build the Extended image, exit, and run 'aishell check'. Expect '✓ Base image exists: aishell:base' and '✓ Project extension is up to date: aishell:ext-…', not 'Project extension needs rebuild'.
+
+**2026-10-28T17:38:41.565397895Z**
+
+Verified on a Docker host 2026-10-28: with ~/.aishell/Dockerfile present, aishell check printed '✓ Base image exists: aishell:base', '✓ Base image: built from ~/.aishell/Dockerfile' and '✓ Project extension is up to date: aishell:ext-8062b518262d'.
+
+**2026-10-28T17:38:41.661000586Z**
+
+aishell check reports and compares against the Base image aishell:base; setup no longer writes :image-tag. Verified on a Docker host with a custom Base image.
