@@ -1069,8 +1069,8 @@
   (first (remove (fn [a] (str/starts-with? a "-")) args)))
 
 (defn dispatch
-  "Public dispatch entry. Consumes a leading --verbose and --base-image and
-   handles --json gating before delegating to do-dispatch.
+  "Consume a leading --verbose and --base-image and gate --json, then
+   delegate to do-dispatch.
 
    --json semantics:
    - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded
@@ -1087,10 +1087,10 @@
         [base-image? args] (split-leading-flag "--base-image" args)
         sub (subcommand-of args)
         json-pass-through? (contains? pass-through-harnesses sub)
-        ;; When --json is pre-position and the subcommand is a pass-through harness,
-        ;; hoist the harness to the front so the case-dispatch in do-dispatch keys
-        ;; on the harness name rather than "--json". This preserves the
-        ;; "claude --json forwards to Claude" contract regardless of flag order.
+        ;; When any flag precedes a pass-through harness, hoist the harness to
+        ;; the front so do-dispatch* keys on the harness name rather than the
+        ;; flag. `--json claude` then forwards --json to Claude as
+        ;; `claude --json` does.
         args (if (and json-pass-through? (not= sub (first args)))
                (into [sub] (remove #{sub} args))
                args)
