@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`aishell check` reports the Base image, not the Foundation image**: setup recorded the Foundation image tag in state, and `check` reported that tag as the Base image (`Base image exists: aishell:foundation`). It also compared the Project extension against the Foundation image, so with a custom Base image (`~/.aishell/Dockerfile`) `check` said an up-to-date Extended image needed a rebuild. `check` now checks `aishell:base` for both. Setup no longer writes `:image-tag` to `~/.aishell/state.edn`. State files that still have it load as before, update leaves the key where it is, and nothing reads it
+- **`aishell check` reports the Base image, not the Foundation image**: setup recorded the Foundation image tag in state, and `check` reported that tag as the Base image (`Base image exists: aishell:foundation`). It also compared the Extended image against the Foundation image, so with a custom Base image (`~/.aishell/Dockerfile`) `check` said an up-to-date Extended image needed a rebuild. `check` now checks `aishell:base` for both. Setup no longer writes `:image-tag` to `~/.aishell/state.edn`. State files that still have it load as before, update leaves the key where it is, and nothing reads it
 
 - **`aishell --verbose claude` shows aishell's build output again**: aishell moved the harness name to the front of the arguments before reading its own leading flags, so `--verbose` landed behind `claude` and was forwarded to Claude Code. aishell now reads a leading `--verbose` first. `aishell claude --verbose` still goes to Claude Code. As a side effect, `aishell --verbose --json ps` now runs `ps` instead of failing with `unknown_command`
 

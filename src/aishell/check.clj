@@ -118,8 +118,8 @@
 
 (defn- check-images
   "Report the Base image, Foundation image staleness, the custom Base
-   image and the Project extension. Returns the Base image tag, or nil
-   when the Base image is missing."
+   image and, when the Base image exists, the Project extension. Returns
+   the Base image tag, or nil when the Base image is missing."
   [state project-dir]
   (let [base-tag (check-base-image)]
     (check-foundation-staleness state)

@@ -432,7 +432,11 @@
           (spit (str config-path) starter-config-yaml)
           (println (str "Scaffolded " dir-name "/config.yaml")))))))
 
-(defn handle-setup [{:keys [opts]}]
+(defn handle-setup
+  "Build the Foundation and Base images for the setup the opts declare,
+   populate the harness volume when a harness is enabled and the volume is
+   missing or stale, and write the setup to state."
+  [{:keys [opts]}]
   (if (:help opts)
     (print-setup-help)
     (let [_ (state/warn-removed-harnesses!)
@@ -447,26 +451,21 @@
           _ (when (:reuse-config? resolution)
               (print-effective-reused-setup state-map))
 
-          ;; Show replacement message if image exists
           _ (when (docker/image-exists? build/foundation-image-tag)
               (println "Replacing existing image..."))
 
-          ;; Build foundation image (harness tools will be volume-mounted in Phase 36)
           _ (build/build-foundation-image
               {:with-gitleaks (:with-gitleaks state-map)
                :verbose (:verbose opts)
                :force (:force opts)})
 
-          ;; Ensure aishell:base exists (custom build from ~/.aishell/Dockerfile or alias)
           _ (base/ensure-base-image {:force (:force opts) :verbose (:verbose opts)})
 
-          ;; Step 2: Compute harness volume hash
           project-dir (System/getProperty "user.dir")
           cfg (config/load-config project-dir)
           harness-hash (vol/compute-harness-hash state-map)
           volume-name (vol/volume-name harness-hash)
 
-          ;; Step 3: Populate volume if needed (only if missing or stale)
           _ (when (harness/volume-harnesses-enabled? state-map)
               (let [vol-missing? (not (vol/volume-exists? volume-name))
                     vol-stale? (and (not vol-missing?)
@@ -483,17 +482,16 @@
                       (when vol-missing? (vol/remove-volume volume-name))
                       (output/error "Failed to populate harness volume"))))))]
 
-      ;; Manage OpenCode whitelist for UniSoma
       (manage-opencode-whitelist! state-map prev-state)
 
-      ;; Persist state (always, even on failure this won't run due to error exit)
+      ;; Reached only on success: every failure above exits.
       (state/write-state
        (assoc state-map
               :build-time (str (java.time.Instant/now))
-              :dockerfile-hash (hash/compute-hash templates/foundation-content)  ; Kept for v2.7.0 compat
-              :foundation-hash (hash/compute-hash templates/foundation-content)  ; NEW: same as dockerfile-hash for now
-              :harness-volume-hash harness-hash                               ; NEW
-              :harness-volume-name volume-name)))))                           ; NEW
+              :dockerfile-hash (hash/compute-hash templates/foundation-content)  ; v2.7.0 name, still read by check and run
+              :foundation-hash (hash/compute-hash templates/foundation-content)  ; v2.8.0 name for the same hash; nothing reads it yet
+              :harness-volume-hash harness-hash
+              :harness-volume-name volume-name)))))
 
 (defn handle-default
   "Run the default dispatch entry: print the version or help, or report an
@@ -547,23 +545,22 @@
   (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update
-  "Update command: refresh harness tools to latest versions.
-   Default behavior: repopulates volume (delete + recreate) without rebuilding foundation.
-   With --force: also rebuilds foundation image using --no-cache."
+  "Refresh harness tools to their latest versions with the saved setup.
+   Rebuilds the Foundation image only when it is missing or stale,
+   refreshes the Base image, and, when a harness is enabled, deletes and
+   recreates the harness volume. With --force, rebuilds the Foundation
+   image with --no-cache and forces the Base image refresh."
   [{:keys [opts]}]
   (if (:help opts)
     (print-update-help)
     (let [_ (state/warn-removed-harnesses!)
           state (state/read-state)]
-      ;; Must have prior build
       (when-not state
         (output/error "No previous setup found. Run: aishell setup"))
 
-      ;; Show what we're updating
       (println "Updating with preserved configuration...")
       (run! println (setup-summary-lines state))
 
-      ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
             cfg (config/load-config project-dir)
             _ (build/build-foundation-image
@@ -572,23 +569,19 @@
                  :force (:force opts)
                  :quiet (not (:force opts))})
 
-            ;; Ensure aishell:base is up to date
             _ (if (:force opts)
                 (base/ensure-base-image {:force true :verbose (:verbose opts)})
                 (base/ensure-base-image {:verbose (:verbose opts) :quiet true}))
 
-            ;; Volume repopulation (unconditional delete + recreate)
             harness-hash (vol/compute-harness-hash state)
             volume-name (or (:harness-volume-name state)
                             (vol/volume-name harness-hash))
 
-            ;; Check if any harness is enabled
             harnesses-enabled? (harness/volume-harnesses-enabled? state)
 
             _ (if harnesses-enabled?
-                ;; Repopulate volume (delete + recreate)
-                (let [;; Compute harness list for label
-                      harness-list (enabled-harness-list state)]
+                ;; Unlike setup, delete and recreate even when the hash matches
+                (let [harness-list (enabled-harness-list state)]
                   (println "Repopulating harness volume...")
                   (let [rm-result (vol/remove-volume volume-name)]
                     (when-not (:removed? rm-result)
@@ -609,13 +602,12 @@
                       (output/error "Failed to populate harness volume")))
                   ;; Clear Pi packages hash so they get reinstalled on next run
                   (pi/clear-hash!))
-                ;; No harnesses enabled
                 (println "No harnesses enabled. Nothing to update."))]
 
-        ;; Refresh OpenCode whitelist for UniSoma (upsert only on update)
+        ;; The same map as new and previous state: upserts the UniSoma whitelist,
+        ;; never removes it
         (manage-opencode-whitelist! state state)
 
-        ;; Update state with new build-time and current hashes
         (state/write-state
          (assoc state
                 :build-time (str (java.time.Instant/now))

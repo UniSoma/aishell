@@ -123,7 +123,7 @@
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
 
-(deftest base-image-check-checks-the-base-image-tag
+(deftest base-image-check-looks-up-the-base-image-tag
   (let [checked (atom nil)]
     (with-redefs [base/base-image-tag "aishell:base-under-test"
                   docker/image-exists? (fn [tag] (reset! checked tag) true)]
