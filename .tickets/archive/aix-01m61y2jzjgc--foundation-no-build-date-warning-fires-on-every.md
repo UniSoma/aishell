@@ -1,14 +1,15 @@
 ---
 id: aix-01m61y2jzjgc
 title: Foundation 'no build date' warning fires on every launch after upgrading from v4.4.1
-status: open
+status: closed
 type: bug
 priority: 2
 mode: hitl
 created: '2026-10-28T18:59:02.770426197Z'
-updated: '2026-10-28T18:59:02.770426197Z'
+updated: '2026-10-28T19:03:55.791268565Z'
+closed: '2026-10-28T19:03:55.791268565Z'
 tags:
-- needs-triage
+- wontfix
 ---
 
 ## Description
@@ -24,3 +25,9 @@ Options to weigh:
 - Warn once per image, then stay quiet until the image changes.
 - Report a missing build date only in `aishell check`, and keep the launch warning for images known to be over 30 days old.
 - Stamp an unlabelled image on a cached rebuild, so plain `update` clears the warning. The stamp would claim a build date the apt layer may not have, so the age check would start counting from the wrong day.
+
+## Notes
+
+**2026-10-28T19:03:55.791268565Z**
+
+Won't fix (user decision, 2026-10-28): the 'no build date' warning after upgrading from v4.4.1 is a one-time cost; it stops after one 'aishell update --force', and the 4.5.0 changelog upgrade note says so.
