@@ -87,8 +87,8 @@ aishell gitleaks detect --verbose
 ```
 
 Common options for all harnesses:
-- `--name NAME` - Custom container name (default: harness name).
-- `--unsafe` - Skip sensitive file detection.
+- `--name NAME` - Custom container name (default: harness name). Must come before the harness name (`aishell --name reviewer claude`); aishell's own commands refuse it.
+- `--unsafe` - Skip sensitive file detection. Must come before the harness name; aishell's own commands refuse it.
 - `--verbose` - Stream image builds and volume population instead of a spinner. Must come before the harness name (`aishell --verbose claude`); after it, the flag is forwarded to the harness.
 
 ### Default (No Command)

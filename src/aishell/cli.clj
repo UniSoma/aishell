@@ -870,8 +870,9 @@
                (not (contains? base-image-commands first-arg)))
       (output/error (str "--base-image only applies to commands that start a sandbox, not '"
                          first-arg "'. Try: aishell --base-image <harness>")))
-    ;; Only harness launches and bare aishell read --unsafe and --name; exec's
-    ;; throwaway container has its own name and no sensitive-file prompt.
+    ;; Only harness launches and bare aishell read --unsafe and --name; the
+    ;; containers exec and vscode start get no --name and skip the
+    ;; sensitive-file checks.
     (when own-subcommand?
       (when unsafe?
         (output/error (str "--unsafe only applies to commands that start a harness or shell, not '"
@@ -889,7 +890,7 @@
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
-    ;; Harness pass-through: a harness subcommand launches its container with
+    ;; Harness pass-through: a harness subcommand launches its Sandbox with
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape, such as whether the project's pre_start hook runs, is
     ;; read from the harness descriptor, not spelled per harness here.

@@ -528,7 +528,7 @@
       (is (= ["claude" ["-p" "x"]] [cmd args]))
       (is (true? (:unsafe opts))))))
 
-(deftest name-and-unsafe-are-refused-where-no-sandbox-is-started
+(deftest name-and-unsafe-are-refused-on-aishells-own-subcommands
   (doseq [flag-args [["--unsafe"] ["--name" "foo"]]
           cmd ["exec" "attach" "a" "vscode" "ps" "setup" "update" "check"
                "volumes" "info" "upgrade"]]
@@ -549,7 +549,7 @@
                  (catch clojure.lang.ExceptionInfo _))))
         (is (false? @checked))))))
 
-(deftest name-and-unsafe-still-reach-help-and-typos
+(deftest name-and-unsafe-leave-help-and-typos-alone
   (testing "--help still prints help"
     (let [out (with-out-str (is (nil? (dispatched ["--unsafe" "--help"]))))]
       (is (str/includes? out "Usage"))))
@@ -603,7 +603,7 @@
       (is (= :setup kind))
       (is (true? (:verbose opts)))
       (is (true? (:with-claude opts)))))
-  (testing "--verbose update runs update"
+  (testing "--verbose update runs update verbosely"
     (let [[kind opts] (dispatched ["--verbose" "update"])]
       (is (= :update kind))
       (is (true? (:verbose opts))))))
