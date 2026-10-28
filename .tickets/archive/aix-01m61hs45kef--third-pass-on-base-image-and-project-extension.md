@@ -6,7 +6,7 @@ type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:24:09.765025058Z'
-updated: '2026-10-28T15:53:50.365125674Z'
+updated: '2026-10-28T15:54:47.070477986Z'
 closed: '2026-10-28T15:53:50.365125674Z'
 tags:
 - ready-for-agent
@@ -21,6 +21,7 @@ acceptance:
   done: true
 links:
 - aix-01m61gkfh089
+- aix-01m61kh6dddr
 ---
 
 ## Description

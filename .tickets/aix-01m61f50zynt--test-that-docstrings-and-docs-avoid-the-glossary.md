@@ -6,7 +6,7 @@ type: chore
 priority: 2
 mode: hitl
 created: '2026-10-28T14:38:14.014736980Z'
-updated: '2026-10-28T14:44:02.345576610Z'
+updated: '2026-10-28T15:54:47.070477986Z'
 tags:
 - needs-triage
 acceptance:
@@ -14,6 +14,8 @@ acceptance:
   done: false
 - title: The suite passes on main once the test lands
   done: false
+links:
+- aix-01m61kh6dddr
 ---
 
 ## Description
