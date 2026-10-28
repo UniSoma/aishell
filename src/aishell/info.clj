@@ -184,14 +184,12 @@
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
 
-    ;; Project section
     (println (str output/BOLD "Project" output/NC " (" (project-image-tag project-dir) ")"))
     (println "--------------------------------------")
     (doseq [line (format-project-section project-dir)]
       (println line))
     (println)
 
-    ;; Foundation section
     (println (str output/BOLD "Foundation Image" output/NC " (aishell:foundation)"))
     (println "--------------------------------------")
     (when distro
@@ -224,7 +222,6 @@
                     "not installed")))
     (println)
 
-    ;; Base Image section
     (println (str output/BOLD "Base Image" output/NC " (aishell:base)"))
     (println "--------------------------------------")
     (if (base/base-dockerfile-exists?)
@@ -232,7 +229,6 @@
       (println "  Default (foundation alias)"))
     (println)
 
-    ;; Project Extension section
     (println (str output/BOLD "Project Extension" output/NC))
     (println "--------------------------------------")
     (if (ext/project-dockerfile project-dir)
@@ -240,7 +236,6 @@
       (println "  Not configured"))
     (println)
 
-    ;; Harnesses section
     (println (str output/BOLD "Harnesses" output/NC " (volume-mounted)"))
     (println "--------------------------------------")
     (if state
@@ -252,7 +247,6 @@
           (println "  UniSoma: enabled (OpenCode model whitelist)")))
       (println "  No setup found"))
 
-    ;; Host Config Paths section (only when harnesses are enabled)
     (when state
       (let [enabled-harnesses (some (fn [[k _]] (get state k)) run/harness-config-dirs)]
         (when enabled-harnesses

@@ -156,7 +156,7 @@
             Exits when the build fails."
   [{:keys [force verbose quiet]}]
   (if (base-dockerfile-exists?)
-    ;; Custom Dockerfile path
+    ;; Build path
     (if (or force (needs-base-rebuild?))
       (build-base-image {:force force :verbose verbose})
       (do

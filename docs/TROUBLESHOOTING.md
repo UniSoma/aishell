@@ -210,7 +210,7 @@ sudo aishell setup --with-claude
    docker build -f ~/.aishell/Dockerfile -t test-base ~/.aishell/
    ```
 
-5. **Revert to default:** Delete the file to skip the custom base image entirely:
+5. **Revert to default:** Delete the file to skip the custom Base image entirely:
    ```bash
    rm ~/.aishell/Dockerfile
    ```
@@ -221,14 +221,14 @@ sudo aishell setup --with-claude
 
 **Resolution:**
 
-1. **Delete the global Dockerfile:**
+1. **Delete the Base image Dockerfile:**
    ```bash
    rm ~/.aishell/Dockerfile
    ```
 
 2. **On the next `aishell` run**, `aishell:base` automatically reverts to a tag alias for `aishell:foundation`.
 
-3. **Clean up orphaned base image:**
+3. **Clean up the orphaned custom Base image:**
    ```bash
    aishell volumes prune
    ```
@@ -241,7 +241,7 @@ sudo aishell setup --with-claude
 
 ### Symptom: "aishell claude" hangs before the harness starts
 
-**Cause:** Before the container launches, aishell may build the Base image (`~/.aishell/Dockerfile`), build the project extension (`.aishell/Dockerfile`), populate the harness volume (`npm install` in a temporary container), install Pi packages, and scan the project for sensitive files. Each of these runs behind a spinner, so a slow or stalled step looks like a hang.
+**Cause:** Before the container launches, aishell may build the Base image (`~/.aishell/Dockerfile`), build the Extended image from the Project extension (`.aishell/Dockerfile`), populate the harness volume (`npm install` in a temporary container), install Pi packages, and scan the project for sensitive files. Each of these runs behind a spinner, so a slow or stalled step looks like a hang.
 
 **Resolution:**
 
@@ -567,7 +567,7 @@ The flag must come before the harness name; after it, the flag goes to the harne
 
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
-**Note:** Since Base image customization was added, `FROM aishell:base` is now valid and recommended for project `.aishell/Dockerfile` files. The `aishell:base` tag always exists -- either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
+**Note:** `FROM aishell:base` is valid and recommended in a Project extension (`.aishell/Dockerfile`). The `aishell:base` tag always exists, either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
 
 If you see this error on an older version of aishell, update aishell to the latest version:
 

@@ -62,7 +62,9 @@
         nil)))
 
 (defn- check-base-image
-  "Check if base Docker image exists."
+  "Print whether the image recorded in state as :image-tag exists, falling
+   back to the Base image tag when state has none. Setup records the
+   Foundation image tag there. Returns the tag, or nil when it is missing."
   [state]
   (let [tag (or (:image-tag state) base/base-image-tag)]
     (if (docker/image-exists? tag)
@@ -72,7 +74,8 @@
           nil))))
 
 (defn- check-base-image-custom
-  "Check base image customization status."
+  "Print whether ~/.aishell/Dockerfile exists and, when it does, whether
+   the Base image needs a rebuild from it."
   []
   (if (base/base-dockerfile-exists?)
     (if (base/needs-base-rebuild?)
@@ -103,7 +106,8 @@
       (print-status :warn (str label " not installed")))))
 
 (defn- check-extension
-  "Check the Project extension status."
+  "Print whether the project has a Project extension and whether its
+   Extended image needs a rebuild."
   [project-dir base-tag]
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     (let [extended-tag (ext/compute-extended-tag project-dir)]
