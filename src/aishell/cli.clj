@@ -1058,10 +1058,9 @@
   [args]
   (split-leading-flag "--verbose" args))
 
-(defn- do-dispatch [args base-image?]
-  (let [[verbose? args] (split-leading-verbose args)]
-    (binding [output/*verbose* (or verbose? output/*verbose*)]
-      (do-dispatch* args verbose? base-image?))))
+(defn- do-dispatch [args verbose? base-image?]
+  (binding [output/*verbose* (or verbose? output/*verbose*)]
+    (do-dispatch* args verbose? base-image?)))
 
 (defn- subcommand-of
   "Return the first non-flag token in args, or nil. Used to decide whether
@@ -1070,8 +1069,8 @@
   (first (remove (fn [a] (str/starts-with? a "-")) args)))
 
 (defn dispatch
-  "Public dispatch entry. Consumes a leading --base-image and handles --json
-   gating before delegating to do-dispatch.
+  "Public dispatch entry. Consumes a leading --verbose and --base-image and
+   handles --json gating before delegating to do-dispatch.
 
    --json semantics:
    - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded
@@ -1083,8 +1082,9 @@
        :supported   -> bind *json-output* and zero out ANSI vars, normal flow"
   [args]
   (let [;; Taken before the harness hoist below, which would otherwise move
-        ;; it behind the harness name and forward it to the harness.
-        [base-image? args] (split-leading-flag "--base-image" (vec args))
+        ;; them behind the harness name and forward them to the harness.
+        [verbose? args] (split-leading-verbose (vec args))
+        [base-image? args] (split-leading-flag "--base-image" args)
         sub (subcommand-of args)
         json-pass-through? (contains? pass-through-harnesses sub)
         ;; When --json is pre-position and the subcommand is a pass-through harness,
@@ -1104,12 +1104,12 @@
         :unsupported (output/emit-error-json
                       (json-error-message args)
                       "unsupported_json")
-        :help        (do-dispatch args base-image?)
+        :help        (do-dispatch args verbose? base-image?)
         :supported   (binding [output/*json-output* true
                                output/RED ""
                                output/YELLOW ""
                                output/CYAN ""
                                output/BOLD ""
                                output/NC ""]
-                       (do-dispatch args base-image?)))
-      (do-dispatch args base-image?))))
+                       (do-dispatch args verbose? base-image?)))
+      (do-dispatch args verbose? base-image?))))

@@ -411,6 +411,23 @@
                  (reset! calls [:error (str err)]))))))
     @calls))
 
+(defn- dispatched-verbosity
+  "Run cli/dispatch on args with the launch stubbed. Returns the harness
+   args the launch received and whether aishell's verbose output was on."
+  [args]
+  (let [seen (atom nil)]
+    (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                  run/run-container (fn [_ harness-args & _]
+                                      (reset! seen [harness-args output/*verbose*]))]
+      (cli/dispatch args))
+    @seen))
+
+(deftest leading-verbose-is-aishells-flag-before-a-harness
+  (testing "before the harness it turns on aishell's verbose output"
+    (is (= [["-p" "x"] true] (dispatched-verbosity ["--verbose" "claude" "-p" "x"]))))
+  (testing "after the harness it is forwarded to the harness"
+    (is (= [["--verbose"] false] (dispatched-verbosity ["claude" "--verbose"])))))
+
 (deftest base-image-flag-reaches-every-sandbox-launch
   (testing "a harness launch gets :base-image and keeps its own args"
     (let [[kind cmd args opts] (dispatched ["--base-image" "claude" "-p" "x"])]
