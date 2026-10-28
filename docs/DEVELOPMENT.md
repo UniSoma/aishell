@@ -101,7 +101,7 @@ aishell/
 
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
-- **docker/base.clj:** Base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `global-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
+- **docker/base.clj:** Base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `base-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
 - **docker/build.clj:** Orchestrate foundation image build, manage state
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
@@ -205,7 +205,7 @@ aishell/
 
 ### Extension Cache Invalidation
 
-**Source:** `docker/extension/build-project-extension`
+**Source:** `docker/extension/needs-extended-rebuild?`, `docker/extension/build-extended-image`
 
 **Three-tier model (current):**
 - Extended images track the Base image ID via the `aishell.base.id` label

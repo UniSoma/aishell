@@ -19,23 +19,23 @@
 (def base-dockerfile-hash-label "aishell.base.dockerfile.hash")
 (def base-foundation-id-label "aishell.base.foundation.id")
 
-(defn global-dockerfile-path
+(defn base-dockerfile-path
   "Get path to the Base image Dockerfile (~/.aishell/Dockerfile)."
   []
   (str (fs/path (util/config-dir) "Dockerfile")))
 
-(defn global-dockerfile-exists?
+(defn base-dockerfile-exists?
   "Check if the Base image Dockerfile exists at ~/.aishell/Dockerfile."
   []
-  (fs/exists? (global-dockerfile-path)))
+  (fs/exists? (base-dockerfile-path)))
 
-(defn global-dockerfile-hash
+(defn base-dockerfile-hash
   "Compute 12-char SHA-256 hash of ~/.aishell/Dockerfile content.
 
    Returns: Hash string, or nil if ~/.aishell/Dockerfile doesn't exist."
   []
-  (when (global-dockerfile-exists?)
-    (hash/compute-hash (slurp (global-dockerfile-path)))))
+  (when (base-dockerfile-exists?)
+    (hash/compute-hash (slurp (base-dockerfile-path)))))
 
 (defn tag-foundation-as-base
   "Tag the Foundation image as the Base image, the alias used when
@@ -75,7 +75,7 @@
     true
 
     (not= (docker/get-image-label base-image-tag base-dockerfile-hash-label)
-          (global-dockerfile-hash))
+          (base-dockerfile-hash))
     true
 
     (not= (docker/get-image-label base-image-tag base-foundation-id-label)
@@ -97,9 +97,9 @@
             alias: the user wrote this Dockerfile, so its failure must show.
             The error includes the build output unless :verbose streamed it."
   [{:keys [force verbose]}]
-  (let [dockerfile-path (global-dockerfile-path)
+  (let [dockerfile-path (base-dockerfile-path)
         foundation-id (docker/image-id build/foundation-image-tag)
-        df-hash (global-dockerfile-hash)
+        df-hash (base-dockerfile-hash)
         build-dir (str (fs/parent dockerfile-path))
         build-args (cond-> ["-f" dockerfile-path
                             "-t" base-image-tag
@@ -155,7 +155,7 @@
             built Base image is current, :alias true on the alias path.
             Exits when the build fails."
   [{:keys [force verbose quiet]}]
-  (if (global-dockerfile-exists?)
+  (if (base-dockerfile-exists?)
     ;; Custom Dockerfile path
     (if (or force (needs-base-rebuild?))
       (build-base-image {:force force :verbose verbose})

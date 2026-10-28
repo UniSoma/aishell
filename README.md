@@ -153,7 +153,7 @@ When you run `aishell claude`, aishell starts a Docker container and mounts your
 - Pins harness versions
 - Runs sidecar services before the shell or harness starts
 
-See [Global base image customization](docs/CONFIGURATION.md#global-base-image-customization) for details.
+See [Base image customization](docs/CONFIGURATION.md#base-image-customization) for details.
 
 ### Power user
 

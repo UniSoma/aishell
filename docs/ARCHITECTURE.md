@@ -374,7 +374,7 @@ Each namespace handles one concern:
 | `aishell.docker.hash` | Cache invalidation | Compute Dockerfile content hash |
 | `aishell.docker.spinner` | Build UI | Animated spinner during quiet builds |
 | `aishell.docker.naming` | Container naming | Deterministic naming, Docker state queries, conflict detection |
-| `aishell.docker.extension` | Project extensions | Build per-project extended images |
+| `aishell.docker.extension` | Project extensions | Build per-project Extended images |
 | `aishell.docker.volume` | Volume management | Harness volume creation, population, hash computation, listing, pruning |
 
 ### Security Namespaces
@@ -415,7 +415,7 @@ Each namespace handles one concern:
 |------|---------|--------|-------------|
 | `~/.aishell/state.edn` | Build state (harnesses, versions, hash) | EDN | Persistent |
 | `~/.aishell/config.yaml` | Global config defaults | YAML | Persistent |
-| `~/.aishell/Dockerfile` | Optional global base image customization | Dockerfile | Persistent |
+| `~/.aishell/Dockerfile` | Optional Base image customization | Dockerfile | Persistent |
 | `~/.local/state/aishell/update-check.edn` | Update check timestamp and latest version | EDN | Persistent |
 | `~/.aishell/gitleaks-scan.edn` | Per-project Gitleaks scan timestamps | EDN | Persistent |
 | `.aishell/config.yaml` | Project-specific config | YAML | Persistent (in project) |

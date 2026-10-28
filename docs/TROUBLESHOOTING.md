@@ -215,9 +215,9 @@ sudo aishell setup --with-claude
    rm ~/.aishell/Dockerfile
    ```
 
-### Reset Global Base Image
+### Reset the Base Image
 
-**Symptom:** You want to remove global base image customizations and revert to the default.
+**Symptom:** You want to remove your Base image customizations and revert to the default.
 
 **Resolution:**
 
@@ -241,7 +241,7 @@ sudo aishell setup --with-claude
 
 ### Symptom: "aishell claude" hangs before the harness starts
 
-**Cause:** Before the container launches, aishell may build the global base image (`~/.aishell/Dockerfile`), build the project extension (`.aishell/Dockerfile`), populate the harness volume (`npm install` in a temporary container), install Pi packages, and scan the project for sensitive files. Each of these runs behind a spinner, so a slow or stalled step looks like a hang.
+**Cause:** Before the container launches, aishell may build the Base image (`~/.aishell/Dockerfile`), build the project extension (`.aishell/Dockerfile`), populate the harness volume (`npm install` in a temporary container), install Pi packages, and scan the project for sensitive files. Each of these runs behind a spinner, so a slow or stalled step looks like a hang.
 
 **Resolution:**
 
@@ -567,7 +567,7 @@ The flag must come before the harness name; after it, the flag goes to the harne
 
 ### Symptom: "Legacy FROM aishell:base error" in custom Dockerfile
 
-**Note:** As of the global base image customization feature, `FROM aishell:base` is now valid and recommended for project `.aishell/Dockerfile` files. The `aishell:base` tag always exists -- either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
+**Note:** Since Base image customization was added, `FROM aishell:base` is now valid and recommended for project `.aishell/Dockerfile` files. The `aishell:base` tag always exists -- either as a custom build from `~/.aishell/Dockerfile` or as a tag alias for `aishell:foundation`.
 
 If you see this error on an older version of aishell, update aishell to the latest version:
 

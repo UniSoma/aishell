@@ -25,7 +25,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [detection](#detection)
   - [claude_isolation](#claude_isolation)
   - [claude_shared_paths](#claude_shared_paths)
-- [Global Base Image Customization](#global-base-image-customization)
+- [Base Image Customization](#base-image-customization)
 - [Common Patterns](#common-patterns)
 
 ---
@@ -1096,7 +1096,7 @@ claude_shared_paths:
 
 ---
 
-## Global Base Image Customization
+## Base Image Customization
 
 Advanced users can customize the base Docker image used by all projects. This adds a layer between the foundation image and per-project extensions, forming a three-tier image chain:
 

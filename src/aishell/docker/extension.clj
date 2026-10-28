@@ -19,7 +19,7 @@
 (def extension-hash-label "aishell.extension.hash")
 
 (defn project-dockerfile
-  "Get path to project extension Dockerfile if it exists.
+  "Get path to the Project extension if it exists.
 
    Arguments:
    - project-dir: Path to project directory
@@ -49,7 +49,7 @@
                       %)))))))
 
 (defn compute-extended-tag
-  "Compute Docker tag for extended image based on project path.
+  "Compute the Extended image's Docker tag from the project path.
 
    Arguments:
    - project-dir: Path to project directory
@@ -59,12 +59,12 @@
   (str "aishell:ext-" (hash/compute-hash project-dir)))
 
 (defn get-extension-dockerfile-hash
-  "Compute hash of project extension Dockerfile content.
+  "Compute hash of the Project extension's content.
 
    Arguments:
    - project-dir: Path to project directory
 
-   Returns: 12-char hash string, or nil if no extension Dockerfile"
+   Returns: 12-char hash string, or nil if there is no Project extension"
   [project-dir]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
     (hash/compute-hash (slurp dockerfile-path))))

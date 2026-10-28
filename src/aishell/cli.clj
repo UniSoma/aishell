@@ -675,7 +675,7 @@
     ;; the custom base image is orphaned — re-tag foundation as base to reset.
     (when (and (docker/image-exists? base/base-image-tag)
                (docker/get-image-label base/base-image-tag "aishell.base.dockerfile.hash")
-               (not (base/global-dockerfile-exists?)))
+               (not (base/base-dockerfile-exists?)))
       (println "Orphaned custom base image found — resetting to foundation alias.")
       (base/tag-foundation-as-base)
       (println "Base image reset to foundation alias."))))

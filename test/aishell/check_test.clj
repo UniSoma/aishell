@@ -5,6 +5,8 @@
             [aishell.util :as util]
             [aishell.docker.naming :as naming]
             [aishell.check :as check]
+            [aishell.docker :as docker]
+            [aishell.docker.base :as base]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]))
 
@@ -115,3 +117,10 @@
               (#'check/check-foundation-staleness
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
+
+(deftest base-image-check-defaults-to-the-base-image-tag
+  (let [checked (atom nil)]
+    (with-redefs [base/base-image-tag "aishell:base-under-test"
+                  docker/image-exists? (fn [tag] (reset! checked tag) true)]
+      (with-out-str (#'check/check-base-image {})))
+    (is (= "aishell:base-under-test" @checked))))

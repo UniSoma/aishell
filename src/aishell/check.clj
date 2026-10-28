@@ -64,7 +64,7 @@
 (defn- check-base-image
   "Check if base Docker image exists."
   [state]
-  (let [tag (or (:image-tag state) "aishell:base")]
+  (let [tag (or (:image-tag state) base/base-image-tag)]
     (if (docker/image-exists? tag)
       (do (print-status :ok (str "Base image exists: " tag))
           tag)
@@ -74,7 +74,7 @@
 (defn- check-base-image-custom
   "Check base image customization status."
   []
-  (if (base/global-dockerfile-exists?)
+  (if (base/base-dockerfile-exists?)
     (if (base/needs-base-rebuild?)
       (print-status :warn "Base image: custom (~/.aishell/Dockerfile) — needs rebuild")
       (print-status :ok "Base image: custom (~/.aishell/Dockerfile)"))
@@ -103,7 +103,7 @@
       (print-status :warn (str label " not installed")))))
 
 (defn- check-extension
-  "Check project extension Dockerfile status."
+  "Check the Project extension status."
   [project-dir base-tag]
   (if-let [_dockerfile (ext/project-dockerfile project-dir)]
     (let [extended-tag (ext/compute-extended-tag project-dir)]

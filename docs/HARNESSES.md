@@ -32,7 +32,7 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 - **Stable cache:** Harness updates leave the Docker extension cache intact
 
 **Base image customization:**
-Advanced users can customize the base image globally via `~/.aishell/Dockerfile` (extra system packages, shell config, dev tools). Project `.aishell/Dockerfile` extensions should use `FROM aishell:base` (recommended) to inherit global customizations. See [Configuration](CONFIGURATION.md#global-base-image-customization) for details.
+Advanced users can customize the base image globally via `~/.aishell/Dockerfile` (extra system packages, shell config, dev tools). Project `.aishell/Dockerfile` extensions should use `FROM aishell:base` (recommended) to inherit global customizations. See [Configuration](CONFIGURATION.md#base-image-customization) for details.
 
 **Volume management:**
 ```bash
