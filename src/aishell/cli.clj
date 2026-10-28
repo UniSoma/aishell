@@ -674,7 +674,7 @@
     ;; If aishell:base has custom Dockerfile label but ~/.aishell/Dockerfile no longer exists,
     ;; the custom base image is orphaned — re-tag foundation as base to reset.
     (when (and (docker/image-exists? base/base-image-tag)
-               (docker/get-image-label base/base-image-tag "aishell.base.dockerfile.hash")
+               (docker/get-image-label base/base-image-tag base/base-dockerfile-hash-label)
                (not (base/base-dockerfile-exists?)))
       (println "Orphaned custom base image found — resetting to foundation alias.")
       (base/tag-foundation-as-base)
