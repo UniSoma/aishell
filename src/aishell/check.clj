@@ -62,11 +62,10 @@
         nil)))
 
 (defn- check-base-image
-  "Print whether the image recorded in state as :image-tag exists, falling
-   back to the Base image tag when state has none. Setup records the
-   Foundation image tag there. Returns the tag, or nil when it is missing."
-  [state]
-  (let [tag (or (:image-tag state) base/base-image-tag)]
+  "Print whether the Base image exists. Returns its tag, or nil when it is
+   missing."
+  []
+  (let [tag base/base-image-tag]
     (if (docker/image-exists? tag)
       (do (print-status :ok (str "Base image exists: " tag))
           tag)
@@ -117,6 +116,18 @@
     (print-status :ok (str "No project extension ("
                            (util/resolve-project-config-dir project-dir)
                            "/Dockerfile)"))))
+
+(defn- check-images
+  "Report the Base image, Foundation image staleness, the custom Base
+   image and the Project extension. Returns the Base image tag, or nil
+   when the Base image is missing."
+  [state project-dir]
+  (let [base-tag (check-base-image)]
+    (check-foundation-staleness state)
+    (check-base-image-custom)
+    (when base-tag
+      (check-extension project-dir base-tag))
+    base-tag))
 
 (defn- check-config
   "Validate configuration files. Returns loaded config."
@@ -263,16 +274,8 @@
     (let [state (check-setup-state)]
       (if state
         (do
-          (let [base-tag (check-base-image state)]
-            (when-not base-tag
-              (reset! critical-fail? true))
-
-            (check-foundation-staleness state)
-
-            (check-base-image-custom)
-
-            (when base-tag
-              (check-extension project-dir base-tag)))
+          (when-not (check-images state project-dir)
+            (reset! critical-fail? true))
 
           (println)
 

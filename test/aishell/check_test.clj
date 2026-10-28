@@ -5,6 +5,11 @@
             [aishell.util :as util]
             [aishell.docker.naming :as naming]
             [aishell.check :as check]
+            [aishell.cli :as cli]
+            [aishell.config :as config]
+            [aishell.state :as state]
+            [aishell.docker.build :as build]
+            [aishell.docker.extension :as ext]
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
             [aishell.docker.hash :as hash]
@@ -118,9 +123,53 @@
                {:dockerfile-hash (hash/compute-hash templates/foundation-content)}))]
     (is (str/includes? out "Foundation image matches its embedded Dockerfile"))))
 
-(deftest base-image-check-defaults-to-the-base-image-tag
+(deftest base-image-check-checks-the-base-image-tag
   (let [checked (atom nil)]
     (with-redefs [base/base-image-tag "aishell:base-under-test"
                   docker/image-exists? (fn [tag] (reset! checked tag) true)]
-      (with-out-str (#'check/check-base-image {})))
+      (with-out-str (#'check/check-base-image)))
     (is (= "aishell:base-under-test" @checked))))
+
+(defn- state-as-setup-writes-it
+  "Run cli/handle-setup with Docker stubbed out and return the state map it
+   writes."
+  []
+  (let [written (atom nil)]
+    (with-redefs [state/warn-removed-harnesses! (fn [])
+                  state/read-state (constantly nil)
+                  state/write-state (fn [s] (reset! written s))
+                  docker/image-exists? (constantly true)
+                  build/build-foundation-image (constantly {:success true :image build/foundation-image-tag})
+                  base/ensure-base-image (constantly {:success true :image base/base-image-tag})
+                  config/load-config (constantly {})]
+      (with-out-str (cli/handle-setup {:opts {}})))
+    @written))
+
+(deftest image-checks-on-setup-state-check-the-base-image
+  (let [setup-state (state-as-setup-writes-it)
+        rebuild-base-tag (atom nil)
+        out (with-redefs [docker/image-exists? (constantly true)
+                          base/base-dockerfile-exists? (constantly true)
+                          base/needs-base-rebuild? (constantly false)
+                          ext/project-dockerfile (constantly "/project/.aishell/Dockerfile")
+                          ext/compute-extended-tag (constantly "aishell:ext-under-test")
+                          ext/needs-extended-rebuild?
+                          (fn [_extended-tag base-tag _project-dir]
+                            (reset! rebuild-base-tag base-tag)
+                            (not= base-tag base/base-image-tag))]
+              (with-out-str (#'check/check-images setup-state "/project")))]
+    (testing "the Base image is reported by the Base image tag"
+      (is (str/includes? out (str "Base image exists: " base/base-image-tag)))
+      (is (not (str/includes? out build/foundation-image-tag))))
+    (testing "the Extended image is compared against the Base image"
+      (is (= base/base-image-tag @rebuild-base-tag))
+      (is (str/includes? out "Project extension is up to date: aishell:ext-under-test")))))
+
+(deftest image-checks-ignore-the-image-tag-older-setups-wrote
+  (let [checked (atom [])]
+    (with-redefs [docker/image-exists? (fn [tag] (swap! checked conj tag) true)
+                  base/base-dockerfile-exists? (constantly false)
+                  ext/project-dockerfile (constantly nil)]
+      (with-out-str (#'check/check-images {:image-tag build/foundation-image-tag}
+                                          "/project")))
+    (is (= [base/base-image-tag] @checked))))

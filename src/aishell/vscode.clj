@@ -4,6 +4,7 @@
             [cheshire.core :as json]
             [aishell.docker :as docker]
             [aishell.docker.naming :as naming]
+            [aishell.docker.base :as base]
             [aishell.docker.build :as build]
             [aishell.docker.run :as docker-run]
             [aishell.run :as run]
@@ -141,7 +142,7 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
     (when-not state
       (output/error-no-setup))
 
-    (let [base-tag (or (:image-tag state) build/foundation-image-tag)
+    (let [base-tag base/base-image-tag
           image-tag (run/resolve-image-tag base-tag project-dir false)
           _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)

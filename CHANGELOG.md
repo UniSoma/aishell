@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`aishell check` reports the Base image, not the Foundation image**: setup recorded the Foundation image tag in state, and `check` reported that tag as the Base image (`Base image exists: aishell:foundation`). It also compared the Project extension against the Foundation image, so with a custom Base image (`~/.aishell/Dockerfile`) `check` said an up-to-date Extended image needed a rebuild. `check` now checks `aishell:base` for both. Setup and update stop writing `:image-tag` to `~/.aishell/state.edn`; state files that still have it load as before, and the key is ignored
+
 - **`aishell --verbose claude` shows aishell's build output again**: aishell moved the harness name to the front of the arguments before reading its own leading flags, so `--verbose` landed behind `claude` and was forwarded to Claude Code. aishell now reads a leading `--verbose` first. `aishell claude --verbose` still goes to Claude Code. As a side effect, `aishell --verbose --json ps` now runs `ps` instead of failing with `unknown_command`
 
 - **Leading global flags no longer turn a command into a shell**: `aishell --verbose setup` and `aishell --unsafe update` started a shell instead of running the command, and `aishell --verbose --help` did too. They now run the command, and a leading `--verbose` makes `setup` and `update` verbose. `aishell --name foo claude --json` launches Claude Code with `--json` instead of failing with `Unknown command: --name`. aishell now reads all four global flags in one place before dispatching

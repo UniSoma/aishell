@@ -65,7 +65,6 @@
     :gemini-version nil          ; string or nil
     :pi-version nil              ; string or nil
     :omp-version nil             ; string or nil
-    :image-tag \"aishell:foundation\"  ; string
     :build-time \"2026-01-20...\" ; ISO-8601 string
     :foundation-hash \"abc123def456\"  ; 12-char SHA-256 of foundation Dockerfile template
     :harness-volume-hash \"def789ghi012\" ; 12-char SHA-256 of enabled harnesses+versions

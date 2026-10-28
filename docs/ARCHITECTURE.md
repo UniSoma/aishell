@@ -448,13 +448,14 @@ Each namespace handles one concern:
  :gemini-version nil                     ; string or nil: pinned version
  :pi-version nil                        ; string or nil: pinned version
  :omp-version nil                        ; string or nil: pinned release (tag without the "v")
- :image-tag "aishell:foundation"         ; string: Docker image tag
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
  :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)
  :harness-volume-hash "def456ghi"        ; 12-char hash of harness config (NEW in v2.8.0)
  :harness-volume-name "aishell-harness-def456ghi" ; Volume name (NEW in v2.8.0)
  :dockerfile-hash "abc123def"}           ; DEPRECATED: use :foundation-hash (kept for backward compat)
 ```
+
+State files from older setups may also carry `:image-tag`. Nothing reads it, and setup and update no longer write it.
 
 ---
 

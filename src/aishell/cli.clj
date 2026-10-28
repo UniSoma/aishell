@@ -452,10 +452,10 @@
               (println "Replacing existing image..."))
 
           ;; Build foundation image (harness tools will be volume-mounted in Phase 36)
-          result (build/build-foundation-image
-                  {:with-gitleaks (:with-gitleaks state-map)
-                   :verbose (:verbose opts)
-                   :force (:force opts)})
+          _ (build/build-foundation-image
+              {:with-gitleaks (:with-gitleaks state-map)
+               :verbose (:verbose opts)
+               :force (:force opts)})
 
           ;; Ensure aishell:base exists (custom build from ~/.aishell/Dockerfile or alias)
           _ (base/ensure-base-image {:force (:force opts) :verbose (:verbose opts)})
@@ -489,7 +489,6 @@
       ;; Persist state (always, even on failure this won't run due to error exit)
       (state/write-state
        (assoc state-map
-              :image-tag (:image result)
               :build-time (str (java.time.Instant/now))
               :dockerfile-hash (hash/compute-hash templates/foundation-content)  ; Kept for v2.7.0 compat
               :foundation-hash (hash/compute-hash templates/foundation-content)  ; NEW: same as dockerfile-hash for now
@@ -567,11 +566,11 @@
       ;; Rebuild foundation image if stale (always check; --force bypasses cache)
       (let [project-dir (System/getProperty "user.dir")
             cfg (config/load-config project-dir)
-            result (build/build-foundation-image
-                    {:with-gitleaks (:with-gitleaks state false)
-                     :verbose (:verbose opts)
-                     :force (:force opts)
-                     :quiet (not (:force opts))})
+            _ (build/build-foundation-image
+                {:with-gitleaks (:with-gitleaks state false)
+                 :verbose (:verbose opts)
+                 :force (:force opts)
+                 :quiet (not (:force opts))})
 
             ;; Ensure aishell:base is up to date
             _ (if (:force opts)
@@ -618,11 +617,10 @@
 
         ;; Update state with new build-time and current hashes
         (state/write-state
-         (cond-> state
-           true (assoc :build-time (str (java.time.Instant/now))
-                       :dockerfile-hash (hash/compute-hash templates/foundation-content)
-                       :foundation-hash (hash/compute-hash templates/foundation-content))
-           result (assoc :image-tag (:image result))))))))
+         (assoc state
+                :build-time (str (java.time.Instant/now))
+                :dockerfile-hash (hash/compute-hash templates/foundation-content)
+                :foundation-hash (hash/compute-hash templates/foundation-content)))))))
 
 (defn- prompt-yn
   "Prompt user for yes/no confirmation."
