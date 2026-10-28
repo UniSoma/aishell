@@ -6,9 +6,8 @@
             [babashka.fs :as fs]
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
-            [aishell.docker.hash :as hash]
+            [aishell.docker.build :as build]
             [aishell.docker.naming :as naming]
-            [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
             [aishell.harness :as harness]
             [aishell.config :as config]
@@ -88,10 +87,9 @@
    stale."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
-    (let [current-hash (hash/compute-hash templates/foundation-content)]
-      (if (= stored-hash current-hash)
-        (print-status :ok "Foundation image matches its embedded Dockerfile")
-        (print-status :warn (str "Image may be stale. Run " output/CYAN "aishell update" output/NC " to rebuild"))))
+    (if (build/foundation-stale? stored-hash)
+      (print-status :warn (str "Image may be stale. Run " output/CYAN "aishell update" output/NC " to rebuild"))
+      (print-status :ok "Foundation image matches its embedded Dockerfile"))
     (print-status :warn "No Dockerfile hash stored (old build format)")))
 
 (defn- check-harnesses

@@ -77,3 +77,20 @@
     (let [out (with-out-str (build/build-foundation-image {}))]
       (is (str/includes? out "Image aishell:foundation matches its embedded Dockerfile (use --force to rebuild)"))
       (is (not (str/includes? out "up to date"))))))
+
+(deftest foundation-stale-compares-a-hash-with-the-embedded-content
+  (testing "the embedded content's own hash is current"
+    (is (false? (build/foundation-stale? (build/get-dockerfile-hash)))))
+  (testing "any other hash is stale"
+    (is (true? (build/foundation-stale? "old"))))
+  (testing "a missing hash is stale"
+    (is (true? (build/foundation-stale? nil)))))
+
+(deftest needs-rebuild-follows-the-image-hash-label
+  (with-redefs [docker/image-exists? (constantly true)]
+    (testing "a label matching the embedded content needs no rebuild"
+      (with-redefs [docker/get-image-label (fn [_ _] (build/get-dockerfile-hash))]
+        (is (false? (build/needs-rebuild? "aishell:foundation" false)))))
+    (testing "an outdated label needs a rebuild"
+      (with-redefs [docker/get-image-label (fn [_ _] "old")]
+        (is (true? (build/needs-rebuild? "aishell:foundation" false)))))))

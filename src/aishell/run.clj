@@ -10,8 +10,6 @@
             [aishell.docker.build :as build]
             [aishell.docker.naming :as naming]
             [aishell.docker.run :as docker-run]
-            [aishell.docker.hash :as hash]
-            [aishell.docker.templates :as templates]
             [aishell.docker.extension :as ext]
             [aishell.docker.volume :as vol]
             [aishell.config :as config]
@@ -72,9 +70,8 @@
    holds no stored hash. Advisory only: it does not block execution."
   [state]
   (when-let [stored-hash (:dockerfile-hash state)]
-    (let [current-hash (hash/compute-hash templates/foundation-content)]
-      (when (not= stored-hash current-hash)
-        (output/warn "Image may be stale. Run 'aishell update' to rebuild.")))))
+    (when (build/foundation-stale? stored-hash)
+      (output/warn "Image may be stale. Run 'aishell update' to rebuild."))))
 
 (defn- ensure-harness-volume
   "Ensure harness volume exists and is up-to-date.

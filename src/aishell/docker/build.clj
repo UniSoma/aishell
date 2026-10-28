@@ -70,6 +70,12 @@
   []
   (hash/compute-hash templates/foundation-content))
 
+(defn foundation-stale?
+  "Return true when `recorded-hash`, read from state or an image label,
+   differs from the hash of the embedded content. A nil hash is stale."
+  [recorded-hash]
+  (not= recorded-hash (get-dockerfile-hash)))
+
 (defn needs-rebuild?
   "Return true when `image-tag` needs a rebuild: `force?` is set, the
    image is missing, or its hash label differs from the embedded content
@@ -77,8 +83,7 @@
   [image-tag force?]
   (or force?
       (not (docker/image-exists? image-tag))
-      (not= (get-dockerfile-hash)
-            (docker/get-image-label image-tag dockerfile-hash-label))))
+      (foundation-stale? (docker/get-image-label image-tag dockerfile-hash-label))))
 
 (defn write-build-files
   "Write embedded template files to build directory."

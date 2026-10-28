@@ -1,12 +1,12 @@
 ---
 id: aix-01m61n9vbtp7
 title: Share one Foundation-image staleness check across run, check and build
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T16:25:43.539415389Z'
-updated: '2026-10-28T16:25:43.539415389Z'
+updated: '2026-10-28T17:49:09.990218014Z'
 tags:
 - ready-for-agent
 acceptance:
