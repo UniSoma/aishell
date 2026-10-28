@@ -118,7 +118,7 @@ aishell/
 
 ### Foundation Image Build Flow
 
-1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the Dockerfile template
+1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the foundation content (the Dockerfile and the files it COPYs)
 2. **Compare hash:** If the image exists and its `aishell.dockerfile.hash` label matches, skip rebuild (unless `--force`)
 3. **Generate Dockerfile:** `docker/templates/foundation-dockerfile` produces the template
 4. **Write to temp dir:** `/tmp/aishell-build-{uuid}/Dockerfile`
@@ -188,7 +188,7 @@ aishell/
 
 **New fields:**
 ```clojure
-{:foundation-hash "abc123def"                    ; Dockerfile template hash; nothing reads it
+{:foundation-hash "abc123def"                    ; Foundation content hash; nothing reads it
  :harness-volume-hash "def456ghi"                ; Harness config hash
  :harness-volume-name "aishell-harness-def456ghi" ; Volume name
  :dockerfile-hash "abc123def"}                   ; Same hash; the key check and run read

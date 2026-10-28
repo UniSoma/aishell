@@ -515,7 +515,7 @@
     ::start-shell))
 
 (def update-spec
-  {:force   {:coerce :boolean :desc "Rebuild the Foundation image with --no-cache, even when current"}
+  {:force   {:coerce :boolean :desc "Force-rebuild Foundation and any custom Base image"}
    :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
    :help    {:alias :h :coerce :boolean :desc "Show update help"}})
 
@@ -541,7 +541,7 @@
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools"))
-  (println (str "  " output/CYAN "aishell update --force" output/NC "               Rebuild the Foundation image with --no-cache"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also force-rebuild Foundation and custom Base"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update

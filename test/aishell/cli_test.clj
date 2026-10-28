@@ -278,7 +278,8 @@
 (deftest update-help-says-a-missing-or-stale-foundation-image-is-rebuilt
   (let [out (with-out-str (cli/print-update-help))]
     (is (not (str/includes? out "NOT rebuilt unless --force")))
-    (is (str/includes? out "Rebuilds the Foundation image when it is missing or stale"))))
+    (is (str/includes? out "Rebuilds the Foundation image when it is missing or stale"))
+    (is (str/includes? out "Force-rebuild Foundation and any custom Base image"))))
 
 (deftest setup-validation-uses-the-canonical-label
   (testing "a bad version names the harness by its canonical label"

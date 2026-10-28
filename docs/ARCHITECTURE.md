@@ -93,7 +93,8 @@ The foundation image contains stable system components that change rarely:
 - Entrypoint script and profile configuration
 
 **Rebuild triggers:**
-- Dockerfile template changes (detected via content hash)
+- Image missing
+- Foundation content changes: the Dockerfile or a file it COPYs (detected via content hash)
 - Explicit `aishell update --force`
 
 **Why separate:** These components stay stable across harness version updates.
@@ -238,7 +239,7 @@ The build phase creates the foundation Docker image and populates the harness vo
 │ aishell.state/write-state                    │
 │ - Store build flags                          │
 │ - Store harness versions                     │
-│ - Store foundation-hash                      │
+│ - Store dockerfile-hash and foundation-hash  │
 │ - Store harness-volume-name                  │
 │ - Location: ~/.aishell/state.edn             │
 └──────────────────────────────────────────────┘
