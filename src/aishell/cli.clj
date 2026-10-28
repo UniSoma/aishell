@@ -1056,6 +1056,11 @@
   (binding [output/*verbose* (or (:verbose? parsed) output/*verbose*)]
     (do-dispatch* parsed)))
 
+(def ^:private argv-owning-subcommands
+  "Subcommands whose argv belongs to the harness or container command, so
+   aishell reads --json only from the flags before them."
+  (conj pass-through-harnesses "exec"))
+
 (defn- split-json-scope
   "Split args into the part aishell reads --json from and the part it
    forwards untouched. After a pass-through harness or `exec` the argv
@@ -1063,7 +1068,7 @@
    are aishell's; after any other subcommand all of args is."
   [args]
   (let [[leading [subcommand & _ :as from-subcommand]] (split-with #(str/starts-with? % "-") args)]
-    (if (or (= "exec" subcommand) (contains? pass-through-harnesses subcommand))
+    (if (contains? argv-owning-subcommands subcommand)
       [(vec leading) (vec from-subcommand)]
       [(vec args) []])))
 
