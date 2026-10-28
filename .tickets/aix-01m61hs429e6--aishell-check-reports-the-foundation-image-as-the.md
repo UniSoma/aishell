@@ -6,7 +6,7 @@ type: bug
 priority: 2
 mode: afk
 created: '2026-10-28T15:24:09.659520871Z'
-updated: '2026-10-28T15:24:09.659520871Z'
+updated: '2026-10-28T15:37:23.643993302Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -16,8 +16,6 @@ acceptance:
   done: false
 - title: A test covers check with state as setup writes it
   done: false
-deps:
-- aix-01m61h9gqhew
 links:
 - aix-01m61gkfh089
 ---
