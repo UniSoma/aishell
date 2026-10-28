@@ -6,7 +6,7 @@ type: bug
 priority: 2
 mode: afk
 created: '2026-10-28T15:15:38.339120507Z'
-updated: '2026-10-28T15:36:45.851379996Z'
+updated: '2026-10-28T15:37:31.645062385Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -18,6 +18,7 @@ deps:
 - aix-01m61h9gmbth
 links:
 - aix-01m61edx3fdb
+- aix-01m61jhk8bz9
 ---
 
 ## Description
