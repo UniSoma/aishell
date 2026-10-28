@@ -484,12 +484,11 @@
 
       ;; Reached only on success: every failure above exits.
       (state/write-state
-       (assoc state-map
-              :build-time (str (java.time.Instant/now))
-              :dockerfile-hash (build/foundation-content-hash)  ; v2.7.0 name, kept for older aishell versions
-              :foundation-hash (build/foundation-content-hash)  ; v2.8.0 name; see state/foundation-hash
-              :harness-volume-hash harness-hash
-              :harness-volume-name volume-name)))))
+       (-> state-map
+           (assoc :build-time (str (java.time.Instant/now)))
+           (state/assoc-foundation-hash (build/foundation-content-hash))
+           (assoc :harness-volume-hash harness-hash
+                  :harness-volume-name volume-name))))))
 
 (defn handle-default
   "Run the default dispatch entry: print the version or help, or report an
@@ -608,10 +607,9 @@
         (manage-opencode-whitelist! state state)
 
         (state/write-state
-         (assoc state
-                :build-time (str (java.time.Instant/now))
-                :dockerfile-hash (build/foundation-content-hash)
-                :foundation-hash (build/foundation-content-hash)))))))
+         (-> state
+             (assoc :build-time (str (java.time.Instant/now)))
+             (state/assoc-foundation-hash (build/foundation-content-hash))))))))
 
 (defn- prompt-yn
   "Prompt user for yes/no confirmation."

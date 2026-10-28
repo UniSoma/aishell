@@ -39,3 +39,7 @@
     (is (= "old" (state/foundation-hash {:dockerfile-hash "old"}))))
   (testing "state without either key has no hash"
     (is (nil? (state/foundation-hash {})))))
+
+(deftest assoc-foundation-hash-writes-both-keys
+  (is (= {:build-time "t" :dockerfile-hash "h" :foundation-hash "h"}
+         (state/assoc-foundation-hash {:build-time "t"} "h"))))

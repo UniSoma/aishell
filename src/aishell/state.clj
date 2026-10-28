@@ -52,6 +52,15 @@
   [state]
   (or (:foundation-hash state) (:dockerfile-hash state)))
 
+(defn assoc-foundation-hash
+  "Record `content-hash` in `state` under both `:dockerfile-hash`, the key
+   aishell read before this version, and `:foundation-hash`, the key
+   `foundation-hash` reads first."
+  [state content-hash]
+  (assoc state
+         :dockerfile-hash content-hash
+         :foundation-hash content-hash))
+
 (defn write-state
   "Write state to file, creating directory if needed.
 
