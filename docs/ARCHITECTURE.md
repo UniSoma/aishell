@@ -100,7 +100,7 @@ The foundation image contains stable system components that change rarely:
 
 ### Base Image (`aishell:base`)
 
-The Base image is the intermediate layer between foundation and project extensions. It always exists as a valid Docker tag.
+The Base image is the intermediate layer between the Foundation image and the Project extension. It always exists as a valid Docker tag.
 
 **Default behavior (no `~/.aishell/Dockerfile`):**
 - `aishell:base` is a tag alias for `aishell:foundation` (via `docker tag`)
@@ -109,7 +109,7 @@ The Base image is the intermediate layer between foundation and project extensio
 **Custom behavior (with `~/.aishell/Dockerfile`):**
 - Built from `~/.aishell/Dockerfile` (recommended: `FROM aishell:foundation`)
 - Applies machine-wide customizations shared by all projects
-- Built during `aishell setup` and `aishell update`, and rebuilt on the next run when `~/.aishell/Dockerfile` changes
+- Built by `aishell setup` and `aishell update`, and checked again on every run; it rebuilds on any of the triggers below
 
 **Cache tracking via Docker labels:**
 - `aishell.base.dockerfile.hash` -- 12-char SHA-256 of `~/.aishell/Dockerfile` content
@@ -121,7 +121,7 @@ The Base image is the intermediate layer between foundation and project extensio
 - `aishell:base` image missing
 - Explicit `aishell setup --force` or `aishell update --force`
 
-**Cascade effect:** When `aishell:base` is rebuilt, all project extension images (`aishell:ext-{hash}`) auto-rebuild on their next run. Extensions track the Base image ID via labels, so a new Base image invalidates their cache.
+**Cascade effect:** When `aishell:base` is rebuilt, all Extended images (`aishell:ext-{hash}`) auto-rebuild on their next run. Extended images track the Base image ID via labels, so a new Base image invalidates their cache.
 
 **Reset procedure:**
 1. Delete `~/.aishell/Dockerfile`
@@ -466,7 +466,7 @@ Projects extend the Base image with custom Dockerfile layers, forming the third 
 **Extension flow (three-tier chain):**
 
 ```
-Foundation Image     Global Customization      Base Image          Project Extension      Extended Image
+Foundation Image     Base Customization        Base Image          Project Extension      Extended Image
 (aishell:foundation) (~/.aishell/Dockerfile)   (aishell:base)      (.aishell/Dockerfile)  (aishell:ext-{hash})
      │                       │                      │                      │                      │
      ▼                       ▼                      ▼                      ▼                      ▼

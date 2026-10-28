@@ -1156,9 +1156,9 @@ RUN pip3 install httpie --break-system-packages && \
 
 ### How It Works
 
-- **Build timing:** `aishell setup` and `aishell update` build the Base image from `~/.aishell/Dockerfile`. A later run rebuilds it when the Dockerfile has changed.
+- **Build timing:** `aishell setup` and `aishell update` build the Base image from `~/.aishell/Dockerfile`, and every run checks it again. Without `--force`, each rebuilds it only when the image is missing, the Dockerfile has changed or the Foundation image has changed.
 - **Auto-detection:** aishell hashes the Dockerfile content and compares it to the existing Base image label. Changes trigger a rebuild.
-- **Cascade rebuilds:** When the Base image changes, all per-project extension images rebuild on their next run.
+- **Cascade rebuilds:** When the Base image changes, all Extended images rebuild on their next run.
 - **Default behavior:** When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishell:foundation` (zero overhead).
 
 ### Project Extension Compatibility
