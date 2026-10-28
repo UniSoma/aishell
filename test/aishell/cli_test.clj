@@ -528,6 +528,25 @@
       (is (= ["claude" ["-p" "x"]] [cmd args]))
       (is (true? (:unsafe opts))))))
 
+(deftest name-and-unsafe-are-refused-where-no-sandbox-is-started
+  (doseq [flag-args [["--unsafe"] ["--name" "foo"]]
+          cmd ["exec" "attach" "vscode" "ps" "setup" "update" "check"
+               "volumes" "info" "upgrade"]]
+    (testing (str/join " " (conj flag-args cmd))
+      (let [[kind msg] (dispatched (conj flag-args cmd))]
+        (is (= :error kind))
+        (is (str/includes? msg (first flag-args)))
+        (is (str/includes? msg cmd))))))
+
+(deftest name-and-unsafe-still-reach-help-and-typos
+  (testing "--help still prints help"
+    (let [out (with-out-str (is (nil? (dispatched ["--unsafe" "--help"]))))]
+      (is (str/includes? out "Usage"))))
+  (testing "a typo is still an unknown command"
+    (let [[kind msg] (dispatched ["--name" "foo" "clauder"])]
+      (is (= :error kind))
+      (is (str/includes? msg "clauder")))))
+
 (deftest name-and-unsafe-after-the-harness-belong-to-the-harness
   (let [[_ cmd args opts] (dispatched ["claude" "--unsafe" "--name" "x"])]
     (is (= ["claude" ["--unsafe" "--name" "x"]] [cmd args]))
@@ -573,10 +592,10 @@
       (is (= :setup kind))
       (is (true? (:verbose opts)))
       (is (true? (:with-claude opts)))))
-  (testing "--unsafe update runs update"
-    (let [[kind opts] (dispatched ["--unsafe" "update"])]
+  (testing "--verbose update runs update"
+    (let [[kind opts] (dispatched ["--verbose" "update"])]
       (is (= :update kind))
-      (is (not (:verbose opts))))))
+      (is (true? (:verbose opts))))))
 
 (deftest leading-verbose-does-not-turn-help-into-a-shell
   (let [out (with-out-str (is (nil? (dispatched ["--verbose" "--help"]))))]

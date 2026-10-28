@@ -870,6 +870,15 @@
                (not (contains? base-image-commands first-arg)))
       (output/error (str "--base-image only applies to commands that start a sandbox, not '"
                          first-arg "'. Try: aishell --base-image <harness>")))
+    ;; Only harness and shell launches read --unsafe and --name; exec's
+    ;; throwaway container has its own name and no sensitive-file prompt.
+    (when own-subcommand?
+      (when unsafe?
+        (output/error (str "--unsafe only applies to harness and shell launches, not '"
+                           first-arg "'. Try: aishell --unsafe <harness>")))
+      (when container-name
+        (output/error (str "--name only applies to harness and shell launches, not '"
+                           first-arg "'. Try: aishell --name " container-name " <harness>"))))
     ;; Check for a newer version, except on help, version and upgrade, which
     ;; would pay the startup delay for nothing. -v means verbose on aishell's
     ;; own subcommands (setup -v, update -v), so -v/--version skips the check
