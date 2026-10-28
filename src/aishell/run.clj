@@ -66,9 +66,10 @@
     ["/bin/bash"]))
 
 (defn- warn-if-foundation-stale
-  "Warn when the Foundation image's embedded content (the Dockerfile or any
-   file it COPYs) changed since the build. Advisory only: it does not block
-   execution."
+  "Warn when the Foundation image is stale: the hash setup or update stored
+   in `state` differs from the hash of the embedded content (the Dockerfile
+   and every file it COPYs from the build context). Silent when `state`
+   holds no stored hash. Advisory only: it does not block execution."
   [state]
   (when-let [stored-hash (:dockerfile-hash state)]
     (let [current-hash (hash/compute-hash templates/foundation-content)]
