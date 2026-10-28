@@ -4,11 +4,11 @@ title: Parse aishell's leading global flags once at dispatch entry
 status: open
 type: task
 priority: 2
-mode: hitl
+mode: afk
 created: '2026-10-28T14:25:36.344326078Z'
-updated: '2026-10-28T14:25:36.577568307Z'
+updated: '2026-10-28T14:55:51.719027765Z'
 tags:
-- needs-triage
+- ready-for-agent
 acceptance:
 - title: aishell's global flags are parsed in one place at dispatch entry
   done: false
@@ -17,6 +17,10 @@ acceptance:
 - title: aishell --name foo claude --json launches claude with --json forwarded
   done: false
 - title: aishell --verbose setup runs setup verbosely, not a shell
+  done: false
+- title: --unsafe and --name are recognized only before the subcommand; after it they reach the harness or command untouched
+  done: false
+- title: Docs and CHANGELOG describe the leading-only rule
   done: false
 links:
 - aix-01m61dyzmayj
@@ -38,3 +42,9 @@ Known breakage from the mismatch:
 Direction (depth review of aix-01m61c17fyb8, 2026-10-28): parse every aishell global flag once at the top of `dispatch` into one map plus subcommand plus remaining args, and hand that to `do-dispatch*`. Deletes `split-leading-verbose`, the positional threading and `subcommand-of`'s separate rules.
 
 Open decision before landing: whether `--unsafe` and `--name` stay accepted anywhere in argv or become leading-only like `--verbose` and `--base-image`. Leading-only changes what `aishell claude --unsafe` means. Refine this ticket to settle it.
+
+## Notes
+
+**2026-10-28T14:55:51.631912706Z**
+
+Decided by the user 2026-10-28: --unsafe and --name become leading-only, like --verbose and --base-image. After the subcommand they are forwarded to the harness/command untouched. Changes what 'aishell claude --unsafe' means: needs a CHANGELOG entry and doc updates (README.md:394 shows 'aishell claude --unsafe'; docs/TROUBLESHOOTING.md and docs/CONFIGURATION.md mention --unsafe).
