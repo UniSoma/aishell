@@ -434,3 +434,31 @@
         (is (= :error kind))
         (is (str/includes? msg "--base-image"))
         (is (str/includes? msg cmd))))))
+
+(deftest base-image-flag-survives-a-leading-name
+  (testing "--name's value does not end the leading flags"
+    (is (= [true ["--name" "foo" "claude"]]
+           (cli/split-leading-flag "--base-image" ["--name" "foo" "--base-image" "claude"]))))
+  (testing "the harness still launches, under the given name"
+    (let [[kind cmd _ opts] (dispatched ["--name" "foo" "--base-image" "claude"])]
+      (is (= [:run "claude"] [kind cmd]))
+      (is (true? (:base-image opts)))
+      (is (= "foo" (:container-name opts))))))
+
+(deftest base-image-flag-does-not-turn-help-or-typos-into-a-shell
+  (testing "--help still prints help"
+    (let [out (with-out-str (is (nil? (dispatched ["--base-image" "--help"]))))]
+      (is (str/includes? out "Usage"))))
+  (testing "a typo is still an unknown command"
+    (let [[kind msg] (dispatched ["--base-image" "clauder"])]
+      (is (= :error kind))
+      (is (str/includes? msg "clauder")))))
+
+(deftest base-image-refusal-comes-before-the-update-check
+  (let [checked (atom false)]
+    (with-redefs [update-check/maybe-check-for-update (fn [& _] (reset! checked true))
+                  output/exit! (fn [_] (throw (ex-info "exit" {})))]
+      (binding [*err* (java.io.StringWriter.)]
+        (try (cli/dispatch ["--base-image" "ps"])
+             (catch clojure.lang.ExceptionInfo _))))
+    (is (false? @checked))))

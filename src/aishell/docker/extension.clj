@@ -146,40 +146,37 @@
             exits on error"
   [{:keys [project-dir foundation-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
-    (when-let [actual (miscased-dockerfile project-dir)]
-      (let [config-dir (util/resolve-project-config-dir project-dir)]
+    (let [config-dir (util/resolve-project-config-dir project-dir)]
+      (when-let [actual (miscased-dockerfile project-dir)]
         (output/warn
          (str config-dir "/" actual " has non-canonical casing. "
               "Docker Desktop's Linux daemon is case-sensitive and will fail "
-              "to find this file during build. Rename it to " config-dir "/Dockerfile."))))
-    (let [base-id (get-foundation-image-id foundation-tag)
-          extension-hash (get-extension-dockerfile-hash project-dir)
-          build-args (cond-> ["-f" dockerfile-path
-                              "-t" extended-tag
-                              (str "--label=" base-image-id-label "=" base-id)
-                              (str "--label=" extension-hash-label "=" extension-hash)]
-                       force (conj "--no-cache")
-                       verbose (conj "--progress=plain"))
-          build-fn (fn []
-                     (let [{:keys [exit out err]}
-                           (apply p/shell {:out :string :err :string :continue true :dir project-dir}
-                                  "docker" "build" (conj build-args project-dir))]
-                       (if (zero? exit)
-                         {:success true :image extended-tag}
-                         {:success false :error (str out "\n" err)})))]
-      (if verbose
-        ;; Verbose: show output directly
-        (let [{:keys [exit]}
-              (apply p/shell {:continue true :dir project-dir}
-                     "docker" "build" (conj build-args project-dir))]
-          (if (zero? exit)
-            {:success true :image extended-tag}
-            (output/error (build-failure-message
-                           (util/resolve-project-config-dir project-dir) nil))))
-        ;; Non-verbose: use spinner
-        (let [result (spinner/with-spinner "Building project extension" build-fn)]
-          (if (:success result)
-            result
-            (output/error (build-failure-message
-                           (util/resolve-project-config-dir project-dir)
-                           (:error result)))))))))
+              "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
+      (let [base-id (get-foundation-image-id foundation-tag)
+            extension-hash (get-extension-dockerfile-hash project-dir)
+            build-args (cond-> ["-f" dockerfile-path
+                                "-t" extended-tag
+                                (str "--label=" base-image-id-label "=" base-id)
+                                (str "--label=" extension-hash-label "=" extension-hash)]
+                         force (conj "--no-cache")
+                         verbose (conj "--progress=plain"))
+            build-fn (fn []
+                       (let [{:keys [exit out err]}
+                             (apply p/shell {:out :string :err :string :continue true :dir project-dir}
+                                    "docker" "build" (conj build-args project-dir))]
+                         (if (zero? exit)
+                           {:success true :image extended-tag}
+                           {:success false :error (str out "\n" err)})))]
+        (if verbose
+          ;; Verbose: show output directly
+          (let [{:keys [exit]}
+                (apply p/shell {:continue true :dir project-dir}
+                       "docker" "build" (conj build-args project-dir))]
+            (if (zero? exit)
+              {:success true :image extended-tag}
+              (output/error (build-failure-message config-dir nil))))
+          ;; Non-verbose: use spinner
+          (let [result (spinner/with-spinner "Building project extension" build-fn)]
+            (if (:success result)
+              result
+              (output/error (build-failure-message config-dir (:error result))))))))))

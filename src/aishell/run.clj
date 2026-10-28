@@ -113,7 +113,7 @@
   [dockerfile]
   (if dockerfile
     (str "Starting on the Base image: Project extension " dockerfile " skipped, and pre_start with it.")
-    (str "Starting on the Base image: no Project extension to skip; pre_start skipped.")))
+    "Starting on the Base image: no Project extension to skip; pre_start skipped."))
 
 (defn skip-pre-start?
   "Whether a launch with these run-container opts skips the pre_start hook.

@@ -876,6 +876,12 @@
                        (into (subvec (vec clean-args) 0 idx)
                              (subvec (vec clean-args) (+ idx 2))))
                      clean-args)]
+    (let [first-arg (first clean-args)]
+      (when (and base-image?
+                 (contains? output/non-harness-commands first-arg)
+                 (not (contains? base-image-commands first-arg)))
+        (output/error (str "--base-image only applies to commands that start a sandbox, not '"
+                           first-arg "'. Try: aishell --base-image <harness>"))))
     ;; Check for newer version (skip for help/version/upgrade to avoid startup delay).
     ;; -v/--version is ambiguous: top-level it means version, but on subcommands
     ;; (setup -v, update -v) it means verbose. Only skip the update check when
@@ -888,12 +894,6 @@
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
-    (let [first-arg (first clean-args)]
-      (when (and base-image?
-                 (contains? output/non-harness-commands first-arg)
-                 (not (contains? base-image-commands first-arg)))
-        (output/error (str "--base-image only applies to commands that start a sandbox, not '"
-                           first-arg "'. Try: aishell --base-image <harness>"))))
     ;; Harness pass-through: a harness subcommand launches its container with
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape — such as whether the project's pre_start hook runs — is
@@ -1025,7 +1025,10 @@
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
         ;; Standard dispatch for other commands (setup, update, help)
-        (if (or unsafe? verbose? container-name-override base-image?)
+        ;; --base-image alone is a shell; with --help or a typo it falls
+        ;; through to normal dispatch, which already dropped the flag
+        (if (or unsafe? verbose? container-name-override
+                (and base-image? (empty? clean-args)))
           ;; --unsafe, --verbose, --name or --base-image with no harness command -> shell mode
           (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override
                                      :base-image base-image?})
@@ -1039,7 +1042,12 @@
    `aishell --verbose claude` is aishell's flag, `aishell claude --verbose`
    belongs to Claude Code (which has a --verbose of its own) and is forwarded."
   [flag args]
-  (let [leading (take-while #(str/starts-with? % "-") args)
+  (let [leading (loop [[a & more] args, acc []]
+                  (cond
+                    ;; --name takes a value, which is not the subcommand
+                    (and (= "--name" a) (seq more)) (recur (rest more) (conj acc a (first more)))
+                    (and a (str/starts-with? a "-")) (recur more (conj acc a))
+                    :else acc))
         trailing (drop (count leading) args)]
     (if (some #{flag} leading)
       [true (vec (concat (remove #{flag} leading) trailing))]
