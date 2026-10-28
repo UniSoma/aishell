@@ -30,17 +30,17 @@
   (fs/exists? (global-dockerfile-path)))
 
 (defn global-dockerfile-hash
-  "Compute 12-char SHA-256 hash of global Dockerfile content.
+  "Compute 12-char SHA-256 hash of ~/.aishell/Dockerfile content.
 
-   Returns: Hash string, or nil if no global Dockerfile exists."
+   Returns: Hash string, or nil if ~/.aishell/Dockerfile doesn't exist."
   []
   (when (global-dockerfile-exists?)
     (hash/compute-hash (slurp (global-dockerfile-path)))))
 
 (defn tag-foundation-as-base
-  "Tag foundation image as base (alias path).
+  "Tag the Foundation image as the Base image (alias path).
 
-   Used when no global Dockerfile exists — ensures `aishell:base` always
+   Used when no ~/.aishell/Dockerfile exists — ensures `aishell:base` always
    exists as a valid image tag.
 
    Returns: {:success true :image \"aishell:base\" :alias true}"
@@ -136,13 +136,13 @@
 
    Main entry point called from setup and update paths.
 
-   When global Dockerfile exists:
+   When ~/.aishell/Dockerfile exists:
    - If needs rebuild or :force -> build the Base image
-   - Else: base is up to date
+   - Else: the Base image is up to date
 
-   When global Dockerfile does NOT exist:
-   - If the Base image is missing or was custom-built -> re-tag foundation as base
-   - Else: base tag already points to foundation, nothing to do
+   When ~/.aishell/Dockerfile does NOT exist:
+   - If the Base image is missing or was custom-built -> re-tag the Foundation image as the Base image
+   - Else: the Base image already points to the Foundation image, nothing to do
 
    Options:
    - :force - Force rebuild
@@ -160,7 +160,7 @@
           (println "Base image aishell:base is up to date"))
         {:success true :image base-image-tag :cached true}))
     ;; No Dockerfile — alias path
-    ;; Re-tag if: base missing, was custom-built, or Base image ID != Foundation image ID
+    ;; Re-tag if: Base image missing, was custom-built, or Base image ID != Foundation image ID
     (if (or (not (docker/image-exists? base-image-tag))
             (has-custom-base-label?)
             (not (base-matches-foundation?)))
