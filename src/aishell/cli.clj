@@ -1056,6 +1056,17 @@
   (binding [output/*verbose* (or (:verbose? parsed) output/*verbose*)]
     (do-dispatch* parsed)))
 
+(defn- split-json-scope
+  "Split args into the part aishell reads --json from and the part it
+   forwards untouched. After a pass-through harness or `exec` the argv
+   belongs to the harness or container command, so only the leading flags
+   are aishell's; after any other subcommand all of args is."
+  [args]
+  (let [[leading [subcommand & _ :as from-subcommand]] (split-with #(str/starts-with? % "-") args)]
+    (if (or (= "exec" subcommand) (contains? pass-through-harnesses subcommand))
+      [(vec leading) (vec from-subcommand)]
+      [(vec args) []])))
+
 (defn dispatch
   "Parse aishell's global flags and gate --json, then delegate to do-dispatch.
 
@@ -1064,8 +1075,9 @@
    be a leading-only flag.
 
    --json semantics:
-   - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded
-     verbatim, never consumed.
+   - After a pass-through harness (claude, opencode, etc.) or `exec` the flag
+     is forwarded verbatim, never consumed. A leading `--json exec` is still
+     aishell's and is refused as unsupported.
    - Otherwise --json is stripped here, and the command is classified:
        :unknown     -> emit unknown_command error and exit 1
        :unsupported -> emit unsupported_json error and exit 1
@@ -1073,9 +1085,9 @@
        :supported   -> bind *json-output* and zero out ANSI vars, normal flow"
   [argv]
   (let [{:keys [args] :as parsed} (parse-global-flags argv)
-        json-mode? (and (not (contains? pass-through-harnesses (first args)))
-                        (boolean (some #{"--json"} args)))
-        args (if json-mode? (vec (remove #{"--json"} args)) args)
+        [own forwarded] (split-json-scope args)
+        json-mode? (boolean (some #{"--json"} own))
+        args (if json-mode? (into (vec (remove #{"--json"} own)) forwarded) args)
         parsed (assoc parsed :args args)]
     (if json-mode?
       (case (classify-json-command args)

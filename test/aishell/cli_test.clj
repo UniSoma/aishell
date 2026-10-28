@@ -3,6 +3,8 @@
             [babashka.fs :as fs]
             [clojure.set :as set]
             [clojure.string :as str]
+            [aishell.docker.bootstrap :as bootstrap]
+            [aishell.docker.naming :as naming]
             [aishell.harness :as harness]
             [aishell.output :as output]
             [aishell.run :as run]
@@ -541,3 +543,19 @@
 (deftest leading-verbose-does-not-turn-help-into-a-shell
   (let [out (with-out-str (is (nil? (dispatched ["--verbose" "--help"]))))]
     (is (str/includes? out "Usage"))))
+
+(deftest json-after-exec-belongs-to-the-container-command
+  (testing "it reaches the command untouched"
+    (is (= [:exec ["jq" "--json"] {:base-image false}]
+           (dispatched ["exec" "jq" "--json"]))))
+  (testing "a leading --json before exec is still refused"
+    (let [[kind msg] (dispatched ["--json" "exec" "jq" "--json"])]
+      (is (= :error kind))
+      (is (str/includes? msg "unsupported_json")))))
+
+(deftest json-after-ps-emits-json
+  (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                naming/list-project-containers (fn [_] [])
+                bootstrap/attach-bootstrap! identity]
+    (doseq [args [["ps" "--json"] ["--json" "ps"]]]
+      (is (= "[]\n" (with-out-str (cli/dispatch args))) (str/join " " args)))))
