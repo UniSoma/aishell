@@ -864,7 +864,7 @@
     (when (and base-image?
                own-subcommand?
                (not (contains? base-image-commands first-arg)))
-      (output/error (str "--base-image only applies to commands that start a sandbox, not '"
+      (output/error (str "--base-image only applies to harness launches, bare aishell and exec, not '"
                          first-arg "'. Try: aishell --base-image <harness>")))
     ;; Only harness launches and bare aishell read --unsafe and --name; the
     ;; containers exec and vscode start get no --name and skip the
