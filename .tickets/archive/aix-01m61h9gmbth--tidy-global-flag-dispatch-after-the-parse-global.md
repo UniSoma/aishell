@@ -1,23 +1,24 @@
 ---
 id: aix-01m61h9gmbth
 title: Tidy global-flag dispatch after the parse-global-flags refactor
-status: in_progress
+status: closed
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:15:38.236876677Z'
-updated: '2026-10-28T15:27:56.415056209Z'
+updated: '2026-10-28T15:30:53.403859726Z'
+closed: '2026-10-28T15:30:53.403859726Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: One code path starts the shell for an empty command
-  done: false
+  done: true
 - title: The reason --json stays out of parse-global-flags is written beside it
-  done: false
+  done: true
 - title: dispatched-command is gone; tests use dispatched
-  done: false
+  done: true
 - title: No has-subcommand? or unowned-flags local remains in cli.clj
-  done: false
+  done: true
 deps:
 - aix-01m61gkfh089
 links:
@@ -41,3 +42,7 @@ Waits on aix-01m61gkfh089 because both edit cli.clj. Behaviour stays the same.
 **2026-10-28T15:27:56.415056209Z**
 
 The :else in handle-default is reachable (aishell --, --no-help, --help=false), so it returns ::start-shell instead of being deleted, and do-dispatch* is the one place that starts the shell. Side effect: aishell --unsafe -- (and --name x --, --base-image --) now keep their flags, as v4.4.1 did; faadcb5 had dropped them.
+
+**2026-10-28T15:30:53.403859726Z**
+
+One code path starts the shell for an empty command (handle-default returns ::start-shell, do-dispatch* launches with the leading flags, so aishell --unsafe -- keeps --unsafe again); --json's reason is in dispatch's docstring; own-subcommand? and later-flags renames; dispatched-command folded into dispatched.

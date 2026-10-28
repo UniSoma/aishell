@@ -384,7 +384,7 @@
             ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]))))
   (testing "other leading flags stay in front of the subcommand"
     (is (= ["--json" "ps"] (:args (cli/parse-global-flags ["--verbose" "--json" "ps"])))))
-  (testing "a harness moves in front of the leading flags aishell does not own"
+  (testing "a harness moves in front of the other leading flags"
     (is (= ["claude" "--json" "-p" "x"]
            (:args (cli/parse-global-flags ["--json" "claude" "-p" "x"])))))
   (testing "global flags alone leave no args"

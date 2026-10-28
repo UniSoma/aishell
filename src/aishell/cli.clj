@@ -497,9 +497,10 @@
               :harness-volume-name volume-name)))))                           ; NEW
 
 (defn handle-default
-  "Run the no-subcommand entry: --version, --help, or an unknown command.
-   With no command it returns ::start-shell and starts nothing, because
-   do-dispatch* holds the launch options from aishell's leading flags."
+  "Run the default dispatch entry: print the version or help, or report an
+   unknown command. With no command at all it returns ::start-shell and
+   launches nothing, since the launch options from aishell's leading flags
+   live in do-dispatch*, which starts the shell."
   [{:keys [opts args]}]
   (cond
     (:version opts)
@@ -510,7 +511,6 @@
     (:help opts)
     (print-help)
 
-    ;; Unknown command - check for typos
     (seq args)
     (output/error-unknown-command (first args))
 
@@ -1033,8 +1033,8 @@
    absent. :args is the other leading flags (`--json`, `--help`), which
    dispatch reads later, then the subcommand and the rest of argv. A
    pass-through harness moves in front of those flags, so `--json claude`
-   forwards --json the way `claude --json` does. Exits 1 through output/error when --name has
-   no value or its value starts with `-`."
+   forwards --json the way `claude --json` does. Exits 1 through
+   output/error when --name has no value or its value starts with `-`."
   [argv]
   (loop [[a & more :as argv] (vec argv)
          flags {:verbose? false :base-image? false :unsafe? false :name nil}
