@@ -1062,10 +1062,10 @@
   (conj pass-through-harnesses "exec"))
 
 (defn- split-json-scope
-  "Split args into the part aishell reads --json from and the part it
-   forwards untouched. After a pass-through harness or `exec` the argv
-   belongs to the harness or container command, so only the leading flags
-   are aishell's; after any other subcommand all of args is."
+  "Split args into [aishell's part, forwarded part] for reading --json.
+   When the subcommand is in argv-owning-subcommands, only the flags before
+   it are aishell's and the rest is forwarded untouched; after any other
+   subcommand, or none, all of args is aishell's."
   [args]
   (let [[leading [subcommand & _ :as from-subcommand]] (split-with #(str/starts-with? % "-") args)]
     (if (contains? argv-owning-subcommands subcommand)
@@ -1081,7 +1081,7 @@
 
    --json semantics:
    - After a pass-through harness (claude, opencode, etc.) or `exec` the flag
-     is forwarded verbatim, never consumed. A leading `--json exec` is still
+     is forwarded verbatim, never consumed. A leading `--json exec` is
      aishell's and is refused as unsupported.
    - Otherwise --json is stripped here, and the command is classified:
        :unknown     -> emit unknown_command error and exit 1

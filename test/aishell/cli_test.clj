@@ -548,12 +548,12 @@
   (testing "it reaches the command untouched"
     (is (= [:exec ["jq" "--json"] {:base-image false}]
            (dispatched ["exec" "jq" "--json"]))))
-  (testing "a leading --json before exec is still refused"
+  (testing "a --json before exec is refused"
     (let [[kind msg] (dispatched ["--json" "exec" "jq" "--json"])]
       (is (= :error kind))
       (is (str/includes? msg "unsupported_json")))))
 
-(deftest json-after-ps-emits-json
+(deftest json-before-or-after-ps-emits-json
   (with-redefs [update-check/maybe-check-for-update (fn [& _])
                 naming/list-project-containers (fn [_] [])
                 bootstrap/attach-bootstrap! identity]
