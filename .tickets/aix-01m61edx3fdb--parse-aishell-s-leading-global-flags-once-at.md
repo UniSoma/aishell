@@ -1,12 +1,12 @@
 ---
 id: aix-01m61edx3fdb
 title: Parse aishell's leading global flags once at dispatch entry
-status: open
+status: in_progress
 type: task
 priority: 2
 mode: afk
 created: '2026-10-28T14:25:36.344326078Z'
-updated: '2026-10-28T14:55:51.719027765Z'
+updated: '2026-10-28T15:03:53.822041847Z'
 tags:
 - ready-for-agent
 acceptance:

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`--unsafe` and `--name` must come before the command**: aishell used to take them from anywhere in the arguments, so `aishell claude --unsafe` skipped the sensitive-file checks and `aishell claude --name reviewer` named the container. Now, like `--verbose` and `--base-image`, they are aishell's flags only before the command (`aishell --unsafe claude`, `aishell --name reviewer claude`). After the harness name they are forwarded to the harness untouched, because harnesses own the arguments after their name. Scripts that put either flag after the harness name need to move it. `aishell --name` with no value now exits 1 with an error
+
 ### Added
 
 - **oh-my-pi (omp) is a Harness**: `aishell setup --with-omp[=VERSION]` installs omp, Stencil Labs' fork of Pi, and `aishell omp` launches it. omp's npm package needs Bun, which the foundation image does not have, so aishell downloads the prebuilt glibc binary for the container's architecture from the GitHub release into `/tools/bin/omp` and checks it with `sha256sum -c` against the release's `SHA256SUMS.txt`. A mismatch fails the volume build. This is a new `:github-release` install kind ([ADR 0009](docs/adr/0009-github-release-binary-install-kind.md)). Unpinned installs follow the latest release, and `aishell update` refreshes them; `--with-omp=18.12.1` pins tag `v18.12.1`. Host `~/.omp` is mounted whole, and `OMP_PROFILE` plus eight provider API keys pass through. `PI_CODING_AGENT_DIR` and `PI_CONFIG_DIR` are left out because omp reads pi's names. omp runs without permission prompts by default, and its update check can only be turned off in its own config (`startup.checkUpdate: false`)
@@ -16,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`aishell --verbose claude` shows aishell's build output again**: aishell moved the harness name to the front of the arguments before reading its own leading flags, so `--verbose` landed behind `claude` and was forwarded to Claude Code. aishell now reads a leading `--verbose` first. `aishell claude --verbose` still goes to Claude Code. As a side effect, `aishell --verbose --json ps` now runs `ps` instead of failing with `unknown_command`
+
+- **Leading global flags no longer turn a command into a shell**: `aishell --verbose setup` and `aishell --unsafe update` started a shell instead of running the command, and `aishell --verbose --help` did too. They now run the command, and a leading `--verbose` makes `setup` and `update` verbose. `aishell --name foo claude --json` launches Claude Code with `--json` instead of failing with `Unknown command: --name`. aishell now reads all four global flags in one place before dispatching
 
 ## [4.4.1] - 2026-09-24
 

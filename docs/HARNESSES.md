@@ -764,8 +764,10 @@ Each container gets a default name matching its harness (`claude`, `opencode`, `
 aishell claude
 
 # Start a second Claude with a custom name
-aishell claude --name reviewer
+aishell --name reviewer claude
 ```
+
+`--name` must come before the harness name. After it, `--name` is passed to the harness.
 
 ### Listing Containers
 
@@ -816,7 +818,7 @@ the default `claude_isolation: shared` instead write that state over each other 
 `~/.claude`, which breaks Agent View; see
 [ADR 0001](adr/0001-per-project-claude-machine-state-isolation.md).
 
-`aishell claude --name reviewer` remains the right tool for a session that should be genuinely
+`aishell --name reviewer claude` remains the right tool for a session that should be genuinely
 independent — its own filesystem view, its own lifetime. Set `claude_isolation: project` when two
 such containers run concurrently.
 

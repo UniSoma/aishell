@@ -371,28 +371,24 @@
       (is (str/includes? out "pi         Run Pi coding agent"))
       (is (not (str/includes? out "  claude     Run Claude Code"))))))
 
-(deftest split-leading-verbose-only-consumes-the-flag-before-the-subcommand
-  (testing "before the harness it is aishell's flag"
-    (is (= [true ["claude" "--model" "opus"]]
-           (cli/split-leading-verbose ["--verbose" "claude" "--model" "opus"]))))
-  (testing "after the harness it is forwarded untouched"
-    (is (= [false ["claude" "--verbose"]]
-           (cli/split-leading-verbose ["claude" "--verbose"]))))
-  (testing "other leading flags survive in order"
-    (is (= [true ["--unsafe" "--name" "x" "claude"]]
-           (cli/split-leading-verbose ["--unsafe" "--verbose" "--name" "x" "claude"]))))
-  (testing "no subcommand means shell mode with the flag consumed"
-    (is (= [true []] (cli/split-leading-verbose ["--verbose"]))))
-  (testing "absent flag leaves args as they were"
-    (is (= [false ["exec" "ls"]] (cli/split-leading-verbose ["exec" "ls"])))))
-
-(deftest split-leading-flag-only-consumes-the-flag-before-the-subcommand
-  (testing "before the harness it is aishell's flag"
-    (is (= [true ["claude" "-p" "x"]]
-           (cli/split-leading-flag "--base-image" ["--base-image" "claude" "-p" "x"]))))
-  (testing "after the harness it is forwarded untouched"
-    (is (= [false ["claude" "--base-image"]]
-           (cli/split-leading-flag "--base-image" ["claude" "--base-image"])))))
+(deftest parse-global-flags-reads-only-the-flags-before-the-subcommand
+  (testing "every global flag before the subcommand is aishell's"
+    (is (= {:verbose? true :base-image? true :unsafe? true :name "x"
+            :args ["claude" "--model" "opus"]}
+           (cli/parse-global-flags
+            ["--unsafe" "--verbose" "--name" "x" "--base-image" "claude" "--model" "opus"]))))
+  (testing "after the subcommand they are left for the harness"
+    (is (= {:verbose? false :base-image? false :unsafe? false :name nil
+            :args ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]}
+           (cli/parse-global-flags
+            ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]))))
+  (testing "other leading flags stay in front of the subcommand"
+    (is (= ["--json" "ps"] (:args (cli/parse-global-flags ["--verbose" "--json" "ps"])))))
+  (testing "a harness moves in front of the leading flags it does not own"
+    (is (= ["claude" "--json" "-p" "x"]
+           (:args (cli/parse-global-flags ["--json" "claude" "-p" "x"])))))
+  (testing "no subcommand leaves no args"
+    (is (= [] (:args (cli/parse-global-flags ["--verbose"]))))))
 
 (defn- dispatched
   "Run cli/dispatch on args with launches and the update check stubbed.
@@ -455,9 +451,6 @@
         (is (str/includes? msg cmd))))))
 
 (deftest base-image-flag-survives-a-leading-name
-  (testing "--name's value does not end the leading flags"
-    (is (= [true ["--name" "foo" "claude"]]
-           (cli/split-leading-flag "--base-image" ["--name" "foo" "--base-image" "claude"]))))
   (testing "the harness still launches, under the given name"
     (let [[kind cmd _ opts] (dispatched ["--name" "foo" "--base-image" "claude"])]
       (is (= [:run "claude"] [kind cmd]))
@@ -481,3 +474,62 @@
         (try (cli/dispatch ["--base-image" "ps"])
              (catch clojure.lang.ExceptionInfo _))))
     (is (false? @checked))))
+
+(deftest leading-name-and-unsafe-reach-a-harness-launch
+  (testing "--json after the harness is forwarded, under the given name"
+    (let [[kind cmd args opts] (dispatched ["--name" "foo" "claude" "--json"])]
+      (is (= [:run "claude" ["--json"]] [kind cmd args]))
+      (is (= "foo" (:container-name opts)))))
+  (testing "a leading --unsafe skips the checks"
+    (let [[_ cmd args opts] (dispatched ["--unsafe" "claude" "-p" "x"])]
+      (is (= ["claude" ["-p" "x"]] [cmd args]))
+      (is (true? (:unsafe opts))))))
+
+(deftest name-and-unsafe-after-the-harness-belong-to-the-harness
+  (let [[_ cmd args opts] (dispatched ["claude" "--unsafe" "--name" "x"])]
+    (is (= ["claude" ["--unsafe" "--name" "x"]] [cmd args]))
+    (is (false? (:unsafe opts)))
+    (is (nil? (:container-name opts)))))
+
+(deftest leading-flags-alone-start-a-shell
+  (doseq [[args k v] [[["--unsafe"] :unsafe true]
+                      [["--name" "foo"] :container-name "foo"]]]
+    (testing (str/join " " args)
+      (let [[kind cmd harness-args opts] (dispatched args)]
+        (is (= [:run nil []] [kind cmd harness-args]))
+        (is (= v (get opts k))))))
+  (testing "--verbose alone starts a verbose shell"
+    (is (= [[] true] (dispatched-verbosity ["--verbose"])))))
+
+(deftest leading-name-needs-a-value
+  (let [[kind msg] (dispatched ["--name"])]
+    (is (= :error kind))
+    (is (str/includes? msg "--name"))))
+
+(defn- dispatched-command
+  "Run cli/dispatch on args with setup, update and launches stubbed.
+   Returns [:setup opts] or [:update opts] for the command that ran, or
+   the recorded launch call."
+  [args]
+  (let [calls (atom nil)]
+    (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                  cli/handle-setup (fn [{:keys [opts]}] (reset! calls [:setup opts]))
+                  cli/handle-update (fn [{:keys [opts]}] (reset! calls [:update opts]))
+                  run/run-container (fn [& a] (reset! calls (into [:run] a)))]
+      (cli/dispatch args))
+    @calls))
+
+(deftest leading-global-flags-run-the-command-not-a-shell
+  (testing "--verbose setup runs setup verbosely"
+    (let [[kind opts] (dispatched-command ["--verbose" "setup" "--with-claude"])]
+      (is (= :setup kind))
+      (is (true? (:verbose opts)))
+      (is (true? (:with-claude opts)))))
+  (testing "--unsafe update runs update"
+    (let [[kind opts] (dispatched-command ["--unsafe" "update"])]
+      (is (= :update kind))
+      (is (not (:verbose opts))))))
+
+(deftest leading-verbose-does-not-turn-help-into-a-shell
+  (let [out (with-out-str (is (nil? (dispatched ["--verbose" "--help"]))))]
+    (is (str/includes? out "Usage"))))

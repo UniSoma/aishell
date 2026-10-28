@@ -161,7 +161,7 @@
           (println)
           (println (str output/RED "Error:" output/NC
                         " High-severity findings detected in non-interactive mode."))
-          (println "Use --unsafe flag to proceed in CI/automation."))
+          (println "Put --unsafe before the command to proceed in CI/automation: aishell --unsafe <harness>"))
         (System/exit 1))
 
       ;; Interactive: prompt

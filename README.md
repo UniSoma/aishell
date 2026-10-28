@@ -239,7 +239,7 @@ Run multiple containers and reconnect later:
 
 ```bash
 # Start Claude in a second terminal
-aishell claude --name reviewer
+aishell --name reviewer claude
 
 # List running containers for this project
 aishell ps
@@ -399,8 +399,10 @@ Proceed? (y/n)
 For CI or other automation, skip the confirmation prompt:
 
 ```bash
-aishell claude --unsafe  # Skip confirmation prompts
+aishell --unsafe claude  # Skip confirmation prompts
 ```
+
+`--unsafe` must come before the harness name. `aishell claude --unsafe` passes `--unsafe` to Claude Code instead.
 
 aishell refuses to start from your home directory or any directory above it, and `--unsafe` does not change that: a sandbox rooted there would hand the harness your SSH keys, credentials, and every project at once.
 

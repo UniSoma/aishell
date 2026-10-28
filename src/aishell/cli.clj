@@ -779,7 +779,7 @@
     (if output/*json-output*
       (output/emit-json (format-ps-data containers))
       (if (empty? containers)
-        (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell opencode --name my-session\n\nContainers are project-specific (based on current directory).")
+        (println "No containers found for this project.\n\nTo start a container:\n  aishell claude\n  aishell --name my-session opencode\n\nContainers are project-specific (based on current directory).")
         (do
           (println "Containers for this project:\n")
           (pp/print-table [:NAME :STATUS :CREATED :BOOTSTRAP]
@@ -824,8 +824,8 @@
       :else :unknown)))
 
 (def dispatch-table
-  [{:cmds ["setup"] :fn handle-setup :spec setup-spec :restrict true}
-   {:cmds ["update"] :fn handle-update :spec update-spec :restrict true}
+  [{:cmds ["setup"] :fn #'handle-setup :spec setup-spec :restrict true}
+   {:cmds ["update"] :fn #'handle-update :spec update-spec :restrict true}
    {:cmds [] :spec global-spec :fn handle-default}])
 
 (defn handle-error
@@ -856,41 +856,22 @@
    --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
-(defn- do-dispatch* [args verbose? base-image?]
-  ;; Extract --unsafe flag before pass-through (used by detection framework)
-  (let [unsafe? (boolean (some #{"--unsafe"} args))
-        clean-args (vec (remove #{"--unsafe"} args))
-
-        ;; Extract --name flag (--name VALUE format) for run-mode commands
-        ;; attach and other commands parse their own --name flag
-        ;; Deliberately the narrow set: harnesses are absent because a harness
-        ;; subcommand is exactly the case where --name belongs to aishell and
-        ;; not to the harness, and where the update check should still run.
-        should-extract-name? (not (contains? output/non-harness-commands (first clean-args)))
-        container-name-override (when should-extract-name?
-                                  (let [idx (.indexOf (vec clean-args) "--name")]
-                                    (when (and (>= idx 0) (< (inc idx) (count clean-args)))
-                                      (nth clean-args (inc idx)))))
-        clean-args (if container-name-override
-                     (let [idx (.indexOf (vec clean-args) "--name")]
-                       (into (subvec (vec clean-args) 0 idx)
-                             (subvec (vec clean-args) (+ idx 2))))
-                     clean-args)]
-    (let [first-arg (first clean-args)]
-      (when (and base-image?
-                 (contains? output/non-harness-commands first-arg)
-                 (not (contains? base-image-commands first-arg)))
-        (output/error (str "--base-image only applies to commands that start a sandbox, not '"
-                           first-arg "'. Try: aishell --base-image <harness>"))))
+(defn- do-dispatch* [{:keys [verbose? base-image? unsafe? name args]}]
+  (let [first-arg (first args)]
+    (when (and base-image?
+               (contains? output/non-harness-commands first-arg)
+               (not (contains? base-image-commands first-arg)))
+      (output/error (str "--base-image only applies to commands that start a sandbox, not '"
+                         first-arg "'. Try: aishell --base-image <harness>"))))
     ;; Check for newer version (skip for help/version/upgrade to avoid startup delay).
     ;; -v/--version is ambiguous: top-level it means version, but on subcommands
     ;; (setup -v, update -v) it means verbose. Only skip the update check when
     ;; there's no subcommand — i.e. the args will route to handle-default.
-    (let [first-arg (first clean-args)
+    (let [first-arg (first args)
           has-subcommand? (contains? output/non-harness-commands first-arg)
-          skip? (or (some #{"--help" "-h"} clean-args)
+          skip? (or (some #{"--help" "-h"} args)
                     (and (not has-subcommand?)
-                         (some #{"-v" "--version"} clean-args))
+                         (some #{"-v" "--version"} args))
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
         (update-check/maybe-check-for-update version)))
@@ -898,18 +879,18 @@
     ;; every remaining arg (including --help, --version) forwarded verbatim.
     ;; Launch shape — such as whether the project's pre_start hook runs — is
     ;; read from the harness descriptor, not spelled per harness here.
-    (if-let [descriptor (harness/for-subcommand (first clean-args))]
-      (run/run-container (:subcommand descriptor) (vec (rest clean-args))
-                         (cond-> {:unsafe unsafe? :container-name container-name-override
+    (if-let [descriptor (harness/for-subcommand (first args))]
+      (run/run-container (:subcommand descriptor) (vec (rest args))
+                         (cond-> {:unsafe unsafe? :container-name name
                                   :base-image base-image?}
                            (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))
-      (case (first clean-args)
-        "info" (info/run-info (vec (rest clean-args)))
+      (case (first args)
+        "info" (info/run-info (vec (rest args)))
         "check" (check/run-check)
-        "exec" (run/run-exec (vec (rest clean-args)) {:base-image base-image?})
+        "exec" (run/run-exec (vec (rest args)) {:base-image base-image?})
         "ps" (handle-ps nil)
-        "volumes" (handle-volumes (vec (rest clean-args)))
-        ("attach" "a") (let [rest-args (vec (rest clean-args))]
+        "volumes" (handle-volumes (vec (rest args)))
+        ("attach" "a") (let [rest-args (vec (rest args))]
                          (cond
                            (some #{"-h" "--help"} rest-args)
                            (do
@@ -949,7 +930,7 @@
                                (output/error err)
                                (attach/attach-to-container (:name parsed)
                                                            :command-argv (:command-argv parsed))))))
-        "vscode" (let [rest-args (vec (rest clean-args))
+        "vscode" (let [rest-args (vec (rest args))
                        own-flags #{"--detach" "--stop" "-h" "--help"}
                        code-args (vec (remove own-flags rest-args))]
                    (cond
@@ -1000,7 +981,7 @@
                      (let [detach? (some #{"--detach"} rest-args)]
                        (vscode/open-vscode {:detach? (boolean detach?)
                                             :code-args code-args}))))
-        "upgrade" (let [rest-args (vec (rest clean-args))]
+        "upgrade" (let [rest-args (vec (rest args))]
                     (cond
                       (some #{"-h" "--help"} rest-args)
                       (do
@@ -1024,53 +1005,49 @@
                         (when target-version
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
-        ;; Standard dispatch for other commands (setup, update, help)
-        ;; --unsafe, --verbose or --name with no harness command -> shell mode.
-        ;; --base-image alone is a shell; with --help or an unknown command it
-        ;; goes to normal dispatch, which never sees the flag.
-        (if (or unsafe? verbose? container-name-override
-                (and base-image? (empty? clean-args)))
-          (run/run-container nil [] {:unsafe unsafe? :container-name container-name-override
+        ;; Global flags with nothing after them start a shell. Anything else
+        ;; (setup, update, --help, a typo) goes to normal dispatch, where a
+        ;; leading --verbose becomes the command's own --verbose.
+        (if (and (empty? args) (or unsafe? verbose? name base-image?))
+          (run/run-container nil [] {:unsafe unsafe? :container-name name
                                      :base-image base-image?})
-          ;; Normal dispatch
-          (cli/dispatch dispatch-table args {:error-fn handle-error
-                                             :restrict true}))))))
+          (cli/dispatch dispatch-table args
+                        (cond-> {:error-fn handle-error :restrict true}
+                          verbose? (assoc :exec-args {:verbose true})))))))
 
-(defn split-leading-flag
-  "Consume `flag` from the flags that precede the subcommand.
-   Returns [present? args-without-it]. Only the leading position counts:
-   `aishell --verbose claude` is aishell's flag, `aishell claude --verbose`
-   belongs to Claude Code (which has a --verbose of its own) and is forwarded."
-  [flag args]
-  (let [leading (loop [[a & more] args, acc []]
-                  (cond
-                    ;; --name takes a value, which is not the subcommand
-                    (and (= "--name" a) (seq more)) (recur (rest more) (conj acc a (first more)))
-                    (and a (str/starts-with? a "-")) (recur more (conj acc a))
-                    :else acc))
-        trailing (drop (count leading) args)]
-    (if (some #{flag} leading)
-      [true (vec (concat (remove #{flag} leading) trailing))]
-      [false (vec args)])))
+(defn parse-global-flags
+  "Read aishell's global flags from the front of argv, before the subcommand.
+   Only that position counts: `aishell --unsafe claude` is aishell's flag,
+   `aishell claude --unsafe` belongs to the harness and is forwarded, since
+   harnesses own their argv and share flag names with aishell (`--verbose`).
 
-(defn split-leading-verbose
-  "Consume a leading `--verbose`; see split-leading-flag."
-  [args]
-  (split-leading-flag "--verbose" args))
+   Returns {:verbose? :base-image? :unsafe? :name :args}. :args is the
+   subcommand, the leading flags aishell does not own (`--json`, `--help`),
+   then the rest of argv. A pass-through harness goes first so `--json claude`
+   forwards --json the way `claude --json` does."
+  [argv]
+  (loop [[a & more :as argv] (vec argv)
+         flags {:verbose? false :base-image? false :unsafe? false :name nil}
+         other []]
+    (case a
+      "--verbose"    (recur more (assoc flags :verbose? true) other)
+      "--base-image" (recur more (assoc flags :base-image? true) other)
+      "--unsafe"     (recur more (assoc flags :unsafe? true) other)
+      "--name"       (if (seq more)
+                       (recur (rest more) (assoc flags :name (first more)) other)
+                       (output/error "--name requires a container name. Try: aishell --name <name> <harness>"))
+      (if (and a (str/starts-with? a "-"))
+        (recur more flags (conj other a))
+        (assoc flags :args (vec (if (contains? pass-through-harnesses a)
+                                  (concat [a] other more)
+                                  (concat other argv))))))))
 
-(defn- do-dispatch [args verbose? base-image?]
-  (binding [output/*verbose* (or verbose? output/*verbose*)]
-    (do-dispatch* args verbose? base-image?)))
-
-(defn- subcommand-of
-  "Return the first non-flag token in args, or nil. Used to decide whether
-   --json should be consumed at the top level or forwarded to a harness."
-  [args]
-  (first (remove (fn [a] (str/starts-with? a "-")) args)))
+(defn- do-dispatch [parsed]
+  (binding [output/*verbose* (or (:verbose? parsed) output/*verbose*)]
+    (do-dispatch* parsed)))
 
 (defn dispatch
-  "Consume a leading --verbose and --base-image and gate --json, then
-   delegate to do-dispatch.
+  "Parse aishell's global flags and gate --json, then delegate to do-dispatch.
 
    --json semantics:
    - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded
@@ -1080,22 +1057,12 @@
        :unsupported -> emit unsupported_json error and exit 1
        :help        -> normal flow with colors (--help wins)
        :supported   -> bind *json-output* and zero out ANSI vars, normal flow"
-  [args]
-  (let [;; Taken before the harness hoist below, which would otherwise move
-        ;; them behind the harness name and forward them to the harness.
-        [verbose? args] (split-leading-verbose (vec args))
-        [base-image? args] (split-leading-flag "--base-image" args)
-        sub (subcommand-of args)
-        json-pass-through? (contains? pass-through-harnesses sub)
-        ;; When any flag precedes a pass-through harness, hoist the harness to
-        ;; the front so do-dispatch* keys on the harness name rather than the
-        ;; flag. `--json claude` then forwards --json to Claude as
-        ;; `claude --json` does.
-        args (if (and json-pass-through? (not= sub (first args)))
-               (into [sub] (remove #{sub} args))
-               args)
-        json-mode? (and (not json-pass-through?) (boolean (some #{"--json"} args)))
-        args (if json-mode? (vec (remove #{"--json"} args)) args)]
+  [argv]
+  (let [{:keys [args] :as parsed} (parse-global-flags argv)
+        json-mode? (and (not (contains? pass-through-harnesses (first args)))
+                        (boolean (some #{"--json"} args)))
+        args (if json-mode? (vec (remove #{"--json"} args)) args)
+        parsed (assoc parsed :args args)]
     (if json-mode?
       (case (classify-json-command args)
         :unknown     (output/emit-error-json
@@ -1104,12 +1071,12 @@
         :unsupported (output/emit-error-json
                       (json-error-message args)
                       "unsupported_json")
-        :help        (do-dispatch args verbose? base-image?)
+        :help        (do-dispatch parsed)
         :supported   (binding [output/*json-output* true
                                output/RED ""
                                output/YELLOW ""
                                output/CYAN ""
                                output/BOLD ""
                                output/NC ""]
-                       (do-dispatch args verbose? base-image?)))
-      (do-dispatch args verbose? base-image?))))
+                       (do-dispatch parsed)))
+      (do-dispatch parsed))))

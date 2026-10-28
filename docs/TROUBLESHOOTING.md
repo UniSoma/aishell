@@ -260,8 +260,9 @@ sudo aishell setup --with-claude
 
 3. **Rule out the sensitive-file scan:**
    ```bash
-   aishell claude --unsafe
+   aishell --unsafe claude
    ```
+   Like `--verbose`, the flag must come before the harness name.
    If this starts immediately, the scan was walking a large tree, or a `(y/n)` confirmation prompt was waiting for input. Allowlist the directory or answer the prompt.
 
 4. **Rebuild with full output** if a build is the culprit:
@@ -1004,7 +1005,7 @@ aishell restores the terminal itself on both the attach and the run paths. On ol
 
 3. **Start a container:**
    ```bash
-   aishell claude --name background-task
+   aishell --name background-task claude
    aishell ps
    ```
 

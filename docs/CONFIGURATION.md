@@ -408,7 +408,7 @@ token, or a mounted ssh-agent socket, avoids exposing the keys themselves.
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 
-**Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Pass `--unsafe` to bypass.
+**Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Pass `--unsafe` before the command (`aishell --unsafe claude`) to bypass.
 
 **SSH Keys Security Note:**
 
