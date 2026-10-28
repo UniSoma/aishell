@@ -12,7 +12,7 @@
     (is (= [["docker" "tag" build/foundation-image-tag base/base-image-tag]] @calls))))
 
 (deftest build-base-image-names-the-base-image
-  (testing "a verbose build reports the Base image by its glossary name"
+  (testing "a verbose build names the Base image by its glossary term, not \"global\""
     (with-redefs [p/shell (fn [& _] {:exit 0 :out "sha256:abc"})]
       (let [out (with-out-str (base/build-base-image {:verbose true}))]
         (is (str/includes? out "Base image built"))

@@ -1,9 +1,10 @@
 (ns aishell.docker.extension
-  "Per-project Dockerfile extension support.
+  "Project extension and Extended image builds.
 
-   Projects can extend the Base image with <active-dir>/Dockerfile, where
-   the active dir is .aishell or its .sandbox alias.
-   The extension is auto-rebuilt when the Base image or extension Dockerfile changes."
+   A project extends the Base image with a Project extension at
+   <active-dir>/Dockerfile, where the active dir is .aishell or its .sandbox
+   alias. The Extended image rebuilds when the Base image ID or the Project
+   extension's content changes; see needs-extended-rebuild?."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as str]

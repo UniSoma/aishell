@@ -38,12 +38,12 @@
     (hash/compute-hash (slurp (global-dockerfile-path)))))
 
 (defn tag-foundation-as-base
-  "Tag the Foundation image as the Base image (alias path).
+  "Tag the Foundation image as the Base image, the alias used when
+   ~/.aishell/Dockerfile does not exist, so `aishell:base` always exists for
+   runs and Extended image builds.
 
-   Used when no ~/.aishell/Dockerfile exists — ensures `aishell:base` always
-   exists as a valid image tag.
-
-   Returns: {:success true :image \"aishell:base\" :alias true}"
+   Returns: {:success true :image \"aishell:base\" :alias true}, without
+            checking whether `docker tag` succeeded."
   []
   (p/shell {:out :string :err :string :continue true}
            "docker" "tag" build/foundation-image-tag base-image-tag)
@@ -134,22 +134,26 @@
 (defn ensure-base-image
   "Ensure `aishell:base` image exists and is up to date.
 
-   Main entry point called from setup and update paths.
+   Called by setup, update and before each run.
 
    When ~/.aishell/Dockerfile exists:
-   - If needs rebuild or :force -> build the Base image
+   - If it needs a rebuild or :force -> build the Base image
    - Else: the Base image is up to date
 
    When ~/.aishell/Dockerfile does NOT exist:
-   - If the Base image is missing or was custom-built -> re-tag the Foundation image as the Base image
-   - Else: the Base image already points to the Foundation image, nothing to do
+   - If the Base image is missing, was custom-built, or its image ID differs
+     from the Foundation image's or can't be read -> tag the Foundation image
+     as the Base image
+   - Else: the Base image already is the Foundation image, nothing to do
 
    Options:
    - :force - Force rebuild
    - :verbose - Show full Docker build output
    - :quiet - Suppress informational messages
 
-   Returns: Result map from whichever path executed, or nil if no action needed."
+   Returns: the result map of the path taken, never nil: :cached true when a
+            built Base image is current, :alias true on the alias path.
+            Exits when the build fails."
   [{:keys [force verbose quiet]}]
   (if (global-dockerfile-exists?)
     ;; Custom Dockerfile path
@@ -159,8 +163,7 @@
         (when-not quiet
           (println "Base image aishell:base is up to date"))
         {:success true :image base-image-tag :cached true}))
-    ;; No Dockerfile — alias path
-    ;; Re-tag if: Base image missing, was custom-built, or Base image ID != Foundation image ID
+    ;; No Dockerfile: alias path
     (if (or (not (docker/image-exists? base-image-tag))
             (has-custom-base-label?)
             (not (base-matches-foundation?)))

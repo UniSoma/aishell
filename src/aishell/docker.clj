@@ -54,8 +54,8 @@
     (catch Exception _ nil)))
 
 (defn image-id
-  "Return the Docker image ID of image-tag, such as \"aishell:base\" for the
-   Base image or \"aishell:foundation\" for the Foundation image.
+  "Return the Docker image ID of image-tag, a tag such as \"aishell:base\"
+   (the Base image) or \"aishell:foundation\" (the Foundation image).
 
    Returns nil when the image does not exist or `docker inspect` fails."
   [image-tag]
