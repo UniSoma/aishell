@@ -507,8 +507,9 @@
 (deftest an-empty-command-starts-a-shell
   (testing "bare aishell"
     (is (= [:run nil []] (take 3 (dispatched [])))))
-  (testing "a bare -- leaves no command"
-    (is (= [:run nil []] (take 3 (dispatched ["--"])))))
+  (testing "flags that parse to nothing leave no command"
+    (doseq [args [["--"] ["--no-help"] ["--help=false"]]]
+      (is (= [:run nil []] (take 3 (dispatched args))) (str/join " " args))))
   (testing "leading flags reach the shell when -- follows them"
     (let [[kind cmd args opts] (dispatched ["--unsafe" "--"])]
       (is (= [:run nil []] [kind cmd args]))

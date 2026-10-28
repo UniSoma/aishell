@@ -6,7 +6,7 @@ type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:15:38.236876677Z'
-updated: '2026-10-28T15:24:26.276605541Z'
+updated: '2026-10-28T15:27:56.415056209Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -35,3 +35,9 @@ Small findings from landing aix-01m61edx3fdb (faadcb5) on 2026-10-28; the user w
 5. Context review: the `cli.clj` docstring calls `--json`/`--help` "leading flags aishell does not own". Say "the other leading flags (`--json`, `--help`), which dispatch reads later" and rename the local `unowned-flags` to `later-flags`.
 
 Waits on aix-01m61gkfh089 because both edit cli.clj. Behaviour stays the same.
+
+## Notes
+
+**2026-10-28T15:27:56.415056209Z**
+
+The :else in handle-default is reachable (aishell --, --no-help, --help=false), so it returns ::start-shell instead of being deleted, and do-dispatch* is the one place that starts the shell. Side effect: aishell --unsafe -- (and --name x --, --base-image --) now keep their flags, as v4.4.1 did; faadcb5 had dropped them.

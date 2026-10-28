@@ -496,7 +496,11 @@
               :harness-volume-hash harness-hash                               ; NEW
               :harness-volume-name volume-name)))))                           ; NEW
 
-(defn handle-default [{:keys [opts args]}]
+(defn handle-default
+  "Run the no-subcommand entry: --version, --help, or an unknown command.
+   With no command it returns ::start-shell and starts nothing, because
+   do-dispatch* holds the launch options from aishell's leading flags."
+  [{:keys [opts args]}]
   (cond
     (:version opts)
     (if output/*json-output*
@@ -510,8 +514,6 @@
     (seq args)
     (output/error-unknown-command (first args))
 
-    ;; No command: do-dispatch* starts the shell, since it holds the
-    ;; launch options from aishell's leading flags.
     :else
     ::start-shell))
 
