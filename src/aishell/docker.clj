@@ -53,6 +53,20 @@
             value))))
     (catch Exception _ nil)))
 
+(defn image-id
+  "Return the Docker image ID of image-tag, such as \"aishell:base\" for the
+   Base image or \"aishell:foundation\" for the Foundation image.
+
+   Returns nil when the image does not exist or `docker inspect` fails."
+  [image-tag]
+  (try
+    (let [{:keys [exit out]}
+          (p/shell {:out :string :err :string :continue true}
+                   "docker" "inspect" "--format={{.Id}}" image-tag)]
+      (when (zero? exit)
+        (str/trim out)))
+    (catch Exception _ nil)))
+
 (defn format-size
   "Format bytes to human-readable size"
   [bytes]

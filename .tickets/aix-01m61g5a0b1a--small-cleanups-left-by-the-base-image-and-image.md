@@ -1,12 +1,12 @@
 ---
 id: aix-01m61g5a0b1a
 title: Small cleanups left by the --base-image and image-id reviews
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T14:55:51.813553267Z'
-updated: '2026-10-28T14:55:51.813553267Z'
+updated: '2026-10-28T14:56:26.707150788Z'
 tags:
 - ready-for-agent
 acceptance:

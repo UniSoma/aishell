@@ -1,19 +1,18 @@
 (ns aishell.docker.base
-  "Global base image customization layer.
+  "Base image layer.
 
-   Manages the `aishell:base` intermediate image between `aishell:foundation`
-   and project extensions. When `~/.aishell/Dockerfile` exists, builds a custom
-   base image from it. Otherwise, tags foundation as base (alias)."
+   Manages `aishell:base`, the image between the Foundation image and
+   Project extensions. When `~/.aishell/Dockerfile` exists, builds the
+   Base image from it. Otherwise, tags the Foundation image as the Base image (alias)."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [aishell.docker :as docker]
+            [aishell.docker.build :as build]
             [aishell.docker.hash :as hash]
-            [aishell.docker.extension :as ext]
             [aishell.docker.spinner :as spinner]
             [aishell.output :as output]
             [aishell.util :as util]))
 
-;; Image tag for the base layer
 (def base-image-tag "aishell:base")
 
 ;; Labels for tracking rebuild dependencies
@@ -21,12 +20,12 @@
 (def base-foundation-id-label "aishell.base.foundation.id")
 
 (defn global-dockerfile-path
-  "Get path to global base Dockerfile (~/.aishell/Dockerfile)."
+  "Get path to the Base image Dockerfile (~/.aishell/Dockerfile)."
   []
   (str (fs/path (util/config-dir) "Dockerfile")))
 
 (defn global-dockerfile-exists?
-  "Check if global base Dockerfile exists at ~/.aishell/Dockerfile."
+  "Check if the Base image Dockerfile exists at ~/.aishell/Dockerfile."
   []
   (fs/exists? (global-dockerfile-path)))
 
@@ -47,11 +46,11 @@
    Returns: {:success true :image \"aishell:base\" :alias true}"
   []
   (p/shell {:out :string :err :string :continue true}
-           "docker" "tag" "aishell:foundation" base-image-tag)
+           "docker" "tag" build/foundation-image-tag base-image-tag)
   {:success true :image base-image-tag :alias true})
 
 (defn- has-custom-base-label?
-  "Check if current base image was custom-built (has dockerfile hash label)."
+  "Check if the current Base image was custom-built (has dockerfile hash label)."
   []
   (some? (docker/get-image-label base-image-tag base-dockerfile-hash-label)))
 
@@ -59,8 +58,8 @@
   "Return true when the Base image has the Foundation image's Docker image ID,
    meaning the alias is current. Returns nil when either image ID can't be read."
   []
-  (let [base-id (ext/image-id base-image-tag)
-        foundation-id (ext/image-id "aishell:foundation")]
+  (let [base-id (docker/image-id base-image-tag)
+        foundation-id (docker/image-id build/foundation-image-tag)]
     (and base-id foundation-id (= base-id foundation-id))))
 
 (defn needs-base-rebuild?
@@ -80,7 +79,7 @@
     true
 
     (not= (docker/get-image-label base-image-tag base-foundation-id-label)
-          (ext/image-id "aishell:foundation"))
+          (docker/image-id build/foundation-image-tag))
     true
 
     :else false))
@@ -99,7 +98,7 @@
             The error includes the build output unless :verbose streamed it."
   [{:keys [force verbose]}]
   (let [dockerfile-path (global-dockerfile-path)
-        foundation-id (ext/image-id "aishell:foundation")
+        foundation-id (docker/image-id build/foundation-image-tag)
         df-hash (global-dockerfile-hash)
         build-dir (str (fs/parent dockerfile-path))
         build-args (cond-> ["-f" dockerfile-path
@@ -121,16 +120,16 @@
                    "docker" "build" (conj build-args build-dir))]
         (if (zero? exit)
           (do
-            (println "Global base image built")
+            (println "Base image built")
             {:success true :image base-image-tag})
-          (output/error "Global base image build failed")))
-      (let [result (spinner/with-spinner "Building global base image"
+          (output/error "Base image build failed")))
+      (let [result (spinner/with-spinner "Building Base image"
                                          build-fn)]
         (if (:success result)
           (do
-            (println "Global base image built")
+            (println "Base image built")
             result)
-          (output/error (str "Global base image build failed:\n" (:error result))))))))
+          (output/error (str "Base image build failed:\n" (:error result))))))))
 
 (defn ensure-base-image
   "Ensure `aishell:base` image exists and is up to date.
@@ -138,11 +137,11 @@
    Main entry point called from setup and update paths.
 
    When global Dockerfile exists:
-   - If needs rebuild or :force -> build custom base image
+   - If needs rebuild or :force -> build the Base image
    - Else: base is up to date
 
    When global Dockerfile does NOT exist:
-   - If base image missing or was custom-built -> re-tag foundation as base
+   - If the Base image is missing or was custom-built -> re-tag foundation as base
    - Else: base tag already points to foundation, nothing to do
 
    Options:
@@ -161,7 +160,7 @@
           (println "Base image aishell:base is up to date"))
         {:success true :image base-image-tag :cached true}))
     ;; No Dockerfile — alias path
-    ;; Re-tag if: base missing, was custom-built, or base image ID != foundation ID
+    ;; Re-tag if: base missing, was custom-built, or Base image ID != Foundation image ID
     (if (or (not (docker/image-exists? base-image-tag))
             (has-custom-base-label?)
             (not (base-matches-foundation?)))

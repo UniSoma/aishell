@@ -70,7 +70,7 @@ aishell/
 │   ├── config.clj            # Configuration loading and merging
 │   ├── state.clj             # State persistence (state.edn)
 │   ├── docker/
-│   │   ├── base.clj          # Global base image customization (three-tier chain)
+│   │   ├── base.clj          # Base image customization (three-tier chain)
 │   │   ├── build.clj         # Foundation image build orchestration
 │   │   ├── run.clj           # Docker run argument construction
 │   │   ├── templates.clj     # Dockerfile template generation
@@ -101,7 +101,7 @@ aishell/
 
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
-- **docker/base.clj:** Global base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `global-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
+- **docker/base.clj:** Base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `global-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
 - **docker/build.clj:** Orchestrate foundation image build, manage state
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume

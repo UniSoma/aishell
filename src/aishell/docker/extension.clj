@@ -1,9 +1,9 @@
 (ns aishell.docker.extension
   "Per-project Dockerfile extension support.
 
-   Projects can extend the base image with <active-dir>/Dockerfile, where
+   Projects can extend the Base image with <active-dir>/Dockerfile, where
    the active dir is .aishell or its .sandbox alias.
-   The extension is auto-rebuilt when base image or extension Dockerfile changes."
+   The extension is auto-rebuilt when the Base image or extension Dockerfile changes."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as str]
@@ -46,20 +46,6 @@
              (some #(when (and (= (str/lower-case %) "dockerfile")
                                (not= % "Dockerfile"))
                       %)))))))
-
-(defn image-id
-  "Return the Docker image ID of image-tag, such as \"aishell:base\" for the
-   Base image or \"aishell:foundation\" for the Foundation image.
-
-   Returns nil when the image does not exist or `docker inspect` fails."
-  [image-tag]
-  (try
-    (let [{:keys [exit out]}
-          (p/shell {:out :string :err :string :continue true}
-                   "docker" "inspect" "--format={{.Id}}" image-tag)]
-      (when (zero? exit)
-        (str/trim out)))
-    (catch Exception _ nil)))
 
 (defn compute-extended-tag
   "Compute Docker tag for extended image based on project path.
@@ -104,7 +90,7 @@
 
      :else
      (let [stored-base-id (docker/get-image-label extended-tag base-image-id-label)
-           current-base-id (image-id base-tag)]
+           current-base-id (docker/image-id base-tag)]
        (cond
          ;; While the Base image exists, an Extended image with no Base image
          ;; ID label also counts as changed and rebuilds.
@@ -147,7 +133,7 @@
          (str config-dir "/" actual " has non-canonical casing. "
               "Docker Desktop's Linux daemon is case-sensitive and will fail "
               "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
-      (let [base-id (image-id base-tag)
+      (let [base-id (docker/image-id base-tag)
             extension-hash (get-extension-dockerfile-hash project-dir)
             build-args (cond-> ["-f" dockerfile-path
                                 "-t" extended-tag
