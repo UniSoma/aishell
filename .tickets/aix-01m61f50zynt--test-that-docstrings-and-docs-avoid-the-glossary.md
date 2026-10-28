@@ -4,9 +4,9 @@ title: Test that docstrings and docs avoid the glossary's _Avoid_ terms
 status: open
 type: chore
 priority: 2
-mode: afk
+mode: hitl
 created: '2026-10-28T14:38:14.014736980Z'
-updated: '2026-10-28T14:38:14.014736980Z'
+updated: '2026-10-28T14:44:02.345576610Z'
 tags:
 - needs-triage
 acceptance:

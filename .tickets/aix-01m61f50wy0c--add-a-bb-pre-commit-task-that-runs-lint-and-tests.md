@@ -4,9 +4,9 @@ title: Add a bb pre-commit task that runs lint and tests
 status: open
 type: chore
 priority: 2
-mode: afk
+mode: hitl
 created: '2026-10-28T14:38:13.918420233Z'
-updated: '2026-10-28T14:38:13.918420233Z'
+updated: '2026-10-28T14:44:02.257285594Z'
 tags:
 - needs-triage
 acceptance:
