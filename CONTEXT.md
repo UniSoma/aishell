@@ -16,6 +16,10 @@ _Avoid_: harness config, harness entry
 The ordered, closed collection of harness descriptors from which every harness-dependent behavior in aishell derives. Closed: users cannot add harnesses; new ones are added in aishell itself.
 _Avoid_: harness list, harness table
 
+**Global flag**:
+One of aishell's own flags (`--verbose`, `--base-image`, `--unsafe`, `--name`), which counts only before the subcommand; after a harness name the same flag belongs to the Harness. `--base-image`, `--unsafe` and `--name` before a subcommand that does not use them are refused. `--json`, `--help` and `--version` are not Global flags.
+_Avoid_: leading flag, top-level flag, global option
+
 **Distro image**:
 The upstream OS image the Foundation image is built FROM — `debian:trixie-slim`. It carries a minimum glibc version as a declared property (`>= 2.39`), asserted at build time; when a tool outruns the floor, the distro image is bumped rather than the tool vendored per-case.
 _Avoid_: base image, OS image
@@ -48,7 +52,7 @@ The Docker container a project's harness runs in, named `aishell-{project-hash}-
 _Avoid_: box, environment
 
 **Owning session**:
-The session started by `aishell <harness>` or `aishell shell`, whose process holds the `docker run --rm` that created the Sandbox. Exactly one per Sandbox; when it exits, the Sandbox is removed and every Attached session on it dies.
+The session started by `aishell <harness>` or bare `aishell` (a shell), whose process holds the `docker run --rm` that created the Sandbox. Exactly one per Sandbox; when it exits, the Sandbox is removed and every Attached session on it dies.
 _Avoid_: main, parent, pane 1
 
 **Attached session**:
