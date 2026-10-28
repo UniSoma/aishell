@@ -530,13 +530,24 @@
 
 (deftest name-and-unsafe-are-refused-where-no-sandbox-is-started
   (doseq [flag-args [["--unsafe"] ["--name" "foo"]]
-          cmd ["exec" "attach" "vscode" "ps" "setup" "update" "check"
+          cmd ["exec" "attach" "a" "vscode" "ps" "setup" "update" "check"
                "volumes" "info" "upgrade"]]
     (testing (str/join " " (conj flag-args cmd))
       (let [[kind msg] (dispatched (conj flag-args cmd))]
         (is (= :error kind))
         (is (str/includes? msg (first flag-args)))
         (is (str/includes? msg cmd))))))
+
+(deftest name-and-unsafe-refusal-comes-before-the-update-check
+  (doseq [flag-args [["--unsafe"] ["--name" "foo"]]]
+    (testing (first flag-args)
+      (let [checked (atom false)]
+        (with-redefs [update-check/maybe-check-for-update (fn [& _] (reset! checked true))
+                      output/exit! (fn [_] (throw (ex-info "exit" {})))]
+          (binding [*err* (java.io.StringWriter.)]
+            (try (cli/dispatch (conj flag-args "ps"))
+                 (catch clojure.lang.ExceptionInfo _))))
+        (is (false? @checked))))))
 
 (deftest name-and-unsafe-still-reach-help-and-typos
   (testing "--help still prints help"
