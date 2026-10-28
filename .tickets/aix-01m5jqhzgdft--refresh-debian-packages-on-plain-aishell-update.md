@@ -4,9 +4,9 @@ title: Refresh Debian packages on plain aishell update
 status: open
 type: feature
 priority: 2
-mode: afk
+mode: hitl
 created: '2026-10-22T21:16:30.605662282Z'
-updated: '2026-10-22T21:16:56.313262120Z'
+updated: '2026-10-28T18:18:20.688099042Z'
 deps:
 - aix-01m5jqhzdcd6
 acceptance:
