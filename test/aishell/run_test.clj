@@ -62,18 +62,18 @@
       (testing "with :base-image the Base image is used and nothing is built"
         (let [out (captured-err
                    #(is (= "aishell:base"
-                           (run/resolve-image-tag nil "/p" false {:base-image true}))))]
+                           (run/resolve-image-tag "/p" false {:base-image true}))))]
           (is (false? @built))
           (is (str/includes? out ".aishell/Dockerfile skipped"))))
       (testing "without it the Extended image is still built"
-        (run/resolve-image-tag nil "/p" false)
+        (run/resolve-image-tag "/p" false)
         (is (true? @built)))))
   (testing "with :base-image and no Project extension it reports none to skip"
     (with-redefs [base/ensure-base-image (fn [& _])
                   ext/project-extension-path (fn [_] nil)]
       (let [out (captured-err
                  #(is (= "aishell:base"
-                         (run/resolve-image-tag nil "/p" false {:base-image true}))))]
+                         (run/resolve-image-tag "/p" false {:base-image true}))))]
         (is (str/includes? out "no Project extension"))))))
 
 (deftest base-image-launch-skips-pre-start

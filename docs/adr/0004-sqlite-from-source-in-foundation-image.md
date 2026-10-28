@@ -1,4 +1,4 @@
-# SQLite compiled from source in the foundation image
+# SQLite compiled from source in the Foundation image
 
 We build SQLite 3.53.4 from upstream's `sqlite-src` tarball in a throwaway
 builder stage and install it under `/usr/local`, replacing Debian's `sqlite3`

@@ -1,6 +1,6 @@
-# uv (Python toolchain) in the foundation image
+# uv (Python toolchain) in the Foundation image
 
-We add `uv` (and `uvx`) as a single pinned static binary to the foundation image, so Python tooling is available in every sandbox. `uv` is treated as universal tooling like `node`/`cue`, not as a language runtime.
+We add `uv` (and `uvx`) as a single pinned static binary to the Foundation image, so Python tooling is available in every sandbox. `uv` is treated as universal tooling like `node`/`cue`, not as a language runtime.
 
 ## Considered Options
 

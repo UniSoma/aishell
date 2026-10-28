@@ -8,7 +8,7 @@ AI coding agents install packages, write scripts, and delete files with minimal 
 
 Docker limits the agent to the files and directories that you mount. These usually include your project and the agent's configuration files. The agent cannot access `~/.ssh` or overwrite your shell configuration unless you mount those paths. Packages installed in the container disappear with the container.
 
-The fixed base image gives each developer the same tools and versions. Each concurrent agent gets a separate container.
+The fixed Foundation image gives each developer the same tools and versions. Each concurrent agent gets a separate container.
 
 ## Why aishell?
 
@@ -54,7 +54,7 @@ You can use both: devcontainers for your development environment, aishell for ru
 # 1. Install
 curl -fsSL https://raw.githubusercontent.com/UniSoma/aishell/main/install.sh | bash
 
-# 2. Build foundation image and select harnesses (one-time)
+# 2. Build Foundation image and select harnesses (one-time)
 aishell setup --with-opencode
 
 # 3. Run
@@ -71,7 +71,7 @@ Use WSL2 and follow the Linux instructions when possible. You can also install a
 # 1. Install
 irm https://raw.githubusercontent.com/UniSoma/aishell/main/install.ps1 | iex
 
-# 2. Restart terminal, then build foundation image and select harnesses (one-time)
+# 2. Restart terminal, then build Foundation image and select harnesses (one-time)
 aishell setup --with-opencode
 
 # 3. Run
@@ -305,7 +305,7 @@ Windows cannot overwrite a running executable. The upgrade renames the current `
 # Refresh harness tools (volume refresh, fast)
 aishell update
 
-# Refresh harness tools AND rebuild foundation image
+# Refresh harness tools AND rebuild Foundation image
 # (also recreates the harness volume)
 aishell update --force
 
@@ -602,7 +602,7 @@ env:
 
 ### Foundation image contents
 
-The foundation image uses `debian:trixie-slim` and glibc 2.41. The build requires glibc 2.39 or later. See [ADR 0005](docs/adr/0005-glibc-floor-on-the-distro-image.md).
+The Foundation image uses `debian:trixie-slim` and glibc 2.41. The build requires glibc 2.39 or later. See [ADR 0005](docs/adr/0005-glibc-floor-on-the-distro-image.md).
 
 Runtimes:
 
@@ -639,7 +639,7 @@ Document and data tools:
 - `xmllint` validates XML and HTML and queries them with XPath.
 - `sponge`, `ts`, `chronic`, and `ifne` come from moreutils. `sponge` reads all input before writing, so `cmd file | ... | sponge file` does not truncate the input file.
 
-aishell mounts harness tools from volumes at `/tools`. You can update these npm packages and binaries without rebuilding the foundation image.
+aishell mounts harness tools from volumes at `/tools`. You can update these npm packages and binaries without rebuilding the Foundation image.
 
 ### Git safe.directory
 

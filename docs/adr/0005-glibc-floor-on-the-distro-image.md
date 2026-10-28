@@ -9,7 +9,7 @@ application of the policy.
 
 ## Context
 
-The foundation image is mostly downloaded prebuilt binaries — `uv`, `cue`,
+The Foundation image is mostly downloaded prebuilt binaries — `uv`, `cue`,
 `gosu`, `gitleaks`, plus whatever a project's own extension pulls in. Upstreams
 build those on ever-newer distributions, so their glibc requirement drifts
 upward on its own schedule, not ours. bookworm's 2.36 was released in 2022 and
@@ -54,7 +54,7 @@ records how much headroom is left before the next one.
 - Users get one foundation rebuild on their next `setup`/`update`, automatic via
   the `foundation-content` hash, with the usual stale warning until then.
 - Package names change with the distro, and a user's `~/.aishell/Dockerfile` or
-  a project extension that pins bookworm-only names breaks. `libreadline8` (now
+  a Project extension that pins bookworm-only names breaks. `libreadline8` (now
   `libreadline8t64`, from the time_t transition) and `openjdk-17-jre-headless`
   (absent from trixie; the foundation now ships 21) are the shape that breakage
   takes. The changelog entry says so loudly; this is the price of the policy.

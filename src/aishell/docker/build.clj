@@ -3,7 +3,7 @@
 
    Builds images from embedded templates, with cache invalidation based
    on the embedded content hash. Supports verbose, quiet, and spinner modes.
-   Also warns when a foundation image is out of date; see
+   Also warns when a Foundation image is out of date; see
    `warn-if-foundation-out-of-date!`."
   (:require [babashka.process :as p]
             [babashka.fs :as fs]
@@ -19,7 +19,7 @@
 (def build-date-label "aishell.build.timestamp")
 
 (def ^:private out-of-date-after-days
-  "Age in days past which a foundation image is out of date: Docker's layer
+  "Age in days past which a Foundation image is out of date: Docker's layer
    cache keeps its OS packages as they were at its build date."
   30)
 
@@ -42,7 +42,7 @@
 (defn warn-if-foundation-out-of-date!
   "Warn on stderr when the foundation under `image-tag` is out of date:
    older than `out-of-date-after-days`, or with no build date. The label is
-   inherited through FROM, so base and extension images carry it too.
+   inherited through FROM, so the Base and Extended images carry it too.
    Advisory only: never stops the command."
   [image-tag]
   (when-let [msg (foundation-out-of-date-warning
@@ -62,8 +62,8 @@
     :else (str now)))
 
 (defn get-dockerfile-hash
-  "Compute the hash of all embedded foundation content: the Dockerfile
-   and every file it COPYs from the build context (entrypoint.sh,
+  "Compute the hash of all the Foundation image's embedded content: the
+   Dockerfile and every file it COPYs from the build context (entrypoint.sh,
    bashrc.aishell, profile.d-aishell.sh, etc-profile). The image label
    keeps the name `aishell.dockerfile.hash` for backwards compatibility,
    but an entrypoint-only edit still changes the hash."
@@ -135,7 +135,7 @@
         (zero? exit)))))
 
 (defn build-foundation-image
-  "Build the foundation image from the embedded templates, unless its
+  "Build the Foundation image from the embedded templates, unless its
    content hash is unchanged and `:force` is unset.
 
    The foundation holds OS packages, runtimes and shared tooling;

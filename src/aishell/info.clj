@@ -161,10 +161,11 @@
     (println "Display information about the aishell image stack.")
     (println)
     (println "Options:")
-    (println "  --foundation  Print the embedded foundation Dockerfile")
+    (println "  --foundation  Print the Foundation image's embedded Dockerfile")
     (println)
-    (println "Shows foundation contents, base customization status,")
-    (println "project extension status, and installed harnesses.")
+    (println "Shows the Foundation image's contents, whether the Base image is")
+    (println "built from ~/.aishell/Dockerfile, the Project extension's status,")
+    (println "and installed harnesses.")
     (System/exit 0))
 
   (when (some #{"--foundation"} args)
@@ -227,7 +228,7 @@
     (println "--------------------------------------")
     (if (base/base-dockerfile-exists?)
       (println "  Custom (~/.aishell/Dockerfile)")
-      (println "  Default (foundation alias)"))
+      (println "  Default (alias of the Foundation image)"))
     (println)
 
     (println (str output/BOLD "Project Extension" output/NC))

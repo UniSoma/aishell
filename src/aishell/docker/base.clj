@@ -50,7 +50,8 @@
   {:success true :image base-image-tag :alias true})
 
 (defn- has-custom-base-label?
-  "Check if the current Base image was custom-built (has dockerfile hash label)."
+  "Check if the current Base image was built from ~/.aishell/Dockerfile
+   (has the Dockerfile hash label)."
   []
   (some? (docker/get-image-label base-image-tag base-dockerfile-hash-label)))
 
@@ -141,7 +142,7 @@
    - Else: the Base image is up to date
 
    When ~/.aishell/Dockerfile does NOT exist:
-   - If the Base image is missing, was custom-built, or its image ID differs
+   - If the Base image is missing, was built from a Dockerfile, or its image ID differs
      from the Foundation image's or can't be read -> tag the Foundation image
      as the Base image
    - Else: the Base image already is the Foundation image, nothing to do

@@ -102,11 +102,11 @@ aishell/
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
 - **docker/base.clj:** Base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `base-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
-- **docker/build.clj:** Orchestrate foundation image build, manage state
+- **docker/build.clj:** Orchestrate the Foundation image build, manage state
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
 - **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning
-- **info.clj:** Display image stack info (foundation contents, base/extension status, harnesses)
+- **info.clj:** Display image stack info (the Foundation image's contents, Base image and Project extension status, harnesses)
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
 - **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)
@@ -118,7 +118,7 @@ aishell/
 
 ### Foundation Image Build Flow
 
-1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the foundation content (the Dockerfile and the files it COPYs)
+1. **Check cache:** `docker/hash/compute-hash` computes the SHA-256 of the Foundation image's content (the Dockerfile and the files it COPYs)
 2. **Compare hash:** If the image exists and its `aishell.dockerfile.hash` label matches, skip rebuild (unless `--force`)
 3. **Generate Dockerfile:** `docker/templates/foundation-dockerfile` produces the template
 4. **Write to temp dir:** `/tmp/aishell-build-{uuid}/Dockerfile`
@@ -210,13 +210,13 @@ aishell/
 **Three-tier model (current):**
 - Extended images track the Base image ID via the `aishell.base.id` label
 - When `aishell:base` changes (`~/.aishell/Dockerfile` modified or the Foundation image updated), Extended images rebuild
-- The `docker/base.clj` module handles the base layer; callers pass `base/base-image-tag` to extension functions to avoid circular dependencies
+- The `docker/base.clj` module handles the Base image; callers pass `base/base-image-tag` to extension functions to avoid circular dependencies
 
 **Previous behavior (v2.8.0):**
-- Used the foundation image ID directly to invalidate cache
+- Used the Foundation image ID directly to invalidate cache
 - Foundation image label: `aishell.foundation.id={image-id}`
 
-**Lazy build pattern:**
+**Base image checks at every entry point:**
 - `ensure-base-image` is called at multiple entry points (run-container, run-exec, resolve-image-tag) for defense-in-depth
 - `aishell setup` and `aishell update` build the Base image, and each run checks it again
 - This pattern ensures the Base image exists before any Extended image build or container launch
@@ -289,7 +289,7 @@ Install kinds:
   `--with-<id>=VERSION`
 - `:github-release`: `{:kind :github-release :repo :asset :binary :tag-prefix
   :checksums}`, for a harness that ships prebuilt binaries but no
-  npm package the foundation image can run ([ADR 0009](adr/0009-github-release-binary-install-kind.md)).
+  npm package the Foundation image can run ([ADR 0009](adr/0009-github-release-binary-install-kind.md)).
   `:asset` holds an `{arch}` placeholder (`x64` or `arm64`), `:tag-prefix` is
   prepended to the pinned version to form the release tag, and `:checksums`
   names the release's SHA-256 file. See the omp descriptor
@@ -703,8 +703,8 @@ Add support for [Harness Name] integration.
 ### Adding Optional Dependencies
 
 Harnesses install into the shared harness volume, not the image. A harness
-that needs a system package the foundation image lacks needs that package
-added to the foundation Dockerfile in `src/aishell/docker/templates.clj`,
+that needs a system package the Foundation image lacks needs that package
+added to the Foundation image's Dockerfile in `src/aishell/docker/templates.clj`,
 which bumps the image for every user; prefer harnesses whose npm package or
 tarball is self-contained.
 

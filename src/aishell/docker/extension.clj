@@ -65,8 +65,8 @@
 
    Returns: 12-char hash string, or nil if there is no Project extension"
   [project-dir]
-  (when-let [dockerfile-path (project-extension-path project-dir)]
-    (hash/compute-hash (slurp dockerfile-path))))
+  (when-let [extension-path (project-extension-path project-dir)]
+    (hash/compute-hash (slurp extension-path))))
 
 (defn needs-extended-rebuild?
   "Return true when the Extended image needs rebuilding, false otherwise.
@@ -126,7 +126,7 @@
    Returns: {:success true :image extended-tag} or nil if no Project
             extension; exits on error with build-failure-message"
   [{:keys [project-dir base-tag extended-tag force verbose]}]
-  (when-let [dockerfile-path (project-extension-path project-dir)]
+  (when-let [extension-path (project-extension-path project-dir)]
     (let [config-dir (util/resolve-project-config-dir project-dir)]
       (when-let [actual (miscased-dockerfile project-dir)]
         (output/warn
@@ -135,7 +135,7 @@
               "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
       (let [base-id (docker/image-id base-tag)
             extension-hash (project-extension-hash project-dir)
-            build-args (cond-> ["-f" dockerfile-path
+            build-args (cond-> ["-f" extension-path
                                 "-t" extended-tag
                                 (str "--label=" base-image-id-label "=" base-id)
                                 (str "--label=" extension-hash-label "=" extension-hash)]

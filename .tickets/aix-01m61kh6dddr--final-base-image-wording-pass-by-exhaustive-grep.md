@@ -1,12 +1,12 @@
 ---
 id: aix-01m61kh6dddr
 title: Final Base image wording pass by exhaustive grep
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:54:47.070477986Z'
-updated: '2026-10-28T16:08:20.999801959Z'
+updated: '2026-10-28T16:12:26.460663667Z'
 tags:
 - ready-for-agent
 acceptance:
@@ -40,3 +40,28 @@ Also (small, from aix-01m61jhk8bz9 at 8888d25): add ["a" "x" "--" "cmd" "--json"
 **2026-10-28T16:08:20.999801959Z**
 
 Also (from aix-01m61k2j7rx3 at 2937b39): include lowercase 'foundation image' in the patterns (docs/CONFIGURATION.md:358, 1101, 1159 known); and qualify the update help line 'Deletes and recreates the harness volume for a clean slate', since handle-update does this only when a harness is enabled (CHANGELOG line).
+
+**2026-10-28T16:12:26.460663667Z**
+
+Grep patterns for this pass (for the glossary-term test aix-01m61f50zynt to reuse). Scope: `src test docs README.md`, excluding `docs/agents/`; `CHANGELOG.md` and `.planning/` are historical and out of scope. Both are `grep -rnIE`; the second adds `-i`.
+
+Case-sensitive. The glossary terms are capitalized, so a lowercase form means the prose didn't use the term:
+
+```
+(^|[^-_./:[:alnum:]])(alias (for|of|to) foundation|foundation [Dd]ocker images?|base (image|layer|customi[sz]ation)s?|foundation (image|layer|alias|[Dd]ockerfile|content)s?|project extensions?|extended images?)([^-_[:alnum:]]|$)|foundation/base
+```
+
+Case-insensitive (_Avoid_ terms and their variants):
+
+```
+global (dockerfile|packages|customi[sz]ations?|images?|base)|extension images?|project (images?|dockerfiles?)|custom( (base|images?)|-built)|system image|lazy build
+```
+
+The leading character class keeps identifiers and flags (`--base-image`, `base-image-tag`, `#base-image-customization`, `aishell:foundation`) from matching. Title Case headings ("Base Image Issues") are not hits.
+
+Legitimate remaining hits:
+- docs/ARCHITECTURE.md:137 "npm global packages": npm's own `-g` term, not the Base image.
+- src/aishell/docker/templates.clj:8 "stable foundation layer": a comment inside the embedded Foundation Dockerfile. Editing it changes the Foundation image's content hash and makes every user rebuild.
+- test/aishell/cli_test.clj: three negative assertions that check output does not contain "base image", "custom base" or "foundation alias".
+
+Known gap: grep runs one line at a time, so a term split across lines (the ARCHITECTURE.md diagram's "+ global" / "packages") needs a check by hand or a multi-line matcher.

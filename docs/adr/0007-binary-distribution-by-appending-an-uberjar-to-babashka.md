@@ -24,7 +24,7 @@ existed only to start the program.
   amd64 build exists only for `babashka.ffi`, which the host CLI does not use,
   and static runs on any glibc or musl distro.
 - **The babashka version is pinned in the build script**, bumped on purpose
-  and noted in the changelog. It is independent of the foundation image's
+  and noted in the changelog. It is independent of the Foundation image's
   `BABASHKA_VERSION`: one is the host CLI's runtime, the other a tool offered
   inside the sandbox.
 - **Release assets are versionless, platform-suffixed archives**

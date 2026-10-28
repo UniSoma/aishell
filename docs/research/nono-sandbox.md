@@ -39,14 +39,14 @@ or Codex logins.
 ## 2. How it differs from aishell
 
 The two tools work at different layers. aishell supplies the environment:
-Docker as the boundary, a reproducible foundation image, the project mounted at
+Docker as the boundary, a reproducible Foundation image, the project mounted at
 its host path, and git identity. nono supplies policy for one process inside
 whatever environment it runs in.
 
 | | aishell | nono |
 |---|---|---|
 | Boundary | Docker container | Landlock / Seatbelt on one process tree |
-| Reproducible toolchain | Yes (foundation image) | No, uses whatever is on the host |
+| Reproducible toolchain | Yes (Foundation image) | No, uses whatever is on the host |
 | Packages the agent installs | Thrown away with the container | Stay on the host, or are blocked |
 | Network control | Planned (ADR 0006): squid sidecar on an `--internal` network | Built in: proxy plus a kernel port restriction |
 | Secret broker | Planned for API-key harnesses | Built in, API keys only |

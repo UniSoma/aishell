@@ -1,19 +1,19 @@
-# Document and data tooling in the foundation image
+# Document and data tooling in the Foundation image
 
 We add PDF extraction (`poppler-utils`, `poppler-data`) and a small set of
 file/data plumbing utilities (`libxml2-utils`, `moreutils`, `zip`, `zstd`,
-`xz-utils`) to the foundation image, and in doing so fix the state of `git`'s
+`xz-utils`) to the Foundation image, and in doing so fix the state of `git`'s
 dropped Recommends (`openssh-client`, `patch`). Agents repeatedly encounter PDFs
 and semi-structured files across projects; these are generic capabilities, not
 project-specific ones.
 
 The more durable output of this decision is the admission test below, which
-exists so the next "should X go in the foundation image?" question is answered
+exists so the next "should X go in the Foundation image?" question is answered
 rather than re-derived.
 
 ## Admission test
 
-A tool belongs in the foundation image when all of these hold:
+A tool belongs in the Foundation image when all of these hold:
 
 1. **Generic agent capability, not project- or language-specific.** Anything
    tied to one stack belongs in the per-project `.aishell/Dockerfile` overlay.

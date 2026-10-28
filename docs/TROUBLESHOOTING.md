@@ -210,7 +210,7 @@ sudo aishell setup --with-claude
    docker build -f ~/.aishell/Dockerfile -t test-base ~/.aishell/
    ```
 
-5. **Revert to default:** Delete the file to skip the custom Base image entirely:
+5. **Revert to default:** Delete the file to make the Base image an alias of the Foundation image again:
    ```bash
    rm ~/.aishell/Dockerfile
    ```
@@ -228,7 +228,7 @@ sudo aishell setup --with-claude
 
 2. **On the next `aishell` run**, `aishell:base` automatically reverts to a tag alias for `aishell:foundation`.
 
-3. **Clean up the orphaned custom Base image:**
+3. **Clean up the Base image built from the removed Dockerfile:**
    ```bash
    aishell volumes prune
    ```

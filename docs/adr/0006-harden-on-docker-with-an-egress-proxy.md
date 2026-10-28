@@ -92,7 +92,7 @@ tokens on disk, not API keys; the platform promise in `docs/ARCHITECTURE.md`
   its lifecycle becomes aishell's responsibility, including on Docker Desktop.
 - Harness descriptors gain a default allowlist (API hosts, telemetry, package
   registries the harness itself pulls from). Every harness and package
-  manager in the foundation image must be verified to honor proxy variables;
+  manager in the Foundation image must be verified to honor proxy variables;
   those that do not simply have no network under `restricted`/`allowlist`.
 - `docker_args` stops being an all-purpose escape hatch. Users who relied on
   it for `--network host` or `--privileged` need the CLI override, which is

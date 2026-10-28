@@ -313,7 +313,7 @@
    - :verbose false -> Show spinner, suppress output
 
    Notes:
-   - Uses foundation image from build/foundation-image-tag
+   - Uses Foundation image from build/foundation-image-tag
    - Volume must exist before calling this function"
   [volume-name state & [opts]]
   (let [install-commands (build-install-commands state)

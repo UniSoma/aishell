@@ -79,12 +79,12 @@
     (if (base/needs-base-rebuild?)
       (print-status :warn "Base image: custom (~/.aishell/Dockerfile) — needs rebuild")
       (print-status :ok "Base image: custom (~/.aishell/Dockerfile)"))
-    (print-status :ok "Base image: default (foundation alias)")))
+    (print-status :ok "Base image: default (alias of the Foundation image)")))
 
 (defn- check-foundation-staleness
   "Report whether the content hash recorded in state matches this
    aishell's embedded content (the Dockerfile and every file it COPYs
-   from the build context). A mismatch means the foundation image is
+   from the build context). A mismatch means the Foundation image is
    stale."
   [state]
   (if-let [stored-hash (:dockerfile-hash state)]
@@ -107,19 +107,20 @@
   "Print whether the project has a Project extension and whether its
    Extended image needs a rebuild."
   [project-dir base-tag]
-  (if-let [_dockerfile (ext/project-extension-path project-dir)]
+  (if (ext/project-extension-path project-dir)
     (let [extended-tag (ext/compute-extended-tag project-dir)]
       (if (ext/needs-extended-rebuild? extended-tag base-tag project-dir)
         (print-status :warn "Project extension needs rebuild")
         (print-status :ok (str "Project extension is up to date: " extended-tag))))
-    (print-status :ok (str "No project extension ("
+    (print-status :ok (str "No Project extension ("
                            (util/resolve-project-config-dir project-dir)
                            "/Dockerfile)"))))
 
 (defn- check-images
-  "Report the Base image, Foundation image staleness, the custom Base
-   image and, when the Base image exists, the Project extension. Returns
-   the Base image tag, or nil when the Base image is missing."
+  "Report the Base image, Foundation image staleness, whether the Base
+   image is built from ~/.aishell/Dockerfile and, when the Base image
+   exists, the Project extension. Returns the Base image tag, or nil when
+   the Base image is missing."
   [state project-dir]
   (let [base-tag (check-base-image)]
     (check-foundation-staleness state)

@@ -66,8 +66,8 @@
     ["/bin/bash"]))
 
 (defn- check-dockerfile-stale
-  "Check if any baked-in foundation content (Dockerfile or any COPY'd
-   file) changed since build, warn if so. Advisory only — does not
+  "Check if any of the Foundation image's baked-in content (Dockerfile or
+   any COPY'd file) changed since build, warn if so. Advisory only — does not
    block execution."
   [state]
   (when-let [stored-hash (:dockerfile-hash state)]
@@ -124,23 +124,23 @@
    extension it skipped, or that the project has none.
    Builds stream their docker output when output/*verbose* is bound (--verbose);
    otherwise they run behind a spinner."
-  [_base-tag project-dir force? & [{:keys [base-image]}]]
+  [project-dir force? & [{:keys [base-image]}]]
   (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
-  (let [dockerfile (ext/project-extension-path project-dir)]
+  (let [extension-path (ext/project-extension-path project-dir)]
     (cond
       base-image
       (do
         (when-not output/*json-output*
           (binding [*out* *err*]
             (println
-             (if dockerfile
+             (if extension-path
                (str "Starting on the Base image: Project extension "
-                    (fs/relativize project-dir dockerfile)
+                    (fs/relativize project-dir extension-path)
                     " skipped, and pre_start with it.")
                "Starting on the Base image: no Project extension to skip; pre_start skipped."))))
         base/base-image-tag)
 
-      dockerfile
+      extension-path
       (let [extended-tag (ext/compute-extended-tag project-dir)]
         (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
           (ext/build-extended-image
@@ -181,7 +181,6 @@
       (output/error-no-setup))
 
     (let [project-dir (System/getProperty "user.dir")
-          base-tag base/base-image-tag
           cfg (config/load-config project-dir)
 
           container-name-str (let [name-part (or (:container-name opts) cmd "shell")]
@@ -204,7 +203,7 @@
             ;; A harness that is itself a secret scanner stands in for aishell's
             ;; own scanning: no sensitive-file scan, no scan-freshness nag.
             secret-scanner? (boolean (:secret-scanner? descriptor))
-            image-tag (resolve-image-tag base-tag project-dir false opts)
+            image-tag (resolve-image-tag project-dir false opts)
             git-id (docker-run/read-git-identity project-dir)
 
             defaults (when (and cfg cmd)
@@ -310,9 +309,7 @@
       (output/error-no-setup))
 
     (let [project-dir (System/getProperty "user.dir")
-          base-tag base/base-image-tag
-
-          image-tag (resolve-image-tag base-tag project-dir false opts)
+          image-tag (resolve-image-tag project-dir false opts)
           _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)
           git-id (docker-run/read-git-identity project-dir)

@@ -366,7 +366,7 @@
                              :order setup-option-order}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell setup" output/NC "                      Set up base image"))
+  (println (str "  " output/CYAN "aishell setup" output/NC "                      Build the Foundation and Base images"))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "        Include Claude Code (latest)"))
   (println (str "  " output/CYAN "aishell setup --with-claude=2.0.22" output/NC " Pin Claude Code version"))
   (println (str "  " output/CYAN "aishell setup --with-claude --with-opencode" output/NC " Include both"))
@@ -515,7 +515,7 @@
     ::start-shell))
 
 (def update-spec
-  {:force   {:coerce :boolean :desc "Force-rebuild Foundation and any custom Base image"}
+  {:force   {:coerce :boolean :desc "Force-rebuild the Foundation image and the Base image"}
    :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
    :help    {:alias :h :coerce :boolean :desc "Show update help"}})
 
@@ -533,7 +533,7 @@
   (println)
   (println (str output/BOLD "Notes:" output/NC))
   (println "  - Refreshes harnesses from last build configuration")
-  (println "  - Deletes and recreates the harness volume for a clean slate")
+  (println "  - With a harness enabled, deletes and recreates the harness volume")
   (println "  - Rebuilds the Foundation image when it is missing or stale")
   (println "  - Use 'aishell setup --reuse-config' when you want setup semantics")
   (println "    (inherit saved config, override selected flags, avoid unconditional")
@@ -541,7 +541,7 @@
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools"))
-  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also force-rebuild Foundation and custom Base"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also force-rebuild the Foundation and Base images"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update
@@ -640,9 +640,9 @@
         (println "\nTo remove orphaned volumes: aishell volumes prune")))))
 
 (defn handle-volumes-prune
-  "Remove orphaned harness volumes after a confirmation prompt. Reset an
-   orphaned custom Base image to the Foundation image alias without
-   prompting."
+  "Remove orphaned harness volumes after a confirmation prompt. Reset a Base
+   image built from a since-removed ~/.aishell/Dockerfile to an alias of the
+   Foundation image without prompting."
   [opts]
   (let [state (state/read-state)
         current-vol (:harness-volume-name state)
@@ -670,9 +670,9 @@
     (when (and (docker/image-exists? base/base-image-tag)
                (docker/get-image-label base/base-image-tag base/base-dockerfile-hash-label)
                (not (base/base-dockerfile-exists?)))
-      (println "Orphaned custom base image found — resetting to foundation alias.")
+      (println "Base image built from a removed ~/.aishell/Dockerfile found — resetting it to an alias of the Foundation image.")
       (base/tag-foundation-as-base)
-      (println "Base image reset to foundation alias."))))
+      (println "Base image reset to an alias of the Foundation image."))))
 
 (defn print-volumes-help
   "Print help for volumes command."

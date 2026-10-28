@@ -73,14 +73,14 @@ aishell:foundation -> aishell:base -> aishell:ext-{hash}
 ```
 
 - **`aishell:foundation`** -- Stable system dependencies (Debian, Node.js, tools). Rebuilt rarely.
-- **`aishell:base`** -- Either a tag alias for foundation (default) or a custom build from `~/.aishell/Dockerfile`. Holds machine-wide customizations (extra packages, shell config, dev tools) shared across all projects.
+- **`aishell:base`** -- Either a tag alias for the Foundation image (default) or built from `~/.aishell/Dockerfile`. Holds machine-wide customizations (extra packages, shell config, dev tools) shared across all projects.
 - **`aishell:ext-{hash}`** -- The Extended image, built per project from `.aishell/Dockerfile`. Adds project-specific layers on top of `aishell:base`.
 
 Base image changes cascade automatically: when `aishell:base` is rebuilt, all Extended images rebuild on their next run.
 
 ### Foundation Image (`aishell:foundation`)
 
-The foundation image contains stable system components that change rarely:
+The Foundation image contains stable system components that change rarely:
 
 **Contents:**
 - Debian trixie-slim distro image (glibc floor >= 2.39, asserted at build time)
@@ -126,8 +126,8 @@ The Base image is the intermediate layer between the Foundation image and the Pr
 
 **Reset procedure:**
 1. Delete `~/.aishell/Dockerfile`
-2. On next run, `aishell:base` reverts to a foundation alias
-3. Run `aishell volumes prune` to clean up the orphaned custom-built Base image
+2. On next run, `aishell:base` reverts to an alias of the Foundation image
+3. Run `aishell volumes prune` to clean up the Base image built from the removed Dockerfile
 
 ### Harness Volume (`aishell-harness-{hash}`)
 
@@ -149,7 +149,7 @@ Docker volumes store harness tools and mount them into containers:
 - Missing volume
 - Hash mismatch (different harness config)
 
-**Why separate:** Harness updates skip multi-gigabyte foundation image rebuilds and Docker extension cache invalidation.
+**Why separate:** Harness updates skip multi-gigabyte Foundation image rebuilds and Docker extension cache invalidation.
 
 ### Runtime Wiring
 
@@ -175,7 +175,7 @@ Mounted read-only for toolchain integrity.
 
 **Image tag change:**
 - Old: `aishell:base` (was the only image)
-- New: `aishell:foundation` (stable system image)
+- New: `aishell:foundation` (the Foundation image)
 - `aishell:base` is now the intermediate layer (always exists as alias or custom build)
 
 **Project `.aishell/Dockerfile` FROM line:**
@@ -192,7 +192,7 @@ Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepte
 
 ### Build Phase
 
-The build phase creates the foundation Docker image and populates the harness volume:
+The build phase builds the Foundation image and populates the harness volume:
 
 ```
 ┌──────────────────┐
@@ -359,7 +359,7 @@ Each namespace handles one concern:
 | `aishell.util` | Shared utilities | Path helpers, home directory resolution |
 | `aishell.attach` | Attach command | Open shell in running containers via docker exec |
 | `aishell.vscode` | VSCode integration | Open VSCode attached to container as developer user |
-| `aishell.info` | Image stack info | Display foundation contents, base/extension status, harnesses |
+| `aishell.info` | Image stack info | Display the Foundation image's contents, Base image and Project extension status, harnesses |
 | `aishell.check` | Pre-flight checks | Validate Docker, config, image state, tool availability |
 | `aishell.update-check` | Update notifications | Time-based version check against GitHub releases |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |
@@ -420,7 +420,7 @@ Each namespace handles one concern:
 | `~/.local/state/aishell/update-check.edn` | Update check timestamp and latest version | EDN | Persistent |
 | `~/.aishell/gitleaks-scan.edn` | Per-project Gitleaks scan timestamps | EDN | Persistent |
 | `.aishell/config.yaml` | Project-specific config | YAML | Persistent (in project) |
-| `.aishell/Dockerfile` | Optional project extension | Dockerfile | Persistent (in project) |
+| `.aishell/Dockerfile` | Optional Project extension | Dockerfile | Persistent (in project) |
 
 ### Container Files
 
@@ -450,7 +450,7 @@ Each namespace handles one concern:
  :pi-version nil                        ; string or nil: pinned version
  :omp-version nil                        ; string or nil: pinned release (tag without the "v")
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
- :dockerfile-hash "abc123def"            ; 12-char SHA-256 of the foundation content; check and run read it
+ :dockerfile-hash "abc123def"            ; 12-char SHA-256 of the Foundation image's content; check and run read it
  :foundation-hash "abc123def"            ; same hash, written alongside (NEW in v2.8.0); nothing reads it
  :harness-volume-hash "def456ghi"        ; 12-char hash of harness config (NEW in v2.8.0)
  :harness-volume-name "aishell-harness-def456ghi"} ; Volume name (NEW in v2.8.0)
@@ -472,8 +472,8 @@ Foundation Image     Base Customization        Base Image          Project Exten
      │                       │                      │                      │                      │
      ▼                       ▼                      ▼                      ▼                      ▼
 ┌──────────┐          ┌─────────────┐         ┌──────────┐         ┌─────────────┐         ┌──────────────┐
-│ Debian   │          │ FROM        │         │ foundation│         │ FROM        │         │ aishell:base │
-│ Node.js  │   →      │ aishell:    │   →     │ + global  │   →    │ aishell:base│   →     │ + project    │
+│ Debian   │          │ FROM        │         │ Foundation│         │ FROM        │         │ aishell:base │
+│ Node.js  │   →      │ aishell:    │   →     │ + user's  │   →    │ aishell:base│   →     │ + project    │
 │ Tools    │          │ foundation  │         │ packages  │         │             │         │ packages     │
 │ Gosu     │          │ RUN ...     │         │ shell cfg │         │ RUN ...     │         │ (postgres,   │
 │ etc.     │          │             │         │ dev tools │         │ COPY ...    │         │  python, etc)│
@@ -491,7 +491,7 @@ When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishe
 4. **Cascade rebuilds:** When `aishell:base` changes, Extended images auto-rebuild on next run
 5. **Persistence:** Extended images persist locally and are shared across runs
 
-**Example project extension:**
+**Example Project extension:**
 
 ```dockerfile
 # .aishell/Dockerfile
@@ -559,7 +559,7 @@ The installers and `aishell upgrade` read the `SHA256SUMS` line for their own as
 
 The build runs on one Linux runner. For each target it downloads the pinned upstream babashka build, appends the jar, and packs the result into the asset archive; concatenation is byte-level, so no target needs a runner of its own. The release workflow then unpacks every archive on a matching runner and runs `--version --json` on the binary inside before it creates the release.
 
-**Two babashka pins.** The build script pins the babashka that becomes the host CLI. `BABASHKA_VERSION` in the foundation image pins the babashka available inside the sandbox. They are separate versions and move separately.
+**Two babashka pins.** The build script pins the babashka that becomes the host CLI. `BABASHKA_VERSION` in the Foundation image pins the babashka available inside the sandbox. They are separate versions and move separately.
 
 The binary starts the appended jar's main class, `aishell.core`, so it runs aishell and is not a general-purpose `bb`. To run aishell on a babashka you already have, install it from the git repository with `bbin install io.github.UniSoma/aishell`; `bb.edn`'s `:bbin/bin` entry names the installed binary and its main opts.
 

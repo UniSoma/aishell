@@ -244,12 +244,12 @@ them.
   honored (`--entrypoint` overrides). aishell's entrypoint creates a user and
   drops privileges with gosu; that script should run as in a container, since
   the guest runs commands as root by default and `msb exec --user` can select
-  another user. Unverified: the foundation image running unmodified.
+  another user. Unverified: the Foundation image running unmodified.
 - **Harness volume:** aishell mounts a Docker volume at `/tools`. The
   equivalent is a named directory volume (virtiofs) with `ro`, which exists
   ([volumes.mdx](https://github.com/superradcompany/microsandbox/blob/main/docs/sandboxes/volumes.mdx)).
 - **Architecture:** images must match the host CPU architecture (Apple Silicon
-  means arm64 guests). Whether aishell's foundation image builds for both is not
+  means arm64 guests). Whether aishell's Foundation image builds for both is not
   checked here.
 - **Sensitive-file detection and gitleaks:** both run on the host before
   launch, so they do not depend on the container runtime.

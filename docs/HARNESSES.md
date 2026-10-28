@@ -18,7 +18,7 @@ Harnesses are AI CLI tools that aishell runs in isolated containers. Each harnes
 
 ### How Harnesses Install (v2.8.0+)
 
-Harnesses install into **Docker volumes**, not into the foundation image. This enables fast updates:
+Harnesses install into **Docker volumes**, not into the Foundation image. This enables fast updates:
 
 **Volume layout:**
 - npm packages install to `/tools/npm`
@@ -27,7 +27,7 @@ Harnesses install into **Docker volumes**, not into the foundation image. This e
 - PATH includes `/tools/npm/bin` and `/tools/bin`
 
 **Benefits:**
-- **Fast updates:** `aishell update` refreshes tools without rebuilding the foundation image
+- **Fast updates:** `aishell update` refreshes tools without rebuilding the Foundation image
 - **Shared volumes:** Projects with identical harness configs share a volume
 - **Stable cache:** Harness updates leave the Docker extension cache intact
 
@@ -78,7 +78,7 @@ aishell setup --with-claude=2.0.22
 Pin versions for reproducible environments.
 
 **Build steps:**
-1. Builds the foundation image (Debian, Node.js, system tools) -- skipped if cached
+1. Builds the Foundation image (Debian, Node.js, system tools) -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
 3. Installs the Claude Code npm package into the volume: `npm install -g @anthropic-ai/claude-code`
 4. Mounts the volume at `/tools` in containers
@@ -609,7 +609,7 @@ aishell setup --with-pi=1.0.0
 ```
 
 **Build steps:**
-1. Builds the foundation image (includes fd for pi's file discovery) -- skipped if cached
+1. Builds the Foundation image (includes fd for pi's file discovery) -- skipped if cached
 2. Creates a harness volume: `aishell-harness-{hash}`
 3. Installs the Pi npm package into the volume: `npm install -g @earendil-works/pi-coding-agent`
 4. Mounts the volume at `/tools` in containers
@@ -677,7 +677,7 @@ A volume mount preserves config across container restarts.
 
 ### Tips & Best Practices
 
-1. **fd dependency:** Pi uses fd for file discovery, which is pre-installed in the foundation image
+1. **fd dependency:** Pi uses fd for file discovery, which is pre-installed in the Foundation image
 2. **Config persistence:** Authenticate on host; credentials mount automatically
 3. **Session handling:** Each `aishell pi` invocation starts a new session
 4. **File operations:** Pi has full filesystem access within the container
@@ -695,7 +695,7 @@ aishell setup --with-omp                     # latest GitHub release
 aishell setup --with-omp=18.12.1             # release tag v18.12.1
 ```
 
-omp's npm package needs Bun, which the foundation image does not have. aishell
+omp's npm package needs Bun, which the Foundation image does not have. aishell
 downloads the prebuilt glibc binary from the GitHub release instead
 (`omp-linux-x64` or `omp-linux-arm64`, picked by `uname -m`) and installs it
 into the Harness volume at `/tools/bin/omp`. Other architectures fail the
@@ -749,7 +749,7 @@ only be turned off in its config file. The check shows a notice and nothing
 else: `/tools` is mounted read-only, so omp cannot update itself. To hide the
 notice, set `startup.checkUpdate: false` in omp's config.
 
-omp's browser tool needs Chromium, which the foundation image does not ship.
+omp's browser tool needs Chromium, which the Foundation image does not ship.
 
 ## Multi-Container Workflow
 

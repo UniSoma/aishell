@@ -4,8 +4,11 @@
             [aishell.attach :as attach]
             [clojure.set :as set]
             [clojure.string :as str]
+            [aishell.docker :as docker]
+            [aishell.docker.base :as base]
             [aishell.docker.bootstrap :as bootstrap]
             [aishell.docker.naming :as naming]
+            [aishell.docker.volume :as vol]
             [aishell.harness :as harness]
             [aishell.output :as output]
             [aishell.run :as run]
@@ -279,7 +282,33 @@
   (let [out (with-out-str (cli/print-update-help))]
     (is (not (str/includes? out "NOT rebuilt unless --force")))
     (is (str/includes? out "Rebuilds the Foundation image when it is missing or stale"))
-    (is (str/includes? out "Force-rebuild Foundation and any custom Base image"))))
+    (is (str/includes? out "Force-rebuild the Foundation image and the Base image"))))
+
+(deftest update-help-says-the-harness-volume-is-recreated-only-with-a-harness
+  (let [out (with-out-str (cli/print-update-help))]
+    (is (not (str/includes? out "for a clean slate")))
+    (is (str/includes? out "With a harness enabled, deletes and recreates the harness volume"))))
+
+(deftest help-names-images-by-their-glossary-terms
+  (testing "setup help says setup builds the Foundation and Base images"
+    (let [out (with-out-str (cli/print-setup-help))]
+      (is (not (str/includes? out "base image")))
+      (is (str/includes? out "Build the Foundation and Base images"))))
+  (testing "update help names the Base image without 'custom'"
+    (let [out (with-out-str (cli/print-update-help))]
+      (is (not (re-find #"(?i)custom base" out))))))
+
+(deftest prune-resets-an-orphaned-base-image-in-glossary-terms
+  (with-redefs [state/read-state (constantly {})
+                vol/list-harness-volumes (constantly [])
+                docker/image-exists? (constantly true)
+                docker/get-image-label (constantly "abc")
+                base/base-dockerfile-exists? (constantly false)
+                base/tag-foundation-as-base (fn [& _])]
+    (let [out (with-out-str (cli/handle-volumes-prune {}))]
+      (is (not (re-find #"custom base image|foundation alias" out)))
+      (is (str/includes? out "Base image built from a removed ~/.aishell/Dockerfile found"))
+      (is (str/includes? out "Base image reset to an alias of the Foundation image.")))))
 
 (deftest setup-validation-uses-the-canonical-label
   (testing "a bad version names the harness by its canonical label"
@@ -592,7 +621,9 @@
 (deftest flags-after-attach-separator-belong-to-the-command
   (testing "--json reaches the command untouched"
     (is (= [:attach "x" ["cmd" "--json"]]
-           (attached-or-opened ["attach" "x" "--" "cmd" "--json"]))))
+           (attached-or-opened ["attach" "x" "--" "cmd" "--json"])))
+    (is (= [:attach "x" ["cmd" "--json"]]
+           (attached-or-opened ["a" "x" "--" "cmd" "--json"]))))
   (testing "--help reaches the command instead of printing attach help"
     (is (= [:attach "x" ["cmd" "--help"]]
            (attached-or-opened ["attach" "x" "--" "cmd" "--help"]))))

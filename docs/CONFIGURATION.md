@@ -355,7 +355,7 @@ mounts:
 - Read-only (`:ro`) prevents the container from modifying host files
 - aishell always mounts the project directory at the same host path
 
-**Persisting the uv (Python) cache:** The foundation image ships `uv`/`uvx`
+**Persisting the uv (Python) cache:** The Foundation image ships `uv`/`uvx`
 but no interpreter — because containers run `--rm` with an ephemeral home, the
 first `uv run`/`uv sync` in each session re-downloads the pinned interpreter.
 To persist that download across sessions, mount uv's cache from the host (on
@@ -366,7 +366,7 @@ mounts:
   - ~/.cache/uv
 ```
 
-**Git over ssh remotes:** The foundation image ships `openssh-client`, but the
+**Git over ssh remotes:** The Foundation image ships `openssh-client`, but the
 container has no keys of its own — cloning, fetching, or pushing an `ssh://` or
 `git@host:` remote needs your host keys mounted in:
 
@@ -1179,26 +1179,26 @@ FROM aishell:foundation
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
 ```
 
-Using `FROM aishell:base` is recommended because it inherits any packages, tools, or shell configuration from your global Dockerfile.
+Using `FROM aishell:base` is recommended because it inherits any packages, tools, or shell configuration from your `~/.aishell/Dockerfile`.
 
 ### Removing Customizations
 
 To revert to the default Base image:
 
 1. Delete `~/.aishell/Dockerfile`
-2. On the next run, `aishell:base` reverts to a foundation alias
-3. Run `aishell volumes prune` to clean up the orphaned custom-built Base image
+2. On the next run, `aishell:base` reverts to an alias of the Foundation image
+3. Run `aishell volumes prune` to clean up the Base image built from the removed Dockerfile
 
 ### Status Check
 
 ```bash
 aishell check
-# Shows: "Base image: custom (~/.aishell/Dockerfile)" or "Base image: default (foundation alias)"
+# Shows: "Base image: custom (~/.aishell/Dockerfile)" or "Base image: default (alias of the Foundation image)"
 ```
 
 ### Build Failures
 
-If your global Dockerfile has errors, the build fails with full Docker output. Fix the Dockerfile or delete it to revert. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#base-image-build-failures) for details.
+If your `~/.aishell/Dockerfile` has errors, the build fails with full Docker output. Fix the Dockerfile or delete it to revert. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#base-image-build-failures) for details.
 
 ---
 
@@ -1401,7 +1401,7 @@ aishell setup --reuse-config --with-opencode
 # Reuse saved config, but pin OpenCode to a new version
 aishell setup --reuse-config --with-opencode=1.2.3
 
-# Rebuild foundation/base layers from the saved config
+# Rebuild the Foundation and Base images from the saved config
 aishell setup --reuse-config --force
 ```
 
@@ -1436,7 +1436,7 @@ aishell setup --with-claude --with-gitleaks
 
 **Behavior:**
 - By default, aishell does NOT install Gitleaks
-- `--with-gitleaks` enables Gitleaks installation (~15MB added to foundation image)
+- `--with-gitleaks` enables Gitleaks installation (~15MB added to Foundation image)
 - Build state records installation status in `~/.aishell/state.edn`
 - `aishell --help` shows the `gitleaks` command only when installed
 
@@ -1463,7 +1463,7 @@ cat ~/.aishell/state.edn
 
 ### --force (setup flag)
 
-**Purpose:** Force full foundation image rebuild, bypassing Docker cache.
+**Purpose:** Force full Foundation image rebuild, bypassing Docker cache.
 
 **Usage:**
 ```bash
@@ -1505,7 +1505,7 @@ aishell update --force
 
 **With --force:**
 1. Rebuilds the Foundation image with `--no-cache`
-2. Rebuilds a custom Base image (`~/.aishell/Dockerfile`) even when it is current
+2. Rebuilds the Base image from `~/.aishell/Dockerfile`, when that file exists, even when it is current
 3. With a harness enabled, deletes, recreates and repopulates the harness volume
 4. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
 
@@ -1523,7 +1523,7 @@ aishell setup --with-claude --with-opencode
 
 **When to use `setup --reuse-config` instead:**
 ```bash
-# Rebuild foundation/base layers from the saved config
+# Rebuild the Foundation and Base images from the saved config
 # without update's unconditional volume repopulation
 aishell setup --reuse-config --force
 ```
@@ -1539,6 +1539,6 @@ Use `aishell setup --reuse-config` when you want setup semantics:
 - **After npm publish:** A new harness version was released
 
 **When to use update --force:**
-- **System package updates:** Debian/Node.js security patches. Starting a sandbox warns that the foundation image is out of date when it is more than 30 days old, or was built before aishell recorded build dates. Only `--force` resets the date: a plain `update` may reuse the cached OS package layer, so the image keeps its old build date.
+- **System package updates:** Debian/Node.js security patches. Starting a sandbox warns that the Foundation image is out of date when it is more than 30 days old, or was built before aishell recorded build dates. Only `--force` resets the date: a plain `update` may reuse the cached OS package layer, so the image keeps its old build date.
 - **Foundation changes:** After an aishell version upgrade
-- **Troubleshooting:** The foundation image behaves unexpectedly
+- **Troubleshooting:** The Foundation image behaves unexpectedly
