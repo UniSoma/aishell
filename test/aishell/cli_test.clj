@@ -418,7 +418,8 @@
   (let [seen (atom nil)]
     (with-redefs [update-check/maybe-check-for-update (fn [& _])
                   run/run-container (fn [_ harness-args & _]
-                                      (reset! seen [harness-args output/*verbose*]))]
+                                      (reset! seen [harness-args output/*verbose*]))
+                  output/exit! (fn [_] (throw (ex-info "exit" {})))]
       (cli/dispatch args))
     @seen))
 
