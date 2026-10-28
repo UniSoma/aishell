@@ -510,9 +510,10 @@
     (seq args)
     (output/error-unknown-command (first args))
 
-    ;; No command, no flags - run shell
+    ;; No command: do-dispatch* starts the shell, since it holds the
+    ;; launch options from aishell's leading flags.
     :else
-    (run/run-container nil [] {})))
+    ::start-shell))
 
 (def update-spec
   {:force   {:coerce :boolean :desc "Also rebuild foundation image (--no-cache)"}
@@ -863,11 +864,11 @@
 
 (defn- do-dispatch* [{:keys [verbose? base-image? unsafe? args] container-name :name}]
   (let [first-arg (first args)
-        has-subcommand? (contains? output/non-harness-commands first-arg)
+        own-subcommand? (contains? output/non-harness-commands first-arg)
         launch-opts {:unsafe unsafe? :container-name container-name
                      :base-image base-image?}]
     (when (and base-image?
-               has-subcommand?
+               own-subcommand?
                (not (contains? base-image-commands first-arg)))
       (output/error (str "--base-image only applies to commands that start a sandbox, not '"
                          first-arg "'. Try: aishell --base-image <harness>")))
@@ -876,7 +877,7 @@
     ;; own subcommands (setup -v, update -v), so -v/--version skips the check
     ;; only when no such subcommand comes first.
     (let [skip? (or (some #{"--help" "-h"} args)
-                    (and (not has-subcommand?)
+                    (and (not own-subcommand?)
                          (some #{"-v" "--version"} args))
                     (= "upgrade" first-arg))]
       (when-not (or skip? output/*json-output*)
@@ -1010,14 +1011,15 @@
                         (when target-version
                           (validate-version target-version "aishell"))
                         (upgrade/do-upgrade version target-version))))
-        ;; Global flags with nothing after them start a shell. Anything else
-        ;; (setup, update, --help, a typo) goes to normal dispatch, where a
-        ;; leading --verbose becomes the command's own --verbose.
-        (if (and (empty? args) (or unsafe? verbose? container-name base-image?))
-          (run/run-container nil [] launch-opts)
-          (cli/dispatch dispatch-table args
-                        (cond-> {:error-fn handle-error :restrict true}
-                          verbose? (assoc :exec-args {:verbose true}))))))))
+        ;; Everything else (setup, update, --help, a typo, no command) goes
+        ;; to normal dispatch, where a leading --verbose becomes the
+        ;; command's own --verbose. handle-default reports no command as
+        ;; ::start-shell, and the shell starts here with the leading flags.
+        (when (= ::start-shell
+                 (cli/dispatch dispatch-table args
+                               (cond-> {:error-fn handle-error :restrict true}
+                                 verbose? (assoc :exec-args {:verbose true}))))
+          (run/run-container nil [] launch-opts))))))
 
 (defn parse-global-flags
   "Read aishell's global flags from the front of argv, before the subcommand.
@@ -1026,27 +1028,27 @@
    harnesses own their argv and share flag names with aishell (`--verbose`).
 
    Returns {:verbose? :base-image? :unsafe? :name :args}, :name nil when
-   absent. :args is the leading flags aishell does not own (`--json`,
-   `--help`), then the subcommand and the rest of argv. A pass-through
-   harness moves in front of those flags, so `--json claude` forwards --json
-   the way `claude --json` does. Exits 1 through output/error when --name has
+   absent. :args is the other leading flags (`--json`, `--help`), which
+   dispatch reads later, then the subcommand and the rest of argv. A
+   pass-through harness moves in front of those flags, so `--json claude`
+   forwards --json the way `claude --json` does. Exits 1 through output/error when --name has
    no value or its value starts with `-`."
   [argv]
   (loop [[a & more :as argv] (vec argv)
          flags {:verbose? false :base-image? false :unsafe? false :name nil}
-         unowned-flags []]
+         later-flags []]
     (case a
-      "--verbose"    (recur more (assoc flags :verbose? true) unowned-flags)
-      "--base-image" (recur more (assoc flags :base-image? true) unowned-flags)
-      "--unsafe"     (recur more (assoc flags :unsafe? true) unowned-flags)
+      "--verbose"    (recur more (assoc flags :verbose? true) later-flags)
+      "--base-image" (recur more (assoc flags :base-image? true) later-flags)
+      "--unsafe"     (recur more (assoc flags :unsafe? true) later-flags)
       "--name"       (if (and (seq more) (not (str/starts-with? (first more) "-")))
-                       (recur (rest more) (assoc flags :name (first more)) unowned-flags)
+                       (recur (rest more) (assoc flags :name (first more)) later-flags)
                        (output/error "--name requires a container name. Try: aishell --name <name> <harness>"))
       (if (and a (str/starts-with? a "-"))
-        (recur more flags (conj unowned-flags a))
+        (recur more flags (conj later-flags a))
         (assoc flags :args (vec (if (contains? pass-through-harnesses a)
-                                  (concat [a] unowned-flags more)
-                                  (concat unowned-flags argv))))))))
+                                  (concat [a] later-flags more)
+                                  (concat later-flags argv))))))))
 
 (defn- do-dispatch [parsed]
   (binding [output/*verbose* (or (:verbose? parsed) output/*verbose*)]
@@ -1054,6 +1056,10 @@
 
 (defn dispatch
   "Parse aishell's global flags and gate --json, then delegate to do-dispatch.
+
+   --json is read here rather than in parse-global-flags because it is also
+   valid after aishell's own subcommands (`aishell ps --json`), so it cannot
+   be a leading-only flag.
 
    --json semantics:
    - For pass-through harnesses (claude, opencode, etc.) the flag is forwarded

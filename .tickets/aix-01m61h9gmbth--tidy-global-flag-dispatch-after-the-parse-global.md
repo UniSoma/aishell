@@ -1,12 +1,12 @@
 ---
 id: aix-01m61h9gmbth
 title: Tidy global-flag dispatch after the parse-global-flags refactor
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:15:38.236876677Z'
-updated: '2026-10-28T15:15:38.236876677Z'
+updated: '2026-10-28T15:24:26.276605541Z'
 tags:
 - ready-for-agent
 acceptance:

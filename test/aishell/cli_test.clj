@@ -391,12 +391,15 @@
     (is (= [] (:args (cli/parse-global-flags ["--verbose"]))))))
 
 (defn- dispatched
-  "Run cli/dispatch on args with launches and the update check stubbed.
-   Returns the recorded launch call, [:error msg] when aishell errors, or
-   nil when nothing launches."
+  "Run cli/dispatch on args with setup, update, launches and the update
+   check stubbed. Returns [:setup opts] or [:update opts] for the command
+   that ran, the recorded launch call, [:error msg] when aishell errors, or
+   nil when nothing runs."
   [args]
   (let [calls (atom nil)]
     (with-redefs [update-check/maybe-check-for-update (fn [& _])
+                  cli/handle-setup (fn [{:keys [opts]}] (reset! calls [:setup opts]))
+                  cli/handle-update (fn [{:keys [opts]}] (reset! calls [:update opts]))
                   run/run-container (fn [& a] (reset! calls (into [:run] a)))
                   run/run-exec (fn [& a] (reset! calls (into [:exec] a)))
                   output/exit! (fn [_] (throw (ex-info "exit" {})))]
@@ -501,6 +504,16 @@
   (testing "--verbose alone starts a verbose shell"
     (is (= [[] true] (dispatched-verbosity ["--verbose"])))))
 
+(deftest an-empty-command-starts-a-shell
+  (testing "bare aishell"
+    (is (= [:run nil []] (take 3 (dispatched [])))))
+  (testing "a bare -- leaves no command"
+    (is (= [:run nil []] (take 3 (dispatched ["--"])))))
+  (testing "leading flags reach the shell when -- follows them"
+    (let [[kind cmd args opts] (dispatched ["--unsafe" "--"])]
+      (is (= [:run nil []] [kind cmd args]))
+      (is (true? (:unsafe opts))))))
+
 (deftest leading-name-needs-a-value
   (doseq [args [["--name"] ["--name" "--verbose" "claude"]]]
     (testing (str/join " " args)
@@ -513,27 +526,14 @@
     (doseq [flag ["--verbose" "--base-image" "--unsafe" "--name"]]
       (is (str/includes? out flag) flag))))
 
-(defn- dispatched-command
-  "Run cli/dispatch on args with setup, update and launches stubbed.
-   Returns [:setup opts] or [:update opts] for the command that ran, the
-   recorded launch call, or nil when nothing runs."
-  [args]
-  (let [calls (atom nil)]
-    (with-redefs [update-check/maybe-check-for-update (fn [& _])
-                  cli/handle-setup (fn [{:keys [opts]}] (reset! calls [:setup opts]))
-                  cli/handle-update (fn [{:keys [opts]}] (reset! calls [:update opts]))
-                  run/run-container (fn [& a] (reset! calls (into [:run] a)))]
-      (cli/dispatch args))
-    @calls))
-
 (deftest leading-global-flags-run-the-command-not-a-shell
   (testing "--verbose setup runs setup verbosely"
-    (let [[kind opts] (dispatched-command ["--verbose" "setup" "--with-claude"])]
+    (let [[kind opts] (dispatched ["--verbose" "setup" "--with-claude"])]
       (is (= :setup kind))
       (is (true? (:verbose opts)))
       (is (true? (:with-claude opts)))))
   (testing "--unsafe update runs update"
-    (let [[kind opts] (dispatched-command ["--unsafe" "update"])]
+    (let [[kind opts] (dispatched ["--unsafe" "update"])]
       (is (= :update kind))
       (is (not (:verbose opts))))))
 
