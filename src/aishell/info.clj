@@ -131,8 +131,9 @@
 (defn- project-image-tag
   "Compute the resolved image tag for a project without calling Docker.
 
-   Returns the extended tag (aishell:ext-XXXXXXXXXXXX) when a project
-   extension Dockerfile exists, otherwise the base tag (aishell:base)."
+   Returns the Extended image tag (aishell:ext-XXXXXXXXXXXX) when the
+   project has a Project extension, otherwise the Base image tag
+   (aishell:base)."
   [project-dir]
   (if (ext/project-extension-path project-dir)
     (ext/compute-extended-tag project-dir)

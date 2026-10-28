@@ -74,9 +74,9 @@ aishell:foundation -> aishell:base -> aishell:ext-{hash}
 
 - **`aishell:foundation`** -- Stable system dependencies (Debian, Node.js, tools). Rebuilt rarely.
 - **`aishell:base`** -- Either a tag alias for foundation (default) or a custom build from `~/.aishell/Dockerfile`. Holds machine-wide customizations (extra packages, shell config, dev tools) shared across all projects.
-- **`aishell:ext-{hash}`** -- Per-project extension built from `.aishell/Dockerfile`. Adds project-specific layers on top of `aishell:base`.
+- **`aishell:ext-{hash}`** -- The Extended image, built per project from `.aishell/Dockerfile`. Adds project-specific layers on top of `aishell:base`.
 
-Base image changes cascade automatically: when `aishell:base` is rebuilt, all project extension images rebuild on their next run.
+Base image changes cascade automatically: when `aishell:base` is rebuilt, all Extended images rebuild on their next run.
 
 ### Foundation Image (`aishell:foundation`)
 
@@ -484,10 +484,10 @@ When no `~/.aishell/Dockerfile` exists, `aishell:base` is a tag alias for `aishe
 
 **Extension behavior:**
 
-1. **Auto-build:** If `.aishell/Dockerfile` exists, the extension builds automatically before run
-2. **Cache:** Extended image tagged by content hash; rebuilt only on Dockerfile or Base image changes
-3. **Base dependency:** Extension builds on `aishell:base` (which inherits any machine-wide customizations)
-4. **Cascade rebuilds:** When `aishell:base` changes, extensions auto-rebuild on next run
+1. **Auto-build:** If `.aishell/Dockerfile` exists, the Extended image builds automatically before run
+2. **Cache:** Extended image tagged by a hash of the project path; rebuilt only when the Project extension or the Base image changes
+3. **Base dependency:** The Extended image builds on `aishell:base` (which inherits any machine-wide customizations)
+4. **Cascade rebuilds:** When `aishell:base` changes, Extended images auto-rebuild on next run
 5. **Persistence:** Extended images persist locally and are shared across runs
 
 **Example project extension:**

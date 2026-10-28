@@ -19,12 +19,11 @@
 (def extension-hash-label "aishell.extension.hash")
 
 (defn project-extension-path
-  "Get path to the Project extension if it exists.
+  "Return the path to the Project extension, <active-dir>/Dockerfile,
+   or nil when the project has none.
 
    Arguments:
-   - project-dir: Path to project directory
-
-   Returns: String path to <active-dir>/Dockerfile if exists, else nil"
+   - project-dir: Path to project directory"
   [project-dir]
   (let [path (fs/path project-dir (util/resolve-project-config-dir project-dir) "Dockerfile")]
     (when (fs/exists? path)
@@ -123,7 +122,7 @@
    - force: Force rebuild (--no-cache)
    - verbose: Show detailed build output
 
-   Warns on stderr when the Dockerfile's filename casing is wrong (Windows).
+   Warns on stderr when the Project extension's filename casing is wrong (Windows).
    Returns: {:success true :image extended-tag} or nil if no Project
             extension; exits on error with build-failure-message"
   [{:keys [project-dir base-tag extended-tag force verbose]}]

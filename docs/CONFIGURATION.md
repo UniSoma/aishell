@@ -1098,7 +1098,7 @@ claude_shared_paths:
 
 ## Base Image Customization
 
-Advanced users can customize the Base image used by all projects. This adds a layer between the Foundation image and per-project extensions, forming a three-tier image chain:
+Advanced users can customize the Base image used by all projects. This adds a layer between the Foundation image and each project's Project extension, forming a three-tier image chain:
 
 ```
 aishell:foundation -> aishell:base -> aishell:ext-{hash}

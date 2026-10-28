@@ -195,7 +195,7 @@ sudo aishell setup --with-claude
 
 2. **Fix the Dockerfile:**
    ```bash
-   # Edit the global Dockerfile
+   # Edit ~/.aishell/Dockerfile
    vim ~/.aishell/Dockerfile
    ```
 
@@ -1047,7 +1047,7 @@ aishell restores the terminal itself on both the attach and the run paths. On ol
 
 **Symptom:** `aishell exec mycommand` fails with "command not found".
 
-**Cause:** The command is not installed in the Base image or in your project extension.
+**Cause:** The command is not installed in the Base image or in your Project extension.
 
 **Solution:**
 1. Use full path: `aishell exec /usr/bin/mycommand`

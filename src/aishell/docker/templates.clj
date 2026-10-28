@@ -1,8 +1,6 @@
 (ns aishell.docker.templates
-  "Embedded build files for Docker image creation.
-
-   Contains the Dockerfile, entrypoint.sh, and bashrc.aishell content
-   as multiline strings. These match the bash version heredocs exactly.")
+  "Embedded build files for the Foundation image: its Dockerfile and the
+   files that Dockerfile COPYs in, as multiline strings.")
 
 (def foundation-dockerfile
   "# Aishell Foundation Image
@@ -732,13 +730,14 @@ fi
 ")
 
 (def foundation-content
-  "Concatenation of every file baked into the foundation image at build
-   time — the Dockerfile plus all files COPY'd in by `write-build-files`.
+  "Concatenation of every file baked into the Foundation image at build
+   time: the Dockerfile plus the files `write-build-files` writes and the
+   Dockerfile COPYs in.
 
    Hashing this (rather than just `foundation-dockerfile`) is what lets cache
-   invalidation pick up an entrypoint or bashrc edit. If you add a new
-   COPY in the Dockerfile, append the corresponding template here in the
-   same order so the hash stays stable."
+   invalidation pick up an entrypoint or bashrc edit. A new COPY in the
+   Dockerfile needs its template appended here too, or edits to that file
+   leave the hash unchanged."
   (str foundation-dockerfile
        entrypoint-script
        bashrc-content

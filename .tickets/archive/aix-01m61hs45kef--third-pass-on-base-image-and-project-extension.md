@@ -1,23 +1,24 @@
 ---
 id: aix-01m61hs45kef
 title: Third pass on Base image and Project extension wording
-status: open
+status: closed
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:24:09.765025058Z'
-updated: '2026-10-28T15:46:47.556535847Z'
+updated: '2026-10-28T15:53:50.365125674Z'
+closed: '2026-10-28T15:53:50.365125674Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: No template var named base-dockerfile remains
-  done: false
+  done: true
 - title: CONFIGURATION.md says setup builds the Base image
-  done: false
+  done: true
 - title: No lowercase 'base image' for the Base image, 'Global Dockerfile' heading or 'Extension image' remains in docs
-  done: false
+  done: true
 - title: No project-dockerfile or get-extension-dockerfile-hash remains in src or test
-  done: false
+  done: true
 links:
 - aix-01m61gkfh089
 ---
@@ -32,3 +33,9 @@ Left open by aix-01m61gkfh089 (2caad42) on 2026-10-28; the user wants small clea
 4. Renames: `extension/project-dockerfile` to `project-extension-path`, `extension/get-extension-dockerfile-hash` to `project-extension-hash` (test/aishell/run_test.clj redefines `project-dockerfile`).
 
 Em dashes inside user-visible output strings stay.
+
+## Notes
+
+**2026-10-28T15:53:50.365125674Z**
+
+Renamed templates/base-dockerfile to foundation-dockerfile and the extension fns to project-extension-path / project-extension-hash; CONFIGURATION.md and ARCHITECTURE.md now say setup and update build the Base image; Base image, Extended image and machine-wide customization wording fixed across ARCHITECTURE, CONFIGURATION and TROUBLESHOOTING.

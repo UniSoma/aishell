@@ -27,7 +27,7 @@
       (is (some #{"libreadline8t64"} packages)))
     (testing "the JRE bbin needs is the one trixie ships"
       (is (some #{"openjdk-21-jre-headless"} packages)))
-    (testing "libsqlite3-0 is never removed — the shadow relies on ldconfig order"
+    (testing "libsqlite3-0 is never removed; the shadow relies on ldconfig order"
       (is (not (str/includes? templates/foundation-dockerfile "apt-get remove"))))))
 
 (deftest sqlite-version-is-parsed-from-the-pinned-arg
