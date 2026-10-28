@@ -65,7 +65,7 @@
                                      :cli-args cli-args})
     ["/bin/bash"]))
 
-(defn- check-dockerfile-stale
+(defn- warn-if-foundation-stale
   "Warn when the Foundation image's embedded content (the Dockerfile or any
    file it COPYs) changed since the build. Advisory only: it does not block
    execution."
@@ -218,7 +218,7 @@
                                      " <" (:email git-id) ">")))
             _ (report-harness-defaults! cmd defaults-vec)
 
-            _ (check-dockerfile-stale state)
+            _ (warn-if-foundation-stale state)
             _ (build/warn-if-foundation-out-of-date! image-tag)
 
             _ (when-let [docker-args (:docker_args cfg)]

@@ -3,6 +3,8 @@
             [clojure.string :as str]
             [aishell.docker.base :as base]
             [aishell.docker.extension :as ext]
+            [aishell.docker.hash :as hash]
+            [aishell.docker.templates :as templates]
             [aishell.output :as output]
             [aishell.run :as run]))
 
@@ -80,3 +82,14 @@
   (is (true? (run/skip-pre-start? {:base-image true})))
   (is (true? (run/skip-pre-start? {:skip-pre-start true})))
   (is (not (run/skip-pre-start? {}))))
+
+(deftest warn-if-foundation-stale-compares-the-stored-hash
+  (let [warn-stale #'run/warn-if-foundation-stale
+        current (hash/compute-hash templates/foundation-content)]
+    (testing "a stored hash that differs from the embedded content warns"
+      (is (str/includes? (captured-err #(warn-stale {:dockerfile-hash "old"}))
+                         "Image may be stale")))
+    (testing "a matching hash prints nothing"
+      (is (= "" (captured-err #(warn-stale {:dockerfile-hash current})))))
+    (testing "state without a stored hash prints nothing"
+      (is (= "" (captured-err #(warn-stale {})))))))

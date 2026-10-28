@@ -1,12 +1,12 @@
 ---
 id: aix-01m61n09sqkq
 title: Rename run/check-dockerfile-stale to warn-if-foundation-stale
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T16:20:30.640377296Z'
-updated: '2026-10-28T16:20:30.640377296Z'
+updated: '2026-10-28T16:20:46.137156539Z'
 tags:
 - ready-for-agent
 acceptance:
