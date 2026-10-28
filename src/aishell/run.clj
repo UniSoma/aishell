@@ -66,9 +66,9 @@
     ["/bin/bash"]))
 
 (defn- check-dockerfile-stale
-  "Check if any of the Foundation image's baked-in content (Dockerfile or
-   any COPY'd file) changed since build, warn if so. Advisory only — does not
-   block execution."
+  "Warn when the Foundation image's embedded content (the Dockerfile or any
+   file it COPYs) changed since the build. Advisory only: it does not block
+   execution."
   [state]
   (when-let [stored-hash (:dockerfile-hash state)]
     (let [current-hash (hash/compute-hash templates/foundation-content)]

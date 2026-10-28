@@ -117,9 +117,9 @@
                            "/Dockerfile)"))))
 
 (defn- check-images
-  "Report the Base image, Foundation image staleness, whether the Base
-   image is built from ~/.aishell/Dockerfile and, when the Base image
-   exists, the Project extension. Returns the Base image tag, or nil when
+  "Report the Base image, Foundation image staleness, whether
+   ~/.aishell/Dockerfile exists and the Base image needs a rebuild from it,
+   and, when the Base image exists, the Project extension. Returns the Base image tag, or nil when
    the Base image is missing."
   [state project-dir]
   (let [base-tag (check-base-image)]

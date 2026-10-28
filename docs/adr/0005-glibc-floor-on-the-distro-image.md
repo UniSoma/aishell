@@ -9,8 +9,8 @@ application of the policy.
 
 ## Context
 
-The Foundation image is mostly downloaded prebuilt binaries — `uv`, `cue`,
-`gosu`, `gitleaks`, plus whatever a project's own extension pulls in. Upstreams
+The Foundation image is mostly downloaded prebuilt binaries (`uv`, `cue`,
+`gosu`, `gitleaks`), plus whatever a Project extension pulls in. Upstreams
 build those on ever-newer distributions, so their glibc requirement drifts
 upward on its own schedule, not ours. bookworm's 2.36 was released in 2022 and
 had already blocked two tools by the time it was replaced: SQLite's prebuilt

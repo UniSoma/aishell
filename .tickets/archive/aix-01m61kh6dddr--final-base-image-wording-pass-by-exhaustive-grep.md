@@ -1,21 +1,22 @@
 ---
 id: aix-01m61kh6dddr
 title: Final Base image wording pass by exhaustive grep
-status: in_progress
+status: closed
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T15:54:47.070477986Z'
-updated: '2026-10-28T16:12:26.460663667Z'
+updated: '2026-10-28T16:19:41.268140231Z'
+closed: '2026-10-28T16:19:41.268140231Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: The grep patterns are recorded in a ticket note
-  done: false
+  done: true
 - title: Those patterns find no remaining hit for the Base image, Foundation image, Project extension or Extended image in src, test, docs or README.md, other than ones the note lists as legitimate
-  done: false
+  done: true
 - title: resolve-image-tag has no _base-tag parameter
-  done: false
+  done: true
 links:
 - aix-01m61hs45kef
 - aix-01m61f50zynt
@@ -67,3 +68,7 @@ Legitimate remaining hits:
 The review added `extension cache` and the `custom (builds?|...dockerfile)` alternatives, which caught "Docker extension cache" and "custom Dockerfile" for the Project extension.
 
 Known gap: grep runs one line at a time, so a term split across lines (the ARCHITECTURE.md diagram's "+ global" / "packages") needs a check by hand or a multi-line matcher.
+
+**2026-10-28T16:19:41.268140231Z**
+
+Grep patterns (recorded in a note) replace list-based passes; every hit in src, test, docs and README.md now uses the Foundation image, Base image, Project extension or Extended image, except the listed legitimate ones. User-visible help and status output changed (CHANGELOG line). resolve-image-tag lost its unused _base-tag parameter; Project extension path locals are extension-path; the attach alias is covered by the separator test.

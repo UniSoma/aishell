@@ -102,7 +102,7 @@ aishell/
 **Namespace responsibilities:**
 - **cli.clj:** Parse commands, validate args, dispatch to handlers
 - **docker/base.clj:** Base image customization -- detect `~/.aishell/Dockerfile`, build `aishell:base`, manage tag alias. Key functions: `ensure-base-image`, `base-dockerfile-exists?`, `needs-base-rebuild?`, `build-base-image`, `tag-foundation-as-base`
-- **docker/build.clj:** Orchestrate the Foundation image build, manage state
+- **docker/build.clj:** Build the Foundation image and warn when it is out of date
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
 - **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning
@@ -216,8 +216,8 @@ aishell/
 - Used the Foundation image ID directly to invalidate cache
 - Foundation image label: `aishell.foundation.id={image-id}`
 
-**Base image checks at every entry point:**
-- `ensure-base-image` is called at multiple entry points (run-container, run-exec, resolve-image-tag) for defense-in-depth
+**Base image checks before every Extended image build and launch:**
+- `resolve-image-tag` calls `ensure-base-image`, so `run-container`, `run-exec` and `open-vscode` check the Base image before they build or launch anything
 - `aishell setup` and `aishell update` build the Base image, and each run checks it again
 - This pattern ensures the Base image exists before any Extended image build or container launch
 

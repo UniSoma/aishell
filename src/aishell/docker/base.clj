@@ -142,9 +142,9 @@
    - Else: the Base image is up to date
 
    When ~/.aishell/Dockerfile does NOT exist:
-   - If the Base image is missing, was built from a Dockerfile, or its image ID differs
-     from the Foundation image's or can't be read -> tag the Foundation image
-     as the Base image
+   - If the Base image is missing, was built from a since-removed
+     ~/.aishell/Dockerfile, or its image ID differs from the Foundation
+     image's or can't be read -> tag the Foundation image as the Base image
    - Else: the Base image already is the Foundation image, nothing to do
 
    Options:

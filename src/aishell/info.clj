@@ -34,7 +34,7 @@
 
    Takes the last FROM that carries no `AS` alias: builder stages are named
    and the main stage is not, so a builder on a different distro can never be
-   reported as the foundation's own."
+   reported as the Foundation image's own."
   [dockerfile]
   (second (last (re-seq #"(?im)^FROM[ \t]+(\S+)[ \t]*$" dockerfile))))
 

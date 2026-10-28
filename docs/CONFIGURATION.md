@@ -1436,7 +1436,7 @@ aishell setup --with-claude --with-gitleaks
 
 **Behavior:**
 - By default, aishell does NOT install Gitleaks
-- `--with-gitleaks` enables Gitleaks installation (~15MB added to Foundation image)
+- `--with-gitleaks` enables Gitleaks installation (~15MB added to the Foundation image)
 - Build state records installation status in `~/.aishell/state.edn`
 - `aishell --help` shows the `gitleaks` command only when installed
 
@@ -1505,7 +1505,7 @@ aishell update --force
 
 **With --force:**
 1. Rebuilds the Foundation image with `--no-cache`
-2. Rebuilds the Base image from `~/.aishell/Dockerfile`, when that file exists, even when it is current
+2. When `~/.aishell/Dockerfile` exists, rebuilds the Base image from it even when it is current
 3. With a harness enabled, deletes, recreates and repopulates the harness volume
 4. Updates state.edn with the new build time, `dockerfile-hash` and `foundation-hash`
 

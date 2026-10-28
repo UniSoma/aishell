@@ -24,9 +24,9 @@
   30)
 
 (defn- foundation-out-of-date-warning
-  "Return the out-of-date warning for a foundation whose `build-date-label`
-   value is `built-at`, an ISO-8601 instant, or nil when it is at most
-   `out-of-date-after-days` old at `now`. A missing label (the image
+  "Return the out-of-date warning for a Foundation image whose
+   `build-date-label` value is `built-at`, an ISO-8601 instant, or nil when
+   it is at most `out-of-date-after-days` old at `now`. A missing label (the image
    predates the label) or an unparseable one counts as out of date."
   [built-at now]
   (let [built (try (Instant/parse built-at) (catch Exception _ nil))
@@ -62,7 +62,7 @@
     :else (str now)))
 
 (defn get-dockerfile-hash
-  "Compute the hash of all the Foundation image's embedded content: the
+  "Compute the hash of the Foundation image's embedded content: the
    Dockerfile and every file it COPYs from the build context (entrypoint.sh,
    bashrc.aishell, profile.d-aishell.sh, etc-profile). The image label
    keeps the name `aishell.dockerfile.hash` for backwards compatibility,

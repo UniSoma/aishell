@@ -549,7 +549,8 @@
    Rebuilds the Foundation image only when it is missing or stale,
    refreshes the Base image, and, when a harness is enabled, deletes and
    recreates the harness volume. With --force, rebuilds the Foundation
-   image with --no-cache and forces the Base image refresh."
+   image with --no-cache and, when ~/.aishell/Dockerfile exists, rebuilds
+   the Base image even when it is current."
   [{:keys [opts]}]
   (if (:help opts)
     (print-update-help)
