@@ -870,10 +870,10 @@
                (not (contains? base-image-commands first-arg)))
       (output/error (str "--base-image only applies to commands that start a sandbox, not '"
                          first-arg "'. Try: aishell --base-image <harness>")))
-    ;; Check for newer version (skip for help/version/upgrade to avoid startup delay).
-    ;; -v/--version is ambiguous: top-level it means version, but on subcommands
-    ;; (setup -v, update -v) it means verbose. Only skip the update check when
-    ;; there's no subcommand — i.e. the args will route to handle-default.
+    ;; Check for a newer version, except on help, version and upgrade, which
+    ;; would pay the startup delay for nothing. -v means verbose on aishell's
+    ;; own subcommands (setup -v, update -v), so -v/--version skips the check
+    ;; only when no such subcommand comes first.
     (let [skip? (or (some #{"--help" "-h"} args)
                     (and (not has-subcommand?)
                          (some #{"-v" "--version"} args))
@@ -882,7 +882,7 @@
         (update-check/maybe-check-for-update version)))
     ;; Harness pass-through: a harness subcommand launches its container with
     ;; every remaining arg (including --help, --version) forwarded verbatim.
-    ;; Launch shape — such as whether the project's pre_start hook runs — is
+    ;; Launch shape, such as whether the project's pre_start hook runs, is
     ;; read from the harness descriptor, not spelled per harness here.
     (if-let [descriptor (harness/for-subcommand first-arg)]
       (run/run-container (:subcommand descriptor) (vec (rest args))
@@ -1024,10 +1024,12 @@
    `aishell claude --unsafe` belongs to the harness and is forwarded, since
    harnesses own their argv and share flag names with aishell (`--verbose`).
 
-   Returns {:verbose? :base-image? :unsafe? :name :args}. :args is the
-   subcommand, the leading flags aishell does not own (`--json`, `--help`),
-   then the rest of argv. A pass-through harness goes first so `--json claude`
-   forwards --json the way `claude --json` does."
+   Returns {:verbose? :base-image? :unsafe? :name :args}, :name nil when
+   absent. :args is the leading flags aishell does not own (`--json`,
+   `--help`), then the subcommand and the rest of argv. A pass-through
+   harness moves in front of those flags, so `--json claude` forwards --json
+   the way `claude --json` does. Exits 1 through output/error when --name has
+   no value or its value starts with `-`."
   [argv]
   (loop [[a & more :as argv] (vec argv)
          flags {:verbose? false :base-image? false :unsafe? false :name nil}

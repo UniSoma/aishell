@@ -384,10 +384,10 @@
             ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]))))
   (testing "other leading flags stay in front of the subcommand"
     (is (= ["--json" "ps"] (:args (cli/parse-global-flags ["--verbose" "--json" "ps"])))))
-  (testing "a harness moves in front of the leading flags it does not own"
+  (testing "a harness moves in front of the leading flags aishell does not own"
     (is (= ["claude" "--json" "-p" "x"]
            (:args (cli/parse-global-flags ["--json" "claude" "-p" "x"])))))
-  (testing "no subcommand leaves no args"
+  (testing "global flags alone leave no args"
     (is (= [] (:args (cli/parse-global-flags ["--verbose"]))))))
 
 (defn- dispatched
@@ -480,7 +480,7 @@
     (let [[kind cmd args opts] (dispatched ["--name" "foo" "claude" "--json"])]
       (is (= [:run "claude" ["--json"]] [kind cmd args]))
       (is (= "foo" (:container-name opts)))))
-  (testing "a leading --unsafe skips the checks"
+  (testing "a leading --unsafe reaches the launch"
     (let [[_ cmd args opts] (dispatched ["--unsafe" "claude" "-p" "x"])]
       (is (= ["claude" ["-p" "x"]] [cmd args]))
       (is (true? (:unsafe opts))))))
@@ -515,8 +515,8 @@
 
 (defn- dispatched-command
   "Run cli/dispatch on args with setup, update and launches stubbed.
-   Returns [:setup opts] or [:update opts] for the command that ran, or
-   the recorded launch call."
+   Returns [:setup opts] or [:update opts] for the command that ran, the
+   recorded launch call, or nil when nothing runs."
   [args]
   (let [calls (atom nil)]
     (with-redefs [update-check/maybe-check-for-update (fn [& _])

@@ -767,7 +767,7 @@ aishell claude
 aishell --name reviewer claude
 ```
 
-`--name` must come before the harness name. After it, `--name` is passed to the harness.
+`--name` must come before the harness name. After the harness name, `--name` is passed to the harness.
 
 ### Listing Containers
 
@@ -819,8 +819,8 @@ the default `claude_isolation: shared` instead write that state over each other 
 [ADR 0001](adr/0001-per-project-claude-machine-state-isolation.md).
 
 `aishell --name reviewer claude` remains the right tool for a session that should be genuinely
-independent — its own filesystem view, its own lifetime. Set `claude_isolation: project` when two
-such containers run concurrently.
+independent, with its own filesystem view and its own lifetime. Set `claude_isolation: project`
+when two such containers run concurrently.
 
 Three things to know about the shared-sandbox pattern:
 

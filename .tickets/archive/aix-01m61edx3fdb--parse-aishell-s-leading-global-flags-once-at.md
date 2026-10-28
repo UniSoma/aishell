@@ -1,27 +1,28 @@
 ---
 id: aix-01m61edx3fdb
 title: Parse aishell's leading global flags once at dispatch entry
-status: in_progress
+status: closed
 type: task
 priority: 2
 mode: afk
 created: '2026-10-28T14:25:36.344326078Z'
-updated: '2026-10-28T15:03:53.822041847Z'
+updated: '2026-10-28T15:12:39.377384427Z'
+closed: '2026-10-28T15:12:39.377384427Z'
 tags:
 - ready-for-agent
 acceptance:
 - title: aishell's global flags are parsed in one place at dispatch entry
-  done: false
+  done: true
 - title: aix-01m61dyzmayj's acceptance criteria hold
-  done: false
+  done: true
 - title: aishell --name foo claude --json launches claude with --json forwarded
-  done: false
+  done: true
 - title: aishell --verbose setup runs setup verbosely, not a shell
-  done: false
+  done: true
 - title: --unsafe and --name are recognized only before the subcommand; after it they reach the harness or command untouched
-  done: false
+  done: true
 - title: Docs and CHANGELOG describe the leading-only rule
-  done: false
+  done: true
 links:
 - aix-01m61dyzmayj
 - aix-01m61c17fyb8
@@ -48,3 +49,7 @@ Open decision before landing: whether `--unsafe` and `--name` stay accepted anyw
 **2026-10-28T14:55:51.631912706Z**
 
 Decided by the user 2026-10-28: --unsafe and --name become leading-only, like --verbose and --base-image. After the subcommand they are forwarded to the harness/command untouched. Changes what 'aishell claude --unsafe' means: needs a CHANGELOG entry and doc updates (README.md:394 shows 'aishell claude --unsafe'; docs/TROUBLESHOOTING.md and docs/CONFIGURATION.md mention --unsafe).
+
+**2026-10-28T15:12:39.377384427Z**
+
+parse-global-flags reads --verbose, --base-image, --unsafe and --name once, before the subcommand only; after a harness name they are forwarded. Leading flags no longer turn setup/update/--help into a shell, --name foo claude --json works, docs, help and CHANGELOG updated.
