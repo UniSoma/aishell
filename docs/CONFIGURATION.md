@@ -1486,7 +1486,7 @@ aishell setup --with-claude --force
 
 ### aishell update
 
-**Purpose:** Refresh harness tools to latest versions without rebuilding the foundation image.
+**Purpose:** Refresh harness tools to latest versions. The foundation image is rebuilt only when it is missing or stale.
 
 **Usage:**
 ```bash
@@ -1502,7 +1502,7 @@ aishell update --force
 2. Creates a new harness volume
 3. Populates the volume with harness tools (npm install, binary download)
 4. Updates state.edn with the new build time
-5. Leaves the foundation image untouched
+5. Rebuilds the foundation image only when it is missing or stale
 
 **With --force:**
 1. Rebuilds the foundation image with `--no-cache`

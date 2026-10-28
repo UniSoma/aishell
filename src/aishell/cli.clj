@@ -515,7 +515,7 @@
     ::start-shell))
 
 (def update-spec
-  {:force   {:coerce :boolean :desc "Also rebuild foundation image (--no-cache)"}
+  {:force   {:coerce :boolean :desc "Rebuild the Foundation image with --no-cache, even when current"}
    :verbose {:alias :v :coerce :boolean :desc "Show full build and install output"}
    :help    {:alias :h :coerce :boolean :desc "Show update help"}})
 
@@ -534,14 +534,14 @@
   (println (str output/BOLD "Notes:" output/NC))
   (println "  - Refreshes harnesses from last build configuration")
   (println "  - Deletes and recreates the harness volume for a clean slate")
-  (println "  - Foundation image is NOT rebuilt unless --force is used")
+  (println "  - Rebuilds the Foundation image when it is missing or stale")
   (println "  - Use 'aishell setup --reuse-config' when you want setup semantics")
   (println "    (inherit saved config, override selected flags, avoid unconditional")
   (println "    harness-volume repopulation when the effective config is unchanged)")
   (println)
   (println (str output/BOLD "Examples:" output/NC))
-  (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools only"))
-  (println (str "  " output/CYAN "aishell update --force" output/NC "               Also rebuild foundation image"))
+  (println (str "  " output/CYAN "aishell update" output/NC "                       Refresh harness tools"))
+  (println (str "  " output/CYAN "aishell update --force" output/NC "               Rebuild the Foundation image with --no-cache"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --force" output/NC " Rebuild setup layers from saved config")))
 
 (defn handle-update

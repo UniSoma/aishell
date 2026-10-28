@@ -182,7 +182,7 @@ Both `FROM aishell:base` (recommended) and `FROM aishell:foundation` are accepte
 
 **State schema evolution:**
 - New fields: `foundation-hash`, `harness-volume-hash`, `harness-volume-name`
-- Deprecated (but still written): `dockerfile-hash` → `foundation-hash`
+- `dockerfile-hash` is still the key `check` and `run` read for staleness; `foundation-hash` holds the same hash and nothing reads it
 - Additive migration: nil values for missing fields, no migration code needed
 
 ---
@@ -449,10 +449,10 @@ Each namespace handles one concern:
  :pi-version nil                        ; string or nil: pinned version
  :omp-version nil                        ; string or nil: pinned release (tag without the "v")
  :build-time "2026-02-01T12:00:00Z"      ; ISO-8601 timestamp
- :foundation-hash "abc123def"            ; 12-char SHA-256 hash (NEW in v2.8.0)
+ :dockerfile-hash "abc123def"            ; 12-char SHA-256 of the foundation content; check and run read it
+ :foundation-hash "abc123def"            ; same hash, written alongside (NEW in v2.8.0); nothing reads it
  :harness-volume-hash "def456ghi"        ; 12-char hash of harness config (NEW in v2.8.0)
- :harness-volume-name "aishell-harness-def456ghi" ; Volume name (NEW in v2.8.0)
- :dockerfile-hash "abc123def"}           ; DEPRECATED: use :foundation-hash (kept for backward compat)
+ :harness-volume-name "aishell-harness-def456ghi"} ; Volume name (NEW in v2.8.0)
 ```
 
 State files from older setups may also carry `:image-tag`. Nothing reads it. Setup no longer writes it, and update leaves an existing one in place.

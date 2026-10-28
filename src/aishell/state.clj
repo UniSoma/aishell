@@ -66,7 +66,8 @@
     :pi-version nil              ; string or nil
     :omp-version nil             ; string or nil
     :build-time \"2026-01-20...\" ; ISO-8601 string
-    :foundation-hash \"abc123def456\"  ; 12-char SHA-256 of foundation Dockerfile template
+    :dockerfile-hash \"abc123def456\"  ; 12-char SHA-256 of the foundation content; check and run read it
+    :foundation-hash \"abc123def456\"  ; same hash, written alongside; nothing reads it
     :harness-volume-hash \"def789ghi012\" ; 12-char SHA-256 of enabled harnesses+versions
     :harness-volume-name \"aishell-harness-def789ghi012\"} ; Docker volume name for runtime mounting"
   [state]
