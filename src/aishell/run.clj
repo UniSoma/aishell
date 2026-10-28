@@ -107,14 +107,6 @@
       ;; Return volume name regardless
       volume-name)))
 
-(defn base-image-notice
-  "Return the startup line for a --base-image launch. dockerfile is the
-   skipped Project extension's path, or nil when the project has none."
-  [dockerfile]
-  (if dockerfile
-    (str "Starting on the Base image: Project extension " dockerfile " skipped, and pre_start with it.")
-    "Starting on the Base image: no Project extension to skip; pre_start skipped."))
-
 (defn skip-pre-start?
   "Return true when a launch with these run-container opts skips the
    pre_start hook. --base-image skips it: pre_start is what most likely
@@ -127,21 +119,26 @@
    Project extension (<active-dir>/Dockerfile), else the Base image.
    Builds or re-tags the Base image first when it needs it, and builds the
    Extended image when it needs a rebuild.
-   With :base-image? returns the Base image and prints base-image-notice
-   to stderr (not in JSON mode); the Project extension is not built.
+   With :base-image returns the Base image and prints to stderr (not in
+   JSON mode) which Project extension it skipped; the Project extension is
+   not built.
    Builds stream their docker output when output/*verbose* is bound (--verbose);
    otherwise they run behind a spinner."
-  [_base-tag project-dir force? & [{:keys [base-image?]}]]
+  [_base-tag project-dir force? & [{:keys [base-image]}]]
   ;; Lazy build from ~/.aishell/Dockerfile, or a re-tag of the Foundation image
   (base/ensure-base-image {:quiet (not output/*verbose*) :verbose output/*verbose*})
   (let [dockerfile (ext/project-dockerfile project-dir)]
     (cond
-      base-image?
+      base-image
       (do
         (when-not output/*json-output*
           (binding [*out* *err*]
-            (println (base-image-notice
-                      (when dockerfile (str (fs/relativize project-dir dockerfile)))))))
+            (println
+             (if dockerfile
+               (str "Starting on the Base image: Project extension "
+                    (fs/relativize project-dir dockerfile)
+                    " skipped, and pre_start with it.")
+               "Starting on the Base image: no Project extension to skip; pre_start skipped."))))
         base/base-image-tag)
 
       dockerfile
@@ -149,7 +146,7 @@
         (when (ext/needs-extended-rebuild? extended-tag base/base-image-tag project-dir)
           (ext/build-extended-image
            {:project-dir project-dir
-            :foundation-tag base/base-image-tag
+            :base-tag base/base-image-tag
             :extended-tag extended-tag
             :force force?
             :verbose output/*verbose*}))
@@ -208,8 +205,7 @@
             ;; A harness that is itself a secret scanner stands in for aishell's
             ;; own scanning: no sensitive-file scan, no scan-freshness nag.
             secret-scanner? (boolean (:secret-scanner? descriptor))
-            image-tag (resolve-image-tag base-tag project-dir false
-                                         {:base-image? (:base-image opts)})
+            image-tag (resolve-image-tag base-tag project-dir false opts)
             git-id (docker-run/read-git-identity project-dir)
 
             defaults (when (and cfg cmd)
@@ -317,8 +313,7 @@
     (let [project-dir (System/getProperty "user.dir")
           base-tag base/base-image-tag
 
-          image-tag (resolve-image-tag base-tag project-dir false
-                                       {:base-image? (:base-image opts)})
+          image-tag (resolve-image-tag base-tag project-dir false opts)
           _ (build/warn-if-foundation-out-of-date! image-tag)
           cfg (config/load-config project-dir)
           git-id (docker-run/read-git-identity project-dir)

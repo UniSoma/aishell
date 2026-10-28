@@ -1,12 +1,12 @@
 ---
 id: aix-01m61edx003f
 title: 'Tidy the --base-image follow-ups: key names, glossary terms, README example'
-status: open
+status: in_progress
 type: chore
 priority: 2
 mode: afk
 created: '2026-10-28T14:25:36.250583130Z'
-updated: '2026-10-28T14:25:36.250583130Z'
+updated: '2026-10-28T14:26:06.199879188Z'
 tags:
 - ready-for-agent
 acceptance:

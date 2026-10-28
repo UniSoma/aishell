@@ -328,10 +328,10 @@ The command checks Docker, the build state, images, configuration, mounts, sensi
 
 ### Project customization
 
-Create `.aishell/Dockerfile` to extend the foundation image:
+Create `.aishell/Dockerfile` to extend the Base image (`aishell:base`):
 
 ```dockerfile
-FROM aishell:foundation
+FROM aishell:base
 
 RUN apt-get update && apt-get install -y postgresql-client
 ```

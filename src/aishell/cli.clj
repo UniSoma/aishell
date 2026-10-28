@@ -852,8 +852,8 @@
     (str "--json is not supported for: " (first args))))
 
 (def ^:private base-image-commands
-  "aishell's own subcommands that start a container on the project image and
-   so accept --base-image. Harness subcommands and the bare default accept it too."
+  "aishell's own subcommands that start a container and so accept
+   --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
 (defn- do-dispatch* [args verbose? base-image?]

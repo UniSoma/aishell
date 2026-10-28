@@ -137,7 +137,7 @@
 
    Arguments (map):
    - project-dir: Path to project directory
-   - foundation-tag: Tag of the Base image (aishell:base)
+   - base-tag: Tag of the Base image (aishell:base)
    - extended-tag: Tag for the Extended image
    - force: Force rebuild (--no-cache)
    - verbose: Show detailed build output
@@ -145,7 +145,7 @@
    Warns on stderr when the Dockerfile's filename casing is wrong (Windows).
    Returns: {:success true :image extended-tag} or nil if no Project
             extension; exits on error with build-failure-message"
-  [{:keys [project-dir foundation-tag extended-tag force verbose]}]
+  [{:keys [project-dir base-tag extended-tag force verbose]}]
   (when-let [dockerfile-path (project-dockerfile project-dir)]
     (let [config-dir (util/resolve-project-config-dir project-dir)]
       (when-let [actual (miscased-dockerfile project-dir)]
@@ -153,7 +153,7 @@
          (str config-dir "/" actual " has non-canonical casing. "
               "Docker Desktop's Linux daemon is case-sensitive and will fail "
               "to find this file during build. Rename it to " config-dir "/Dockerfile.")))
-      (let [base-id (get-foundation-image-id foundation-tag)
+      (let [base-id (get-foundation-image-id base-tag)
             extension-hash (get-extension-dockerfile-hash project-dir)
             build-args (cond-> ["-f" dockerfile-path
                                 "-t" extended-tag
@@ -177,7 +177,7 @@
               {:success true :image extended-tag}
               (output/error (build-failure-message config-dir nil))))
           ;; Non-verbose: use spinner
-          (let [result (spinner/with-spinner "Building project extension" build-fn)]
+          (let [result (spinner/with-spinner "Building Extended image" build-fn)]
             (if (:success result)
               result
               (output/error (build-failure-message config-dir (:error result))))))))))
