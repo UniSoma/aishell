@@ -48,13 +48,10 @@
                       %)))))))
 
 (defn image-id
-  "Get the Docker image ID for an image tag, such as the Base image or
-   the Foundation image.
+  "Return the Docker image ID of image-tag, such as \"aishell:base\" for the
+   Base image or \"aishell:foundation\" for the Foundation image.
 
-   Arguments:
-   - image-tag: Docker image tag (e.g., \"aishell:base\" or \"aishell:foundation\")
-
-   Returns: Image ID string or nil on error"
+   Returns nil when the image does not exist or `docker inspect` fails."
   [image-tag]
   (try
     (let [{:keys [exit out]}
@@ -86,43 +83,39 @@
     (hash/compute-hash (slurp dockerfile-path))))
 
 (defn needs-extended-rebuild?
-  "Check if extended image needs to be rebuilt.
+  "Return true when the Extended image needs rebuilding, false otherwise.
 
    Rebuild is needed when:
-   1. Extended image doesn't exist
-   2. Base image ID has changed (base image inherits foundation changes)
-   3. Extension Dockerfile content has changed
+   1. The Extended image doesn't exist
+   2. The Base image ID has changed (the Base image picks up Foundation image changes)
+   3. The Project extension's content has changed (only checked when
+      project-dir is given and has a Project extension)
 
    Arguments:
-   - extended-tag: Tag for extended image
-   - base-tag: Tag for base image (aishell:base)
-   - project-dir: Path to project directory (optional, for Dockerfile hash check)
-
-   Returns: true if rebuild needed, false otherwise"
+   - extended-tag: Tag of the Extended image
+   - base-tag: Tag of the Base image (aishell:base)
+   - project-dir: Path to project directory (optional)"
   ([extended-tag base-tag]
    (needs-extended-rebuild? extended-tag base-tag nil))
   ([extended-tag base-tag project-dir]
    (cond
-     ;; Extended image doesn't exist
      (not (docker/image-exists? extended-tag))
      true
 
-     ;; Check base image ID (base-tag is typically "aishell:base")
      :else
      (let [stored-base-id (docker/get-image-label extended-tag base-image-id-label)
            current-base-id (image-id base-tag)]
        (cond
-         ;; Base image changed (or extension has no base label - triggers rebuild for migration)
+         ;; While the Base image exists, an Extended image with no Base image
+         ;; ID label also counts as changed and rebuilds.
          (not= stored-base-id current-base-id)
          true
 
-         ;; Check extension Dockerfile hash if project-dir provided
          (and project-dir (project-dockerfile project-dir))
          (let [stored-hash (docker/get-image-label extended-tag extension-hash-label)
                current-hash (get-extension-dockerfile-hash project-dir)]
            (not= stored-hash current-hash))
 
-         ;; No changes detected
          :else false)))))
 
 (defn build-failure-message

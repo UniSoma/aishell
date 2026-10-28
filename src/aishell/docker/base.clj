@@ -56,32 +56,29 @@
   (some? (docker/get-image-label base-image-tag base-dockerfile-hash-label)))
 
 (defn- base-matches-foundation?
-  "Check if base image is the same image as foundation (alias is current).
-   Compares actual Docker image IDs."
+  "Return true when the Base image has the Foundation image's Docker image ID,
+   meaning the alias is current. Returns nil when either image ID can't be read."
   []
   (let [base-id (ext/image-id base-image-tag)
         foundation-id (ext/image-id "aishell:foundation")]
     (and base-id foundation-id (= base-id foundation-id))))
 
 (defn needs-base-rebuild?
-  "Check if custom base image needs rebuilding.
+  "Return true when the Base image needs rebuilding from ~/.aishell/Dockerfile.
 
-   Returns true if:
-   - `aishell:base` image doesn't exist
-   - Stored Dockerfile hash differs from current global Dockerfile hash
-   - Stored foundation image ID differs from current foundation image ID"
+   Rebuild is needed when:
+   - the `aishell:base` image doesn't exist
+   - its stored Dockerfile hash differs from the current ~/.aishell/Dockerfile hash
+   - its stored Foundation image ID differs from the current Foundation image ID"
   []
   (cond
-    ;; Base image doesn't exist
     (not (docker/image-exists? base-image-tag))
     true
 
-    ;; Dockerfile hash changed
     (not= (docker/get-image-label base-image-tag base-dockerfile-hash-label)
           (global-dockerfile-hash))
     true
 
-    ;; Foundation image changed
     (not= (docker/get-image-label base-image-tag base-foundation-id-label)
           (ext/image-id "aishell:foundation"))
     true
@@ -89,14 +86,17 @@
     :else false))
 
 (defn build-base-image
-  "Build custom base image from ~/.aishell/Dockerfile.
+  "Build the Base image from ~/.aishell/Dockerfile, labelled with the
+   Dockerfile hash and the Foundation image ID that needs-base-rebuild? compares.
 
    Options:
    - :force - Force rebuild (--no-cache)
    - :verbose - Show full Docker build output
 
    Returns: {:success true :image \"aishell:base\"} on success.
-            Exits on failure (hard-stop per decision)."
+            Exits on failure rather than falling back to the Foundation image
+            alias: the user wrote this Dockerfile, so its failure must show.
+            The error includes the build output unless :verbose streamed it."
   [{:keys [force verbose]}]
   (let [dockerfile-path (global-dockerfile-path)
         foundation-id (ext/image-id "aishell:foundation")
@@ -116,7 +116,6 @@
                        {:success true :image base-image-tag}
                        {:success false :error (str out "\n" err)})))]
     (if verbose
-      ;; Verbose: show output directly
       (let [{:keys [exit]}
             (apply p/shell {:continue true :dir build-dir}
                    "docker" "build" (conj build-args build-dir))]
@@ -125,7 +124,6 @@
             (println "Global base image built")
             {:success true :image base-image-tag})
           (output/error "Global base image build failed")))
-      ;; Non-verbose: use spinner
       (let [result (spinner/with-spinner "Building global base image"
                                          build-fn)]
         (if (:success result)
