@@ -22,9 +22,8 @@ of turning on aishell's output.
   flags after a harness name are the Harness's. One parser,
   `cli/parse-global-flags`, reads them before dispatch.
 - **A flag that the subcommand ignores is an error.** `--base-image`
-  applies only to commands that start a Sandbox (harnesses, bare `aishell`,
-  `exec`); `--unsafe` and `--name` only to harness launches and bare
-  `aishell`. `aishell --unsafe ps` exits 1 instead of quietly dropping the
+  applies only to harness launches, bare `aishell` and `exec`; `--unsafe`
+  and `--name` only to harness launches and bare `aishell`. `aishell --unsafe ps` exits 1 instead of quietly dropping the
   flag. `--verbose` is accepted before any subcommand.
 - **`--json`, `--help` and `--version` are not Global flags.** They keep their
   own handling per command.
