@@ -432,7 +432,7 @@
 (deftest harness-config-dirs-table
   (testing "home-relative config paths per harness state key, in registry order"
     (is (= {:with-claude   [[".claude"] [".claude.json"]]
-            :with-opencode [[".config" "opencode"] [".local" "share" "opencode"]]
+            :with-opencode [[".config" "opencode"] [".local" "share" "opencode"] [".agents" "skills"]]
             :with-codex    [[".codex"]]
             :with-copilot  [[".copilot"]]
             :with-gemini   [[".gemini"]]
@@ -445,6 +445,37 @@
            (vec (keys run/harness-config-dirs)))))
   (testing "gitleaks mounts no host config"
     (is (nil? (get run/harness-config-dirs :with-gitleaks)))))
+
+(deftest opencode-mounts-host-agents-skills
+  (let [home (seed-home [])
+        skills (str (fs/path home ".agents" "skills"))]
+    (try
+      (with-redefs [util/get-home (fn [] home)]
+        (testing "enabled opencode creates a missing host folder and mounts it at the same path"
+          (is (not (fs/exists? skills)))
+          (is (some #{(str skills ":" skills)}
+                    (mount-strings (vec (build-mounts {:with-opencode true} home {})))))
+          (is (fs/directory? skills)))
+        (testing "an existing folder is mounted too"
+          (is (some #{(str skills ":" skills)}
+                    (mount-strings (vec (build-mounts {:with-opencode true} home {}))))))
+        (testing "the whole ~/.agents folder is not mounted"
+          (is (not-any? #{(str (fs/path home ".agents") ":" (fs/path home ".agents"))}
+                        (mount-strings (vec (build-mounts {:with-opencode true} home {})))))))
+      (finally
+        (fs/delete-tree home)))
+    (let [home (seed-home [])]
+      (try
+        (with-redefs [util/get-home (fn [] home)]
+          (testing "without opencode nothing is mounted or created"
+            (is (not-any? #(str/includes? % ".agents")
+                          (mount-strings (vec (build-mounts {:with-codex true} home {})))))
+            (is (not (fs/exists? (fs/path home ".agents" "skills")))))
+          (testing "other harnesses are unaffected"
+            (is (= {:with-codex [[".codex"]]}
+                   (select-keys run/harness-config-dirs [:with-codex])))))
+        (finally
+          (fs/delete-tree home))))))
 
 (deftest harness-config-files-are-seeded-not-created-as-dirs
   (testing "only .claude.json is a file entry"
