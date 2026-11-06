@@ -1,6 +1,6 @@
 # SQLite compiled from source in the Foundation image
 
-We build SQLite 3.53.4 from upstream's `sqlite-src` tarball in a throwaway
+We build SQLite 3.54.1 from upstream's `sqlite-src` tarball in a throwaway
 builder stage and install it under `/usr/local`, replacing Debian's `sqlite3`
 package. The shared library is `ldconfig`'d ahead of Debian's `libsqlite3-0`, so
 every dynamically-linked consumer in the container gets the new version, not
@@ -94,7 +94,7 @@ touches:
 - There are **no prebuilt tools for arm64**.
 - The prebuilt tools come with **upstream's compile flags**, not the
   Debian-parity floor this build asserts option by option.
-- Trixie's own `sqlite3` is **3.46.1**, still well behind the pinned 3.53.4, so
+- Trixie's own `sqlite3` is **3.46.1**, still well behind the pinned 3.54.1, so
   "install it from apt" and "have current SQLite" remain mutually exclusive.
 
 One package name above also went stale with the distro: the readline runtime in

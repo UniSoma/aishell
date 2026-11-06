@@ -11,9 +11,9 @@
 # verification step in the main stage need them: a bare `ARG NAME` inside a
 # stage inherits from the global scope only.
 #
-# SQLITE_VERSION must be X.Y.Z. The zero-padded download id (3.53.4 becomes
-# 3530400) is derived from it in-shell; sqlite.org URLs need the year as well.
-ARG SQLITE_VERSION=3.53.4
+# SQLITE_VERSION must be X.Y.Z. The zero-padded download id (3.54.1 becomes
+# 3540100) is derived from it in-shell; sqlite.org URLs need the year as well.
+ARG SQLITE_VERSION=3.54.1
 ARG SQLITE_YEAR=2026
 # SHA-256 of sqlite-src-${dlId}.zip. sqlite.org publishes SHA3-256, so on a
 # version bump: fetch the zip, confirm `openssl dgst -sha3-256` against the
@@ -21,7 +21,7 @@ ARG SQLITE_YEAR=2026
 # the SHA-256 keeps the builder to coreutils. This is the one tool we compile
 # and then load into every process in the container, so a swapped tarball is
 # worst here — hence the departure from curl-and-trust-TLS used elsewhere.
-ARG SQLITE_SHA256=d18fa15aec74d8c17e1463f861095adc01b5ad190256acb4f91d22f0368d232b
+ARG SQLITE_SHA256=387e7f6cad4797b17848c07d453dc6606917bb356a6cfe5a3abafd38c240c71b
 
 # Stage 1: Node.js source (for multi-stage copy)
 FROM node:24-trixie-slim AS node-source
@@ -123,10 +123,10 @@ RUN set -eux; \\
 FROM debian:trixie-slim
 
 # Build arguments for developer tools
-ARG BABASHKA_VERSION=1.13.222
+ARG BABASHKA_VERSION=1.13.229
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.17.1
-ARG UV_VERSION=0.11.29
+ARG UV_VERSION=0.13.7
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -287,11 +287,11 @@ RUN mkdir -p /usr/local/share/bbin/bin \\
 RUN bbin version \\
     && test -d /usr/local/share/m2/org/clojure
 
-# Install gosu 1.19 for proper user switching
+# Install gosu 1.20 for proper user switching
 # Source: https://github.com/tianon/gosu
 RUN set -eux; \\
     dpkgArch=\"$(dpkg --print-architecture)\"; \\
-    curl -fsSL \"https://github.com/tianon/gosu/releases/download/1.19/gosu-${dpkgArch}\" -o /usr/local/bin/gosu; \\
+    curl -fsSL \"https://github.com/tianon/gosu/releases/download/1.20/gosu-${dpkgArch}\" -o /usr/local/bin/gosu; \\
     chmod +x /usr/local/bin/gosu; \\
     gosu --version; \\
     gosu nobody true

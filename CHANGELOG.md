@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The host runtime moves to babashka 1.13.229**: the build script's pin goes up seven patch releases. Upstream distrusts the eMudhra root certificates from 1.13.227/1.13.228 on, so HTTPS to a site whose chain ends at an eMudhra root now fails in `bb`. The macOS amd64 binary now needs macOS 11 or later
+
+- **Babashka in the foundation image moves to 1.13.229**: the pin follows upstream, with the same eMudhra distrust as the host runtime. amd64 stays on the dynamically linked build. Rebuild is automatic via the foundation-content hash: one rebuild on your next `setup` or `update`, with the usual stale warning until then
+
+- **uv in the foundation image moves from 0.11.29 to 0.13.7, across two breaking minor releases**: **Upgrade note**: check these if you run `uv` or `uvx` in a Sandbox. From 0.12.0: `uv init` creates a packaged project with a `src/` layout by default; pre-release resolution defaults to `if-necessary`; a non-empty `SSL_CERT_FILE` or `SSL_CERT_DIR` now replaces the default root certificates instead of adding to them; `uv run` discovers the project from the script's directory, not the working directory; `uv venv --clear` needs `--force` to clear a directory that is not a virtual environment; legacy bz2 and xz source distributions are rejected. From 0.13.0: the default Python is 3.15; `--require-hashes` in included constraints files is enforced; the tar backend is stricter by default, and `UV_LEGACY_TAR_BACKEND=1` restores the old one; the cache format changed, so the first runs after the bump repopulate the cache. Rebuild is automatic via the foundation-content hash
+
+- **gosu in the foundation image moves from 1.19 to 1.20**: 1.20 is a rebuild with Go 1.24.6 that addresses GO-2026-6686. `aishell info` reports the new version. Rebuild is automatic via the foundation-content hash
+
+- **SQLite in the foundation image moves from 3.53.4 to 3.54.1**: the pinned SHA-256 was confirmed against the SHA3-256 sqlite.org publishes. Three changes can affect scripts: in the `sqlite3` shell, a line holding only `go` or `/` no longer ends a statement; with headers on, the shell prints them for queries that return no rows; and `ALTER TABLE` rejects `ROWID`, `_ROWID_` and `OID` as column names. Rebuild is automatic via the foundation-content hash
+
+### Fixed
+
+- **The README names the Gitleaks version the image installs**: it said v8.30.0; the pin is 8.30.1
+
 ## [4.5.0] - 2026-10-28
 
 ### Changed

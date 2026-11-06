@@ -216,7 +216,7 @@
       (println (str "    SQLite " sqlite-version
                     " (sqlite3, sqldiff, sqlite3_rsync"
                     " + libsqlite3/headers, built from source)")))
-    (println "    gosu 1.19")
+    (println "    gosu 1.20")
     (println)
     (println (str "  Gitleaks: "
                   (if (and state (:with-gitleaks state))

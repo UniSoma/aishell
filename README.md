@@ -611,18 +611,18 @@ Runtimes:
 - bbin (shared install dir at `/usr/local/share/bbin`, writable by both root at build and the developer user at runtime)
 - OpenJDK 21 JRE (headless), which bbin requires to resolve `tools.deps` dependencies
 - CUE v0.17.1 for data validation, configuration, and code generation
-- uv v0.11.29 for Python packages and toolchains (`uv`, `uvx`)
-- SQLite 3.53.4, compiled from upstream source instead of Debian's 3.46.1 package. It includes
+- uv v0.13.7 for Python packages and toolchains (`uv`, `uvx`)
+- SQLite 3.54.1, compiled from upstream source instead of Debian's 3.46.1 package. It includes
   `sqlite3`, `sqldiff` and `sqlite3_rsync`, plus the shared library, header and
   pkg-config file under `/usr/local`.
 
 uv downloads the Python version that a project pins. The image does not include a Python interpreter.
 
-`ldconfig` places the upstream SQLite library before Debian's library. Programs that link `libsqlite3.so.0` therefore use version 3.53.4. The image excludes `sqlite3_analyzer` because it requires TCL.
+`ldconfig` places the upstream SQLite library before Debian's library. Programs that link `libsqlite3.so.0` therefore use version 3.54.1. The image excludes `sqlite3_analyzer` because it requires TCL.
 
 Security tools:
 
-- Gitleaks v8.30.0 (optional, via `--with-gitleaks`)
+- Gitleaks v8.30.1 (optional, via `--with-gitleaks`)
 
 CLI tools:
 

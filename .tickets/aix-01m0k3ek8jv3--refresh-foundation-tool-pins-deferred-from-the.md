@@ -6,7 +6,7 @@ type: task
 priority: 3
 mode: hitl
 created: '2026-08-21T21:25:53.554482774Z'
-updated: '2026-08-21T21:26:00.316130070Z'
+updated: '2026-11-06T18:16:00.686342774Z'
 acceptance:
 - title: Each pinned tool version reviewed against upstream and bumped or explicitly left alone with a reason
   done: false
@@ -20,6 +20,7 @@ tags:
 - ready-for-human
 links:
 - aix-01m0k3e5txye
+- aix-01m6s1689gfa
 ---
 
 ## Description
@@ -39,3 +40,9 @@ Trixie makes `ncurses-term` slightly more tempting: ~2,800 terminfo entries for 
 ## Note on the SQLite pin
 
 Bumping `SQLITE_VERSION` invalidates only the tail of the build — the COPY from the builder stage is deliberately placed late. The build self-verifies: it fails on a SHA mismatch, and fails if the installed library is missing any expected compile option. See ADR 0004 for why this is compiled from source rather than taken from apt or from upstream prebuilts.
+
+## Notes
+
+**2026-11-06T18:16:00.686342774Z**
+
+2026-11-06: bumped babashka 1.13.222 -> 1.13.229 (image and host build pin), uv 0.11.29 -> 0.13.7, gosu 1.19 -> 1.20, SQLite 3.53.4 -> 3.54.1 (SQLITE_YEAR stays 2026; SHA-256 387e7f6c...c71b pinned after SHA3-256 matched upstream's 877c6f49...22ad). Left alone: bbin 0.2.5 and gitleaks 8.30.1 are current upstream; cue stays 0.17.1 because 0.18 is still a release candidate. README's gitleaks line was corrected from v8.30.0 to v8.30.1. Node 24 -> 26 split into its own ticket. Still open here: the ncurses-term decision and a foundation image build with every in-build probe passing (no docker in the environment that made the bump). Unverified for 1.13.229: the templates.clj claim that amd64 bb's highest versioned symbol is GLIBC_2.27; the build or an objdump on the new binary should confirm it.

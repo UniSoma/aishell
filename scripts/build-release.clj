@@ -27,7 +27,7 @@
 ;; The one place the host CLI's babashka runtime is pinned. Independent of the
 ;; foundation image's BABASHKA_VERSION (src/aishell/docker/templates.clj):
 ;; one is the CLI's own runtime, the other a tool offered inside the sandbox.
-(def babashka-version "1.13.222")
+(def babashka-version "1.13.229")
 
 (def output-dir "dist")
 (def sums-file (str output-dir "/SHA256SUMS"))
