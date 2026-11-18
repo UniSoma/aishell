@@ -68,6 +68,11 @@
   [dockerfile]
   (second (re-find #"ARG UV_VERSION=(\S+)" dockerfile)))
 
+(defn- parse-fossil-version
+  "Extract Fossil version from ARG FOSSIL_VERSION=X.Y."
+  [dockerfile]
+  (second (re-find #"ARG FOSSIL_VERSION=(\S+)" dockerfile)))
+
 (defn- parse-sqlite-version
   "Extract SQLite version from ARG SQLITE_VERSION=X.Y.Z."
   [dockerfile]
@@ -182,6 +187,7 @@
         cue-version (parse-cue-version dockerfile)
         uv-version (parse-uv-version dockerfile)
         sqlite-version (parse-sqlite-version dockerfile)
+        fossil-version (parse-fossil-version dockerfile)
         gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
@@ -216,6 +222,8 @@
       (println (str "    SQLite " sqlite-version
                     " (sqlite3, sqldiff, sqlite3_rsync"
                     " + libsqlite3/headers, built from source)")))
+    (when fossil-version
+      (println (str "    Fossil " fossil-version " (official prebuilt binary)")))
     (println "    gosu 1.20")
     (println)
     (println (str "  Gitleaks: "

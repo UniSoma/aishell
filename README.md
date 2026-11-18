@@ -615,6 +615,7 @@ Runtimes:
 - SQLite 3.54.1, compiled from upstream source instead of Debian's 3.46.1 package. It includes
   `sqlite3`, `sqldiff` and `sqlite3_rsync`, plus the shared library, header and
   pkg-config file under `/usr/local`.
+- Fossil 2.28, the official prebuilt binary from fossil-scm.org instead of Debian's 2.26 package
 
 uv downloads the Python version that a project pins. The image does not include a Python interpreter.
 

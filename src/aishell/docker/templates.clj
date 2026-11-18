@@ -127,6 +127,12 @@ ARG BABASHKA_VERSION=1.13.229
 ARG BBIN_VERSION=0.2.5
 ARG CUE_VERSION=0.17.1
 ARG UV_VERSION=0.13.7
+# Fossil pins. fossil-scm.org publishes SHA3-256 in /juvlist, so on a version
+# bump: fetch both tarballs, confirm `openssl dgst -sha3-256` against /juvlist,
+# then pin `sha256sum` here, keeping the check to coreutils as SQLite does.
+ARG FOSSIL_VERSION=2.28
+ARG FOSSIL_SHA256_AMD64=c9d2bf9d150dff1076eae1b0b822ed3cde892e1273f78b040c4f8ace1b59dd40
+ARG FOSSIL_SHA256_ARM64=14f1a1e781caff9828fc740d7abf28f09f5ce191150408ae5450d4f786d0d846
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -170,8 +176,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     zstd \\
     && rm -rf /var/lib/apt/lists/*
 
-# Assert the glibc floor. Prebuilt binaries we download (uv, cue, gitleaks,
-# gosu) and ones a project pulls in later are linked against ever-newer glibc,
+# Assert the glibc floor. Prebuilt binaries we download (uv, cue, fossil,
+# gitleaks, gosu) and ones a project pulls in later are linked against ever-newer glibc,
 # so the distro image carries a floor as a first-class property: >= 2.39. The
 # number asserted is the policy, not what trixie happens to ship (2.41) — the
 # headroom is why trixie was chosen, but the promise is 2.39. dpkg does the
@@ -325,6 +331,26 @@ RUN set -eux; \\
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx; \\
     uv --version; \\
     uvx --version
+
+# Install Fossil from upstream's prebuilt binaries rather than apt: a Pinned
+# tool, see ADR 0011. The arm64 build is the one upstream names \"pi\"; it is
+# aarch64, needs GLIBC_2.35 and links libz.so.1 from zlib1g, already in the
+# distro image. The amd64 build needs GLIBC_2.25 and bundles its own zlib.
+# Both bundle their own SQLite, so neither uses the shadowed libsqlite3.
+# Source: https://fossil-scm.org/home/uv/download.html
+RUN set -eux; \\
+    dpkgArch=\"$(dpkg --print-architecture)\"; \\
+    case \"${dpkgArch}\" in \\
+        amd64) fossilArch='linux-x64'; fossilSha=\"${FOSSIL_SHA256_AMD64}\" ;; \\
+        arm64) fossilArch='pi'; fossilSha=\"${FOSSIL_SHA256_ARM64}\" ;; \\
+        *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
+    esac; \\
+    curl -fsSL -o /tmp/fossil.tar.gz \"https://fossil-scm.org/home/uv/fossil-${fossilArch}-${FOSSIL_VERSION}.tar.gz\"; \\
+    echo \"${fossilSha}  /tmp/fossil.tar.gz\" | sha256sum -c -; \\
+    tar -xzf /tmp/fossil.tar.gz -C /usr/local/bin fossil; \\
+    rm /tmp/fossil.tar.gz; \\
+    chmod +x /usr/local/bin/fossil; \\
+    fossil version
 
 # Install SQLite, compiled in the sqlite-source stage. The shared library lands
 # in /usr/local/lib and is ldconfig'd, deliberately shadowing Debian's

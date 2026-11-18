@@ -32,6 +32,14 @@ _Avoid_: base (for this layer), system image
 When the Foundation image's OS packages were last fetched fresh: the time of its first or forced build, carried unchanged through cached rebuilds. A Foundation image whose build date is past the age limit, or unknown, is *out of date*.
 _Avoid_: build time, last build, image age, stale (that is a content mismatch, not age)
 
+**Pinned tool**:
+A Foundation image tool whose exact version aishell controls: fetched from its upstream at a pinned version and moved only by a deliberate bump. Fossil, SQLite, CUE, uv, Babashka and gosu are Pinned tools.
+_Avoid_: runtime (for gosu, CUE and the like), vendored tool
+
+**Distro package**:
+A Foundation image tool taken from the Distro image's package manager at whatever version it ships; aishell does not track its version, which moves when the Distro image does.
+_Avoid_: system package (as a policy term; it is only the `aishell info` heading)
+
 **Base image**:
 `aishell:base` — the per-user layer between the Foundation image and the Project extension, built from `~/.aishell/Dockerfile` when one exists and otherwise a plain tag alias of the Foundation image. This is where a user's own machine-wide customizations go.
 _Avoid_: foundation, global image

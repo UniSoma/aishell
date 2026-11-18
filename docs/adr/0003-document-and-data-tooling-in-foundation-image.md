@@ -34,6 +34,9 @@ A tool belongs in the Foundation image when all of these hold:
 
 ### Amendment: the test gates admission, not upgrades
 
+_Superseded by "Amendment: criterion 3 chooses a class" below, which covers
+this case._
+
 Added when SQLite moved to a source build (ADR 0004). Criterion 3 ("Installable
 via apt") fails by construction for that change, but the criterion was written to
 gate the *admission* of new tools — where the curl/tarball path buys convenience
@@ -120,3 +123,19 @@ longer describe the image: `openjdk-17-jre-headless` was replaced by
 distro is no longer necessarily the Python wrapper — the no-interpreter rule
 that rejected it still stands and would have to be re-checked against trixie
 before `yq` were reconsidered. The admission test itself is unaffected.
+
+## Amendment: criterion 3 chooses a class
+
+Added when Fossil was admitted (ADR 0011). Fossil is in apt, so criterion 3 as
+written would have put it there; it fails the criterion by choice. The
+Foundation image holds two classes of tool, and criterion 3 now picks one:
+
+3. **Choose the class.** If we want control over the exact version, the tool
+   is a Pinned tool and pays the `ARG`, arch `case`, `parse-*`, `info`
+   and bump cost. Otherwise it is a Distro package and must be installable via
+   apt.
+
+SQLite (ADR 0004), CUE, uv, Babashka, gosu and Fossil are Pinned tools.
+Moving an admitted tool from Distro package to Pinned tool, as SQLite did, is
+a change of class under this rule, not an exception to it. The other criteria
+still apply in full.

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Fossil 2.28 in the foundation image**: the official prebuilt binary from fossil-scm.org, verified against a pinned SHA-256 for each architecture (amd64, arm64), rather than Debian trixie's 2.26 package. `aishell info` lists it under Runtimes. Rebuild is automatic via the foundation-content hash
+
 ### Changed
 
 - **The host runtime moves to babashka 1.13.229**: the build script's pin goes up seven patch releases. Upstream distrusts the eMudhra root certificates from 1.13.227/1.13.228 on, so HTTPS to a site whose chain ends at an eMudhra root now fails in `bb`. The macOS amd64 binary now needs macOS 11 or later

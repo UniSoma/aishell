@@ -8,6 +8,7 @@
 (def ^:private format-harnesses #'info/format-harnesses)
 (def ^:private harness-labels @#'info/harness-labels)
 (def ^:private parse-sqlite-version #'info/parse-sqlite-version)
+(def ^:private parse-fossil-version #'info/parse-fossil-version)
 (def ^:private parse-distro #'info/parse-distro)
 (def ^:private parse-node-tag #'info/parse-node-tag)
 
@@ -33,6 +34,10 @@
 (deftest sqlite-version-is-parsed-from-the-pinned-arg
   (is (re-matches #"\d+\.\d+\.\d+"
                   (parse-sqlite-version templates/foundation-dockerfile))))
+
+(deftest fossil-version-is-parsed-from-the-pinned-arg
+  (is (re-matches #"\d+\.\d+(\.\d+)?"
+                  (parse-fossil-version templates/foundation-dockerfile))))
 
 (deftest distro-comes-from-the-final-from-line
   (testing "the reported distro is the main stage's, not a builder stage's"
