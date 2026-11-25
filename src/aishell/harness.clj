@@ -2,18 +2,17 @@
   "The harness registry: the ordered, closed collection of harness descriptors
    from which every harness-dependent behavior in aishell derives.
 
-   A descriptor is pure data — no functions. It records one Harness's identity,
+   A descriptor is pure data, with no functions. It records one Harness's identity,
    canonical label, state and version keys, capabilities, install source,
    config paths, passthrough environment variables and fixed runtime
-   environment policy. Capabilities are
-   presence-based where that reads naturally (no `:alias` key means no shell
-   alias, no `:config-paths` means nothing to mount) and explicit booleans
-   where absence would be ambiguous (`:interactive?`, `:pre-start?`,
-   `:volume-participant?`, `:accepts-config-defaults?`).
+   environment policy. Capabilities are presence-based: no `:alias` key means
+   no shell alias, no `:config-paths` means nothing to mount.
 
-   Everything else in this namespace is a derivation over the registry:
-   capability filters, and the single argv interpreter that both the container
-   launch path and the shell-alias builder call.")
+   The rest of this namespace derives from the registry (lookups, setup flag
+   text, the harness volume config, the alias filter, and the single argv
+   interpreter that both the container launch path and the shell-alias
+   builder call), apart from the skip-permissions override, which reads the
+   host environment.")
 
 ;; ---------------------------------------------------------------------------
 ;; Descriptor schema
@@ -22,13 +21,7 @@
 ;;   :label                    canonical long label, used in all user-facing output
 ;;   :subcommand               `aishell <subcommand>` and the launch command name
 ;;   :state-key                setup-state boolean, always `:with-<id>`
-;;   :version-key              setup-state version pin, always `:<id>-version`;
-;;                             absent when the harness carries no version
-;;   :interactive?             runs in an interactive shell/TTY session
-;;   :pre-start?               the project's pre_start hook runs before it
-;;   :accepts-config-defaults? `harness_args` defaults from config reach its argv
-;;   :volume-participant?      installed into the shared harness volume (and so
-;;                             part of the volume hash)
+;;   :version-key              setup-state version pin, always `:<id>-version`
 ;;   :fixed-args               argv flags always inserted before user args
 ;;   :skip-permissions-flag    flag added when skip-permissions is in effect
 ;;   :alias                    presence = emits a shell alias in the sandbox;
@@ -55,10 +48,6 @@
     :subcommand "claude"
     :state-key :with-claude
     :version-key :claude-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :skip-permissions-flag "--dangerously-skip-permissions"
     :alias {:always? true}
     :install {:kind :npm :package "@anthropic-ai/claude-code"}
@@ -72,10 +61,6 @@
     :subcommand "opencode"
     :state-key :with-opencode
     :version-key :opencode-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :alias {:always? false}
     :install {:kind :npm :package "@opencode/cli"}
     :config-paths [{:path [".config" "opencode"] :type :dir}
@@ -88,10 +73,6 @@
     :subcommand "codex"
     :state-key :with-codex
     :version-key :codex-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :fixed-args ["-c" "check_for_update_on_startup=false"]
     :alias {:always? true}
     :install {:kind :npm :package "@openai/codex"}
@@ -103,10 +84,6 @@
     :subcommand "copilot"
     :state-key :with-copilot
     :version-key :copilot-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :alias {:always? true}
     :install {:kind :npm :package "@github/copilot"}
     :config-paths [{:path [".copilot"] :type :dir}]
@@ -118,10 +95,6 @@
     :subcommand "gemini"
     :state-key :with-gemini
     :version-key :gemini-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :alias {:always? false}
     :install {:kind :npm :package "@google/gemini-cli"}
     :config-paths [{:path [".gemini"] :type :dir}]
@@ -134,10 +107,6 @@
     :subcommand "pi"
     :state-key :with-pi
     :version-key :pi-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :alias {:always? false}
     :install {:kind :npm :package "@earendil-works/pi-coding-agent"}
     :config-paths [{:path [".pi"] :type :dir}]
@@ -149,10 +118,6 @@
     :subcommand "omp"
     :state-key :with-omp
     :version-key :omp-version
-    :interactive? true
-    :pre-start? true
-    :accepts-config-defaults? true
-    :volume-participant? true
     :alias {:always? false}
     :install {:kind :github-release
               :repo "can1357/oh-my-pi"
@@ -181,45 +146,33 @@
     (first (filter #(= subcommand (:subcommand %)) registry))))
 
 ;; ---------------------------------------------------------------------------
-;; Capability filters
+;; Registry derivations
 ;; ---------------------------------------------------------------------------
-
-(defn versioned
-  "Descriptors whose version can be pinned at setup: those with a
-   `:version-key`. A descriptor without one would take a plain boolean flag."
-  []
-  (filterv :version-key registry))
 
 (defn setup-flag-desc
   "Help text for a descriptor's `--with-<id>` setup flag, derived from the
    canonical label."
-  [{:keys [label version-key]}]
-  (str "Include " label (when version-key " (optional: =VERSION)")))
+  [{:keys [label]}]
+  (str "Include " label " (optional: =VERSION)"))
 
 (defn subcommands
   "Every harness subcommand, in display order."
   []
   (mapv :subcommand registry))
 
-(defn volume-participants
-  "Descriptors installed into the shared harness volume — the harnesses whose
-   enabled state and pinned version feed the volume hash."
-  []
-  (filterv :volume-participant? registry))
-
 (defn volume-harnesses-enabled?
-  "Whether `state` enables any harness that lives in the shared harness volume.
-   Gates volume creation, population and repopulation."
+  "Whether `state` enables any harness, all of which live in the shared
+   harness volume. Gates volume creation, population and repopulation."
   [state]
-  (boolean (some #(get state (:state-key %)) (volume-participants))))
+  (boolean (some #(get state (:state-key %)) registry)))
 
 (defn volume-config
   "Canonical, hash-bearing description of the harness volume `state` asks for:
-   a vector of `[id version]` pairs for every enabled volume participant,
-   sorted by id so registry (display) order can never affect it. An unpinned
-   harness carries the version \"latest\"."
+   a vector of `[id version]` pairs for every enabled harness, sorted by id
+   so registry (display) order can never affect it. An unpinned harness
+   carries the version \"latest\"."
   [state]
-  (->> (volume-participants)
+  (->> registry
        (filter #(get state (:state-key %)))
        (map (fn [{:keys [id version-key]}]
               [id (or (get state version-key) "latest")]))
@@ -257,14 +210,10 @@
      :default-args       `harness_args` defaults from config
      :cli-args           arguments the user passed on the command line
 
-   Config defaults precede CLI args so that CLI args win by position. A harness
-   with `:accepts-config-defaults?` false takes CLI args only."
+   Config defaults precede CLI args so that CLI args win by position."
   [descriptor {:keys [skip-permissions? default-args cli-args]}]
-  (let [{:keys [subcommand fixed-args skip-permissions-flag accepts-config-defaults?]} descriptor
+  (let [{:keys [subcommand fixed-args skip-permissions-flag]} descriptor
         prefix (cond-> [subcommand]
                  (and skip-permissions? skip-permissions-flag) (conj skip-permissions-flag)
-                 (seq fixed-args) (into fixed-args))
-        user-args (if accepts-config-defaults?
-                    (concat default-args cli-args)
-                    cli-args)]
-    (into prefix user-args)))
+                 (seq fixed-args) (into fixed-args))]
+    (into prefix (concat default-args cli-args))))

@@ -506,11 +506,42 @@
           :config config
           :state state
           :git-identity {}
-          :skip-pre-start false
-          :skip-interactive true}))
+          :skip-pre-start false}))
       (finally
         (fs/delete-tree home)
         (fs/delete-tree project)))))
+
+(defn- exec-args
+  "The `docker run` argv for a one-off `exec` built from `config` and setup
+   `state`, against a throwaway HOME."
+  [{:keys [config state]}]
+  (let [home (str (fs/create-temp-dir))
+        project (str (fs/create-temp-dir))]
+    (try
+      (with-redefs [util/get-home (constantly home)]
+        (run/build-docker-args-for-exec
+         {:project-dir project
+          :image-tag "aishell:test"
+          :config config
+          :state state
+          :git-identity {}
+          :tty? false}))
+      (finally
+        (fs/delete-tree home)
+        (fs/delete-tree project)))))
+
+(deftest exec-skips-pre-start-and-harness-aliases-a-launch-keeps
+  (let [inputs {:config {:pre_start "echo hi"} :state {:with-claude true}}
+        aliases (fn [argv] (filter #(str/starts-with? (str %) "HARNESS_ALIAS_") argv))]
+    (testing "a launch passes pre_start and the harness aliases"
+      (let [argv (sandbox-args inputs)]
+        (is (some #{"PRE_START=echo hi"} argv))
+        (is (seq (aliases argv)))))
+    (testing "exec clears pre_start and passes no harness alias"
+      (let [argv (exec-args inputs)]
+        (is (some #{"PRE_START="} argv))
+        (is (not-any? #{"PRE_START=echo hi"} argv))
+        (is (empty? (aliases argv)))))))
 
 (def ^:private runtime-env-descriptors
   "Every descriptor declaring fixed runtime environment policy. The behavioral

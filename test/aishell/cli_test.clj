@@ -249,7 +249,7 @@
              :with-gemini :with-pi :with-omp}
            (set/intersection (set (keys cli/setup-spec))
                              (set (map :state-key harness/registry))))))
-  (testing "versioned flags take an optional =VERSION and so are not coerced"
+  (testing "each flag takes an optional =VERSION and so is not coerced"
     (is (= {:desc "Include Claude Code (optional: =VERSION)"}
            (:with-claude cli/setup-spec)))
     (is (= {:desc "Include Pi coding agent (optional: =VERSION)"}
@@ -325,7 +325,7 @@
                           "Invalid Gemini CLI version format"))))
 
 (deftest empty-setup-state-covers-every-harness-key
-  (testing "a boolean per harness, a version per versioned harness, plus unisoma"
+  (testing "a boolean and a version per harness, plus unisoma"
     (is (= {:with-claude false :with-opencode false :with-codex false
             :with-copilot false :with-gemini false :with-pi false :with-omp false
             :unisoma false
@@ -376,7 +376,7 @@
     (is (str/includes? (with-out-str (cli/print-effective-reused-setup cli/empty-setup-state))
                        "No harnesses or optional tools enabled"))))
 
-(deftest enabled-harness-list-names-volume-participants
+(deftest enabled-harness-list-names-enabled-harnesses
   (testing "enabled harnesses are listed by subcommand"
     (is (= "claude,pi"
            (cli/enabled-harness-list (assoc cli/empty-setup-state

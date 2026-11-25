@@ -38,19 +38,14 @@
 ;; Table-driven completeness
 ;;
 ;; The rules below are written independently of the registry: a descriptor that
-;; drops a field its declared capabilities require must fail this test.
+;; drops a field it requires must fail this test.
 ;; ---------------------------------------------------------------------------
 
 (def ^:private always-required
-  [:id :label :subcommand :state-key
-   :interactive? :pre-start? :accepts-config-defaults? :volume-participant?
-   :install])
+  [:id :label :subcommand :state-key :version-key :install])
 
 (def ^:private conditional-rules
-  [{:name "harness volume participants carry a version key"
-    :when :volume-participant?
-    :require [:version-key]}
-   {:name "npm installs name their package"
+  [{:name "npm installs name their package"
     :when #(= :npm (get-in % [:install :kind]))
     :require [[:install :package]]}
    {:name "github-release installs name the repo, asset, binary, tag prefix and checksum file"
@@ -77,14 +72,14 @@
          :when (missing-path? descriptor path)]
      [(:id descriptor) name path])))
 
-(deftest every-descriptor-carries-the-fields-its-capabilities-require
+(deftest every-descriptor-carries-its-required-fields
   (testing "no descriptor in the registry violates a completeness rule"
     (is (= [] (vec (mapcat descriptor-violations harness/registry))))))
 
 (deftest completeness-checker-rejects-an-incomplete-descriptor
   (testing "a descriptor missing an unconditionally required field is caught"
     (is (seq (descriptor-violations (dissoc (harness/descriptor :pi) :label)))))
-  (testing "a volume participant missing its version key is caught"
+  (testing "a descriptor missing its version key is caught"
     (is (seq (descriptor-violations (dissoc (harness/descriptor :gemini) :version-key)))))
   (testing "an npm install missing its package is caught"
     (is (seq (descriptor-violations (update (harness/descriptor :claude) :install dissoc :package)))))
@@ -103,27 +98,31 @@
 ;; Volume-hash sufficiency
 ;;
 ;; The hash derivation itself lives in the volume namespace. What the registry
-;; owes it: the id as a keyword, the exact state/version key spellings, and
-;; participation as a capability.
+;; owes it: the id as a keyword and the exact state/version key spellings.
 ;; ---------------------------------------------------------------------------
 
 (deftest state-and-version-key-spellings-match-the-hash-contract
   (testing "state key is :with-<id> and version key is :<id>-version"
     (doseq [d harness/registry]
       (is (= (keyword (str "with-" (name (:id d)))) (:state-key d)))
-      (when (:version-key d)
-        (is (= (keyword (str (name (:id d)) "-version")) (:version-key d)))))))
+      (is (= (keyword (str (name (:id d)) "-version")) (:version-key d))))))
 
-(deftest every-harness-participates-in-the-volume
-  (testing "every harness participates in the harness volume"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
-           (mapv :id (harness/volume-participants)))))
-  (testing "sorted participant ids are the hash membership set"
-    (is (= [:claude :codex :copilot :gemini :omp :opencode :pi]
-           (sort (map :id (harness/volume-participants)))))))
+(deftest every-enabled-harness-joins-the-volume-config
+  (let [all-enabled (into {} (map (juxt :state-key (constantly true))) harness/registry)]
+    (testing "every harness enabled puts every id in the volume config, sorted by id"
+      (is (= [[:claude "latest"] [:codex "latest"] [:copilot "latest"] [:gemini "latest"]
+              [:omp "latest"] [:opencode "latest"] [:pi "latest"]]
+             (harness/volume-config all-enabled))))
+    (testing "a pinned version replaces latest"
+      (is (= [[:pi "1.2.3"]]
+             (harness/volume-config {:with-pi true :pi-version "1.2.3"}))))
+    (testing "no harness enabled means no volume harnesses"
+      (is (= [] (harness/volume-config {})))
+      (is (false? (harness/volume-harnesses-enabled? {})))
+      (is (true? (harness/volume-harnesses-enabled? {:with-omp true}))))))
 
 ;; ---------------------------------------------------------------------------
-;; Capability filters
+;; Registry derivations
 ;; ---------------------------------------------------------------------------
 
 (deftest subcommand-set-covers-every-harness
@@ -139,13 +138,6 @@
     (is (= {:claude true :opencode false :codex true :copilot true :gemini false :pi false
             :omp false}
            (into {} (map (juxt :id #(get-in % [:alias :always?]))) (harness/alias-emitters))))))
-
-(deftest launch-shape-capabilities
-  (testing "every harness is interactive, runs pre_start and takes config defaults"
-    (doseq [d harness/registry]
-      (is (true? (:interactive? d)))
-      (is (true? (:pre-start? d)))
-      (is (true? (:accepts-config-defaults? d))))))
 
 (deftest config-paths-and-env-passthrough-are-carried
   (testing "claude's config paths distinguish the directory from the seed file"
@@ -248,14 +240,6 @@
            (argv :claude {:skip-permissions? true :cli-args ["-p" "x"]})))
     (is (= ["gemini" "chat"] (argv :gemini {:cli-args ["chat"]})))))
 
-(deftest argv-without-config-defaults
-  (let [defaultless (assoc (harness/descriptor :gemini) :accepts-config-defaults? false)]
-    (testing "a harness that does not accept config defaults takes CLI args only"
-      (is (= ["gemini" "chat"]
-             (harness/launch-argv defaultless {:default-args ["-d"] :cli-args ["chat"]}))))
-    (testing "config defaults alone produce a bare argv"
-      (is (= ["gemini"] (harness/launch-argv defaultless {:default-args ["-d"]}))))))
-
 (deftest argv-returns-a-vector-of-strings
   (testing "callers hand the result straight to process invocation"
     (doseq [d harness/registry]
@@ -266,13 +250,8 @@
         (is (every? string? v))
         (is (= (:subcommand d) (first v)))))))
 
-(deftest versioned-harnesses-are-those-with-a-version-key
-  (testing "every harness carries a pinnable version"
-    (is (= [:claude :opencode :codex :copilot :gemini :pi :omp]
-           (mapv :id (harness/versioned))))))
-
 (deftest setup-flag-descriptions
-  (testing "a versioned harness advertises its optional =VERSION"
+  (testing "a harness advertises its optional =VERSION"
     (is (= "Include Claude Code (optional: =VERSION)"
            (harness/setup-flag-desc (harness/descriptor :claude))))
     (is (= "Include Pi coding agent (optional: =VERSION)"

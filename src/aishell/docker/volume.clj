@@ -232,7 +232,7 @@
    Install kinds come from each harness descriptor. Nil versions become
    \"latest\"."
   [state]
-  (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
+  (let [enabled (filter #(get state (:state-key %)) harness/registry)
         npm-install (npm-install-command state enabled)
         release-installs (->> (of-install-kind :github-release enabled)
                               (map #(github-release-install-command state %)))]

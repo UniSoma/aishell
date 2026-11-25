@@ -85,8 +85,7 @@
            :gemini-version "1.2.3"}})
 
 (def ^:private enabled-combinations
-  "All 2^5 enabled/disabled combinations of the five volume-participating
-   harnesses."
+  "All 2^5 enabled/disabled combinations of five harnesses."
   (let [harnesses [:claude :opencode :codex :gemini :pi]]
     (for [bits (range 32)]
       (into {}
@@ -120,7 +119,7 @@
   (testing "no enabled harness serializes as an empty vector"
     (is (= "[]" (pr-str (vol/normalize-harness-config {}))))))
 
-(deftest harness-hash-ignores-non-participants
+(deftest harness-hash-ignores-non-harness-keys
   (testing "unisoma and the keys of removed harnesses never enter the hash"
     (doseq [flags enabled-combinations]
       (is (= (vol/compute-harness-hash flags)
@@ -166,7 +165,7 @@
                 " && chmod -R a+rwX /tools")
            (vol/build-install-commands {:with-opencode true :opencode-version "2.0.16"})))))
 
-(deftest install-commands-cover-every-volume-participant
+(deftest install-commands-cover-every-harness
   (testing "npm packages keep registry order"
     (is (= (str "export NPM_CONFIG_PREFIX=/tools/npm"
                 " && npm install -g @anthropic-ai/claude-code@latest"

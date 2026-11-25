@@ -22,14 +22,6 @@
    future command registry."
   (into #{"vscode"} (map :subcommand) harness/registry))
 
-(def ^:private defaultless-harnesses
-  "Harnesses the registry knows but that cannot receive configured defaults.
-   Their `harness_args` are accepted as a name but ignored at launch, so they
-   warrant a different warning from an outright unknown name."
-  (into #{}
-        (comp (remove :accepts-config-defaults?) (map :subcommand))
-        harness/registry))
-
 (defn project-config-path
   "Path to project config: PROJECT_DIR/<active-dir>/config.yaml.
    The active dir (.aishell or .sandbox) is resolved from the filesystem."
@@ -83,21 +75,15 @@
                harness-args-map))))
 
 (defn validate-harness-names
-  "Warn if harness_args names a harness that does not exist, or one that exists
-   but cannot receive configured defaults."
+  "Warn if harness_args names a harness that does not exist."
   [harness-args-map source-path]
   (when harness-args-map
     (let [config-harnesses (set (map name (keys harness-args-map)))
-          unknown (clojure.set/difference config-harnesses known-harnesses)
-          ignored (clojure.set/intersection config-harnesses defaultless-harnesses)]
+          unknown (clojure.set/difference config-harnesses known-harnesses)]
       (when (seq unknown)
         (output/warn (str "Unknown harness names in " source-path
                           " harness_args: "
-                          (clojure.string/join ", " (sort unknown)))))
-      (when (seq ignored)
-        (output/warn (str "Ignored harness_args in " source-path
-                          ": " (clojure.string/join ", " (sort ignored))
-                          " cannot receive configured defaults"))))))
+                          (clojure.string/join ", " (sort unknown))))))))
 
 (defn validate-detection-config
   "Validate detection config. Warns on invalid severity and missing reason.

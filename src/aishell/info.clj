@@ -100,7 +100,7 @@
 (defn- format-harnesses
   "Format enabled harnesses from state map."
   [state]
-  (let [enabled (filter #(get state (:state-key %)) (harness/versioned))]
+  (let [enabled (filter #(get state (:state-key %)) harness/registry)]
     (if (empty? enabled)
       ["  None"]
       (mapv (fn [{:keys [label version-key]}]

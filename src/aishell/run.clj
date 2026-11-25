@@ -36,20 +36,10 @@
           subcommand))))
 
 (defn- report-harness-defaults!
-  "Report the `harness_args` defaults configured for `cmd`.
-
-   Defaults that reach the launch argv are a verbose note. A harness that
-   cannot receive them (one whose descriptor sets :accepts-config-defaults?
-   false) warns instead, so the config mistake is visible rather than
-   silently dropped."
+  "Report the `harness_args` defaults configured for `cmd` as a verbose note."
   [cmd default-args]
   (when (seq default-args)
-    (let [descriptor (harness-for cmd)
-          joined (str/join " " default-args)]
-      (if (and descriptor (not (:accepts-config-defaults? descriptor)))
-        (output/warn (str "Ignoring harness_args for " cmd ": " (:label descriptor)
-                          " does not accept configured defaults (" joined ")"))
-        (output/verbose (str "Applying " cmd " defaults: " joined))))))
+    (output/verbose (str "Applying " cmd " defaults: " (str/join " " default-args)))))
 
 (defn- container-command
   "Launch argv for `cmd` inside the container. Harness commands derive their
@@ -107,7 +97,7 @@
    pre_start hook. --base-image skips it: pre_start is what most likely
    needs the Project extension's tools."
   [opts]
-  (boolean (or (:skip-pre-start opts) (:base-image opts))))
+  (boolean (:base-image opts)))
 
 (defn resolve-image-tag
   "Return the image tag to run: the Extended image if the project has a
@@ -156,7 +146,7 @@
    - cmd: nil for a shell, else a harness subcommand from the registry
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings),
-     :container-name (overrides the name part), :skip-pre-start and
+     :container-name (overrides the name part) and
      :base-image (start on the Base image, without the Project extension
      or pre_start)
 
@@ -194,8 +184,7 @@
       (when-let [descriptor (harness-for cmd)]
         (verify-harness-available descriptor state))
 
-      (let [descriptor (harness-for cmd)
-            image-tag (resolve-image-tag project-dir false opts)
+      (let [image-tag (resolve-image-tag project-dir false opts)
             git-id (docker-run/read-git-identity project-dir)
 
             defaults (when (and cfg cmd)
@@ -236,8 +225,6 @@
                           :state state
                           :git-identity git-id
                           :skip-pre-start (skip-pre-start? opts)
-                          :skip-interactive (boolean (and descriptor
-                                                          (not (:interactive? descriptor))))
                           :container-name container-name-str
                           :harness-volume-name harness-volume-name})
 

@@ -237,9 +237,7 @@ GitHub-release harness.
 Append a descriptor to `registry` in display order. The schema comment at the
 top of the namespace documents every key; the required ones are `:id`,
 `:label`, `:subcommand`, `:state-key` (`:with-<id>`), `:version-key`
-(`:<id>-version`), the four capability booleans (`:interactive?`,
-`:pre-start?`, `:accepts-config-defaults?`, `:volume-participant?`) and
-`:install`.
+(`:<id>-version`) and `:install`.
 
 ```clojure
 {:id :cursor
@@ -247,10 +245,6 @@ top of the namespace documents every key; the required ones are `:id`,
  :subcommand "cursor"
  :state-key :with-cursor
  :version-key :cursor-version
- :interactive? true
- :pre-start? true
- :accepts-config-defaults? true
- :volume-participant? true
  :alias {:always? true}
  :install {:kind :npm :package "@cursor/cli"}
  :config-paths [{:path [".cursor"] :type :dir}]

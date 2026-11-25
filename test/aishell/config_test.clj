@@ -75,9 +75,9 @@
     (is (= "" (captured-warnings
                #(config/validate-claude-shared-paths ["skills" "notes/x.md"] "/x"))))))
 
-(deftest harness-args-accepts-every-harness-that-takes-defaults
-  (testing "each registry harness whose descriptor takes configured defaults is accepted"
-    (doseq [{:keys [subcommand]} (filter :accepts-config-defaults? harness/registry)]
+(deftest harness-args-accepts-every-harness
+  (testing "each registry harness is accepted"
+    (doseq [{:keys [subcommand]} harness/registry]
       (is (= "" (captured-warnings
                  #(config/validate-harness-names {(keyword subcommand) ["--x"]}
                                                  "config.yaml")))
@@ -97,8 +97,7 @@
   (testing "a name no harness answers to is still reported as unknown"
     (let [out (captured-warnings
                #(config/validate-harness-names {:openspec ["--x"]} "config.yaml"))]
-      (is (re-find #"Unknown harness names" out))
-      (is (not (re-find #"Ignored harness_args" out))))))
+      (is (re-find #"Unknown harness names" out)))))
 
 (deftest harness-args-warns-for-a-name-no-harness-owns
   (testing "a genuine typo still warns"

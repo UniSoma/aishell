@@ -9,7 +9,7 @@ An AI coding CLI (Claude Code, OpenCode, Codex, Gemini, GitHub Copilot CLI, pi, 
 _Avoid_: agent, tool, AI; pi (for omp)
 
 **Harness descriptor**:
-The pure-data record of one Harness's facts: identity, canonical label, state and version keys, capabilities (subcommand, launch command, shell alias, harness-volume participation), install source, config paths, passthrough environment variables, and fixed runtime environment policy.
+The pure-data record of one Harness's facts: identity, canonical label, state and version keys, capabilities (subcommand, launch command, shell alias), install source, config paths, passthrough environment variables, and fixed runtime environment policy.
 _Avoid_: harness config, harness entry
 
 **Harness registry**:

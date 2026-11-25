@@ -135,18 +135,15 @@
           (spit config-path (json/generate-string config {:pretty true})))))))
 
 ;; Setup subcommand spec
-;; Note: the versioned --with-<harness> flags don't use :coerce because
-;; babashka.cli returns boolean true for flags without values, which can't be
-;; coerced to string. parse-with-flag handles both boolean true and string
-;; values. A harness with no version takes :coerce :boolean instead.
+;; The --with-<harness> flags skip :coerce: babashka.cli returns boolean true
+;; for a flag without a value, which can't be coerced to string.
+;; parse-with-flag accepts both true and a version string.
 (def harness-setup-spec
   "The `--with-<harness>` half of the setup spec, one entry per registry row.
-   A versioned harness takes an optional =VERSION and so stays uncoerced;
-   a version-less one is a plain boolean."
+   Each takes an optional =VERSION."
   (into {}
-        (map (fn [{:keys [state-key version-key] :as descriptor}]
-               [state-key (cond-> {:desc (harness/setup-flag-desc descriptor)}
-                            (not version-key) (assoc :coerce :boolean))]))
+        (map (fn [{:keys [state-key] :as descriptor}]
+               [state-key {:desc (harness/setup-flag-desc descriptor)}]))
         harness/registry))
 
 (def setup-spec
@@ -165,26 +162,23 @@
         [:unisoma :dir :reuse-config :force :verbose :help]))
 
 (def setup-harness-options
-  "Setup options that carry an optional version, with the label their
-   validation errors and summaries print."
+  "The harness setup options, each carrying an optional version, with the
+   label their validation errors and summaries print."
   (mapv (fn [{:keys [state-key version-key label]}]
           {:opt state-key :state state-key :version version-key :label label})
-        (harness/versioned)))
+        harness/registry))
 
 (def setup-boolean-options
-  "Setup options that are a plain on/off: the version-less harnesses, plus
-   the UniSoma whitelist, which is not a harness at all."
-  (conj (mapv (fn [{:keys [state-key]}] {:opt state-key :state state-key})
-              (remove :version-key harness/registry))
-        {:opt :unisoma :state :unisoma}))
+  "Setup options that are a plain on/off: the UniSoma whitelist, which is
+   not a harness at all."
+  [{:opt :unisoma :state :unisoma}])
 
 (def empty-setup-state
-  "Every setup-state key, all disabled: a boolean per harness, a version per
-   versioned harness, plus the UniSoma flag."
+  "Every setup-state key, all disabled: a boolean and a version per harness,
+   plus the UniSoma flag."
   (into {:unisoma false}
         (mapcat (fn [{:keys [state-key version-key]}]
-                  (cond-> [[state-key false]]
-                    version-key (conj [version-key nil]))))
+                  [[state-key false] [version-key nil]]))
         harness/registry))
 
 (defn explicit-setup-state
@@ -271,24 +265,22 @@
     (output/error msg)))
 
 (defn enabled-harness-list
-  "Return the enabled harness volume participants, in display order, as the
-   comma-separated value of the volume's `aishell.harnesses` label."
+  "Return the enabled harnesses, in display order, as the comma-separated
+   value of the volume's `aishell.harnesses` label."
   [state-map]
-  (->> (harness/volume-participants)
+  (->> harness/registry
        (keep (fn [{:keys [subcommand state-key]}]
                (when (get state-map state-key) subcommand)))
        (str/join ",")))
 
 (defn setup-summary-lines
   "Lines describing what a setup state enables, in registry display order:
-   a versioned harness shows its pinned version, a version-less one shows
-   `enabled`, and the UniSoma whitelist follows the harnesses."
+   each harness shows its pinned version, and the UniSoma whitelist follows
+   the harnesses."
   [state-map]
   (cond-> (vec (keep (fn [{:keys [label state-key version-key]}]
                        (when (get state-map state-key)
-                         (if version-key
-                           (str "  " label ": " (or (get state-map version-key) "latest"))
-                           (str "  " label ": enabled"))))
+                         (str "  " label ": " (or (get state-map version-key) "latest"))))
                      harness/registry))
     (:unisoma state-map) (conj "  UniSoma: enabled")))
 
@@ -885,12 +877,8 @@
         (update-check/maybe-check-for-update version)))
     ;; Harness pass-through: a harness subcommand launches its Sandbox with
     ;; every remaining arg (including --help, --version) forwarded verbatim.
-    ;; Launch shape, such as whether the project's pre_start hook runs, is
-    ;; read from the harness descriptor, not spelled per harness here.
     (if-let [descriptor (harness/for-subcommand first-arg)]
-      (run/run-container (:subcommand descriptor) (vec (rest args))
-                         (cond-> launch-opts
-                           (not (:pre-start? descriptor)) (assoc :skip-pre-start true)))
+      (run/run-container (:subcommand descriptor) (vec (rest args)) launch-opts)
       (case first-arg
         "info" (info/run-info (vec (rest args)))
         "check" (check/run-check)

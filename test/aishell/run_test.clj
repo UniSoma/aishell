@@ -5,7 +5,6 @@
             [aishell.docker.extension :as ext]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
-            [aishell.harness :as harness]
             [aishell.output :as output]
             [aishell.run :as run]))
 
@@ -18,8 +17,8 @@
       (f))
     (str err)))
 
-(deftest harness-args-for-a-launchable-harness-are-announced-verbosely
-  (testing "defaults that reach the argv are a verbose note, not a warning"
+(deftest harness-args-are-announced-verbosely
+  (testing "configured defaults are a verbose note, not a warning"
     (let [out (captured-err
                #(binding [output/*verbose* true]
                   (report-defaults "claude" ["--model" "opus"])))]
@@ -32,26 +31,8 @@
                #(binding [output/*verbose* true]
                   (report-defaults "claude" [])))))))
 
-(deftest harness-args-for-a-harness-without-config-defaults-warn
-  (with-redefs [harness/for-subcommand
-                (fn [_] (assoc (harness/descriptor :gemini) :accepts-config-defaults? false))]
-    (testing "a harness that cannot receive configured defaults warns"
-      (let [out (captured-err #(report-defaults "gemini" ["-d"]))]
-        (is (str/includes? out "Warning"))
-        (is (str/includes? out "harness_args"))
-        (is (str/includes? out "gemini"))
-        (is (str/includes? out "-d"))))
-    (testing "the warning is not suppressed by non-verbose mode"
-      (let [quiet (captured-err #(report-defaults "gemini" ["-d"]))
-            verbose (captured-err #(binding [output/*verbose* true]
-                                     (report-defaults "gemini" ["-d"])))]
-        (is (= quiet verbose))
-        (is (seq quiet))))
-    (testing "no configured defaults stays silent"
-      (is (= "" (captured-err #(report-defaults "gemini" [])))))))
-
 (deftest shell-mode-defaults-keep-their-verbose-note
-  (testing "a non-harness command has no descriptor and is not warned about"
+  (testing "a non-harness command keeps the verbose note"
     (let [out (captured-err
                #(binding [output/*verbose* true]
                   (report-defaults "shell" ["-x"])))]
@@ -83,7 +64,6 @@
 
 (deftest base-image-launch-skips-pre-start
   (is (true? (run/skip-pre-start? {:base-image true})))
-  (is (true? (run/skip-pre-start? {:skip-pre-start true})))
   (is (not (run/skip-pre-start? {}))))
 
 (deftest warn-if-foundation-stale-compares-the-stored-hash

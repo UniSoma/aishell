@@ -94,7 +94,7 @@
   [state]
   (doseq [{:keys [label state-key version-key]} harness/registry]
     (if (get state state-key)
-      (let [ver (when version-key (get state version-key))]
+      (let [ver (get state version-key)]
         (print-status :ok (str label " installed" (when ver (str " (" ver ")")))))
       (print-status :warn (str label " not installed")))))
 

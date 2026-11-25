@@ -661,15 +661,17 @@
    - project-dir: Absolute path to project
    - image-tag: Docker image to run
    - config: Parsed config map from config.clj (or nil)
+   - state: Setup state map
    - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
    - skip-pre-start: When true, disable pre_start hooks
-   - skip-interactive: When true, skip interactive features (harness aliases)
+   - container-name: Value for --name, or nil
+   - harness-volume-name: Harness volume to mount, or nil
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
 
-   Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
-   handles execution: runs in background, logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name harness-volume-name]}]
+   PRE_START is passed as -e PRE_START=command. The entrypoint script runs it
+   in the background and logs to /tmp/pre-start.log."
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start container-name harness-volume-name]}]
   (build-docker-args-internal
    {:project-dir project-dir
     :image-tag image-tag
@@ -677,7 +679,6 @@
     :state state
     :git-identity git-identity
     :skip-pre-start skip-pre-start
-    :skip-interactive skip-interactive
     :container-name container-name
     :harness-volume-name harness-volume-name
     :tty-flags ["-it"]}))
