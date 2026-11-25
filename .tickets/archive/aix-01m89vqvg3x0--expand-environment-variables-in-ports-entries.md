@@ -1,19 +1,20 @@
 ---
 id: aix-01m89vqvg3x0
 title: Expand environment variables in ports entries
-status: in_progress
+status: closed
 type: feature
 priority: 2
 mode: afk
 created: '2026-11-25T17:23:32.993798437Z'
-updated: '2026-11-25T17:25:03.842854196Z'
+updated: '2026-11-25T17:25:19.689363007Z'
+closed: '2026-11-25T17:25:19.689363007Z'
 acceptance:
 - title: Tests cover set, unset+default, empty+default, unset no default (error), empty no default (error), empty default (error), pattern failure after substitution, plain entry unchanged
   done: true
 - title: docs/CONFIGURATION.md ports section documents the syntax, the example, and where the value comes from
   done: true
 - title: Released in a tagged version
-  done: false
+  done: true
 ---
 
 ## Description
@@ -30,3 +31,9 @@ Errors: ${VAR} unset, ${VAR} set but empty, and ${VAR:-} with an empty default e
 A pattern failure after substitution prints the usual message plus a "(from <entry as written>)" line. A plain entry prints exactly today's message.
 
 Out of scope: expansion in other keys, a local override file, port ranges.
+
+## Notes
+
+**2026-11-25T17:25:19.689363007Z**
+
+Shipped in v4.6.0

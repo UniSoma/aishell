@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.6.0] - 2026-11-25
 
 ### Added
+
+- **Environment variables in `ports` entries**: `${VAR}` and `${VAR:-default}` in a `ports` entry are replaced from the environment of the shell that runs `aishell`, so a project can commit `"127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"` and each developer can set the host port with an exported variable or a mise `[env]` entry. The default applies when the variable is unset or empty. A variable with no default that is unset or empty stops aishell with an error naming the variable and the entry. The expanded entry gets the usual format check, and an invalid one is reported along with the entry as written. `$VAR` without braces is not expanded, and other config keys are unchanged
 
 - **Fossil 2.28 in the foundation image**: the official prebuilt binary from fossil-scm.org, verified against a pinned SHA-256 for each architecture (amd64, arm64), rather than Debian trixie's 2.26 package. `aishell info` lists it under Runtimes. Rebuild is automatic via the foundation-content hash
 
