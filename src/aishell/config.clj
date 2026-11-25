@@ -12,7 +12,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :gitleaks_freshness_check :gitleaks_freshness_threshold :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
 
 (def known-harnesses
   "Harness names accepted under `harness_args`, derived from the registry.
@@ -181,7 +181,7 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                           (clojure.string/join ", " (map name unknown))
-                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, gitleaks_freshness_check, gitleaks_freshness_threshold, detection, pi_packages, update_check, claude_isolation, claude_shared_paths"))))
+                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, pi_packages, update_check, claude_isolation, claude_shared_paths"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
@@ -248,17 +248,18 @@
 
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
-   - Lists (mounts, ports, docker_args): concatenate (global + project)
+   - Lists (mounts, ports, docker_args, pi_packages, claude_shared_paths):
+     concatenate (global + project)
    - Maps (env): shallow merge (project overrides global)
    - Map-of-lists (harness_args): merge keys, concatenate per-key lists
-   - Scalars (pre_start): project replaces global
+   - Scalars (pre_start, claude_isolation): project replaces global
    - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
   (let [list-keys #{:mounts :ports :docker_args :pi_packages :claude_shared_paths}
         map-keys #{:env}
         map-of-lists-keys #{:harness_args}
-        scalar-keys #{:pre_start :gitleaks_freshness_check :claude_isolation}
+        scalar-keys #{:pre_start :claude_isolation}
         ;; Extract detection config before reduce
         global-detection (get global-config :detection)
         project-detection (get project-config :detection)

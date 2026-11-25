@@ -1,9 +1,7 @@
 (ns aishell.core
   (:require [aishell.cli :as cli]
             [aishell.output :as output]
-            [aishell.upgrade :as upgrade]
-            [aishell.gitleaks.scan-state]
-            [aishell.gitleaks.warnings]))
+            [aishell.upgrade :as upgrade]))
 
 (defn -main [& args]
   ;; A Windows upgrade cannot delete the executable it is running from, so it

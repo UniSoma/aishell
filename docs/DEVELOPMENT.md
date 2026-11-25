@@ -84,9 +84,6 @@ aishell/
 │   │   ├── patterns.clj      # Pattern definitions
 │   │   ├── formatters.clj    # Output formatting
 │   │   └── gitignore.clj     # Gitignore parsing
-│   ├── gitleaks/
-│   │   ├── scan_state.clj    # Scan freshness tracking
-│   │   └── warnings.clj      # Gitleaks reminder warnings
 │   ├── attach.clj            # Attach command (reconnect to containers)
 │   ├── check.clj             # Pre-flight validation command
 │   ├── info.clj              # Image stack info display
@@ -268,7 +265,6 @@ Optional keys, each read by exactly one derivation:
 | `:fixed-args` | argv flags inserted before user args on every launch |
 | `:skip-permissions-flag` | flag added when skip-permissions is in effect |
 | `:alias` | emit a shell alias in the sandbox; `{:always? false}` means only when it has args |
-| `:setup-flag-desc` | help text for `--with-<id>` when "Include <label>" is not enough |
 | `:config-paths` | home-relative dirs/files created on the host and mounted into the container |
 | `:credentials-file-env` | env var naming a host credentials file to mount read-only |
 | `:env-passthrough` | host env vars forwarded when set, in declared order |
@@ -293,7 +289,6 @@ Install kinds:
   `:asset` holds an `{arch}` placeholder (`x64` or `arm64`), `:tag-prefix` is
   prepended to the pinned version to form the release tag, and `:checksums`
   names the release's SHA-256 file. See the omp descriptor
-- `:image-baked`: see gitleaks
 
 A new kind needs a branch in `volume/build-install-commands`.
 

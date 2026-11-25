@@ -340,8 +340,7 @@
 
 (def ^:private all-enabled
   {:with-claude true :with-opencode true :with-codex true
-   :with-copilot true :with-gemini true :with-pi true :with-omp true
-   :with-gitleaks true})
+   :with-copilot true :with-gemini true :with-pi true :with-omp true})
 
 (defn- alias-value
   "The value of HARNESS_ALIAS_<NAME> in a -e flag vector, or nil when absent."
@@ -387,9 +386,6 @@
     (testing "config defaults make the remaining harnesses emit"
       (is (= ["claude" "opencode" "codex" "copilot" "gemini" "pi" "omp"]
              (alias-names (alias-env-args {:harness_args every-harness-args} all-enabled)))))
-    (testing "gitleaks has no alias even with config defaults"
-      (is (nil? (alias-value (alias-env-args {:harness_args {:gitleaks ["--redact"]}} all-enabled)
-                             "gitleaks"))))
     (testing "a disabled harness emits nothing"
       (is (empty? (alias-names (alias-env-args {:harness_args every-harness-args} {})))))))
 
@@ -412,11 +408,6 @@
   (testing "no harness command falls back to bash"
     (is (= ["/bin/bash"] (container-command nil [] [] true)))
     (is (= ["/bin/bash"] (container-command "bash" [] [] true)))))
-
-(deftest gitleaks-launch-drops-config-defaults
-  (testing "gitleaks takes CLI args only, per its capability field"
-    (is (= ["gitleaks" "dir" "."]
-           (container-command "gitleaks" ["--redact"] ["dir" "."] true)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Harness config-path and env-passthrough tables
@@ -443,9 +434,7 @@
   (testing "iteration order is preserved for mount and info output"
     (is (= [:with-claude :with-opencode :with-codex :with-copilot :with-gemini :with-pi
             :with-omp]
-           (vec (keys run/harness-config-dirs)))))
-  (testing "gitleaks mounts no host config"
-    (is (nil? (get run/harness-config-dirs :with-gitleaks)))))
+           (vec (keys run/harness-config-dirs))))))
 
 (deftest harness-config-files-are-seeded-not-created-as-dirs
   (testing "only .claude.json is a file entry"
@@ -464,9 +453,7 @@
             :with-omp      ["OMP_PROFILE" "ANTHROPIC_API_KEY" "OPENAI_API_KEY"
                             "GEMINI_API_KEY" "OPENROUTER_API_KEY" "GROQ_API_KEY"
                             "XAI_API_KEY" "MISTRAL_API_KEY" "DEEPSEEK_API_KEY"]}
-           run/harness-api-keys)))
-  (testing "gitleaks passes no API keys through"
-    (is (nil? (get run/harness-api-keys :with-gitleaks)))))
+           run/harness-api-keys))))
 
 (deftest copilot-does-not-forward-broad-github-or-cache-vars
   (testing "GH_TOKEN, GITHUB_TOKEN, COPILOT_HOME, and COPILOT_CACHE_HOME are not declared for Copilot"

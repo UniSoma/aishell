@@ -93,6 +93,10 @@ _Avoid_: network policy (the allowlist is the policy; the mode selects whether o
 The aishell-managed sidecar container that is a Sandbox's only route to the network under `restricted` and `allowlist`. It resolves names itself and enforces the Network mode on the resolved address.
 _Avoid_: sidecar (unqualified), gateway, firewall
 
+**Sensitive-file detection**:
+The check aishell runs on a project's file names before a **Harness** starts, warning about files likely to hold secrets (`.env`, keys, cloud credentials) that the **Sandbox** would expose to it. This is aishell's whole share of secret scanning; scanning file contents and git history for committed secrets is the project's job.
+_Avoid_: secret scanning, gitleaks, detection (unqualified)
+
 **Secret broker**:
 A planned sidecar that holds an API key on the Sandbox's behalf and substitutes it into outbound requests, so the harness sees only a placeholder. Applies to API-key harnesses; OAuth tokens are not brokered.
 _Avoid_: vault, key proxy

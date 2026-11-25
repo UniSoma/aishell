@@ -158,7 +158,6 @@ See [Base image customization](docs/CONFIGURATION.md#base-image-customization) f
 ### Power user
 
 - Warns before an agent can access detected secrets, keys, or credentials
-- Runs optional content-based secret scans with `aishell gitleaks` when setup includes `--with-gitleaks`
 - Runs a single container command with `aishell exec`
 - Assigns deterministic container names with `--name`
 - Opens VSCode in a container as `developer` and persists the server state across restarts
@@ -322,7 +321,7 @@ Check the setup without starting a container:
 aishell check
 ```
 
-The command checks Docker, the build state, images, configuration, mounts, sensitive files, gitleaks scan age, Git, and the VSCode `code` CLI.
+The command checks Docker, the build state, images, configuration, mounts, sensitive files, Git, and the VSCode `code` CLI.
 
 ## Configuration
 
@@ -406,24 +405,7 @@ aishell --unsafe claude  # Skip confirmation prompts
 
 aishell refuses to start from your home directory or any directory above it, and `--unsafe` does not change that: a sandbox rooted there would hand the harness your SSH keys, credentials, and every project at once.
 
-### Gitleaks (optional)
-
-Gitleaks is opt-in. Enable it at build time:
-
-```bash
-aishell setup --with-claude --with-gitleaks
-```
-
-Then use `aishell gitleaks` for content-based secret detection inside the container:
-
-```bash
-aishell gitleaks detect
-aishell gitleaks detect --verbose --no-git
-```
-
-aishell tracks when you last ran gitleaks and reminds you if it's been more than 7 days.
-
-For custom detection patterns, allowlists, and freshness configuration, see [Configuration docs](docs/CONFIGURATION.md).
+Sensitive-file detection checks file names, not file contents or git history. For custom patterns and allowlists, see [detection](docs/CONFIGURATION.md#detection). To catch secrets before they are committed, see [Secret scanning](docs/CONFIGURATION.md#secret-scanning).
 
 ## Authentication
 
@@ -620,10 +602,6 @@ Runtimes:
 uv downloads the Python version that a project pins. The image does not include a Python interpreter.
 
 `ldconfig` places the upstream SQLite library before Debian's library. Programs that link `libsqlite3.so.0` therefore use version 3.54.1. The image excludes `sqlite3_analyzer` because it requires TCL.
-
-Security tools:
-
-- Gitleaks v8.30.1 (optional, via `--with-gitleaks`)
 
 CLI tools:
 

@@ -6,7 +6,7 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:44.064243075Z'
-updated: '2026-07-15T02:44:33.217991534Z'
+updated: '2026-11-25T20:05:57.765060500Z'
 tags:
 - ready-for-agent
 - json
@@ -33,6 +33,8 @@ acceptance:
   done: false
 deps:
 - aix-01kr1qp6deb1
+links:
+- aix-01m8a3nye1d7
 ---
 
 ## Description
@@ -60,7 +62,7 @@ Behavior:
 - passed is true iff summary.fail == 0 (warn does not fail). Exit code preserved: exit 1 when passed is false, else exit 0. This matches the existing critical-fail semantics; warn-level results never trigger a non-zero exit.
 - label strings are stripped of ANSI color (force-disabled in JSON mode anyway, so this is a natural side effect).
 - sensitiveFiles.findings carries the structured per-file detail that today is printed as additional indented lines below the summary status line. Each finding has {path, kind, severity} extracted from what aishell.detection.formatters/format-finding-line already has access to. When detection is disabled or there are no findings, findings is [] and total/high/medium/low are 0.
-- Gitleaks-freshness, sensitive-file detection, mount checks, security checks, harness-installed checks, dockerfile-staleness, base-image-custom, extension freshness, docker availability, setup-state-found — all the existing checks become entries in the checks array with the same status enum and label text the human path uses.
+- Sensitive-file detection, mount checks, security checks, harness-installed checks, dockerfile-staleness, base-image-custom, extension freshness, docker availability, setup-state-found: all the existing checks become entries in the checks array with the same status enum and label text the human path uses.
 - Human path (aishell check without --json) is unchanged: same banners, separators, ✓/✗/! glyphs, exit code.
 
 Mechanics:
@@ -72,3 +74,9 @@ Mechanics:
 ## Blocked by
 
 - aix-01kr1qp6deb1 (Wire --json infrastructure and aishell ps --json)
+
+## Notes
+
+**2026-11-25T19:55:57.601528988Z**
+
+Gitleaks support was removed (aix-01m8a3nye1d7), so there is no Gitleaks-freshness check to carry into the checks array.

@@ -60,7 +60,7 @@ graph TB
 4. **Project Extension:** Optional per-project `.aishell/Dockerfile` extends the Base image
 5. **Configuration Merge:** Global and project configs combine with defined semantics
 6. **Stateless Containers:** No data persists in container; all work is in mounted project dir
-7. **Security Layers:** Detection (filename patterns) + Gitleaks (opt-in content scanning) before launch
+7. **Sensitive-file detection:** A filename scan before launch warns about secrets the harness could read
 
 ---
 
@@ -88,7 +88,6 @@ The Foundation image contains stable system components that change rarely:
 - Babashka CLI runtime
 - System tools (git, curl, jq, ripgrep, vim, etc.)
 - fd (fd-find with symlink for pi file discovery)
-- Gitleaks binary (opt-in, via `--with-gitleaks`)
 - Gosu for user switching
 - Entrypoint script and profile configuration
 
@@ -214,7 +213,6 @@ The build phase builds the Foundation image and populates the harness volume:
 │ - FROM debian:trixie-slim                    │
 │ - Install system packages                    │
 │ - Install Node.js, Babashka, Gosu             │
-│ - Install Gitleaks (if --with-gitleaks)        │
 │ - Tag: aishell:foundation                    │
 └────────┬─────────────────────────────────────┘
          │
@@ -277,7 +275,6 @@ The run phase executes a harness (or shell) in a container with project files mo
 ┌──────────────────────────────────────────┐
 │ Security Checks                          │
 │ - aishell.detection.core (filename scan) │
-│ - aishell.gitleaks.warnings (freshness)  │
 │ - aishell.validation (dangerous args)    │
 └────────┬─────────────────────────────────┘
          │
@@ -386,8 +383,6 @@ Each namespace handles one concern:
 | `aishell.detection.patterns` | Detection rules | Default patterns for sensitive files |
 | `aishell.detection.formatters` | Detection output | Format findings for user display |
 | `aishell.detection.gitignore` | Gitignore integration | Skip gitignored files during scan |
-| `aishell.gitleaks.scan_state` | Gitleaks state tracking | Timestamp management for scan freshness |
-| `aishell.gitleaks.warnings` | Gitleaks freshness warnings | Advisory warnings when scans are stale |
 
 **Security architecture:**
 
@@ -396,13 +391,7 @@ Each namespace handles one concern:
    - Configurable via `detection:` in config.yaml
    - Supports custom patterns and allowlists
 
-2. **Gitleaks layer (aishell.gitleaks.*):** Content-based secret scanning (opt-in via `--with-gitleaks`)
-   - Requires `--with-gitleaks` build flag; not available by default
-   - Slower; runs on-demand via `aishell gitleaks dir .`
-   - Warns when scans exceed 7 days old
-   - Advisory only; never blocks execution
-
-3. **Validation layer (aishell.validation):** Config safety checks
+2. **Validation layer (aishell.validation):** Config safety checks
    - Warns about dangerous `docker_args` (--privileged, --network=host)
    - Warns about dangerous mounts (/etc, /var/run/docker.sock)
 
@@ -418,7 +407,6 @@ Each namespace handles one concern:
 | `~/.aishell/config.yaml` | Global config defaults | YAML | Persistent |
 | `~/.aishell/Dockerfile` | Optional Base image customization | Dockerfile | Persistent |
 | `~/.local/state/aishell/update-check.edn` | Update check timestamp and latest version | EDN | Persistent |
-| `~/.aishell/gitleaks-scan.edn` | Per-project Gitleaks scan timestamps | EDN | Persistent |
 | `.aishell/config.yaml` | Project-specific config | YAML | Persistent (in project) |
 | `.aishell/Dockerfile` | Optional Project extension | Dockerfile | Persistent (in project) |
 
@@ -441,7 +429,6 @@ Each namespace handles one concern:
  :with-gemini false                      ; boolean: Gemini CLI enabled?
  :with-pi false                         ; boolean: Pi coding agent enabled?
  :with-omp false                         ; boolean: oh-my-pi (omp) enabled?
- :with-gitleaks false                    ; boolean: Gitleaks installed? (opt-in, default false)
  :claude-version "2.0.22"                ; string or nil: pinned version
  :opencode-version nil                   ; string or nil: pinned version
  :codex-version "0.89.0"                 ; string or nil: pinned version
@@ -530,11 +517,12 @@ See the Dockerfile extension section in the Configuration Reference for details.
 - **Reproducibility:** All projects share the same base
 - **Flexibility:** Projects add languages, databases, or tools without rebuilding the base
 
-**Why two-layer security (detection + gitleaks)?**
+**Why sensitive-file detection alone?**
 
-- **Speed vs thoroughness:** Detection runs instantly; Gitleaks (when installed) scans comprehensively
-- **Fail-fast:** Catches obvious mistakes before expensive builds
+- **Right threat, right time:** The risk aishell creates is a harness reading a `.env` or key file in the mounted project. That happens at launch, so sensitive-file detection runs at every launch without being asked
+- **Fast:** It checks file names only, so it adds almost nothing to startup
 - **Non-blocking:** Advisory warnings never block power users
+- **Commit leakage is the project's job:** Scanning file contents and git history for committed secrets belongs in the project's pre-commit hook or CI, where it runs on every change whether or not aishell is involved. See [ADR 0012](adr/0012-secret-scanning-stops-at-sensitive-file-detection.md) and [Secret scanning](CONFIGURATION.md#secret-scanning)
 
 ---
 

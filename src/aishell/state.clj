@@ -4,6 +4,7 @@
    knows what was built."
   (:require [babashka.fs :as fs]
             [clojure.edn :as edn]
+            [clojure.string :as str]
             [aishell.output :as output]
             [aishell.util :as util]))
 
@@ -20,11 +21,23 @@
     (when (fs/exists? path)
       (edn/read-string (slurp path)))))
 
+(def ^:private removed-harnesses
+  "Harnesses aishell no longer supports: their state keys and the warning a
+   saved state that still enables one gets."
+  [{:keys [:with-openspec :openspec-version]
+    :message (str "OpenSpec support was removed from aishell. "
+                  "Its setup flag and state are gone, and the harness volume "
+                  "repopulates without it on the next setup or update.")}
+   {:keys [:with-gitleaks]
+    :message (str "Gitleaks support was removed from aishell. "
+                  "The Foundation image rebuilds without it on the next setup or update; "
+                  "docs/CONFIGURATION.md (Secret scanning) shows where gitleaks goes now.")}])
+
 (def removed-keys
   "State keys for harnesses aishell no longer supports.
    Dropped on every state write; presence in a saved state triggers a
    one-time removal warning."
-  [:with-openspec :openspec-version])
+  (into [] (mapcat :keys) removed-harnesses))
 
 (defn strip-removed-keys
   "Remove keys for no-longer-supported harnesses from a state map."
@@ -33,17 +46,19 @@
     (apply dissoc state removed-keys)))
 
 (defn removed-harness-warning
-  "Return a removal warning for a saved state that had a removed harness
-   enabled, or nil when there is nothing to warn about.
+  "Return one string holding the removal warning of every removed harness
+   the saved state enables, or nil when it enables none.
 
-   Keyed on the flag being truthy, not merely present: every setup since
-   v3.7.0 wrote :with-openspec false into state, so presence would warn
-   users who never enabled it."
+   Keyed on the flag being truthy, not merely present: setup wrote
+   :with-openspec (since v3.7.0) and :with-gitleaks as false into state when
+   they were not enabled, so presence would warn users who never enabled
+   them."
   [state]
-  (when (or (:with-openspec state) (:openspec-version state))
-    (str "OpenSpec support was removed from aishell. "
-         "Its setup flag and state are gone, and the harness volume "
-         "repopulates without it on the next setup or update.")))
+  (some->> removed-harnesses
+           (filter (fn [{:keys [keys]}] (some #(get state %) keys)))
+           (map :message)
+           seq
+           (str/join " ")))
 
 (defn foundation-hash
   "Return the Foundation content hash recorded in `state`: `:foundation-hash`,
@@ -72,7 +87,6 @@
     :with-gemini false           ; boolean
     :with-pi false               ; boolean
     :with-omp false              ; boolean
-    :with-gitleaks false         ; boolean (whether Gitleaks installed, default false, opt-in)
     :unisoma false               ; boolean (UniSoma OpenCode provider whitelist, default false)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil

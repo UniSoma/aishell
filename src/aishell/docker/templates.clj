@@ -177,7 +177,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     && rm -rf /var/lib/apt/lists/*
 
 # Assert the glibc floor. Prebuilt binaries we download (uv, cue, fossil,
-# gitleaks, gosu) and ones a project pulls in later are linked against ever-newer glibc,
+# gosu) and ones a project pulls in later are linked against ever-newer glibc,
 # so the distro image carries a floor as a first-class property: >= 2.39. The
 # number asserted is the policy, not what trixie happens to ship (2.41) — the
 # headroom is why trixie was chosen, but the promise is 2.39. dpkg does the
@@ -407,24 +407,6 @@ RUN set -eux; \\
             || { echo \"missing SQLite compile option: $opt\"; exit 1; }; \\
     done; \\
     rm -f /tmp/sqlite-probe /tmp/sqlite-probe.out
-
-# Install Gitleaks for secret scanning (conditional, opt-in)
-ARG WITH_GITLEAKS=false
-ARG GITLEAKS_VERSION=8.30.1
-RUN if [ \"$WITH_GITLEAKS\" = \"true\" ]; then \\
-        set -eux; \\
-        dpkgArch=\"$(dpkg --print-architecture)\"; \\
-        case \"${dpkgArch##*-}\" in \\
-            amd64) glArch='x64' ;; \\
-            arm64) glArch='arm64' ;; \\
-            armhf) glArch='armv7' ;; \\
-            *) echo \"unsupported architecture: $dpkgArch\"; exit 1 ;; \\
-        esac; \\
-        curl -fsSL \"https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${glArch}.tar.gz\" \\
-        | tar -xz -C /usr/local/bin gitleaks; \\
-        chmod +x /usr/local/bin/gitleaks; \\
-        gitleaks version; \\
-    fi
 
 # Create developer user at build time (visible in /etc/passwd for VSCode Dev Containers)
 # UID/GID are adjusted at runtime by entrypoint to match host user

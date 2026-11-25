@@ -67,7 +67,6 @@ Options:
 - `--with-copilot[=VERSION]` - Install GitHub Copilot CLI. Optionally pin a version.
 - `--with-gemini[=VERSION]` - Install Gemini CLI.
 - `--with-omp[=VERSION]` - Install oh-my-pi (omp) from its GitHub release binary. VERSION is the release tag without the `v`.
-- `--with-gitleaks` - Include Gitleaks secret scanner.
 - `--force` - Rebuild everything, bypass Docker cache.
 - `--verbose`, `-v` - Show full Docker build output.
 
@@ -83,7 +82,6 @@ aishell codex
 aishell copilot
 aishell gemini
 aishell omp
-aishell gitleaks detect --verbose
 ```
 
 Common options for all harnesses:
@@ -133,7 +131,7 @@ Validate the project without launching a container.
 aishell check
 ```
 
-Checks: Docker availability, setup state, image existence, Dockerfile staleness, harness versions, project extensions, configuration validity, mount sources, dangerous Docker options, sensitive files, Gitleaks scan freshness.
+Checks: Docker availability, setup state, image existence, Dockerfile staleness, harness versions, project extensions, configuration validity, mount sources, dangerous Docker options, sensitive files.
 
 ### ps
 
@@ -236,7 +234,7 @@ The `extends` key in project config controls merging:
   - Lists (mounts, ports, docker_args): concatenate.
   - Maps (env): shallow merge, project keys win.
   - Map-of-lists (harness_args): merge keys, concatenate per-harness lists.
-  - Scalars (pre_start, gitleaks_freshness_check): project replaces global.
+  - Scalars (pre_start, claude_isolation): project replaces global.
   - Detection: enabled = project wins, custom_patterns = map merge, allowlist = concatenate.
 - `extends: none` - Ignore global config entirely.
 
@@ -343,14 +341,6 @@ harness_args:
 ```
 
 Argument order: [global defaults] + [project defaults] + [CLI args].
-
-#### gitleaks_freshness_check
-
-Boolean (default: true). Warns before container launch if the Gitleaks scan is older than 7 days. Advisory only; never blocks.
-
-```yaml
-gitleaks_freshness_check: false
-```
 
 #### detection
 
@@ -484,7 +474,7 @@ Harness config directories (`~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`, 
 
 ## Security
 
-Three security layers run before container launch:
+Two security checks run before container launch:
 
 ### 1. Sensitive File Detection
 
@@ -496,18 +486,9 @@ Scans the project for files matching known sensitive patterns:
 
 Bypass with `--unsafe`. Customize with `detection` config key. Allowlist false positives.
 
-### 2. Gitleaks Integration
+Sensitive-file detection checks file names only. aishell does not scan file contents or git history; run gitleaks or a similar scanner in the project's pre-commit hook or CI. See docs/CONFIGURATION.md (Secret scanning).
 
-Content-based secret scanning. Run manually:
-
-```
-aishell gitleaks detect
-aishell gitleaks detect --verbose --no-git
-```
-
-Tracks last scan timestamp per project. Warns when scans exceed 7 days old (advisory; never blocks). Disable with `gitleaks_freshness_check: false`.
-
-### 3. Configuration Validation
+### 2. Configuration Validation
 
 Warns about dangerous `docker_args` (--privileged, --network=host, --cap-add=ALL, etc.) and dangerous mount paths (/etc, /var/run/docker.sock).
 
@@ -546,7 +527,6 @@ docker stop aishell-<hash>-reviewer        # Stop container
 Built on debian:trixie-slim:
 
 - **Runtimes:** Node.js 24 (npm, npx), Babashka
-- **Security:** Gitleaks v8.30.0 (optional)
 - **Tools:** git, curl, jq, ripgrep, vim, tree, less, file, unzip, watch, htop, sudo
 - **SQLite 3.53.4:** built from source (sqlite3, sqldiff, sqlite3_rsync), shadowing Debian's 3.46.1 library
 - **User switching:** gosu (matches host UID/GID)
@@ -560,7 +540,6 @@ Built on debian:trixie-slim:
 
 - `~/.aishell/state.edn` - Build state (harnesses, versions, image tags, volume names, timestamps). EDN format.
 - `~/.aishell/config.yaml` - Global configuration.
-- `~/.aishell/gitleaks-scan.edn` - Per-project Gitleaks scan timestamps.
 - `.aishell/config.yaml` - Project-specific configuration.
 - `.aishell/Dockerfile` - Optional project extension Dockerfile.
 
@@ -638,12 +617,6 @@ aishell update --force            # Also rebuild foundation image
 
 ```
 aishell check
-```
-
-### Secret scanning
-
-```
-aishell gitleaks detect --verbose
 ```
 
 ---

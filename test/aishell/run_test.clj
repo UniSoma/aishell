@@ -5,6 +5,7 @@
             [aishell.docker.extension :as ext]
             [aishell.docker.hash :as hash]
             [aishell.docker.templates :as templates]
+            [aishell.harness :as harness]
             [aishell.output :as output]
             [aishell.run :as run]))
 
@@ -31,21 +32,23 @@
                #(binding [output/*verbose* true]
                   (report-defaults "claude" [])))))))
 
-(deftest harness-args-for-a-non-launchable-harness-warn
-  (testing "gitleaks cannot receive configured defaults, so they warn"
-    (let [out (captured-err #(report-defaults "gitleaks" ["--redact"]))]
-      (is (str/includes? out "Warning"))
-      (is (str/includes? out "harness_args"))
-      (is (str/includes? out "gitleaks"))
-      (is (str/includes? out "--redact"))))
-  (testing "the warning is not suppressed by non-verbose mode"
-    (let [quiet (captured-err #(report-defaults "gitleaks" ["--redact"]))
-          verbose (captured-err #(binding [output/*verbose* true]
-                                   (report-defaults "gitleaks" ["--redact"])))]
-      (is (= quiet verbose))
-      (is (seq quiet))))
-  (testing "gitleaks with no configured defaults stays silent"
-    (is (= "" (captured-err #(report-defaults "gitleaks" []))))))
+(deftest harness-args-for-a-harness-without-config-defaults-warn
+  (with-redefs [harness/for-subcommand
+                (fn [_] (assoc (harness/descriptor :gemini) :accepts-config-defaults? false))]
+    (testing "a harness that cannot receive configured defaults warns"
+      (let [out (captured-err #(report-defaults "gemini" ["-d"]))]
+        (is (str/includes? out "Warning"))
+        (is (str/includes? out "harness_args"))
+        (is (str/includes? out "gemini"))
+        (is (str/includes? out "-d"))))
+    (testing "the warning is not suppressed by non-verbose mode"
+      (let [quiet (captured-err #(report-defaults "gemini" ["-d"]))
+            verbose (captured-err #(binding [output/*verbose* true]
+                                     (report-defaults "gemini" ["-d"])))]
+        (is (= quiet verbose))
+        (is (seq quiet))))
+    (testing "no configured defaults stays silent"
+      (is (= "" (captured-err #(report-defaults "gemini" [])))))))
 
 (deftest shell-mode-defaults-keep-their-verbose-note
   (testing "a non-harness command has no descriptor and is not warned about"

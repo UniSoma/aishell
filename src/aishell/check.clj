@@ -15,7 +15,6 @@
             [aishell.validation :as validation]
             [aishell.detection.core :as detection]
             [aishell.detection.formatters :as formatters]
-            [aishell.gitleaks.scan-state :as scan-state]
             [aishell.output :as output]
             [aishell.util :as util]))
 
@@ -205,23 +204,6 @@
                 (doseq [finding items]
                   (println (str "      " (formatters/format-finding-line finding))))))))))))
 
-(defn- check-gitleaks-freshness
-  "Check gitleaks scan freshness. Only runs when gitleaks is installed."
-  [project-dir cfg state]
-  (when (and (:with-gitleaks state)
-             (not= false (:gitleaks_freshness_check cfg)))
-    (let [days (scan-state/days-since-scan project-dir)
-          threshold (or (:gitleaks_freshness_threshold cfg) 7)]
-      (cond
-        (nil? days)
-        (print-status :warn (str "Gitleaks scan never run. Run: " output/CYAN "aishell gitleaks" output/NC))
-
-        (>= days threshold)
-        (print-status :warn (str "Gitleaks scan is stale (" days " days old). Run: " output/CYAN "aishell gitleaks" output/NC))
-
-        :else
-        (print-status :ok (str "Gitleaks scan is fresh (" days " day(s) old)"))))))
-
 (defn- check-claude-isolation
   "Report the effective Claude isolation mode. Only runs when Claude Code is
    installed. In project mode, also report the per-project state dir path and
@@ -293,7 +275,6 @@
       (println (str output/BOLD "Security" output/NC))
       (check-security cfg)
       (check-sensitive-files project-dir cfg)
-      (check-gitleaks-freshness project-dir cfg (state/read-state))
 
       (check-claude-isolation project-dir cfg (state/read-state)))
 

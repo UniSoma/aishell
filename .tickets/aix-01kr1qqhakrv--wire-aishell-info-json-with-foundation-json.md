@@ -6,7 +6,7 @@ type: feature
 priority: 2
 mode: afk
 created: '2026-05-07T17:28:23.633967378Z'
-updated: '2026-08-21T14:21:35.687930954Z'
+updated: '2026-11-25T19:55:57.416995048Z'
 tags:
 - ready-for-agent
 - json
@@ -31,6 +31,7 @@ deps:
 - aix-01kr1qp6deb1
 links:
 - aix-01m0fkfpxkzm
+- aix-01m8a3nye1d7
 ---
 
 ## Description
@@ -43,7 +44,7 @@ Behavior:
 - aishell info --json emits a single compact JSON object on stdout (no banners, no separators) with this top-level shape:
   {
     project: {directory, hash, containerPrefix, imageTag},
-    foundation: {tag, base, systemPackages: [...], runtimes: {node, babashka, bbin, cue, gosu}, gitleaks: {installed, version}},
+    foundation: {tag, base, systemPackages: [...], runtimes: {node, babashka, bbin, cue, gosu}},
     baseImage: {tag, custom},
     projectExtension: {configured, tag},
     harnesses: {claude: {enabled, version}, opencode: {…}, codex: {…}, gemini: {…}, pi: {…}, openspec: {…}},
@@ -58,7 +59,6 @@ Behavior:
 Mechanics:
 - Extract a pure build-info-data function (no I/O beyond the same state/template/fs reads the human path already does) that returns the JSON-shaped map. The human renderer consumes the same map (or its sub-pieces) and prints the existing human layout. This makes the data path testable in isolation and ensures the two paths can never drift.
 - Versions for runtimes (node, babashka, bbin, cue) come from the existing parse-* helpers on the embedded Dockerfile template.
-- gitleaks.installed / gitleaks.version reflect the same logic the human path uses (state-dependent; null/false when not installed).
 
 ## Blocked by
 
@@ -69,3 +69,7 @@ Mechanics:
 **2026-08-21T14:21:35.687930954Z**
 
 OpenSpec was removed from aishell (aix-01m0dpf8cvrx), so this ticket's 'all six keys' for the info --json harness shape is now five: claude, opencode, codex, gemini, pi. Update the spec before implementing.
+
+**2026-11-25T19:55:57.416995048Z**
+
+Gitleaks support was removed (aix-01m8a3nye1d7), so the foundation.gitleaks field is gone from the info --json shape.

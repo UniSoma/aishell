@@ -1,15 +1,18 @@
 ---
 id: aix-01kr1d73gmbm
 title: Consolidate gitleaks scan_state and warnings
-status: open
+status: closed
 type: chore
 priority: 2
 mode: hitl
 created: '2026-05-07T14:24:39.443938975Z'
-updated: '2026-07-15T02:44:18.756843086Z'
+updated: '2026-11-25T19:59:45.672646390Z'
+closed: '2026-11-25T19:55:57.971788615Z'
 tags:
-- needs-triage
 - codebase-design
+- wontfix
+links:
+- aix-01m8a3nye1d7
 ---
 
 ## Description
@@ -29,3 +32,9 @@ tags:
 ## Blocked by
 
 None.
+
+## Notes
+
+**2026-11-25T19:55:57.971788615Z**
+
+Won't fix: superseded by aix-01m8a3nye1d7, which removes Gitleaks support and deletes both namespaces.

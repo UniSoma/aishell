@@ -18,7 +18,7 @@
 ;; ---------------------------------------------------------------------------
 ;; Descriptor schema
 ;;
-;;   :id                       identity keyword (`:claude`) — also the hash key
+;;   :id                       identity keyword (`:claude`), also the hash key
 ;;   :label                    canonical long label, used in all user-facing output
 ;;   :subcommand               `aishell <subcommand>` and the launch command name
 ;;   :state-key                setup-state boolean, always `:with-<id>`
@@ -32,13 +32,8 @@
 ;;   :fixed-args               argv flags always inserted before user args
 ;;   :skip-permissions-flag    flag added when skip-permissions is in effect
 ;;   :alias                    presence = emits a shell alias in the sandbox;
-;;                             {:always? bool} — false means "only when it has args"
-;;   :setup-flag-desc          help text for the `--with-<id>` flag; absent when
-;;                             "Include <label>" already says it
-;;   :secret-scanner?          the harness is itself a secret scanner, so
-;;                             aishell's own sensitive-file scan and its
-;;                             scan-freshness warning stand down while it runs
-;;   :install                  {:kind :npm|:github-release|:image-baked, …}
+;;                             {:always? bool}; false means "only when it has args"
+;;   :install                  {:kind :npm|:github-release, …}
 ;;                             :github-release names :repo, :asset (with an
 ;;                             {arch} placeholder), :binary, :tag-prefix and
 ;;                             :checksums (ADR 0009)
@@ -170,19 +165,7 @@
     ;; so a host value meant for pi would redirect omp's config.
     :env-passthrough ["OMP_PROFILE" "ANTHROPIC_API_KEY" "OPENAI_API_KEY"
                       "GEMINI_API_KEY" "OPENROUTER_API_KEY" "GROQ_API_KEY"
-                      "XAI_API_KEY" "MISTRAL_API_KEY" "DEEPSEEK_API_KEY"]}
-
-   {:id :gitleaks
-    :label "Gitleaks"
-    :subcommand "gitleaks"
-    :state-key :with-gitleaks
-    :setup-flag-desc "Include Gitleaks secret scanner"
-    :interactive? false
-    :pre-start? false
-    :accepts-config-defaults? false
-    :volume-participant? false
-    :secret-scanner? true
-    :install {:kind :image-baked :version "8.30.1"}}])
+                      "XAI_API_KEY" "MISTRAL_API_KEY" "DEEPSEEK_API_KEY"]}])
 
 (defn descriptor
   "The descriptor for `id`, or nil when the registry has no such harness."
@@ -202,19 +185,16 @@
 ;; ---------------------------------------------------------------------------
 
 (defn versioned
-  "Descriptors whose version can be pinned at setup — those with a
-   `:version-key`. The others (gitleaks, baked into the image) take a plain
-   boolean flag."
+  "Descriptors whose version can be pinned at setup: those with a
+   `:version-key`. A descriptor without one would take a plain boolean flag."
   []
   (filterv :version-key registry))
 
 (defn setup-flag-desc
-  "Help text for a descriptor's `--with-<id>` setup flag. Derived from the
-   canonical label, except where a descriptor spells its own out because the
-   label alone would not say what the tool is."
-  [{:keys [label version-key setup-flag-desc]}]
-  (or setup-flag-desc
-      (str "Include " label (when version-key " (optional: =VERSION)"))))
+  "Help text for a descriptor's `--with-<id>` setup flag, derived from the
+   canonical label."
+  [{:keys [label version-key]}]
+  (str "Include " label (when version-key " (optional: =VERSION)")))
 
 (defn subcommands
   "Every harness subcommand, in display order."
@@ -278,7 +258,7 @@
      :cli-args           arguments the user passed on the command line
 
    Config defaults precede CLI args so that CLI args win by position. A harness
-   with `:accepts-config-defaults?` false (gitleaks) takes CLI args only."
+   with `:accepts-config-defaults?` false takes CLI args only."
   [descriptor {:keys [skip-permissions? default-args cli-args]}]
   (let [{:keys [subcommand fixed-args skip-permissions-flag accepts-config-defaults?]} descriptor
         prefix (cond-> [subcommand]

@@ -229,8 +229,8 @@
                each checked against its release's checksum file
             4. Sets world-writable permissions with chmod
 
-   Install kinds come from each harness descriptor; image-baked harnesses
-   (gitleaks) never reach the volume. Nil versions become \"latest\"."
+   Install kinds come from each harness descriptor. Nil versions become
+   \"latest\"."
   [state]
   (let [enabled (filter #(get state (:state-key %)) (harness/volume-participants))
         npm-install (npm-install-command state enabled)

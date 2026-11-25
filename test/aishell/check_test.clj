@@ -103,8 +103,7 @@
   (let [out (with-out-str (check-harnesses {:with-claude true
                                             :with-codex true :codex-version "1.2.3"
                                             :with-copilot true :copilot-version "0.0.339"
-                                            :with-omp true :omp-version "18.12.1"
-                                            :with-gitleaks true}))]
+                                            :with-omp true :omp-version "18.12.1"}))]
     (testing "every harness is reported, by its canonical label"
       (is (str/includes? out "Claude Code installed"))
       (is (str/includes? out "Codex CLI installed (1.2.3)"))
@@ -112,10 +111,9 @@
       (is (str/includes? out "Pi coding agent not installed"))
       (is (str/includes? out "oh-my-pi (omp) installed (18.12.1)"))
       (is (str/includes? out "Gemini CLI not installed"))
-      (is (str/includes? out "OpenCode not installed"))
-      (is (str/includes? out "Gitleaks installed")))
-    (testing "the version-less harness reports no version"
-      (is (not (str/includes? out "Gitleaks installed ("))))))
+      (is (str/includes? out "OpenCode not installed")))
+    (testing "Gitleaks is not reported"
+      (is (not (str/includes? out "Gitleaks"))))))
 
 (deftest staleness-check-passes-a-foundation-built-from-current-content
   (let [out (with-out-str

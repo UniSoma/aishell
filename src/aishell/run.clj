@@ -19,8 +19,6 @@
             [aishell.terminal :as terminal]
             [aishell.validation :as validation]
             [aishell.detection.core :as detection]
-            [aishell.gitleaks.warnings :as gitleaks-warnings]
-            [aishell.gitleaks.scan-state :as scan-state]
             [aishell.pi :as pi]))
 
 (defn- harness-for
@@ -41,9 +39,9 @@
   "Report the `harness_args` defaults configured for `cmd`.
 
    Defaults that reach the launch argv are a verbose note. A harness that
-   cannot receive them — one whose descriptor sets :accepts-config-defaults?
-   false, gitleaks today — warns instead, so the config mistake is visible
-   rather than silently dropped."
+   cannot receive them (one whose descriptor sets :accepts-config-defaults?
+   false) warns instead, so the config mistake is visible rather than
+   silently dropped."
   [cmd default-args]
   (when (seq default-args)
     (let [descriptor (harness-for cmd)
@@ -197,9 +195,6 @@
         (verify-harness-available descriptor state))
 
       (let [descriptor (harness-for cmd)
-            ;; A harness that is itself a secret scanner stands in for aishell's
-            ;; own scanning: no sensitive-file scan, no scan-freshness nag.
-            secret-scanner? (boolean (:secret-scanner? descriptor))
             image-tag (resolve-image-tag project-dir false opts)
             git-id (docker-run/read-git-identity project-dir)
 
@@ -224,7 +219,7 @@
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
 
-            _ (when-not (or (:unsafe opts) secret-scanner?)
+            _ (when-not (:unsafe opts)
                 (let [detection-config (get cfg :detection {})
                       allowlist (:allowlist detection-config [])
                       ;; scan-project checks :enabled and uses :custom_patterns
@@ -233,9 +228,6 @@
                   (when (seq filtered-findings)
                     (detection/display-warnings project-dir filtered-findings)
                     (detection/confirm-if-needed filtered-findings))))
-
-            _ (when (and (:with-gitleaks state) (not secret-scanner?))
-                (gitleaks-warnings/display-freshness-warning project-dir cfg))
 
             docker-args (docker-run/build-docker-args
                          {:project-dir project-dir
@@ -252,38 +244,25 @@
             skip-perms? (harness/skip-permissions?
                          (System/getenv harness/skip-permissions-env-var))
 
-            container-cmd (container-command cmd defaults-vec harness-args skip-perms?)]
+            container-cmd (container-command cmd defaults-vec harness-args skip-perms?)
+            project-name (.getName (java.io.File. project-dir))]
 
-        ;; For a scan, use shell instead of exec so we can update the timestamp after
-        ;; :continue true prevents p/shell from throwing on non-zero exit
-        (if secret-scanner?
-          (let [result (apply p/shell {:inherit true :continue true} (concat docker-args container-cmd))
-                ;; Only update timestamp for actual scan subcommands, not help/version
-                scan-subcommands #{"dir" "git" "detect" "protect"}
-                first-arg (first harness-args)
-                is-scan? (contains? scan-subcommands first-arg)
-                ;; Gitleaks exit codes: 0=no leaks, 1=leaks found (both are successful scans)
-                scan-completed? (contains? #{0 1} (:exit result))]
-            (when (and scan-completed? is-scan?)
-              (scan-state/write-scan-timestamp project-dir))
-            (System/exit (:exit result)))
-          ;; Foreground mode: set window title, then exec (transfer terminal control)
-          (let [project-name (.getName (java.io.File. project-dir))]
-            (print (str "\033]2;[aishell] " project-name "\007"))
+        ;; Set the terminal window title, then hand over terminal control (exec)
+        (print (str "\033]2;[aishell] " project-name "\007"))
+        (flush)
+        (if (fs/windows?)
+          ;; Windows: spawn child process with inherited I/O, wait, propagate exit.
+          ;; No stty equivalent here, so only the escapes are replayed.
+          (let [result @(apply p/process {:inherit true}
+                               (concat docker-args container-cmd))]
+            (print terminal/restore-sequence)
             (flush)
-            (if (fs/windows?)
-              ;; Windows: spawn child process with inherited I/O, wait, propagate exit.
-              ;; No stty equivalent here, so only the escapes are replayed.
-              (let [result @(apply p/process {:inherit true}
-                                   (concat docker-args container-cmd))]
-                (print terminal/restore-sequence)
-                (flush)
-                (System/exit (:exit result)))
-              ;; Unix: replace process (cleaner process tree). Wrapped so the
-              ;; terminal is restored if the harness is killed rather than
-              ;; exiting — `docker kill`, or the daemon going away.
-              (apply p/exec (terminal/wrap-with-restore
-                             (vec (concat docker-args container-cmd)))))))))))
+            (System/exit (:exit result)))
+          ;; Unix: replace process (cleaner process tree). Wrapped so the
+          ;; terminal is restored if the harness is killed rather than
+          ;; exiting: `docker kill`, or the daemon going away.
+          (apply p/exec (terminal/wrap-with-restore
+                         (vec (concat docker-args container-cmd)))))))))
 
 (defn run-exec
   "Run one-off command in container.

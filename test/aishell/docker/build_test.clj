@@ -11,7 +11,7 @@
   (str (.minusSeconds now (* n 24 60 60))))
 
 (deftest build-args-carry-the-build-date
-  (let [args (#'build/build-docker-args {} "abc123" now)]
+  (let [args (#'build/build-docker-args "abc123" now)]
     (is (some #{(str build/build-date-label "=2026-10-22T12:00:00Z")} args))))
 
 (deftest foundation-out-of-date-warning-by-build-date
@@ -68,7 +68,7 @@
                                                    :previous nil :now now})))))
 
 (deftest build-args-without-a-build-date-omit-the-label
-  (let [args (#'build/build-docker-args {} "abc123" nil)]
+  (let [args (#'build/build-docker-args "abc123" nil)]
     (is (not-any? #(str/starts-with? % build/build-date-label) args))))
 
 (deftest a-cached-foundation-build-reports-a-content-match

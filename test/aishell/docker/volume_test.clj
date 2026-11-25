@@ -121,7 +121,7 @@
     (is (= "[]" (pr-str (vol/normalize-harness-config {}))))))
 
 (deftest harness-hash-ignores-non-participants
-  (testing "gitleaks, unisoma and stale keys never enter the hash"
+  (testing "unisoma and the keys of removed harnesses never enter the hash"
     (doseq [flags enabled-combinations]
       (is (= (vol/compute-harness-hash flags)
              (vol/compute-harness-hash (assoc flags
@@ -176,7 +176,7 @@
            (vol/build-install-commands {:with-claude true :with-opencode true
                                         :with-codex true :with-gemini true
                                         :with-pi true}))))
-  (testing "gitleaks is baked into the image, never installed into the volume"
+  (testing "a removed harness's leftover key installs nothing"
     (is (= "export NPM_CONFIG_PREFIX=/tools/npm && chmod -R a+rwX /tools"
            (vol/build-install-commands {:with-gitleaks true}))))
   (testing "no harness enabled still yields a well-formed command"

@@ -371,7 +371,6 @@
   (println (str "  " output/CYAN "aishell setup --with-codex --with-gemini" output/NC " Include Codex and Gemini"))
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
   (println (str "  " output/CYAN "aishell setup --with-omp=18.12.1" output/NC "      Pin oh-my-pi (omp) release"))
-  (println (str "  " output/CYAN "aishell setup --with-gitleaks" output/NC "          Include Gitleaks scanner"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
   (println (str "  " output/CYAN "aishell setup --dir .sandbox" output/NC "           Scaffold a .sandbox/ project config dir"))
   (println (str "  " output/CYAN "aishell setup --reuse-config" output/NC "           Reuse saved setup defaults"))
@@ -453,8 +452,7 @@
               (println "Replacing existing image..."))
 
           _ (build/build-foundation-image
-              {:with-gitleaks (:with-gitleaks state-map)
-               :verbose (:verbose opts)
+              {:verbose (:verbose opts)
                :force (:force opts)})
 
           _ (base/ensure-base-image {:force (:force opts) :verbose (:verbose opts)})
@@ -562,8 +560,7 @@
       (let [project-dir (System/getProperty "user.dir")
             cfg (config/load-config project-dir)
             _ (build/build-foundation-image
-                {:with-gitleaks (:with-gitleaks state false)
-                 :verbose (:verbose opts)
+                {:verbose (:verbose opts)
                  :force (:force opts)
                  :quiet (not (:force opts))})
 

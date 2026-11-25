@@ -27,7 +27,6 @@
                         :with-gemini false
                         :with-pi false
                         :with-omp false
-                        :with-gitleaks false
                         :unisoma false
                         :claude-version "2.0.22"
                         :opencode-version nil
@@ -51,7 +50,6 @@
             :with-gemini false
             :with-pi true
             :with-omp true
-            :with-gitleaks true
             :unisoma true
             :claude-version "2.0.22"
             :opencode-version nil
@@ -151,9 +149,10 @@
     (is (= :unsupported (cli/classify-json-command ["copilot"])))
     (is (= :unsupported (cli/classify-json-command ["gemini"])))
     (is (= :unsupported (cli/classify-json-command ["pi"])))
-    (is (= :unsupported (cli/classify-json-command ["gitleaks"])))
     (is (= :unsupported (cli/classify-json-command ["vscode"])))
     (is (= :unsupported (cli/classify-json-command ["upgrade"]))))
+  (testing "gitleaks is no longer a subcommand"
+    (is (= :unknown (cli/classify-json-command ["gitleaks"]))))
   (testing "Group-A-eventually subcommands without a wired JSON path are :unsupported"
     (is (= :unsupported (cli/classify-json-command ["volumes"])))
     (is (= :unsupported (cli/classify-json-command ["volumes" "list"])))
@@ -247,7 +246,7 @@
 (deftest setup-spec-carries-one-flag-per-harness
   (testing "every harness has a --with-<id> flag"
     (is (= #{:with-claude :with-opencode :with-codex :with-copilot
-             :with-gemini :with-pi :with-omp :with-gitleaks}
+             :with-gemini :with-pi :with-omp}
            (set/intersection (set (keys cli/setup-spec))
                              (set (map :state-key harness/registry))))))
   (testing "versioned flags take an optional =VERSION and so are not coerced"
@@ -263,9 +262,8 @@
   (testing "omp takes an optional release version"
     (is (= {:desc "Include oh-my-pi (omp) (optional: =VERSION)"}
            (:with-omp cli/setup-spec))))
-  (testing "the version-less gitleaks flag is a plain boolean"
-    (is (= {:coerce :boolean :desc "Include Gitleaks secret scanner"}
-           (:with-gitleaks cli/setup-spec))))
+  (testing "Gitleaks has no setup flag"
+    (is (not (contains? cli/setup-spec :with-gitleaks))))
   (testing "non-harness options are untouched"
     (is (= {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
            (:force cli/setup-spec)))))
@@ -275,7 +273,7 @@
     (let [out (with-out-str (cli/print-setup-help))
           index (fn [flag] (str/index-of out (str "--" flag)))]
       (is (apply < (map index ["with-claude" "with-opencode" "with-codex" "with-copilot"
-                               "with-gemini" "with-pi" "with-omp" "with-gitleaks"
+                               "with-gemini" "with-pi" "with-omp"
                                "unisoma" "dir"]))))))
 
 (deftest update-help-says-when-the-foundation-image-is-rebuilt
@@ -330,7 +328,6 @@
   (testing "a boolean per harness, a version per versioned harness, plus unisoma"
     (is (= {:with-claude false :with-opencode false :with-codex false
             :with-copilot false :with-gemini false :with-pi false :with-omp false
-            :with-gitleaks false
             :unisoma false
             :claude-version nil :opencode-version nil :codex-version nil
             :copilot-version nil :gemini-version nil :pi-version nil :omp-version nil}
@@ -357,14 +354,12 @@
       (is (nil? (cli/setup-validation-error resolved))))))
 
 (deftest explicit-setup-state-reads-every-harness-flag
-  (testing "flags with versions, bare flags, and the boolean-only harness"
+  (testing "flags with versions and bare flags"
     (is (= (assoc cli/empty-setup-state
                   :with-pi true :pi-version "1.2.3"
-                  :with-gitleaks true
                   :with-gemini true)
            (cli/explicit-setup-state {:with-pi "1.2.3"
-                                      :with-gemini true
-                                      :with-gitleaks true})))))
+                                      :with-gemini true})))))
 
 (deftest reused-setup-summary-uses-canonical-labels
   (testing "each enabled harness prints its canonical label and version"
@@ -373,23 +368,20 @@
                  (assoc cli/empty-setup-state
                         :with-codex true :codex-version "1.2.3"
                         :with-pi true
-                        :with-gitleaks true
                         :unisoma true)))]
       (is (str/includes? out "  Codex CLI: 1.2.3"))
       (is (str/includes? out "  Pi coding agent: latest"))
-      (is (str/includes? out "  Gitleaks: enabled"))
       (is (str/includes? out "  UniSoma: enabled"))))
   (testing "an empty configuration says so"
     (is (str/includes? (with-out-str (cli/print-effective-reused-setup cli/empty-setup-state))
                        "No harnesses or optional tools enabled"))))
 
 (deftest enabled-harness-list-names-volume-participants
-  (testing "gitleaks lives outside the volume and is not listed"
+  (testing "enabled harnesses are listed by subcommand"
     (is (= "claude,pi"
            (cli/enabled-harness-list (assoc cli/empty-setup-state
                                             :with-claude true
-                                            :with-pi true
-                                            :with-gitleaks true))))))
+                                            :with-pi true))))))
 
 (deftest help-lists-every-harness-command-with-its-label
   (testing "with no saved state every harness is listed, for discoverability"
@@ -403,7 +395,7 @@
       (is (str/includes? out "gemini     Run Gemini CLI"))
       (is (str/includes? out "pi         Run Pi coding agent"))
       (is (str/includes? out "omp        Run oh-my-pi (omp)"))
-      (is (str/includes? out "gitleaks   Run Gitleaks"))))
+      (is (not (str/includes? out "gitleaks")))))
   (testing "only the harnesses in the saved state are listed"
     (let [out (with-redefs [state/read-state (fn [] {:with-pi true})]
                 (binding [output/CYAN "" output/NC "" output/BOLD ""]

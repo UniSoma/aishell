@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **Gitleaks support is gone (breaking)**: removing a subcommand and a setup flag makes this a breaking change, so the next release is 5.0.0. `aishell gitleaks` is now an unknown command and `aishell setup --with-gitleaks` an unknown option. The Foundation image no longer takes a gitleaks build arg or installs gitleaks, so it is the same for every user again; it rebuilds once on your next `setup` or `update`. A saved setup that enabled Gitleaks gets a one-time warning on the next `setup`, `update` or launch, and the key is dropped from `state.edn`. The scan freshness reminder goes too, along with the gitleaks lines in `aishell check` and `aishell info`: leftover `gitleaks_freshness_check` or `gitleaks_freshness_threshold` keys now get the generic unknown-config-key warning, and a leftover `harness_args.gitleaks` gets the unknown-harness warning. The scan timestamp file, `~/.local/state/aishell/gitleaks-scans.edn` (under `$XDG_STATE_HOME/aishell` when that is set), is no longer read and is safe to delete. To keep scanning for committed secrets, run gitleaks in the project's pre-commit hook or CI, or install it in a Project extension and run `aishell exec gitleaks dir .`; [Secret scanning](docs/CONFIGURATION.md#secret-scanning) shows both. The reason: aishell's share of secret scanning is sensitive-file detection at launch, and a scan that ran only when someone remembered it, with a reminder blind to scans run in pre-commit or CI, caught neither threat well. See [ADR 0012](docs/adr/0012-secret-scanning-stops-at-sensitive-file-detection.md)
+
 ## [4.6.0] - 2026-11-25
 
 ### Added

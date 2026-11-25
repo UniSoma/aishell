@@ -619,7 +619,7 @@
         (into (build-harness-env-args harness-volume-name))
 
         ;; Harness aliases for interactive shell use
-        ;; Skip when skip-interactive is true (non-interactive commands like exec/gitleaks)
+        ;; Skipped for non-interactive launches such as exec
         (cond-> (not skip-interactive)
           (into (build-harness-alias-env-args config state)))
 
@@ -640,7 +640,6 @@
 
         ;; Config: pre_start (passed to entrypoint via env var)
         ;; Entrypoint handles execution: sh -c "$PRE_START" > /tmp/pre-start.log 2>&1 &
-        ;; Skip pre_start if skip-pre-start flag is true (for gitleaks command)
         (cond-> (and (:pre_start config) (not skip-pre-start))
           (into ["-e" (str "PRE_START=" (:pre_start config))]))
 
@@ -663,13 +662,13 @@
    - image-tag: Docker image to run
    - config: Parsed config map from config.clj (or nil)
    - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
-   - skip-pre-start: When true, disable pre_start hooks (for gitleaks command)
+   - skip-pre-start: When true, disable pre_start hooks
    - skip-interactive: When true, skip interactive features (harness aliases)
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
 
    Note: PRE_START is passed as -e PRE_START=command. The entrypoint script
-   (from Phase 14) handles execution: runs in background, logs to /tmp/pre-start.log."
+   handles execution: runs in background, logs to /tmp/pre-start.log."
   [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name harness-volume-name]}]
   (build-docker-args-internal
    {:project-dir project-dir

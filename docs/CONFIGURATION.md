@@ -19,10 +19,10 @@ Complete reference for aishell configuration options, covering both the global (
   - [docker_args](#docker_args)
   - [pre_start](#pre_start)
   - [harness_args](#harness_args)
-  - [gitleaks_freshness_check](#gitleaks_freshness_check)
   - [pi_packages](#pi_packages)
   - [update_check](#update_check)
   - [detection](#detection)
+  - [Secret scanning](#secret-scanning)
   - [claude_isolation](#claude_isolation)
   - [claude_shared_paths](#claude_shared_paths)
 - [Base Image Customization](#base-image-customization)
@@ -83,7 +83,7 @@ With `extends: global` (the default), aishell merges configs by data type:
 | **Lists** | `mounts`, `ports`, `docker_args` | Concatenate (global + project) | Global: `["~/.gitconfig"]`<br/>Project: `["~/data:/data"]`<br/>Result: Both mounts |
 | **Maps** | `env` | Shallow merge (project overrides global keys) | Global: `{DEBUG: "false"}`<br/>Project: `{DEBUG: "true"}`<br/>Result: `{DEBUG: "true"}` |
 | **Map-of-lists** | `harness_args` | Merge keys, concatenate per-harness lists | Global: `{claude: ["--verbose"]}`<br/>Project: `{claude: ["--model", "sonnet"]}`<br/>Result: `{claude: ["--verbose", "--model", "sonnet"]}` |
-| **Scalars** | `pre_start`, `gitleaks_freshness_check` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
+| **Scalars** | `pre_start`, `claude_isolation` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
 | **Custom** | `detection` | Custom merge (see [detection](#detection)) | Enabled: project wins<br/>Patterns: map merge<br/>Allowlist: concatenate |
 | **Global-only** | `pi_packages`, `update_check` | Not merged (global config only) | Project values ignored with warning |
 
@@ -224,23 +224,6 @@ harness_args:
 # String shorthand (single arg):
 # harness_args:
 #   claude: "--verbose"               # Auto-converts to ["--verbose"]
-
-# =============================================================================
-# GITLEAKS_FRESHNESS_CHECK - Gitleaks scan freshness warning toggle
-# =============================================================================
-# When true (default), warns before container launch if the gitleaks scan
-# is stale. Requires --with-gitleaks build flag; has no effect without it.
-# scan is stale (>7 days old) or has never run. Advisory only -- never
-# blocks execution.
-#
-# When Gitleaks is installed, the warning reminds you to run: aishell gitleaks dir .
-#
-# Set to false to disable the freshness warning entirely.
-
-gitleaks_freshness_check: true
-
-# To disable:
-# gitleaks_freshness_check: false
 
 # =============================================================================
 # UPDATE_CHECK - Automatic update notification (global-only)
@@ -780,43 +763,6 @@ claude --verbose --model sonnet --workspace /workspace
 
 ---
 
-### gitleaks_freshness_check
-
-**Purpose:** Toggle advisory warnings when Gitleaks scan is stale (>7 days).
-
-**Type:** Boolean
-
-**Default:** `true`
-
-**Requires:** `--with-gitleaks` build flag. When Gitleaks is not installed, this setting has no effect (no warnings are shown).
-
-**Example:**
-
-```yaml
-# Enable freshness warnings (default)
-gitleaks_freshness_check: true
-
-# Disable freshness warnings
-gitleaks_freshness_check: false
-```
-
-**Notes:**
-- Advisory only -- never blocks execution
-- The warning appears before container launch (for shell/claude/opencode, not gitleaks itself)
-- "Stale" means the scan is >7 days old or has never run
-- The warning suggests running `aishell gitleaks dir .`
-- aishell stores timestamps in `~/.aishell/gitleaks-scan.edn` (per-project)
-
-**Merge behavior:** Project replaces global (scalar).
-
-**When to disable:**
-
-- **CI/CD environments:** Automated systems need no reminders
-- **Trusted projects:** Internal code with no sensitive data
-- **Separate scanning:** You run Gitleaks outside aishell
-
----
-
 ### pi_packages
 
 **Purpose:** Automatically install Pi plugins before entering the container.
@@ -1053,6 +999,41 @@ detection:
     - path: "test.pem"         # From project
       reason: "Test fixture"
 ```
+
+---
+
+### Secret scanning
+
+aishell's own secret check is [sensitive-file detection](#detection): at launch it looks at file names in the project and warns about files likely to hold secrets. aishell does not scan file contents or git history.
+
+To catch secrets before they are committed, run [gitleaks](https://github.com/gitleaks/gitleaks) or a similar scanner in the project's pre-commit hook or CI. That check runs on every commit, whether or not aishell is involved.
+
+To run gitleaks inside the Sandbox instead, install it in a Project extension. This `.aishell/Dockerfile` installs a pinned release binary for the image's architecture:
+
+```dockerfile
+FROM aishell:base
+
+ARG GITLEAKS_VERSION=8.30.1
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) glArch='x64' ;; \
+        arm64) glArch='arm64' ;; \
+        *) echo "unsupported architecture"; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${glArch}.tar.gz" \
+    | tar -xz -C /usr/local/bin gitleaks; \
+    gitleaks version
+```
+
+Then scan the project:
+
+```bash
+aishell exec gitleaks dir .
+```
+
+Pick the version from the [gitleaks releases](https://github.com/gitleaks/gitleaks/releases) page.
+
+aishell versions before 5.0.0 kept gitleaks scan timestamps in `~/.local/state/aishell/gitleaks-scans.edn` (under `$XDG_STATE_HOME/aishell` when that is set). Nothing reads that file any more, and you can delete it.
 
 ---
 
@@ -1424,7 +1405,7 @@ aishell setup --reuse-config --force
 - Omitted setup flags inherit from the saved setup intent
 - Explicit `--with-...=VERSION` flags override inherited version pins
 - A bare `--with-...` flag resets that tool to `latest`
-- Inherited settings include harness selection, version pins, `--with-gitleaks`, and `--unisoma`
+- Inherited settings include harness selection, version pins, and `--unisoma`
 - Validation runs against the merged effective config before the build starts
 - Setup still recomputes derived build metadata (hashes, build time, volume name) before persisting state
 
@@ -1436,42 +1417,6 @@ aishell setup --reuse-config --force
 **When not to use:**
 - **Write a brand-new config:** Use plain `aishell setup ...`
 - **Disable saved tools:** Use plain `aishell setup ...` with the exact desired selection
-
----
-
-### --with-gitleaks
-
-**Purpose:** Install Gitleaks during build for content-based secret scanning.
-
-**Usage:**
-```bash
-aishell setup --with-claude --with-gitleaks
-```
-
-**Behavior:**
-- By default, aishell does NOT install Gitleaks
-- `--with-gitleaks` enables Gitleaks installation (~15MB added to the Foundation image)
-- Build state records installation status in `~/.aishell/state.edn`
-- `aishell --help` shows the `gitleaks` command only when installed
-
-**State tracking:**
-```bash
-# Check what was installed
-cat ~/.aishell/state.edn
-# Shows :with-gitleaks true or false
-```
-
-**When to use:**
-- **Content scanning:** You want deep secret detection beyond filename patterns
-- **Pre-commit safety:** Run scans before AI agents see your code
-- **Compliance:** Your workflow requires secret scanning
-
-**Image size impact:**
-- Without Gitleaks (default): ~265MB
-- With Gitleaks: ~280MB
-- Cost: ~15MB
-
-**Note:** Without `--with-gitleaks`, the `aishell gitleaks` command is not available.
 
 ---
 
@@ -1526,7 +1471,6 @@ aishell update --force
 **Preserved from the last build:**
 - Enabled harnesses (`--with-claude`, etc.)
 - Harness version pins
-- Gitleaks installation status (`--with-gitleaks` opt-in)
 
 **Cannot change harness selection.**
 To add or remove harnesses, use `aishell setup`:

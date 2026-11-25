@@ -78,11 +78,6 @@
   [dockerfile]
   (second (re-find #"ARG SQLITE_VERSION=(\S+)" dockerfile)))
 
-(defn- parse-gitleaks-version
-  "Extract Gitleaks version from ARG GITLEAKS_VERSION=X.Y.Z."
-  [dockerfile]
-  (second (re-find #"ARG GITLEAKS_VERSION=(\S+)" dockerfile)))
-
 (defn- wrap-packages
   "Format package list into comma-separated lines wrapped at ~70 chars."
   [packages]
@@ -188,7 +183,6 @@
         uv-version (parse-uv-version dockerfile)
         sqlite-version (parse-sqlite-version dockerfile)
         fossil-version (parse-fossil-version dockerfile)
-        gitleaks-version (parse-gitleaks-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")]
 
@@ -225,11 +219,6 @@
     (when fossil-version
       (println (str "    Fossil " fossil-version " (official prebuilt binary)")))
     (println "    gosu 1.20")
-    (println)
-    (println (str "  Gitleaks: "
-                  (if (and state (:with-gitleaks state))
-                    (str "installed (" gitleaks-version ")")
-                    "not installed")))
     (println)
 
     (println (str output/BOLD "Base Image" output/NC " (aishell:base)"))

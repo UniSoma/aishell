@@ -95,11 +95,8 @@
 
 (defn- build-docker-args
   "Return the docker build argument vector."
-  [{:keys [with-gitleaks]} dockerfile-hash built-at]
-  (cond-> []
-    ;; Passed even when false so the build cache sees the same args every time
-    true (conj "--build-arg" (str "WITH_GITLEAKS=" (if with-gitleaks "true" "false")))
-    true (conj "--label" (str dockerfile-hash-label "=" dockerfile-hash))
+  [dockerfile-hash built-at]
+  (cond-> ["--label" (str dockerfile-hash-label "=" dockerfile-hash)]
     built-at (conj "--label" (str build-date-label "=" built-at))))
 
 (defn- format-duration
@@ -146,14 +143,13 @@
    volume-installed harnesses live in the harness volume instead.
 
    Options:
-   - :with-gitleaks - Include Gitleaks (default false, opt-in)
    - :force - Rebuild with `--no-cache` and stamp a fresh build date
    - :verbose - Show full build output
    - :quiet - Suppress all output except errors
 
    Returns {:success true :image tag}, plus `:cached true` when no build
    ran. Exits the process when the build fails."
-  [{:keys [force verbose quiet] :as opts}]
+  [{:keys [force verbose quiet]}]
   (docker/check-docker!)
 
   (if-not (needs-rebuild? foundation-image-tag force)
@@ -172,7 +168,7 @@
                                  (docker/get-image-label foundation-image-tag
                                                          build-date-label))
                      :now (Instant/now)})
-          docker-args (build-docker-args opts dockerfile-hash built-at)
+          docker-args (build-docker-args dockerfile-hash built-at)
           start-time (System/currentTimeMillis)]
       (try
         (write-build-files build-dir)
