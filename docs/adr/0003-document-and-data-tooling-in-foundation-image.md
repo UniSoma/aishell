@@ -50,7 +50,8 @@ The remaining criteria still apply in full.
 
 - **Placement: foundation, not overlay or ARG-gate.** The per-project
   `.aishell/Dockerfile` overlay already supports `RUN apt-get install -y
-  poppler-utils`, and `gitleaks` sets the precedent for an ARG-gated opt-in. We
+  poppler-utils`, and `gitleaks` sets the precedent for an ARG-gated opt-in
+  (since removed by ADR 0012, so no ARG-gated opt-in remains). We
   chose unconditional foundation because these are the same shape as the
   `jq`/`sqlite3`/`ripgrep`/`file` tools already baked in: generic capabilities an
   agent cannot usefully install on demand. ARG-gating was rejected outright —

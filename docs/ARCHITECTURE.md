@@ -521,7 +521,7 @@ See the Dockerfile extension section in the Configuration Reference for details.
 
 - **Right threat, right time:** The risk aishell creates is a harness reading a `.env` or key file in the mounted project. That happens at launch, so sensitive-file detection runs at every launch without being asked
 - **Fast:** It checks file names only, so it adds almost nothing to startup
-- **Non-blocking:** Advisory warnings never block power users
+- **Blocks only on high severity:** Medium and low findings are warnings and launch goes ahead. High-severity findings ask for confirmation (y/n); without a terminal, as in CI, aishell exits 1 unless `--unsafe` comes before the command
 - **Commit leakage is the project's job:** Scanning file contents and git history for committed secrets belongs in the project's pre-commit hook or CI, where it runs on every change whether or not aishell is involved. See [ADR 0012](adr/0012-secret-scanning-stops-at-sensitive-file-detection.md) and [Secret scanning](CONFIGURATION.md#secret-scanning)
 
 ---
