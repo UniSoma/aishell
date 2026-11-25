@@ -7,6 +7,7 @@
             [aishell.docker.naming :as naming]
             [aishell.docker.run :as run]
             [aishell.harness :as harness]
+            [aishell.output :as output]
             [aishell.run]))
 
 (def ^:private build-mounts #'run/build-harness-config-mounts)
@@ -588,3 +589,62 @@
   (testing "no other harness declares one"
     (is (= [:gemini]
            (mapv :id (filter :credentials-file-env harness/registry))))))
+
+
+(def ^:private port-args #'run/build-port-args)
+
+(defn- ports-outcome
+  "Run build-port-args against an env map. Returns {:args [...]} or, when it
+   calls output/error, {:error <stderr text>}."
+  [ports env]
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "exit" {})))]
+        (try
+          {:args (vec (port-args ports env))}
+          (catch clojure.lang.ExceptionInfo _
+            {:error (str err)}))))))
+
+(deftest ports-expand-host-environment-variables
+  (testing "a set variable supplies the host port"
+    (is (= {:args ["-p" "127.0.0.1:9999:7888"]}
+           (ports-outcome ["127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"]
+                          {"WEAVE_NREPL_PORT" "9999"}))))
+  (testing "an unset variable falls back to its default"
+    (is (= {:args ["-p" "127.0.0.1:7888:7888"]}
+           (ports-outcome ["127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"] {}))))
+  (testing "an empty variable falls back to its default"
+    (is (= {:args ["-p" "127.0.0.1:7888:7888"]}
+           (ports-outcome ["127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"]
+                          {"WEAVE_NREPL_PORT" ""})))))
+
+(deftest ports-refuse-an-unresolvable-variable
+  (testing "unset with no default names the variable and the entry"
+    (let [{:keys [error]} (ports-outcome ["127.0.0.1:${WEAVE_NREPL_PORT}:7888"] {})]
+      (is (str/includes? error "${WEAVE_NREPL_PORT}"))
+      (is (str/includes? error "\"127.0.0.1:${WEAVE_NREPL_PORT}:7888\""))
+      (is (str/includes? error "not set"))))
+  (testing "set but empty with no default is refused too"
+    (let [{:keys [error]} (ports-outcome ["${P}:7888"] {"P" ""})]
+      (is (str/includes? error "${P}"))
+      (is (str/includes? error "empty"))))
+  (testing "an empty default is refused"
+    (let [{:keys [error]} (ports-outcome ["${P:-}:7888"] {})]
+      (is (str/includes? error "${P:-}"))
+      (is (str/includes? error "empty default")))))
+
+(deftest ports-check-the-format-after-substitution
+  (let [{:keys [error]} (ports-outcome ["127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"]
+                                       {"WEAVE_NREPL_PORT" "abc"})]
+    (is (str/includes? error "Invalid port mapping: 127.0.0.1:abc:7888"))
+    (is (str/includes? error "(from \"127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888\")"))
+    (is (str/includes? error "Expected format:"))))
+
+(deftest ports-without-variables-behave-as-before
+  (testing "a valid plain entry passes through unchanged"
+    (is (= {:args ["-p" "8080:80" "-p" "127.0.0.1:5432:5432" "-p" "9090:9090/udp"]}
+           (ports-outcome ["8080:80" "127.0.0.1:5432:5432" "9090:9090/udp"] {}))))
+  (testing "an invalid plain entry gets today's message, with no (from ...) line"
+    (let [{:keys [error]} (ports-outcome ["abc:80"] {})]
+      (is (str/includes? error "Invalid port mapping: abc:80\nExpected format:"))
+      (is (not (str/includes? error "(from"))))))

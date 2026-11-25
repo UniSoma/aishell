@@ -170,22 +170,42 @@
   "Valid port format: [IP:]HOST:CONTAINER[/PROTOCOL]"
   #"^((\d{1,3}\.){3}\d{1,3}:)?\d+:\d+(/[a-z]+)?$")
 
+(defn- unresolved-port-var-message
+  [entry {:keys [var reason]}]
+  (str "Port mapping \"" entry "\" uses "
+       (case reason
+         :unset (str "${" var "}, which is not set")
+         :empty (str "${" var "}, which is empty")
+         :empty-default (str "${" var ":-}, an empty default, and " var " is not set or empty"))))
+
 (defn- build-port-args
   "Build -p flags from ports config.
 
-   Validates format: HOST:CONTAINER or IP:HOST:CONTAINER
+   Expands ${VAR} and ${VAR:-default} in each entry from env (the host
+   environment by default), then validates the format:
+   HOST:CONTAINER or IP:HOST:CONTAINER
    Examples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp"
-  [ports]
-  (when (seq ports)
-    (->> ports
-         (mapcat
-          (fn [port]
-            (let [port-str (str port)]
-              (if (re-matches port-pattern port-str)
-                ["-p" port-str]
-                (output/error (str "Invalid port mapping: " port-str
-                                   "\nExpected format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT"
-                                   "\nExamples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp")))))))))
+  ([ports] (build-port-args ports (System/getenv)))
+  ([ports env]
+   (when (seq ports)
+     (->> ports
+          (mapcat
+           (fn [port]
+             (let [entry (str port)
+                   {:keys [value error]} (util/expand-env-refs entry env)]
+               (cond
+                 error
+                 (output/error (unresolved-port-var-message entry error))
+
+                 (re-matches port-pattern value)
+                 ["-p" value]
+
+                 :else
+                 (output/error (str "Invalid port mapping: " value
+                                    (when (not= value entry)
+                                      (str "\n  (from \"" entry "\")"))
+                                    "\nExpected format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT"
+                                    "\nExamples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp"))))))))))
 
 (defn- tokenize-docker-args
   "Tokenize docker_args into individual args.

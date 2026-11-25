@@ -151,6 +151,7 @@ env:
 # PORTS - Port mappings (host:container)
 # =============================================================================
 # Format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT
+# ${VAR} and ${VAR:-default} are read from the shell that runs aishell
 ports:
   - "8080:8080"                       # Web server
   - "3000:3000"                       # Dev server
@@ -521,6 +522,19 @@ ports:
 - `127.0.0.1` restricts the binding to localhost (more secure)
 - `0.0.0.0` exposes the port on all network interfaces
 - The host port must be free; Docker errors if it is already in use
+
+**Environment variables:** An entry can take parts of its value from environment variables, so a project can commit a mapping whose host port each developer can override:
+
+```yaml
+ports:
+  - "127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"
+```
+
+- `${VAR}` is replaced by the value of `VAR`.
+- `${VAR:-default}` is replaced by the value of `VAR`, or by `default` when `VAR` is unset or empty.
+- `$VAR` without braces is not expanded.
+
+The value comes from the environment of the shell that runs `aishell`, so an exported variable or a mise `[env]` entry sets it. aishell exits with an error naming the variable and the entry when `${VAR}` has no default and `VAR` is unset or empty; it never substitutes an empty string. The result is then checked like any other entry, and an invalid one is reported along with the entry as written. Only `ports` entries are expanded this way.
 
 **Merge behavior:** Global and project ports concatenate (both apply).
 

@@ -285,7 +285,10 @@ ports:
   - "8080:8080"                       # All interfaces
   - "127.0.0.1:5432:5432"             # Localhost only
   - "9090:9090/udp"                   # UDP
+  - "127.0.0.1:${WEAVE_NREPL_PORT:-7888}:7888"  # Host port from the environment
 ```
+
+`${VAR}` and `${VAR:-default}` in a `ports` entry are replaced from the environment of the shell that runs `aishell` (an exported variable or a mise `[env]` entry). The default applies when the variable is unset or empty. `$VAR` is not expanded. An unset or empty variable with no default is an error.
 
 #### docker_args
 

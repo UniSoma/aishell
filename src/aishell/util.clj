@@ -81,6 +81,36 @@
           (str/replace #"\$\{USER\}" user)
           (str/replace #"\$USER(?![A-Za-z0-9_])" user)))))
 
+(def ^:private env-ref-pattern
+  #"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
+
+(defn expand-env-refs
+  "Replace ${VAR} and ${VAR:-default} in s from the env map.
+   A default replaces an unset or empty VAR. Other forms, $VAR included, are
+   left as written. Returns {:value expanded}, or {:error {:var name :reason r}}
+   for the first reference that would expand to an empty string, where r is
+   :unset, :empty or :empty-default."
+  [s env]
+  (let [m (re-matcher env-ref-pattern s)
+        sb (StringBuilder.)]
+    (loop [pos 0]
+      (if (.find m)
+        (let [var-name (.group m 1)
+              default (.group m 2)
+              value (get env var-name)
+              [result reason] (cond
+                                (seq value) [value nil]
+                                (nil? default) [nil (if (nil? value) :unset :empty)]
+                                (seq default) [default nil]
+                                :else [nil :empty-default])]
+          (if reason
+            {:error {:var var-name :reason reason}}
+            (do (.append sb (subs s pos (.start m)))
+                (.append sb result)
+                (recur (.end m)))))
+        (do (.append sb (subs s pos))
+            {:value (str sb)})))))
+
 (defn expand-path
   "Expand ~ and $HOME in path string, normalize separators.
    Works on both Windows and Unix."
