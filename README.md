@@ -372,7 +372,9 @@ ports:
   - "3000:3000"
   - "8080:80"
 
-docker_args: "--memory=4g --cpus=2"
+resources:
+  memory: "4g"
+  cpus: 2
 
 pre_start: "redis-server --daemonize yes"
 ```

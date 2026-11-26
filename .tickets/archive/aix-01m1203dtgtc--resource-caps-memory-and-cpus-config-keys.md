@@ -6,7 +6,7 @@ type: feature
 priority: 3
 mode: afk
 created: '2026-08-27T16:15:58.288259919Z'
-updated: '2026-11-26T14:58:57.314114903Z'
+updated: '2026-11-26T18:04:30.585856885Z'
 closed: '2026-11-26T14:58:57.314114903Z'
 acceptance:
 - title: resources.memory and resources.cpus reach docker run; absent keys add no flags
@@ -31,7 +31,7 @@ Carried forward from the old description: no default cap (ADR 0006); the `--memo
 
 - The flags are built by a new fn in `aishell.docker.run` beside `build-port-args`, called from `build-docker-args-internal`, so both `build-docker-args` and `build-docker-args-for-exec` (and the vscode launch, which calls `build-docker-args`) get the caps. Setup containers (`docker/volume.clj`, `pi.clj`, `docker/build.clj`) take no caps.
 - The validator lives in the same fn and fails through `output/error` (exit 1), the way `build-port-args` refuses a bad port. `config/validate-config` stays warn-only: it adds `resources` to `known-keys` and to the "Valid keys" message, and warns on an unknown key under `resources` (for example `swap`) without exiting.
-- `memory` follows Docker's client grammar (`go-units` `RAMInBytes`): digits with an optional decimal part, an optional space, an optional unit `b k m g t p` in either case, an optional `i`, and an optional `b` (`512m`, `8g`, `1.5G`, `8GiB`, `1073741824`). A YAML integer is read as bytes. Zero is refused: an absent key is the only way to say "no cap".
+- `memory` follows Docker's client grammar (`go-units` `RAMInBytes`): digits with an optional decimal part, an optional space, then either a lone `b` or one of `k m g t p` followed by nothing, `b` or `ib`, in either case (`512m`, `8g`, `1.5G`, `8GiB`, `1073741824`); suffixes go-units refuses, such as `8i`, `8Gi`, `8bb` and `8bi`, are refused. A YAML integer is read as bytes. Zero is refused, and so is any size under one byte (`0.5`, `0.9b`), which Docker truncates to 0 and reads as no limit: an absent key is the only way to say "no cap".
 - `cpus` is a positive decimal number, given as a YAML number or a string (`4`, `"4"`, `1.5`), with at most 9 fractional digits (Docker's "value is too precise" bound). Zero and negatives are refused.
 - Host-dependent limits (the daemon's 6 MB memory floor, `cpus` above the host's core count) are left to the Docker daemon; aishell checks the grammar only.
 - The flags are emitted as `--memory <value>` and `--cpus <value>` with the value as the user wrote it (numbers stringified), placed just before `docker_args`. `docker_args` keeps its documented place as the last word: a `--memory` there wins over `resources.memory`.

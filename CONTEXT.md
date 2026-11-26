@@ -89,6 +89,10 @@ Per-project choice of whether a sandbox shares the user's Claude machine state (
 The named bundle of restrictions a Sandbox runs under — `default` or `strict` — chosen per project. Governs capabilities, privilege escalation, process limits and which Network mode applies.
 _Avoid_: posture, hardening level, security mode
 
+**Resource cap**:
+A per-project ceiling on the memory or CPUs a **Sandbox** may use, set by the user and independent of the **Security profile**. aishell sets none of its own: a project without one runs uncapped.
+_Avoid_: resource limit (for memory and CPUs), quota
+
 **Refused entry**:
 A `docker_args` or `mounts` entry that would weaken a **Sandbox**'s isolation (privilege, capabilities, security options, a host namespace, another network or **Runtime**, a device, the Docker socket), so the Sandbox does not start under any **Security profile** unless the **Global flag** `--unsafe-docker-args` lets it through. The list is fixed in aishell; config cannot shorten it.
 _Avoid_: dangerous args, blocked flags, security warning

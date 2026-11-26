@@ -315,8 +315,8 @@ authentication quirks. Use "Harness" for the concept; the glossary avoids
 
 ### Checklist
 
-- [ ] Descriptor added in display order; `clj-kondo --lint src test` clean
-- [ ] `bb test` passes with the new harness in every table-driven expectation
+- [ ] Descriptor added in display order
+- [ ] `bb pre-commit` passes with the new harness in every table-driven expectation
 - [ ] Existing harness-volume hashes unchanged when the harness is disabled
 - [ ] No harness-specific branch outside `harness.clj`
 - [ ] Documentation and changelog updated

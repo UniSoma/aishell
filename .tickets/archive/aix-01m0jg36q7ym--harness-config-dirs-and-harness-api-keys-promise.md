@@ -6,7 +6,7 @@ type: task
 priority: 3
 mode: afk
 created: '2026-08-21T15:47:37.319402952Z'
-updated: '2026-11-26T14:47:03.720193425Z'
+updated: '2026-11-26T18:04:30.381898876Z'
 closed: '2026-11-26T14:47:03.720193425Z'
 tags:
 - registry
@@ -33,7 +33,7 @@ Found by the verification agent during the harness registry migration (aix-01m0d
 ### Decisions
 
 - `build-harness-config-mounts` and `build-api-env-args` walk `harness/registry` at call time, filtering on each descriptor's `:state-key` in the setup state and taking `:config-paths` (their `:path`) or `:env-passthrough`, then `distinct`, the way `build-harness-runtime-env-args` already does. Their order then comes from the registry vector, not from any map's size. The Claude project-isolation removal of `[".claude"]` and the `host-env` and `fs/exists?` filters stay as they are.
-- `harness-config-dirs` and `harness-api-keys` stay maps, for lookup only (`info.clj` and the run tests use `get`, `keys` and `some` on them; `info.clj` sorts by state key and `some` is order-free). Their docstrings drop the display-order promise.
+- `harness-config-dirs` and `harness-api-keys` stay maps, for lookup only: `info.clj` filters `harness-config-dirs`, sorts it by state key and calls `some` on it, none of which depends on map order, and the run tests use `get` and compare whole tables. Their docstrings drop the display-order promise.
 - Rejected: turning the two vars into vectors of pairs (every `val` caller and the `get` lookups would change) and sorting explicitly (the registry vector already is the order; a sort key would restate it).
 - Tests rebind `harness/registry` with `with-redefs` to nine or more synthetic descriptors, all enabled, and check the argv order. Because the builders read the registry at call time, the rebinding reaches them. The config-mount test makes each synthetic directory under a temp home bound through `util/get-home`, as the existing run tests do; the env test binds `run/host-env`.
 - The "iteration order is preserved for mount and info output" block of `harness-config-dirs-table` goes: the argv-order tests replace it. The table equality checks stay.
