@@ -31,10 +31,9 @@
 (defn- file-allowlisted?
   "Check if file path matches any allowlist entry.
    Supports exact paths and glob patterns.
-   Allowlist entries must be maps with :path key (and :reason for documentation).
-   Returns false for nil paths (summary findings should never be allowlisted)."
+   Allowlist entries must be maps with :path key (and :reason for documentation)."
   [file-path allowlist project-dir]
-  (when (and file-path (seq allowlist))  ;; Guard against nil file-path
+  (when (seq allowlist)
     (let [rel-path (str (fs/relativize project-dir (fs/absolutize file-path)))]
       (some (fn [entry]
               (let [pattern (:path entry)]
@@ -44,7 +43,7 @@
                       (path-matches-glob? rel-path pattern)))))
             allowlist))))
 
-(defn filter-allowlisted
+(defn- filter-allowlisted
   "Remove findings that match allowlist entries.
    Allowlisted files are completely hidden (no 'allowed' status)."
   [findings allowlist project-dir]
@@ -54,7 +53,8 @@
 
 (defn scan-project
   "Scan project directory for sensitive files.
-   Returns vector of findings, filtered by allowlist."
+   Returns findings with allowlisted files removed, then grouped by type, so a
+   summary counts only the files that are not allowlisted."
   [project-dir & [detection-config]]
   ;; Check if detection is disabled via config
   (let [enabled? (get detection-config :enabled true)]
@@ -79,7 +79,9 @@
                            (patterns/detect-database-credentials project-dir excluded-dirs)
                            ;; Phase 23-02 custom patterns
                            (patterns/detect-custom-patterns project-dir excluded-dirs custom-patterns))]
-        (patterns/group-findings all-findings)))))
+        (-> all-findings
+            (filter-allowlisted (get detection-config :allowlist []) project-dir)
+            patterns/group-findings)))))
 
 (defn group-by-severity
   "Group findings by severity and sort (high first, then medium, then low)."

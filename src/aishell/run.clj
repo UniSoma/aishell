@@ -211,13 +211,11 @@
 
             _ (when-not (:unsafe opts)
                 (let [detection-config (get cfg :detection {})
-                      allowlist (:allowlist detection-config [])
-                      ;; scan-project checks :enabled and uses :custom_patterns
-                      findings (detection/scan-project project-dir detection-config)
-                      filtered-findings (detection/filter-allowlisted findings allowlist project-dir)]
-                  (when (seq filtered-findings)
-                    (detection/display-warnings project-dir filtered-findings)
-                    (detection/confirm-if-needed filtered-findings))))
+                      ;; scan-project checks :enabled and applies :custom_patterns and :allowlist
+                      findings (detection/scan-project project-dir detection-config)]
+                  (when (seq findings)
+                    (detection/display-warnings project-dir findings)
+                    (detection/confirm-if-needed findings))))
 
             docker-args (docker-run/build-docker-args
                          {:project-dir project-dir

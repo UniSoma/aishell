@@ -186,9 +186,7 @@
         enabled? (get detection-config :enabled true)]
     (if-not enabled?
       (print-status :ok "Sensitive file detection disabled via config")
-      (let [allowlist (:allowlist detection-config [])
-            findings (detection/scan-project project-dir detection-config)
-            filtered (detection/filter-allowlisted findings allowlist project-dir)
+      (let [filtered (detection/scan-project project-dir detection-config)
             high-count (count (filter #(= :high (:severity %)) filtered))
             medium-count (count (filter #(= :medium (:severity %)) filtered))
             low-count (count (filter #(= :low (:severity %)) filtered))
