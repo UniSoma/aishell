@@ -543,6 +543,16 @@
         (is (not-any? #{"PRE_START=echo hi"} argv))
         (is (empty? (aliases argv)))))))
 
+(deftest vscode-server-volume-follows-the-vscode-option
+  (let [mounts-volume? (fn [argv]
+                         (some #(re-matches #"aishell-vscode-server:.*/\.vscode-server" (str %)) argv))]
+    (testing "with VSCode enabled, a Sandbox mounts the volume at the VSCode server path"
+      (is (mounts-volume? (sandbox-args {:state {:with-vscode true}}))))
+    (testing "with VSCode disabled, it does not"
+      (is (not (mounts-volume? (sandbox-args {:state {:with-claude true}})))))
+    (testing "a one-off exec is not a Sandbox and does not mount it"
+      (is (not (mounts-volume? (exec-args {:state {:with-vscode true}})))))))
+
 (def ^:private runtime-env-descriptors
   "Every descriptor declaring fixed runtime environment policy. The behavioral
    tests below iterate over this rather than naming one harness, so a descriptor

@@ -46,12 +46,16 @@
       (str/trim (:out wsl-result)))
     (catch Exception _ nil)))
 
-(defn- get-uid []
+(defn get-uid
+  "The host user's uid as a string, \"1000\" on Windows."
+  []
   (if (fs/windows?)
     "1000"
     (-> (p/shell {:out :string} "id" "-u") :out str/trim)))
 
-(defn- get-gid []
+(defn get-gid
+  "The host user's gid as a string, \"1000\" on Windows."
+  []
   (if (fs/windows?)
     "1000"
     (-> (p/shell {:out :string} "id" "-g") :out str/trim)))

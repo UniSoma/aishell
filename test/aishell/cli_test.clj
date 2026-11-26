@@ -28,6 +28,7 @@
                         :with-pi false
                         :with-omp false
                         :unisoma false
+                        :with-vscode false
                         :claude-version "2.0.22"
                         :opencode-version nil
                         :codex-version nil
@@ -51,6 +52,7 @@
             :with-pi true
             :with-omp true
             :unisoma true
+            :with-vscode false
             :claude-version "2.0.22"
             :opencode-version nil
             :codex-version nil
@@ -309,6 +311,37 @@
       (is (str/includes? out "Base image built from a removed ~/.aishell/Dockerfile found"))
       (is (str/includes? out "Base image reset to an alias of the Foundation image.")))))
 
+(defn- volumes-out
+  "Output of `f` with one VSCode server volume and no harness volume, under
+   setup `state`, with every removal recorded in `removed`."
+  [state removed f]
+  (with-redefs [state/read-state (constantly state)
+                vol/list-harness-volumes (constantly [])
+                vol/volume-exists? (fn [n] (= n vol/vscode-server-volume))
+                vol/get-volume-size (constantly "12MB")
+                vol/volume-in-use? (constantly false)
+                vol/remove-volume (fn [n] (swap! removed conj n) {:removed? true})
+                docker/image-exists? (constantly false)]
+    (with-out-str (f))))
+
+(deftest volumes-list-shows-the-vscode-server-volume
+  (testing "active while VSCode is enabled"
+    (let [out (volumes-out {:with-vscode true} (atom []) cli/handle-volumes-list)]
+      (is (re-find #"aishell-vscode-server\s*\|\s*active" out))))
+  (testing "unused once VSCode is disabled"
+    (let [out (volumes-out {} (atom []) cli/handle-volumes-list)]
+      (is (re-find #"aishell-vscode-server\s*\|\s*unused" out)))))
+
+(deftest volumes-prune-removes-the-vscode-server-volume-only-when-disabled
+  (testing "kept while VSCode is enabled"
+    (let [removed (atom [])]
+      (volumes-out {:with-vscode true} removed #(cli/handle-volumes-prune {:yes true}))
+      (is (= [] @removed))))
+  (testing "removed once VSCode is disabled"
+    (let [removed (atom [])]
+      (volumes-out {} removed #(cli/handle-volumes-prune {:yes true}))
+      (is (= [vol/vscode-server-volume] @removed)))))
+
 (deftest setup-validation-uses-the-canonical-label
   (testing "a bad version names the harness by its canonical label"
     (is (str/starts-with? (cli/setup-validation-error
@@ -324,11 +357,29 @@
                             :state-map {:with-gemini true :gemini-version "1.2"}})
                           "Invalid Gemini CLI version format"))))
 
+(deftest vscode-setup-option-is-a-plain-boolean
+  (testing "--with-vscode enables VSCode"
+    (is (true? (:with-vscode (:state-map (cli/resolve-setup-state {:with-vscode true} nil))))))
+  (testing "plain setup without the flag turns it off"
+    (is (false? (:with-vscode (:state-map (cli/resolve-setup-state {:with-claude true}
+                                                                   {:with-vscode true}))))))
+  (testing "--reuse-config keeps a saved VSCode option"
+    (is (true? (:with-vscode (:state-map (cli/resolve-setup-state {:reuse-config true}
+                                                                  {:with-vscode true}))))))
+  (testing "a value is refused"
+    (doseq [v ["1.2" 1.2 "latest" false]]
+      (is (= "--with-vscode takes no value"
+             (:error (cli/resolve-setup-state {:with-vscode v} nil)))
+          (pr-str v))))
+  (testing "the summary names it"
+    (is (some #{"  VSCode: enabled"}
+              (cli/setup-summary-lines (assoc cli/empty-setup-state :with-vscode true))))))
+
 (deftest empty-setup-state-covers-every-harness-key
-  (testing "a boolean and a version per harness, plus unisoma"
+  (testing "a boolean and a version per harness, plus unisoma and vscode"
     (is (= {:with-claude false :with-opencode false :with-codex false
             :with-copilot false :with-gemini false :with-pi false :with-omp false
-            :unisoma false
+            :unisoma false :with-vscode false
             :claude-version nil :opencode-version nil :codex-version nil
             :copilot-version nil :gemini-version nil :pi-version nil :omp-version nil}
            cli/empty-setup-state))))
@@ -668,6 +719,12 @@
   (testing "aishell's flags before the separator stay aishell's"
     (is (= [:vscode {:detach? true :code-args ["--disable-gpu" "--json"]}]
            (attached-or-opened ["vscode" "--detach" "--disable-gpu" "--" "--json"]))))
+  (testing "a first argument that is not a flag names the Sandbox"
+    (is (= [:vscode {:name "shell" :detach? false :code-args ["--disable-gpu"]}]
+           (attached-or-opened ["vscode" "shell" "--disable-gpu"]))))
+  (testing "a flag's value is not taken for a name"
+    (is (= [:vscode {:detach? false :code-args ["--profile" "Work"]}]
+           (attached-or-opened ["vscode" "--profile" "Work"]))))
   (testing "a --json before the separator is refused"
     (doseq [args [["vscode" "--json" "--" "x"] ["vscode" "--json" "--" "--help"]]]
       (let [[kind msg] (attached-or-opened args)]

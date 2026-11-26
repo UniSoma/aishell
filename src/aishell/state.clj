@@ -88,6 +88,7 @@
     :with-pi false               ; boolean
     :with-omp false              ; boolean
     :unisoma false               ; boolean (UniSoma OpenCode provider whitelist, default false)
+    :with-vscode false           ; boolean (aishell vscode and the VSCode server volume, default false)
     :claude-version \"2.0.22\"   ; string or nil
     :opencode-version nil        ; string or nil
     :codex-version \"0.89.0\"    ; string or nil

@@ -1405,7 +1405,7 @@ aishell setup --reuse-config --force
 - Omitted setup flags inherit from the saved setup intent
 - Explicit `--with-...=VERSION` flags override inherited version pins
 - A bare `--with-...` flag resets that tool to `latest`
-- Inherited settings include harness selection, version pins, and `--unisoma`
+- Inherited settings include harness selection, version pins, `--unisoma` and `--with-vscode`
 - Validation runs against the merged effective config before the build starts
 - Setup still recomputes derived build metadata (hashes, build time, volume name) before persisting state
 

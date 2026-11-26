@@ -130,6 +130,18 @@
     :not-found
     nil))
 
+(defn container-image
+  "The image a container was started from, as Docker records it, or nil when
+   the container is gone or Docker cannot say."
+  [container-name]
+  (try
+    (let [{:keys [exit out]} (p/shell {:out :string :err :string :continue true}
+                                      "docker" "inspect" "--format" "{{.Config.Image}}"
+                                      container-name)]
+      (when (and (zero? exit) (not (str/blank? out)))
+        (str/trim out)))
+    (catch Exception _ nil)))
+
 (defn list-project-containers
   "List all containers (running or stopped) for a project directory.
    Returns vector of maps with :name, :status, :created keys.

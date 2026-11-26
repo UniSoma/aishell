@@ -3,13 +3,22 @@
 
    Harness volumes are keyed by hash of enabled harnesses + versions.
    This ensures projects with identical harness combinations share the
-   same volume, reducing disk usage and improving performance."
+   same volume, reducing disk usage and improving performance.
+
+   The VSCode server volume, `aishell-vscode-server`, is not keyed by
+   harnesses: one volume serves every Sandbox while VSCode is enabled."
   (:require [aishell.docker.hash :as hash]
             [aishell.harness :as harness]
             [aishell.docker.build :as build]
             [aishell.docker.spinner :as spinner]
+            [aishell.util :as util]
             [babashka.process :as p]
             [clojure.string :as str]))
+
+(def vscode-server-volume
+  "The VSCode server volume: the VSCode server and its extensions, shared by
+   every Sandbox when VSCode is enabled at setup."
+  "aishell-vscode-server")
 
 (def volume-schema-version
   "Value of the `aishell.harness.version` label stamped on every harness
@@ -145,6 +154,27 @@
         cmd (concat ["docker" "volume" "create"] label-args [volume-name])]
     (apply p/shell cmd)
     volume-name))
+
+(defn ensure-vscode-server-volume!
+  "When setup `state` enables VSCode, create the VSCode server volume if it is
+   missing, owned by the host user. Docker creates a volume's root as
+   root-owned, and the developer user must write to it, so a one-off container
+   from `image-tag` hands it over once. Call before starting a Sandbox."
+  [state image-tag]
+  (when (and (:with-vscode state)
+             (not (volume-exists? vscode-server-volume)))
+    (create-volume vscode-server-volume {})
+    (p/shell {:out :string :err :string}
+             "docker" "run" "--rm" "--entrypoint" "chown"
+             "-v" (str vscode-server-volume ":/v")
+             image-tag (str (util/get-uid) ":" (util/get-gid)) "/v")))
+
+(defn vscode-server-volume-status
+  "The VSCode server volume's status under setup `state`: :active while VSCode
+   is enabled, :unused once it is not, or nil when the volume does not exist."
+  [state]
+  (when (volume-exists? vscode-server-volume)
+    (if (:with-vscode state) :active :unused)))
 
 (defn remove-volume
   "Remove Docker volume by name.

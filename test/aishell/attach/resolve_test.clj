@@ -58,3 +58,14 @@
             [(container "a" "Up 1 second")
              (container "gone" "Exited (137) 1 minute ago")
              (container "bb" "Up 2 seconds")])))))
+
+(deftest resolve-multiple-running-names-the-asking-command
+  (testing "the copyable command uses the command that asked"
+    (is (= {:error (str "Multiple running containers — name one:\n\n"
+                        "  claude    Up 3 minutes\n"
+                        "  shell     Up 20 minutes\n\n"
+                        "  aishell vscode claude")}
+           (resolve/resolve-attach-target
+            [(container "claude" "Up 3 minutes")
+             (container "shell" "Up 20 minutes")]
+            "vscode")))))

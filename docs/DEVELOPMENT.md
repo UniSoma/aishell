@@ -102,7 +102,7 @@ aishell/
 - **docker/build.clj:** Build the Foundation image and warn when it is out of date
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
-- **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning
+- **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning; the VSCode server volume's creation and status
 - **info.clj:** Display image stack info (the Foundation image's contents, Base image and Project extension status, harnesses)
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)

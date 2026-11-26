@@ -9,7 +9,8 @@
             [aishell.docker.naming :as naming]
             [aishell.validation :as validation]
             [aishell.config :as cfg]
-            [aishell.harness :as harness]))
+            [aishell.harness :as harness]
+            [aishell.docker.volume :as vol]))
 
 (defn read-git-identity
   "Read git identity from host configuration.
@@ -572,13 +573,13 @@
   [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
-        home (util/get-home)]
+        home (util/get-home)
+        container-home (if (fs/windows?) "/home/developer" home)]
     (-> ["docker" "run" "--rm" "--init"]
         (into tty-flags)
         (cond-> container-name (into ["--name" container-name]))
         (into (let [mount-source (normalize-mount-source project-dir)
-                    mount-dest (if (fs/windows?) "/workspace" project-dir)
-                    container-home (if (fs/windows?) "/home/developer" home)]
+                    mount-dest (if (fs/windows?) "/workspace" project-dir)]
                 [;; Project mount
                  "-v" (str mount-source ":" mount-dest)
                  "-w" mount-dest
@@ -617,6 +618,10 @@
         ;; Harness volume mount (volume-mounted harness tools)
         (into (build-harness-volume-args harness-volume-name config))
         (into (build-harness-env-args harness-volume-name))
+
+        ;; VSCode server volume: every Sandbox when VSCode is enabled, never exec
+        (cond-> (and (:with-vscode state) (not skip-interactive))
+          (into ["-v" (str vol/vscode-server-volume ":" container-home "/.vscode-server")]))
 
         ;; Harness aliases for interactive shell use
         ;; Skipped for non-interactive launches such as exec

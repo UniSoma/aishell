@@ -64,8 +64,12 @@ The session started by `aishell <harness>` or bare `aishell` (a shell), whose pr
 _Avoid_: main, parent, pane 1
 
 **Attached session**:
-A session joined to an existing Sandbox by `aishell attach`, running as a `docker exec` guest. Any number per Sandbox. It cannot outlive the Owning session and is not a process child of it.
+A session joined to an existing Sandbox by `aishell attach` or `aishell vscode`, running as a `docker exec` guest. A VSCode window that `aishell vscode` opens in a Sandbox it did not start is one. Any number per Sandbox. It cannot outlive the Owning session and is not a process child of it.
 _Avoid_: child, secondary, sub-session
+
+**VSCode server volume**:
+The aishell-managed Docker volume that holds the VSCode server and its extensions, mounted into every Sandbox when VSCode is enabled at setup, so a VSCode window joining any Sandbox finds them already installed. It never shares the host's own `~/.vscode-server`.
+_Avoid_: vscode-server mount, VSCode cache
 
 **Claude config**:
 The slowly-changing Claude Code files a user deliberately curates and wants identical in every sandbox: skills, agents, commands, hooks, plugins, memory (CLAUDE.md), settings, credentials.

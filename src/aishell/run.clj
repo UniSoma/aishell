@@ -185,6 +185,7 @@
         (verify-harness-available descriptor state))
 
       (let [image-tag (resolve-image-tag project-dir false opts)
+            _ (vol/ensure-vscode-server-volume! state image-tag)
             git-id (docker-run/read-git-identity project-dir)
 
             defaults (when (and cfg cmd)

@@ -160,10 +160,10 @@ See [Base image customization](docs/CONFIGURATION.md#base-image-customization) f
 - Warns before an agent can access detected secrets, keys, or credentials
 - Runs a single container command with `aishell exec`
 - Assigns deterministic container names with `--name`
-- Opens VSCode in a container as `developer` and persists the server state across restarts
+- Opens VSCode as `developer` in a running Sandbox, or in its own, with `aishell vscode` once setup enables it
 - Opens a shell in a running container with `aishell attach`; the name is optional when one container is running
 - Lists project containers with `aishell ps`
-- Lists and prunes orphaned harness volumes with `aishell volumes`
+- Lists and prunes orphaned harness volumes and the unused VSCode server volume with `aishell volumes`
 - Shows the image stack and installed tools with `aishell info`
 - Checks for new versions at a configurable interval; set `update_check` to disable the check
 - Updates aishell and verifies the downloaded checksum with `aishell upgrade`
@@ -259,28 +259,36 @@ aishell reports an error if a running container already uses the requested name.
 
 ### VSCode (experimental)
 
-Open VSCode in the container as the `developer` user:
+Enable VSCode once at setup, then open it in a Sandbox as the `developer` user:
 
 ```bash
-# Open VSCode attached to the container (blocks until window closes, then stops container)
+# Enable VSCode (keeps your other setup options)
+aishell setup --reuse-config --with-vscode
+
+# Open VSCode in the only running Sandbox, or start a vscode Sandbox when none runs
 aishell vscode
 
-# Detached mode: container keeps running in the background
+# Open VSCode in a named running Sandbox
+aishell vscode shell
+
+# Leave a Sandbox that aishell vscode started running in the background
 aishell vscode --detach
 
-# Stop a detached container when done
+# Stop that Sandbox when done
 aishell vscode --stop
 
 # Pass extra arguments through to the 'code' CLI
 aishell vscode --profile Work
-aishell vscode --detach --disable-gpu
+aishell vscode shell --disable-gpu
 ```
 
-By default, aishell waits for the VSCode window to close and then stops the container. Use `--detach` to leave the container running. Each concurrent `aishell vscode` instance opens a separate window.
+When a Sandbox is already running, for example one started with bare `aishell` that has harnesses attached in other terminals, `aishell vscode` opens VSCode in it and returns. Closing the window leaves the Sandbox running, and the window disconnects when that Sandbox's own session exits. With several Sandboxes running, name one; `aishell ps` lists them.
 
-aishell passes unrecognized arguments to the `code` CLI. Its own arguments are `--detach`, `--stop`, and `--help`. You can set persistent defaults through `harness_args.vscode` in your [configuration](docs/CONFIGURATION.md#harness_args).
+With no Sandbox running, `aishell vscode` starts a `vscode` Sandbox. By default, it waits for the window to close and then stops that Sandbox. Use `--detach` to leave it running. Each concurrent `aishell vscode` instance opens a separate window.
 
-aishell mounts `~/.vscode-server` into the container. VSCode server extensions and cached data persist across container restarts.
+The Sandbox name comes first. Other arguments go to the `code` CLI, except aishell's own: `--detach`, `--stop`, and `--help`. You can set persistent defaults through `harness_args.vscode` in your [configuration](docs/CONFIGURATION.md#harness_args).
+
+With VSCode enabled, every Sandbox mounts the `aishell-vscode-server` Docker volume, so the VSCode server and the extensions you install in it persist across Sandboxes and restarts. aishell does not mount the host's `~/.vscode-server`, so a harness cannot change the VSCode server on the host. `aishell volumes prune` removes the volume after you turn VSCode off.
 
 This command requires VSCode, the `code` CLI on `PATH`, and the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension. If WSL2 runs Docker inside the distribution, see [Troubleshooting](docs/TROUBLESHOOTING.md#symptom-vscode-dev-container-cant-find-docker-on-wsl2-no-docker-desktop).
 

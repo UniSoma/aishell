@@ -168,22 +168,25 @@ aishell volumes prune --yes  # Remove without confirmation
 
 ### vscode
 
-Open VSCode attached to the aishell container as the `developer` user. Experimental — API subject to change.
+Open VSCode as the `developer` user in a Sandbox. Experimental: API subject to change. Requires `aishell setup --with-vscode`.
 
 ```
-aishell vscode            # Open VSCode (blocks until closed, then stops container)
-aishell vscode --detach   # Run in background (container persists)
-aishell vscode --stop     # Stop a detached vscode container
+aishell vscode            # Join the only running Sandbox, or start a vscode Sandbox (blocks until closed, then stops it)
+aishell vscode shell      # Join the running Sandbox named shell
+aishell vscode --detach   # Leave a vscode Sandbox this command starts running
+aishell vscode --stop     # Stop the vscode Sandbox
 ```
 
 What this does:
-1. Ensures VSCode per-image config exists (defaults `remoteUser` to `developer`).
-2. Starts the container in detached mode if not already running.
-3. Mounts `~/.vscode-server` for server persistence across restarts.
+1. Refuses to run unless setup enabled VSCode.
+2. Picks the Sandbox: a name must be running; with no name, the only running Sandbox is joined, none running starts the `vscode` Sandbox, and several running is an error listing them.
+3. Ensures VSCode per-image config exists for the Sandbox's image (defaults `remoteUser` to `developer`).
 4. Opens VSCode using the `vscode-remote://attached-container+` URI scheme.
-5. By default, waits for VSCode to close, then stops the container. Multiple instances can run simultaneously.
+5. A joined Sandbox is never stopped by this command, which returns at once. A `vscode` Sandbox it started stops when the window closes, unless `--detach`.
 
-Prerequisites: VSCode with `code` CLI on PATH, Dev Containers extension installed, `aishell setup` completed.
+With VSCode enabled, every Sandbox mounts the `aishell-vscode-server` Docker volume at `~/.vscode-server`; the host's `~/.vscode-server` is not mounted.
+
+Prerequisites: VSCode with `code` CLI on PATH, Dev Containers extension installed, `aishell setup --with-vscode` completed.
 
 ### upgrade
 

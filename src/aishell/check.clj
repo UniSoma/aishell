@@ -25,12 +25,13 @@
 (defn- warn-mark [] (str output/YELLOW "!" output/NC))
 
 (defn- print-status
-  "Print a status line: ✓/✗/! label"
+  "Print a status line: ✓/✗/!/- label"
   [status label]
   (let [mark (case status
                :ok   (check-mark)
                :fail (cross-mark)
-               :warn (warn-mark))]
+               :warn (warn-mark)
+               :info "-")]
     (println (str "  " mark " " label))))
 
 (defn- check-docker
@@ -231,6 +232,22 @@
               (print-status :warn "Claude credentials: none yet (login persists into project state dir)")))))
       (print-status :ok "Claude isolation: shared (host ~/.claude mounted wholesale)"))))
 
+(defn- check-vscode
+  "Report the VSCode setup option and, when it is on, the `code` CLI that
+   `aishell vscode` needs."
+  [state]
+  (cond
+    (not (:with-vscode state))
+    (print-status :info "VSCode disabled (aishell setup --with-vscode)")
+
+    (fs/which "code")
+    (do
+      (print-status :ok "VSCode 'code' CLI available (aishell vscode)")
+      (print-status :ok (str "VSCode imageConfigs: " (util/vscode-imageconfigs-dir))))
+
+    :else
+    (print-status :warn "VSCode 'code' CLI not found (aishell vscode won't work)")))
+
 (defn run-check
   "Run all pre-flight checks and report status. Exit the process with
    status 1 when any critical check fails."
@@ -281,11 +298,7 @@
     (println)
 
     (println (str output/BOLD "Tools" output/NC))
-    (if (fs/which "code")
-      (do
-        (print-status :ok "VSCode 'code' CLI available (aishell vscode)")
-        (print-status :ok (str "VSCode imageConfigs: " (util/vscode-imageconfigs-dir))))
-      (print-status :warn "VSCode 'code' CLI not found (aishell vscode won't work)"))
+    (check-vscode (state/read-state))
     (if (fs/which "git")
       (print-status :ok "Git available")
       (print-status :warn "Git not found (git identity won't be forwarded to container)"))

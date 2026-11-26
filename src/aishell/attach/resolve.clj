@@ -25,21 +25,24 @@
        "If this is unexpected, check Docker: aishell check"))
 
 (defn- ambiguous-error
-  [candidates]
+  [candidates command]
   (let [width (+ 4 (apply max (map (comp count :name) candidates)))]
     (str "Multiple running containers — name one:\n\n"
          (str/join (for [{:keys [name status]} candidates]
                      (str "  " (pad name width) status "\n")))
-         "\n  aishell attach " (:name (first candidates)))))
+         "\n  aishell " command " " (:name (first candidates)))))
 
 (defn resolve-attach-target
-  "Pick the container a bare `aishell attach` should target.
+  "Pick the running container a bare `aishell attach` or `aishell vscode`
+   should target.
 
    Takes the raw container vector from `list-project-containers` (maps with
    :name and :status) and returns {:name <short name>} when exactly one is
    running, or {:error <message>} otherwise. Listing order is preserved, so
-   the error reads in the same order as `aishell ps`."
-  [containers]
+   the error reads in the same order as `aishell ps`. `command` is the
+   aishell subcommand the copyable hint names, `attach` by default."
+  ([containers] (resolve-attach-target containers "attach"))
+  ([containers command]
   (let [rows (map (fn [c] {:name (naming/extract-short-name (:name c))
                            :status (:status c)})
                   containers)
@@ -47,4 +50,4 @@
     (case (count running)
       1 {:name (:name (first running))}
       0 {:error (none-running-error (map :name stopped))}
-      {:error (ambiguous-error running)})))
+      {:error (ambiguous-error running command)}))))

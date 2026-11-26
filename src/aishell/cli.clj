@@ -150,6 +150,7 @@
   (merge
    harness-setup-spec
    {:unisoma      {:coerce :boolean :desc "Enable UniSoma OpenCode model whitelist (requires --with-opencode)"}
+    :with-vscode  {:desc "Enable aishell vscode and the VSCode server volume in every Sandbox"}
     :dir          {:coerce :string :desc "Scaffold project config dir: .aishell (default) or .sandbox"}
     :reuse-config {:coerce :boolean :desc "Seed omitted options from the saved setup config"}
     :force        {:coerce :boolean :desc "Force rebuild (bypass Docker cache)"}
@@ -159,7 +160,7 @@
 (def setup-option-order
   "Setup help order: harness flags in registry display order, then the rest."
   (into (mapv :state-key harness/registry)
-        [:unisoma :dir :reuse-config :force :verbose :help]))
+        [:unisoma :with-vscode :dir :reuse-config :force :verbose :help]))
 
 (def setup-harness-options
   "The harness setup options, each carrying an optional version, with the
@@ -169,14 +170,15 @@
         harness/registry))
 
 (def setup-boolean-options
-  "Setup options that are a plain on/off: the UniSoma whitelist, which is
-   not a harness at all."
-  [{:opt :unisoma :state :unisoma}])
+  "Setup options that are a plain on/off and not a harness: the UniSoma
+   whitelist and VSCode."
+  [{:opt :unisoma :state :unisoma}
+   {:opt :with-vscode :state :with-vscode}])
 
 (def empty-setup-state
   "Every setup-state key, all disabled: a boolean and a version per harness,
-   plus the UniSoma flag."
-  (into {:unisoma false}
+   plus the UniSoma and VSCode flags."
+  (into {:unisoma false :with-vscode false}
         (mapcat (fn [{:keys [state-key version-key]}]
                   [[state-key false] [version-key nil]]))
         harness/registry))
@@ -212,6 +214,13 @@
   [opts saved-state]
   (let [reuse-config? (boolean (:reuse-config opts))]
     (cond
+      ;; No :coerce here: :boolean reads --with-vscode=1.2 or =latest as true.
+      ;; A bare flag parses to true, so any other value came with =
+      (and (contains? opts :with-vscode)
+           (not (true? (:with-vscode opts))))
+      {:reuse-config? reuse-config?
+       :error "--with-vscode takes no value"}
+
       (not reuse-config?)
       {:reuse-config? false
        :state-map (explicit-setup-state opts)}
@@ -282,7 +291,8 @@
                        (when (get state-map state-key)
                          (str "  " label ": " (or (get state-map version-key) "latest"))))
                      harness/registry))
-    (:unisoma state-map) (conj "  UniSoma: enabled")))
+    (:unisoma state-map) (conj "  UniSoma: enabled")
+    (:with-vscode state-map) (conj "  VSCode: enabled")))
 
 (defn print-effective-reused-setup
   "Print the merged effective config when --reuse-config is active."
@@ -317,9 +327,9 @@
   (println (str "  " output/CYAN "check" output/NC "      Validate setup and configuration"))
   (println (str "  " output/CYAN "exec" output/NC "       Run one-off command in container"))
   (println (str "  " output/CYAN "ps" output/NC "         List project containers"))
-  (println (str "  " output/CYAN "volumes" output/NC "    Manage harness volumes"))
+  (println (str "  " output/CYAN "volumes" output/NC "    Manage harness and VSCode server volumes"))
   (println (str "  " output/CYAN "attach, a" output/NC "  Attach to running container"))
-  (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode attached to container"))
+  (println (str "  " output/CYAN "vscode" output/NC "     Open VSCode in a running or new Sandbox"))
   (println (str "  " output/CYAN "info" output/NC "       Show image stack and installed tools"))
   (println (str "  " output/CYAN "upgrade" output/NC "    Upgrade aishell to latest version"))
   ;; Conditionally show harness commands based on installation
@@ -364,6 +374,7 @@
   (println (str "  " output/CYAN "aishell setup --with-pi" output/NC "               Include Pi coding agent"))
   (println (str "  " output/CYAN "aishell setup --with-omp=18.12.1" output/NC "      Pin oh-my-pi (omp) release"))
   (println (str "  " output/CYAN "aishell setup --with-opencode --unisoma" output/NC " OpenCode with UniSoma whitelist"))
+  (println (str "  " output/CYAN "aishell setup --reuse-config --with-vscode" output/NC " Enable aishell vscode"))
   (println (str "  " output/CYAN "aishell setup --dir .sandbox" output/NC "           Scaffold a .sandbox/ project config dir"))
   (println (str "  " output/CYAN "aishell setup --reuse-config" output/NC "           Reuse saved setup defaults"))
   (println (str "  " output/CYAN "aishell setup --reuse-config --with-opencode" output/NC " Reuse config, reset OpenCode to latest"))
@@ -607,43 +618,59 @@
   (flush)
   (= "y" (str/trim (read-line))))
 
+(defn- vscode-server-volume-row
+  "The VSCode server volume's `volumes list` row, or nil when it does not
+   exist. Its status is active while VSCode is enabled at setup, unused
+   otherwise."
+  [state]
+  (when-let [status (vol/vscode-server-volume-status state)]
+    {:NAME vol/vscode-server-volume
+     :STATUS (name status)
+     :SIZE (vol/get-volume-size vol/vscode-server-volume)
+     :HARNESSES "(VSCode server)"}))
+
 (defn handle-volumes-list
-  "List all harness volumes with active/orphaned status."
+  "List the harness volumes with active/orphaned status, and the VSCode
+   server volume with active/unused status."
   []
   (let [state (state/read-state)
-        volumes (vol/list-harness-volumes)
-        current-vol (:harness-volume-name state)]
-    (if (empty? volumes)
-      (println "No harness volumes found.\n\nVolumes are created automatically during 'aishell setup' when harnesses are enabled.")
+        current-vol (:harness-volume-name state)
+        vscode-row (vscode-server-volume-row state)
+        rows (cond-> (mapv (fn [{:keys [name harnesses]}]
+                             {:NAME name
+                              :STATUS (if (= name current-vol) "active" "orphaned")
+                              :SIZE (vol/get-volume-size name)
+                              :HARNESSES (or harnesses "unknown")})
+                           (vol/list-harness-volumes))
+               vscode-row (conj vscode-row))]
+    (if (empty? rows)
+      (println "No harness or VSCode server volumes found.\n\nVolumes are created automatically during 'aishell setup' when harnesses are enabled.")
       (do
-        (pp/print-table [:NAME :STATUS :SIZE :HARNESSES]
-                        (map (fn [{:keys [name harnesses]}]
-                               {:NAME name
-                                :STATUS (if (= name current-vol) "active" "orphaned")
-                                :SIZE (vol/get-volume-size name)
-                                :HARNESSES (or harnesses "unknown")})
-                             volumes))
-        (println "\nTo remove orphaned volumes: aishell volumes prune")))))
+        (pp/print-table [:NAME :STATUS :SIZE :HARNESSES] rows)
+        (println "\nTo remove orphaned and unused volumes: aishell volumes prune")))))
 
 (defn handle-volumes-prune
-  "Remove orphaned harness volumes after a confirmation prompt. Reset a Base
-   image built from a since-removed ~/.aishell/Dockerfile to an alias of the
-   Foundation image without prompting."
+  "Remove orphaned harness volumes, and the VSCode server volume when VSCode
+   is disabled, after a confirmation prompt. Reset a Base image built from a
+   since-removed ~/.aishell/Dockerfile to an alias of the Foundation image
+   without prompting."
   [opts]
   (let [state (state/read-state)
         current-vol (:harness-volume-name state)
         all-volumes (vol/list-harness-volumes)
-        orphaned (filter #(and (not= (:name %) current-vol)
-                               (str/starts-with? (:name %) "aishell-harness-"))
-                         all-volumes)]
-    (if (empty? orphaned)
-      (println "No orphaned volumes to prune.")
+        prunable (cond-> (filterv #(and (not= (:name %) current-vol)
+                                        (str/starts-with? (:name %) "aishell-harness-"))
+                                  all-volumes)
+                   (= :unused (vol/vscode-server-volume-status state))
+                   (conj {:name vol/vscode-server-volume}))]
+    (if (empty? prunable)
+      (println "No orphaned or unused volumes to prune.")
       (do
         (println "The following volumes will be removed:")
-        (doseq [{:keys [name]} orphaned]
+        (doseq [{:keys [name]} prunable]
           (println (str "  - " name)))
         (when (or (:yes opts) (prompt-yn "Remove these volumes?"))
-          (doseq [{:keys [name]} orphaned]
+          (doseq [{:keys [name]} prunable]
             (if (vol/volume-in-use? name)
               (println (str "Skipping " name " (in use by container)"))
               (do
@@ -665,11 +692,11 @@
   []
   (println (str output/BOLD "Usage:" output/NC " aishell volumes [SUBCOMMAND]"))
   (println)
-  (println "Manage harness volumes.")
+  (println "Manage harness volumes and the VSCode server volume.")
   (println)
   (println (str output/BOLD "Subcommands:" output/NC))
   (println "  list     List all harness volumes (default)")
-  (println "  prune    Remove orphaned volumes")
+  (println "  prune    Remove orphaned harness volumes, and the VSCode server volume when VSCode is disabled")
   (println)
   (println (str output/BOLD "Prune Options:" output/NC))
   (println (cli/format-opts {:spec volumes-prune-spec
@@ -926,58 +953,11 @@
                                (output/error err)
                                (attach/attach-to-container (:name parsed)
                                                            :command-argv (:command-argv parsed))))))
-        "vscode" (let [[before-separator after-separator] (split-at-separator (rest args))
-                       own-flags #{"--detach" "--stop" "-h" "--help"}
-                       code-args (into (vec (remove own-flags before-separator))
-                                       (rest after-separator))]
+        "vscode" (let [{:keys [help? stop?] :as parsed} (vscode/parse-args (rest args))]
                    (cond
-                     (some #{"-h" "--help"} before-separator)
-                     (do
-                       (println (str output/BOLD "Usage:" output/NC " aishell vscode [OPTIONS] [-- CODE_ARGS...]"))
-                       (println)
-                       (println "Open VSCode attached to the aishell container as the developer user.")
-                       (println (str output/YELLOW "(Experimental — API subject to change)" output/NC))
-                       (println)
-                       (println (str output/BOLD "Options:" output/NC))
-                       (println "  -h, --help      Show this help")
-                       (println "      --detach    Run in background (don't wait for VSCode to close)")
-                       (println "      --stop      Stop a detached vscode container")
-                       (println)
-                       (println (str output/BOLD "Extra arguments:" output/NC))
-                       (println "  Any arguments not listed above are passed through to the 'code' CLI.")
-                       (println (str "  Default args can be set via harness_args.vscode in "
-                                     (util/resolve-project-config-dir (System/getProperty "user.dir"))
-                                     "/config.yaml."))
-                       (println)
-                       (println (str output/BOLD "What this does:" output/NC))
-                       (println "  1. Syncs host VSCode extensions to container config")
-                       (println "  2. Starts the container if not already running")
-                       (println "  3. Opens VSCode attached to the container")
-                       (println "  4. Waits for VSCode to close, then stops the container")
-                       (println)
-                       (println (str output/BOLD "Note:" output/NC))
-                       (println "  Your locally installed VSCode extensions are automatically")
-                       (println "  made available inside the container.")
-                       (println)
-                       (println (str output/BOLD "Prerequisites:" output/NC))
-                       (println "  - VSCode with 'code' CLI on PATH")
-                       (println "  - Dev Containers extension installed in VSCode")
-                       (println "  - aishell setup completed")
-                       (println)
-                       (println (str output/BOLD "Examples:" output/NC))
-                       (println (str "  " output/CYAN "aishell vscode" output/NC "                         Open VSCode (blocks until closed)"))
-                       (println (str "  " output/CYAN "aishell vscode --detach" output/NC "                Run in background"))
-                       (println (str "  " output/CYAN "aishell vscode --stop" output/NC "                  Stop a detached container"))
-                       (println (str "  " output/CYAN "aishell vscode --disable-gpu" output/NC "           Pass --disable-gpu to code"))
-                       (println (str "  " output/CYAN "aishell vscode --detach --profile Work" output/NC " Detach with a code profile")))
-
-                     (some #{"--stop"} before-separator)
-                     (vscode/stop-vscode)
-
-                     :else
-                     (let [detach? (some #{"--detach"} before-separator)]
-                       (vscode/open-vscode {:detach? (boolean detach?)
-                                            :code-args code-args}))))
+                     help? (vscode/print-help)
+                     stop? (vscode/stop-vscode)
+                     :else (vscode/open-vscode (dissoc parsed :help? :stop?))))
         "upgrade" (let [rest-args (vec (rest args))]
                     (cond
                       (some #{"-h" "--help"} rest-args)

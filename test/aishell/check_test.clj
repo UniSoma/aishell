@@ -17,6 +17,7 @@
 
 (def ^:private check-isolation #'check/check-claude-isolation)
 (def ^:private check-harnesses #'check/check-harnesses)
+(def ^:private check-vscode #'check/check-vscode)
 
 (defn- with-temp-env
   "Run f with util/get-home and util/state-dir redefined to fresh temp dirs.
@@ -185,3 +186,15 @@
       (with-out-str (#'check/check-images {:image-tag build/foundation-image-tag}
                                           "/project")))
     (is (= [base/base-image-tag] @checked))))
+
+(deftest vscode-check-follows-the-setup-option
+  (testing "disabled: one info line, and no lookup for code"
+    (let [looked-up (atom false)
+          out (with-redefs [fs/which (fn [& _] (reset! looked-up true) nil)]
+                (with-out-str (check-vscode {:with-claude true})))]
+      (is (str/includes? out "VSCode disabled (aishell setup --with-vscode)"))
+      (is (false? @looked-up))))
+  (testing "enabled and code missing: a warning"
+    (let [out (with-redefs [fs/which (constantly nil)]
+                (with-out-str (check-vscode {:with-vscode true})))]
+      (is (str/includes? out "VSCode 'code' CLI not found")))))
