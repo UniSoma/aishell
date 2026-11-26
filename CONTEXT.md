@@ -60,7 +60,7 @@ The Docker container a project's harness runs in, named `aishell-{project-hash}-
 _Avoid_: box, environment
 
 **Owning session**:
-The session started by `aishell <harness>` or bare `aishell` (a shell), whose process holds the `docker run --rm` that created the Sandbox. Exactly one per Sandbox; when it exits, the Sandbox is removed and every Attached session on it dies.
+The session started by `aishell <harness>` or bare `aishell` (a shell), whose process holds the `docker run --rm` that created the Sandbox; when it exits, the Sandbox is removed and every Attached session on it dies. Every Sandbox has exactly one, except the `vscode` Sandbox that `aishell vscode` starts when none is running, which stops when its window closes or on `aishell vscode --stop`.
 _Avoid_: main, parent, pane 1
 
 **Attached session**:
