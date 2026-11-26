@@ -6,7 +6,7 @@ type: feature
 priority: 1
 mode: hitl
 created: '2026-08-27T16:15:58.067238058Z'
-updated: '2026-11-26T17:24:44.592907408Z'
+updated: '2026-11-26T17:49:09.012313139Z'
 closed: '2026-11-26T17:24:44.592907408Z'
 acceptance:
 - title: An unknown security_profile value exits 1 naming the key and valid values; no key means default; a project config cannot relax a global strict
@@ -30,6 +30,7 @@ acceptance:
 links:
 - aix-01kr1d764vty
 - aix-01kxmde9p330
+- aix-01m8cfkea9ac
 tags:
 - security
 - host-needed
