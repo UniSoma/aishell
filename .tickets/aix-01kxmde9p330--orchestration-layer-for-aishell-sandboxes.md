@@ -6,7 +6,7 @@ type: epic
 priority: 2
 mode: hitl
 created: '2026-07-16T02:52:38.466589346Z'
-updated: '2026-09-08T12:31:21.374005124Z'
+updated: '2026-11-26T14:32:39.256425440Z'
 tags:
 - wayfinder:map
 links:
@@ -32,6 +32,10 @@ ADR 0006: headless runs default to the strict security profile (see aix-01m1203d
 **2026-09-08T12:31:21.374005124Z**
 
 herdr (https://herdr.dev) is an orthogonal host-side layer, not an input to this design: a terminal multiplexer run on the host, one sandbox per pane, launched as `HERDR_AGENT=claude aishell claude`. It needs no aishell code and does not touch the headless `docker exec` mechanics here. The open 'streaming/progress UX for long-running headless runs' item stays open — herdr answers only the supervised case (a human watching a pane), not whether `aishell run` buffers or streams. See docs/HERDR.md, which also records why herdr's control socket is never mounted into a sandbox.
+
+**2026-11-26T14:32:39.256425440Z**
+
+2026-11-26 decision by the user (Iris ticket review): headless runs always start their own sandbox on the strict profile; they do not join a running interactive sandbox through docker exec. This replaces the epic's locked "Container: reuse the project's existing sandbox via docker exec" choice. A headless sandbox leaves out the config's `ports` entries, so it never collides with host ports a dev sandbox already publishes; publishing on Docker-chosen host ports can be added later if host access is ever needed. Why: ADR 0006 puts headless runs on strict, and a profile is fixed at docker run, which docker exec cannot change. Next: /refine aix-01kxmdezr60p to rewrite the exec mechanics around this.
 
 ## Decisions so far
 

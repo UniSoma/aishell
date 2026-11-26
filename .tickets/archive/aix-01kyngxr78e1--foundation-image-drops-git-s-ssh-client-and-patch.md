@@ -1,12 +1,13 @@
 ---
 id: aix-01kyngxr78e1
 title: Foundation image drops git's ssh-client and patch recommends
-status: open
+status: closed
 type: bug
 priority: 2
 mode: hitl
 created: '2026-07-28T23:28:26.856341752Z'
-updated: '2026-08-20T12:49:21.652866615Z'
+updated: '2026-11-26T14:24:47.737418856Z'
+closed: '2026-11-26T14:24:47.737418856Z'
 tags:
 - docker
 - foundation
@@ -19,6 +20,8 @@ acceptance:
   done: false
 links:
 - aix-01m0fkf9tz6n
+external_refs:
+- git:ab37358
 ---
 
 ## Description
@@ -32,3 +35,9 @@ Consequences:
 - `patch` is absent, so agents cannot apply unified diffs with `patch -p1`.
 
 Fix: add `openssh-client` and `patch` to the apt list. Marginal cost ~12 MB (openssh-client 5.8 MB plus the krb5/fido2/libedit chain; patch ~200 kB).
+
+## Notes
+
+**2026-11-26T14:24:47.737418856Z**
+
+Fixed in ab37358 (openssh-client and patch installed in the foundation image); found unclosed in the 2026-11-26 open-ticket review.
