@@ -15,6 +15,10 @@
 
 Issues are tracked with **knot** — local markdown tickets under `.tickets/`, managed via the `knot` skill. See [docs/agents/issue-tracking.md](docs/agents/issue-tracking.md).
 
+### Research
+
+Research for a ticket is saved as a knot document on that ticket (`knot document add`), not as a file in the repo.
+
 ### Triage labels
 
 Triage state is recorded as knot tags (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
