@@ -22,4 +22,4 @@ How does a headless run physically execute? Decide how `docker exec` composes wi
 
 **2026-07-16T02:59:55.731335293Z**
 
-Research input: --dangerously-skip-permissions exits 1 when run as root unless IS_SANDBOX=1 is set in the container env — the exec-mechanics decision must pick non-root exec user and/or set IS_SANDBOX. Also: session lookup is scoped to cwd inside the container, and headless runs share ~/.claude machine state with interactive sessions. See docs/research/claude-code-headless-cli.md (branch research/claude-headless-cli).
+Research input: --dangerously-skip-permissions exits 1 when run as root unless IS_SANDBOX=1 is set in the container env — the exec-mechanics decision must pick non-root exec user and/or set IS_SANDBOX. Also: session lookup is scoped to cwd inside the container, and headless runs share ~/.claude machine state with interactive sessions. See document aix-01kxmde9p330-d43m7 on the parent epic (`knot document show aix-01kxmde9p330-d43m7`).

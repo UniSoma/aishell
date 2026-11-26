@@ -35,3 +35,5 @@ Steps:
 6. Note whether GPU access (`nvidia` runtime) matters for any sandbox — gVisor's nvproxy is limited.
 
 Exit criteria for keeping gVisor: steps 2–4 pass, step 5 within ~2× of runc. If it fails, record why here and repeat the shape with microsandbox (`msb doctor`, `--mount-dir <proj>:<same path>:rw`, Claude Code via OAuth, same visibility and timing checks). Either way, record the outcome as a note and, if a runtime other than runc is viable, un-block the `runtime` key ticket.
+
+microsandbox research for the fallback branch: document aix-01m1203e0gm4-dab2m.

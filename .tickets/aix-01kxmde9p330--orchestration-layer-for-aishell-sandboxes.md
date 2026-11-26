@@ -48,7 +48,7 @@ Locked during charting (no ticket; recorded here):
 
 Resolved tickets:
 
-- [Claude Code headless CLI surface](aix-01kxmdezmmx8) — headless surface documented in docs/research/claude-code-headless-cli.md (branch research/claude-headless-cli): JSON envelope schema (branch on is_error/subtype; result optional on error), always read session_id back from each envelope, skip-permissions needs non-root or IS_SANDBOX=1, stream-json's final line is the same envelope, no built-in timeout.
+- [Claude Code headless CLI surface](aix-01kxmdezmmx8) — headless surface documented in this epic's document aix-01kxmde9p330-d43m7: JSON envelope schema (branch on is_error/subtype; result optional on error), always read session_id back from each envelope, skip-permissions needs non-root or IS_SANDBOX=1, stream-json's final line is the same envelope, no built-in timeout.
 
 ## Not yet specified
 
