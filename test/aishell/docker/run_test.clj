@@ -708,3 +708,67 @@
     (let [{:keys [error]} (ports-outcome ["abc:80"] {})]
       (is (str/includes? error "Invalid port mapping: abc:80\nExpected format:"))
       (is (not (str/includes? error "(from"))))))
+
+
+;; Resource caps (resources.memory, resources.cpus)
+
+(defn- resources-outcome
+  "Build the argv for both a launch and an exec from `resources`. Returns
+   {:sandbox argv :exec argv} or, when the build calls output/error,
+   {:error <stderr text>}."
+  [resources]
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "exit" {})))]
+        (try
+          {:sandbox (sandbox-args {:config {:resources resources} :state {}})
+           :exec (exec-args {:config {:resources resources} :state {}})}
+          (catch clojure.lang.ExceptionInfo _
+            {:error (str err)}))))))
+
+(defn- flag-value [argv flag]
+  (second (drop-while #(not= flag %) argv)))
+
+(deftest resources-reach-both-launch-paths
+  (doseq [path [:sandbox :exec]]
+    (testing (str "memory and cpus become flags on the " (name path) " argv")
+      (let [argv (path (resources-outcome {:memory "8g" :cpus "4"}))]
+        (is (= "8g" (flag-value argv "--memory")))
+        (is (= "4" (flag-value argv "--cpus")))))
+    (testing (str "absent keys add no flag on the " (name path) " argv")
+      (doseq [resources [nil {}]]
+        (let [argv (path (resources-outcome resources))]
+          (is (not-any? #{"--memory" "--cpus"} argv))))
+      (let [argv (path (resources-outcome {:cpus 2}))]
+        (is (= "2" (flag-value argv "--cpus")))
+        (is (not-any? #{"--memory"} argv))))))
+
+(deftest resources-keep-the-value-as-written
+  (testing "accepted memory forms pass through unchanged"
+    (doseq [v ["512m" "8g" "1.5G" "8GiB" "8gb" "8K" "1073741824" "512 MB" "100b" "1.5"]]
+      (is (= v (flag-value (:sandbox (resources-outcome {:memory v})) "--memory")) v)))
+  (testing "a YAML integer memory value is read as bytes and stringified"
+    (is (= "1073741824" (flag-value (:sandbox (resources-outcome {:memory 1073741824})) "--memory"))))
+  (testing "accepted cpus forms pass through, numbers stringified"
+    (doseq [[v expected] [["4" "4"] [4 "4"] [1.5 "1.5"] ["0.5" "0.5"] ["1.000000001" "1.000000001"]]]
+      (is (= expected (flag-value (:sandbox (resources-outcome {:cpus v})) "--cpus")) (pr-str v)))))
+
+(deftest resources-come-before-docker-args
+  (let [argv (sandbox-args {:config {:resources {:memory "8g"} :docker_args ["--memory=2g"]}
+                            :state {}})
+        idx (fn [s] (.indexOf ^java.util.List argv s))]
+    (is (< (idx "--memory") (idx "--memory=2g")))))
+
+(deftest invalid-resources-exit-naming-the-key
+  (testing "refused memory values name resources.memory and the value"
+    (doseq [v ["8x" "0" "0g" "-1" "abc" "" 0 -1 "8i" "8Gi" "8bb" "8bi" "8gbb" "0.5" "0.9b"]]
+      (let [{:keys [error]} (resources-outcome {:memory v})]
+        (is (some? error) (pr-str v))
+        (is (str/includes? (str error) "resources.memory") (pr-str v))
+        (is (str/includes? (str error) (str v)) (pr-str v)))))
+  (testing "refused cpus values name resources.cpus and the value"
+    (doseq [v ["8x" "0" 0 "-1" -1 "abc" "1.0000000001" 0.0]]
+      (let [{:keys [error]} (resources-outcome {:cpus v})]
+        (is (some? error) (pr-str v))
+        (is (str/includes? (str error) "resources.cpus") (pr-str v))
+        (is (str/includes? (str error) (str v)) (pr-str v))))))

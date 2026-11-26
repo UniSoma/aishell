@@ -356,7 +356,7 @@ Each namespace handles one concern:
 | `aishell.util` | Shared utilities | Path helpers, home directory resolution |
 | `aishell.attach` | Attach command | Open shell in running containers via docker exec |
 | `aishell.vscode` | VSCode integration | Open VSCode as the developer user in a running Sandbox, or in a `vscode` Sandbox it starts |
-| `aishell.info` | Image stack info | Display the Foundation image's contents, Base image and Project extension status, harnesses |
+| `aishell.info` | Image stack and resource cap info | Display the project's resource caps and the image stack: the Foundation image's contents, Base image and Project extension status, harnesses |
 | `aishell.check` | Pre-flight checks | Validate Docker, config, image state, tool availability |
 | `aishell.update-check` | Update notifications | Time-based version check against GitHub releases |
 | `aishell.validation` | Config validation | Warn about dangerous docker_args/mounts |

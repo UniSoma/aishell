@@ -17,6 +17,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [env](#env)
   - [ports](#ports)
   - [docker_args](#docker_args)
+  - [resources](#resources)
   - [pre_start](#pre_start)
   - [harness_args](#harness_args)
   - [pi_packages](#pi_packages)
@@ -81,7 +82,7 @@ With `extends: global` (the default), aishell merges configs by data type:
 | Type | Keys | Behavior | Example |
 |------|------|----------|---------|
 | **Lists** | `mounts`, `ports`, `docker_args` | Concatenate (global + project) | Global: `["~/.gitconfig"]`<br/>Project: `["~/data:/data"]`<br/>Result: Both mounts |
-| **Maps** | `env` | Shallow merge (project overrides global keys) | Global: `{DEBUG: "false"}`<br/>Project: `{DEBUG: "true"}`<br/>Result: `{DEBUG: "true"}` |
+| **Maps** | `env`, `resources` | Shallow merge (project overrides global keys) | Global: `{DEBUG: "false"}`<br/>Project: `{DEBUG: "true"}`<br/>Result: `{DEBUG: "true"}` |
 | **Map-of-lists** | `harness_args` | Merge keys, concatenate per-harness lists | Global: `{claude: ["--verbose"]}`<br/>Project: `{claude: ["--model", "sonnet"]}`<br/>Result: `{claude: ["--verbose", "--model", "sonnet"]}` |
 | **Scalars** | `pre_start`, `claude_isolation` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
 | **Custom** | `detection` | Custom merge (see [detection](#detection)) | Enabled: project wins<br/>Patterns: map merge<br/>Allowlist: concatenate |
@@ -110,7 +111,7 @@ Example showing all available options:
 # Controls how this project config relates to the global (~/.aishell/config.yaml):
 #   - "global" (default): Merge with global config
 #       - Lists (mounts, ports, docker_args): concatenate (global + project)
-#       - Maps (env): shallow merge (project overrides global)
+#       - Maps (env, resources): shallow merge (project overrides global)
 #       - Scalars (pre_start): project replaces global
 #   - "none": This config fully replaces global (no merging)
 
@@ -164,15 +165,23 @@ ports:
 # Supports string (space-separated) or array format
 # WARNING: Some flags are dangerous (--privileged, --network=host, etc.)
 
+# For memory and CPU caps, use resources (below).
+
 # String format:
-# docker_args: "--cpus=2 --memory=4g"
+# docker_args: "--hostname=aishell --add-host=myhost:127.0.0.1"
 
 # Array format (recommended for complex args):
 docker_args:
-  - "--cpus=2"
-  - "--memory=4g"
   - "--hostname=aishell"
   - "--add-host=myhost:127.0.0.1"
+
+# =============================================================================
+# RESOURCES - Memory and CPU caps for the Sandbox container
+# =============================================================================
+# Both keys are optional; an absent key sets no cap. aishell has no default.
+resources:
+  memory: "8g"                      # docker run --memory 8g
+  cpus: 4                           # docker run --cpus 4
 
 # =============================================================================
 # PRE_START - Command to run before shell starts
@@ -543,13 +552,11 @@ The value comes from the environment of the shell that runs `aishell`, so an exp
 ```yaml
 # Array format (recommended)
 docker_args:
-  - "--cpus=2"                        # Limit CPU cores
-  - "--memory=4g"                     # Limit memory
   - "--hostname=aishell"              # Custom hostname
   - "--add-host=db:192.168.1.100"    # Custom /etc/hosts entry
 
 # String format (alternative)
-# docker_args: "--cpus=2 --memory=4g --hostname=aishell"
+# docker_args: "--hostname=aishell --add-host=db:192.168.1.100"
 ```
 
 **Notes:**
@@ -580,11 +587,42 @@ inside a Sandbox with a read-only, pinned Harness volume is on you. See [ADR 000
 
 | Use Case | Example |
 |----------|---------|
-| Resource limits | `--cpus=2 --memory=4g` |
+| Resource limits beyond [resources](#resources) | `--memory-swap=4g --pids-limit=100` |
 | Custom hostname | `--hostname=dev-box` |
 | DNS config | `--dns=8.8.8.8` |
 | /etc/hosts | `--add-host=api:192.168.1.50` |
 | Tmpfs mount | `--tmpfs=/tmp:rw,noexec,nosuid,size=1g` |
+
+---
+
+### resources
+
+**Purpose:** Cap the memory and CPUs the Sandbox container may use.
+
+**Type:** Map with two optional keys, `memory` and `cpus`
+
+**Example:**
+
+```yaml
+resources:
+  memory: "8g"      # docker run --memory 8g
+  cpus: 4           # docker run --cpus 4
+```
+
+**Values:**
+- `memory`: a size in Docker's format: a number with an optional unit, either `b` or one of `k`, `m`, `g`, `t`, `p` alone or followed by `b` or `ib`, in either case, such as `512m`, `8g`, `1.5G`, `8GB` or `8GiB`. A bare number, or a YAML integer, is a byte count. Docker rounds the size down to whole bytes, so a size under one byte, such as `0.5`, is refused like zero.
+- `cpus`: a number of CPUs above zero, such as `4` or `1.5`, with at most 9 decimal places. A YAML number or a string both work.
+
+**Notes:**
+- aishell sets no cap of its own: a key you leave out adds no flag. To remove a cap, remove the key; zero is refused.
+- The caps apply to every Sandbox `docker run`: the interactive shell, harness launches, `exec` and the VSCode launch.
+- A value Docker would refuse stops the launch with exit 1 and an error that names the key (`resources.memory` or `resources.cpus`). Limits that depend on the host, such as Docker's 6 MB memory floor or more CPUs than the host has, are left to Docker to report.
+- aishell warns on any other key under `resources` and ignores it.
+- `aishell info` shows the caps in effect for the current project.
+
+**Merge behavior:** Shallow merge, like `env`: a project key overrides the same global key, and the other global key is kept. With `extends: none` the global map is dropped.
+
+**Precedence:** the flags go just before `docker_args`, so a `--memory` or `--cpus` in `docker_args` wins over `resources`.
 
 ---
 
@@ -1225,12 +1263,14 @@ ports:
 
 ### Custom Docker Resource Limits
 
-Limit container resources:
+Cap memory and CPUs with [resources](#resources); pass other limits through `docker_args`:
 
 ```yaml
+resources:
+  cpus: 2                      # Max 2 CPU cores
+  memory: "4g"                 # Max 4GB RAM
+
 docker_args:
-  - "--cpus=2"                 # Max 2 CPU cores
-  - "--memory=4g"              # Max 4GB RAM
   - "--memory-swap=4g"         # No swap beyond memory limit
   - "--pids-limit=100"         # Limit process count
 ```
@@ -1316,9 +1356,9 @@ ports:
   - "8080:8080"                             # API server
   - "3000:3000"                             # Frontend
 
-docker_args:
-  - "--cpus=4"
-  - "--memory=8g"
+resources:
+  cpus: 4
+  memory: "8g"
 
 pre_start:
   - "redis-server --daemonize yes"

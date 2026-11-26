@@ -208,6 +208,69 @@
                                     "\nExpected format: HOST_PORT:CONTAINER_PORT or IP:HOST_PORT:CONTAINER_PORT"
                                     "\nExamples: 8080:80, 127.0.0.1:8080:80, 8080:80/udp"))))))))))
 
+(def ^:private memory-pattern
+  "The memory sizes aishell accepts, a subset of Docker's client grammar
+   (go-units RAMInBytes): digits with an optional decimal part, an optional
+   space, then either `b` or one of `k m g t p` followed by nothing, `b` or
+   `ib`, in any case. A bare number is bytes. Every suffix go-units refuses
+   is refused here too; forms such as `.5g` that it also takes are not."
+  #"^(\d+(?:\.\d+)?) ?(?i:(b)|([kmgtp])(?:i?b)?)?$")
+
+(def ^:private memory-multipliers
+  {"k" 1024 "m" (* 1024 1024) "g" (* 1024 1024 1024)
+   "t" (* 1024 1024 1024 1024) "p" (* 1024 1024 1024 1024 1024)})
+
+(def ^:private cpus-pattern
+  "A decimal number with at most 9 fractional digits, the precision Docker
+   accepts for --cpus."
+  #"^\d+(\.\d{1,9})?$")
+
+(defn- resource-error [k value expected]
+  (output/error (str "Invalid resources." (name k) ": " (pr-str value)
+                     "\nExpected " expected)))
+
+(defn- check-memory [value]
+  (let [s (when (or (string? value) (integer? value)) (str value))
+        [_ number _ unit] (when s (re-matches memory-pattern s))
+        multiplier (get memory-multipliers (some-> unit str/lower-case) 1)]
+    ;; Docker truncates the size to whole bytes, and reads 0 as no limit.
+    (if (and number (>= (* (bigdec number) multiplier) 1))
+      s
+      (resource-error :memory value
+                      "a size above zero such as 512m, 8g, 1.5G or 8GiB, or a byte count"))))
+
+(defn- check-cpus [value]
+  (let [s (cond
+            (string? value) value
+            (integer? value) (str value)
+            (number? value) (.toPlainString (bigdec value)))]
+    (if (and s (re-matches cpus-pattern s) (pos? (bigdec s)))
+      s
+      (resource-error :cpus value
+                      "a number above zero with at most 9 decimal places, such as 4 or 1.5"))))
+
+(defn build-resource-args
+  "Build --memory and --cpus flags from the resources config map.
+
+   Each key is optional and an absent key adds no flag: aishell sets no cap of
+   its own (ADR 0006). The value goes to docker as written, numbers
+   stringified. A value Docker's client would refuse exits 1 through
+   output/error, naming the key; limits that depend on the host, such as the
+   daemon's memory floor, are left to Docker.
+   Example: {:memory \"8g\" :cpus 4} => [\"--memory\" \"8g\" \"--cpus\" \"4\"]"
+  [resources]
+  (cond
+    (nil? resources) []
+
+    (not (map? resources))
+    (output/error (str "Invalid resources: " (pr-str resources)
+                       "\nExpected a map with memory and/or cpus"))
+
+    :else
+    (cond-> []
+      (some? (:memory resources)) (into ["--memory" (check-memory (:memory resources))])
+      (some? (:cpus resources)) (into ["--cpus" (check-cpus (:cpus resources))]))))
+
 (defn- tokenize-docker-args
   "Tokenize docker_args into individual args.
    Accepts string (splits on whitespace) or vector (returns as-is).
@@ -575,8 +638,8 @@
              harness-credential-files)))
 
 (defn- build-docker-args-internal
-  "Internal helper to build docker run arguments.
-   Shared by both build-docker-args and build-docker-args-for-exec."
+  "Build the docker run argument vector shared by build-docker-args and
+   build-docker-args-for-exec."
   [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name tty-flags harness-volume-name]}]
   (let [uid (get-uid)
         gid (get-gid)
@@ -658,6 +721,9 @@
         ;; Unset PRE_START if skip-pre-start is true
         (cond-> skip-pre-start
           (into ["-e" "PRE_START="]))
+
+        ;; Config: resources (before docker_args, so a flag there wins)
+        (into (build-resource-args (:resources config)))
 
         ;; Config: docker_args (must be before image)
         (cond-> (:docker_args config)

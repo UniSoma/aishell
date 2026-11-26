@@ -88,3 +88,16 @@
     (is (= "GitHub Copilot CLI" (get harness-labels :with-copilot)))
     (is (= "Gemini CLI" (get harness-labels :with-gemini)))
     (is (= "oh-my-pi (omp)" (get harness-labels :with-omp)))))
+
+(def ^:private format-resources-section #'info/format-resources-section)
+
+(deftest resources-section-lists-the-caps-that-are-set
+  (testing "both caps"
+    (is (= ["  Memory: 8g" "  CPUs:   4"]
+           (format-resources-section {:resources {:memory "8g" :cpus 4}}))))
+  (testing "one cap"
+    (is (= ["  CPUs:   1.5"]
+           (format-resources-section {:resources {:cpus 1.5}}))))
+  (testing "no caps"
+    (is (= ["  None (no caps)"] (format-resources-section nil)))
+    (is (= ["  None (no caps)"] (format-resources-section {:resources {}})))))

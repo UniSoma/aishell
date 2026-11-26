@@ -12,7 +12,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :detection :pi_packages :update_check :claude_isolation :claude_shared_paths})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :detection :pi_packages :update_check :claude_isolation :claude_shared_paths :resources})
 
 (def known-harnesses
   "Harness names accepted under `harness_args`, derived from the registry.
@@ -158,6 +158,19 @@
                           ": must be a non-empty string, got: " (pr-str entry))))))
   paths)
 
+(defn validate-resources
+  "Warn on keys under resources other than memory and cpus. Returns resources
+   unchanged. The values are checked by aishell.docker.run/build-resource-args,
+   which exits on a bad one."
+  [resources source-path]
+  (when (map? resources)
+    (let [unknown (remove #{:memory :cpus} (keys resources))]
+      (when (seq unknown)
+        (output/warn (str "Unknown resources keys in " source-path ": "
+                          (clojure.string/join ", " (map name unknown))
+                          "\nValid keys: memory, cpus")))))
+  resources)
+
 (defn validate-config
   "Validate config map. Warns on unknown keys. Returns config unchanged."
   [config source-path]
@@ -167,7 +180,7 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                           (clojure.string/join ", " (map name unknown))
-                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, pi_packages, update_check, claude_isolation, claude_shared_paths"))))
+                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, pi_packages, update_check, claude_isolation, claude_shared_paths, resources"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
@@ -178,6 +191,8 @@
       (validate-claude-isolation (:claude_isolation config) source-path))
     (when-let [paths (:claude_shared_paths config)]
       (validate-claude-shared-paths paths source-path))
+    (when-let [resources (:resources config)]
+      (validate-resources resources source-path))
     (when (and (contains? config :update_check)
                (not= source-path (global-config-path)))
       (output/warn (str "update_check in " source-path " will be ignored.\n"
@@ -236,7 +251,7 @@
   "Merge global-config and project-config with defined strategy.
    - Lists (mounts, ports, docker_args, pi_packages, claude_shared_paths):
      concatenate (global + project)
-   - Maps (env): shallow merge (project overrides global)
+   - Maps (env, resources): shallow merge (project overrides global)
    - Map-of-lists (harness_args): merge keys, concatenate per-key lists
    - Scalars (pre_start, claude_isolation): project replaces global
    - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
@@ -271,6 +286,17 @@
                         (assoc acc k (merge (normalize-env-to-map (or global-val {}))
                                             (normalize-env-to-map (or project-val {}))))
                         acc))
+
+                    ;; resources - shallow merge, project keys win
+                    (= k :resources)
+                    (let [global-val (get global-config k)
+                          project-val (get project-config k)]
+                      (cond
+                        (and (map? global-val) (map? project-val))
+                        (assoc acc k (merge global-val project-val))
+                        (some? project-val) (assoc acc k project-val)
+                        (some? global-val) (assoc acc k global-val)
+                        :else acc))
 
                     ;; Map-of-lists keys - merge keys, concatenate lists
                     (contains? map-of-lists-keys k)

@@ -1,11 +1,13 @@
 (ns aishell.info
-  "Display information about the aishell image stack.
+  "Display information about the aishell image stack and the project's
+   resource caps.
 
-   Extracts info from static sources (templates, state) rather than
+   Extracts info from static sources (templates, state, config) rather than
    running Docker commands, so `aishell info` works even when Docker
    isn't running."
   (:require [clojure.string :as str]
             [babashka.fs :as fs]
+            [aishell.config :as config]
             [aishell.docker.templates :as templates]
             [aishell.docker.base :as base]
             [aishell.docker.extension :as ext]
@@ -152,20 +154,32 @@
      (str "  Hash:             " hash)
      (str "  Container prefix: " prefix)]))
 
+(defn- format-resources-section
+  "Format the Resources section body: one line per cap that is set, or a
+   None line. The caps go through run/build-resource-args, so a value the
+   launch would refuse exits here with the same message."
+  [config]
+  (let [labels {"--memory" "  Memory: " "--cpus" "  CPUs:   "}
+        lines (->> (run/build-resource-args (:resources config))
+                   (partition 2)
+                   (mapv (fn [[flag value]] (str (labels flag) value))))]
+    (if (seq lines) lines ["  None (no caps)"])))
+
 (defn run-info
-  "Print structured summary of the aishell image stack."
+  "Print a structured summary of the project's resource caps and the aishell
+   image stack."
   [args]
   (when (some #{"-h" "--help"} args)
     (println (str output/BOLD "Usage:" output/NC " aishell info [--foundation]"))
     (println)
-    (println "Display information about the aishell image stack.")
+    (println "Display the project's resource caps and the aishell image stack.")
     (println)
     (println "Options:")
     (println "  --foundation  Print the Foundation image's embedded Dockerfile")
     (println)
-    (println "Shows the Foundation image's contents, whether the Base image is")
-    (println "built from ~/.aishell/Dockerfile, the Project extension's status,")
-    (println "and installed harnesses.")
+    (println "Shows the project's resource caps, the Foundation image's contents,")
+    (println "whether the Base image is built from ~/.aishell/Dockerfile, the")
+    (println "Project extension's status, and installed harnesses.")
     (System/exit 0))
 
   (when (some #{"--foundation"} args)
@@ -184,11 +198,18 @@
         sqlite-version (parse-sqlite-version dockerfile)
         fossil-version (parse-fossil-version dockerfile)
         state (state/read-state)
-        project-dir (System/getProperty "user.dir")]
+        project-dir (System/getProperty "user.dir")
+        resource-lines (format-resources-section (config/load-config project-dir))]
 
     (println (str output/BOLD "Project" output/NC " (" (project-image-tag project-dir) ")"))
     (println "--------------------------------------")
     (doseq [line (format-project-section project-dir)]
+      (println line))
+    (println)
+
+    (println (str output/BOLD "Resources" output/NC))
+    (println "--------------------------------------")
+    (doseq [line resource-lines]
       (println line))
     (println)
 
