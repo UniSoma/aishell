@@ -2,6 +2,7 @@
 
 - **No AI attribution in commit messages or trailers.** No "Generated with", `Co-Authored-By: Claude`, AI emojis, or similar.
 - **Run `bb pre-commit` before commit; it is the gate.** It runs the clj-kondo binary over `src` and `test` (`deps.edn` carries no `:clj-kondo` alias), then the test suite, and fails on either. `scripts/` is not linted: it has two known namespace-name errors that stay as they are.
+- **Ticket-only commit.** A commit holding only ticket files skips the gate: stage that ticket's files with `git add -A -- ':(glob).tickets/**/<id>--*'` (this also stages a move into `.tickets/archive/`), then `git commit`. Name each ticket's paths; never stage `.tickets/` whole, since other sessions share the tree.
 
 ## Where to look
 
