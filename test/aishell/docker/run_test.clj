@@ -430,11 +430,43 @@
             :with-gemini   [[".gemini"]]
             :with-pi       [[".pi"]]
             :with-omp      [[".omp"]]}
-           run/harness-config-dirs)))
-  (testing "iteration order is preserved for mount and info output"
-    (is (= [:with-claude :with-opencode :with-codex :with-copilot :with-gemini :with-pi
-            :with-omp]
-           (vec (keys run/harness-config-dirs))))))
+           run/harness-config-dirs))))
+
+(def ^:private synthetic-ids
+  "Ten harness ids: enough that a map keyed by their state keys is a hash-map,
+   whose iteration order no longer follows insertion order."
+  (mapv #(str "h" %) (range 10)))
+
+(def ^:private synthetic-registry
+  (mapv (fn [id]
+          {:id id
+           :state-key (keyword (str "with-" id))
+           :config-paths [{:path [(str "." id)] :type :dir}]
+           :env-passthrough [(str (str/upper-case id) "_KEY")]})
+        synthetic-ids))
+
+(def ^:private synthetic-state
+  (into {} (map (fn [{:keys [state-key]}] [state-key true])) synthetic-registry))
+
+(deftest config-mounts-follow-registry-order
+  (let [home (str (fs/create-temp-dir))]
+    (doseq [id synthetic-ids] (fs/create-dirs (fs/path home (str "." id))))
+    (try
+      (with-redefs [harness/registry synthetic-registry
+                    util/get-home (fn [] home)]
+        (let [expected (map #(let [p (str (fs/path home (str "." %)))] (str p ":" p))
+                            synthetic-ids)]
+          (is (= expected (mount-strings (build-mounts synthetic-state home {}))))))
+      (finally
+        (fs/delete-tree home)))))
+
+(deftest api-key-args-follow-registry-order
+  (with-redefs [harness/registry synthetic-registry
+                run/host-env (fn [var] (str var "-value"))]
+    (is (= (mapcat #(let [var (str (str/upper-case %) "_KEY")]
+                      ["-e" (str var "=" var "-value")])
+                   synthetic-ids)
+           (api-env-args synthetic-state)))))
 
 (deftest harness-config-files-are-seeded-not-created-as-dirs
   (testing "only .claude.json is a file entry"

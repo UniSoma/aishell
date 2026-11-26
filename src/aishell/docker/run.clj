@@ -265,8 +265,9 @@
 
 (def harness-config-dirs
   "Config directories required by each harness, keyed by setup-state flag and
-   derived from the registry's descriptors in display order.
-   Only directories for enabled harnesses are mounted."
+   derived from the registry's descriptors. For lookup only: past eight entries
+   a map stops keeping insertion order, so build-harness-config-mounts walks
+   the registry instead."
   (into {}
         (keep (fn [{:keys [state-key config-paths]}]
                 (when (seq config-paths)
@@ -471,9 +472,15 @@
                                 user-entries)]
       (into (into base overlays) user-overlays))))
 
+(defn- enabled-harnesses
+  "Return the harness descriptors whose setup-state flag is on, in registry order."
+  [state]
+  (filter #(get state (:state-key %)) harness/registry))
+
 (defn- build-harness-config-mounts
-  "Build mount args for harness configuration directories.
-   Only mounts directories for enabled harnesses that exist on host.
+  "Build mount args for harness config directories and files.
+   Only mounts entries for enabled harnesses that exist on host, in registry
+   order.
    On Windows: maps destinations under /home/developer (container home).
    On Unix: mounts at same path as source.
    In Claude project-isolation mode, the wholesale ~/.claude mount is replaced
@@ -484,9 +491,9 @@
         container-home "/home/developer"
         project-isolation? (and (:with-claude state)
                                 (= :project (cfg/resolve-claude-isolation config)))
-        config-entries (cond->> (->> harness-config-dirs
-                                     (filter (fn [[state-key _]] (get state state-key)))
-                                     (mapcat val)
+        config-entries (cond->> (->> (enabled-harnesses state)
+                                     (mapcat :config-paths)
+                                     (map :path)
                                      distinct)
                          project-isolation? (remove #(= % [".claude"])))
         base-mounts (do
@@ -506,8 +513,9 @@
 
 (def harness-api-keys
   "API key environment variables required by each harness, keyed by setup-state
-   flag and derived from the registry's descriptors in display order.
-   Only keys for enabled harnesses are passed into the container.
+   flag and derived from the registry's descriptors. For lookup only: past
+   eight entries a map stops keeping insertion order, so build-api-env-args
+   walks the registry instead.
    Cross-cutting keys (GITHUB_TOKEN, AWS_*) must be added explicitly
    via config.yaml env: section."
   (into {}
@@ -523,11 +531,11 @@
   (System/getenv var))
 
 (defn- build-api-env-args
-  "Build -e flags for API keys required by enabled harnesses."
+  "Build -e flags for API keys required by enabled harnesses, in registry
+   order. Keys unset on the host are skipped."
   [state]
-  (let [enabled-keys (->> harness-api-keys
-                          (filter (fn [[state-key _]] (get state state-key)))
-                          (mapcat val)
+  (let [enabled-keys (->> (enabled-harnesses state)
+                          (mapcat :env-passthrough)
                           distinct)]
     (->> enabled-keys
          (keep (fn [var] (when-let [value (host-env var)] ["-e" (str var "=" value)])))
@@ -539,10 +547,9 @@
    overrides it through the low-level docker_args escape hatch."
   [state]
   (into []
-        (comp (filter #(get state (:state-key %)))
-              (mapcat :runtime-env)
+        (comp (mapcat :runtime-env)
               (mapcat (fn [[var value]] ["-e" (str var "=" value)])))
-        harness/registry))
+        (enabled-harnesses state)))
 
 (def ^:private harness-credential-files
   "Setup-state flag -> env var naming a host credentials file the harness reads.
