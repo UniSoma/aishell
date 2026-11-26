@@ -1,21 +1,22 @@
 ---
 id: aix-01m61f50wy0c
 title: Add a bb pre-commit task that runs lint and tests
-status: open
+status: closed
 type: chore
 priority: 2
-mode: hitl
+mode: afk
 created: '2026-10-28T14:38:13.918420233Z'
-updated: '2026-10-28T14:44:02.257285594Z'
+updated: '2026-11-26T14:33:54.970184463Z'
+closed: '2026-11-26T14:33:54.970184463Z'
 tags:
-- needs-triage
+- settled
 acceptance:
 - title: bb pre-commit fails when clj-kondo reports an error in src or test
-  done: false
+  done: true
 - title: bb pre-commit fails when a test fails
-  done: false
+  done: true
 - title: AGENTS.md names bb pre-commit as the gate
-  done: false
+  done: true
 ---
 
 ## Description
@@ -24,4 +25,8 @@ As of 7462c39 the required gate is two commands (`clj-kondo --lint src test` per
 
 Add a `pre-commit` task to `bb.edn` that runs clj-kondo over `src` and `test` (not `scripts/`, which has two known namespace errors) and then the test suite, failing on either. Point AGENTS.md's "Lint before commit" rule at it.
 
-Proposed 2026-10-28; awaiting the user's go-ahead (tagged needs-triage until then).
+## Notes
+
+**2026-11-26T14:33:54.970184463Z**
+
+Added a bb pre-commit task (clj-kondo over src and test, then the test suite) and pointed AGENTS.md at it as the gate.

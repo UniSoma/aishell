@@ -1,7 +1,7 @@
 ## Hard rules (every task)
 
 - **No AI attribution in commit messages or trailers.** No "Generated with", `Co-Authored-By: Claude`, AI emojis, or similar.
-- **Lint before commit.** `clj-kondo --lint src test`, using the binary: `deps.edn` carries no `:clj-kondo` alias. Lint `src` and `test` only; `scripts/` has two known namespace-name errors that stay as they are.
+- **Run `bb pre-commit` before commit; it is the gate.** It runs the clj-kondo binary over `src` and `test` (`deps.edn` carries no `:clj-kondo` alias), then the test suite, and fails on either. `scripts/` is not linted: it has two known namespace-name errors that stay as they are.
 
 ## Where to look
 
