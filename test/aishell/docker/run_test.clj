@@ -8,6 +8,7 @@
             [aishell.docker.run :as run]
             [aishell.harness :as harness]
             [aishell.output :as output]
+            [aishell.config]
             [aishell.run]))
 
 (def ^:private build-mounts #'run/build-harness-config-mounts)
@@ -527,7 +528,7 @@
   "The `docker run` argv for a sandbox built from `config` and setup `state`,
    against a throwaway HOME. The rest of the launch inputs are fixed: these
    tests read the argv for one variable, not for the container it describes."
-  [{:keys [config state]}]
+  [{:keys [config state unsafe-docker-args]}]
   (let [home (str (fs/create-temp-dir))
         project (str (fs/create-temp-dir))]
     (try
@@ -538,7 +539,8 @@
           :config config
           :state state
           :git-identity {}
-          :skip-pre-start false}))
+          :skip-pre-start false
+          :unsafe-docker-args unsafe-docker-args}))
       (finally
         (fs/delete-tree home)
         (fs/delete-tree project)))))
@@ -546,7 +548,7 @@
 (defn- exec-args
   "The `docker run` argv for a one-off `exec` built from `config` and setup
    `state`, against a throwaway HOME."
-  [{:keys [config state]}]
+  [{:keys [config state unsafe-docker-args]}]
   (let [home (str (fs/create-temp-dir))
         project (str (fs/create-temp-dir))]
     (try
@@ -557,7 +559,8 @@
           :config config
           :state state
           :git-identity {}
-          :tty? false}))
+          :tty? false
+          :unsafe-docker-args unsafe-docker-args}))
       (finally
         (fs/delete-tree home)
         (fs/delete-tree project)))))
@@ -772,3 +775,122 @@
         (is (some? error) (pr-str v))
         (is (str/includes? (str error) "resources.cpus") (pr-str v))
         (is (str/includes? (str error) (str v)) (pr-str v))))))
+
+
+;; Security profiles and refused docker_args
+
+(defn- launch-outcome
+  "Build the argv for a launch and an exec from inputs. Returns
+   {:sandbox argv :exec argv :stderr s}, or {:error <stderr>} when either
+   build calls output/error."
+  [inputs]
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "exit" {})))]
+        (try
+          (assoc {:sandbox (sandbox-args inputs) :exec (exec-args inputs)}
+                 :stderr (str err))
+          (catch clojure.lang.ExceptionInfo _
+            {:error (str err)}))))))
+
+(defn- flag-values
+  "Every value that follows `flag` in argv, in order."
+  [argv flag]
+  (->> argv (partition 2 1) (filter #(= flag (first %))) (mapv second)))
+
+(def ^:private strict-caps ["CHOWN" "SETUID" "SETGID" "FOWNER" "DAC_OVERRIDE"])
+
+(deftest default-profile-adds-only-the-process-cap
+  (doseq [config [{} {:security_profile "default"}]
+          path [:sandbox :exec]]
+    (testing (str (pr-str config) " on the " (name path) " argv")
+      (let [argv (path (launch-outcome {:config config :state {}}))]
+        (is (= ["4096"] (flag-values argv "--pids-limit")))
+        (is (not-any? #{"--security-opt" "--cap-drop" "--cap-add"} argv))))))
+
+(deftest strict-profile-drops-capabilities-and-privilege-escalation
+  (doseq [path [:sandbox :exec]]
+    (testing (str "the " (name path) " argv")
+      (let [argv (path (launch-outcome {:config {:security_profile "strict"} :state {}}))]
+        (is (= ["4096"] (flag-values argv "--pids-limit")))
+        (is (= ["no-new-privileges"] (flag-values argv "--security-opt")))
+        (is (= ["ALL"] (flag-values argv "--cap-drop")))
+        (is (= strict-caps (flag-values argv "--cap-add")))))))
+
+(deftest refused-entries-stop-the-sandbox-launch
+  (doseq [docker-args [["--privileged"] ["--network" "host"] ["--cap-add=SYS_ADMIN"]
+                       ["-v" "/var/run/docker.sock:/var/run/docker.sock"]]]
+    (let [{:keys [error]} (launch-outcome {:config {:docker_args docker-args} :state {}})]
+      (is (some? error) (pr-str docker-args))
+      (is (str/includes? (str error) (last docker-args)) (pr-str docker-args))))
+  (testing "a mounts entry with the Docker socket"
+    (let [dir (fs/create-temp-dir)
+          sock (str (fs/path dir "docker.sock"))]
+      (spit sock "")
+      (try
+        (is (str/includes? (str (:error (launch-outcome {:config {:mounts [sock]} :state {}})))
+                           (str "mounts: " sock)))
+        (finally (fs/delete-tree dir))))))
+
+(deftest docker-sock-mounts-are-judged-by-their-host-source
+  (testing "with a destination, the source is refused"
+    (is (str/includes? (str (:error (launch-outcome {:config {:mounts ["/var/run/docker.sock:/run/d.sock"]}
+                                                    :state {}})))
+                       "mounts: /var/run/docker.sock")))
+  (testing "a destination named docker.sock exposes nothing of the host"
+    (is (nil? (:error (launch-outcome {:config {:mounts ["/tmp/x:/var/run/docker.sock"]} :state {}}))))))
+
+(deftest refused-docker-args-stop-the-exec-path
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "exit" {})))]
+        (is (thrown? clojure.lang.ExceptionInfo
+                     (exec-args {:config {:docker_args ["--privileged"]} :state {}})))))
+    (is (str/includes? (str err) "--privileged"))))
+
+(deftest refusal-comes-before-any-host-config-path-is-created
+  (let [home (str (fs/create-temp-dir))
+        project (str (fs/create-temp-dir))]
+    (try
+      (binding [*err* (java.io.StringWriter.)]
+        (with-redefs [util/get-home (constantly home)
+                      output/exit! (fn [_] (throw (ex-info "exit" {})))]
+          (is (thrown? clojure.lang.ExceptionInfo
+                       (run/build-docker-args
+                        {:project-dir project :image-tag "aishell:test"
+                         :config {:docker_args ["--privileged"]}
+                         :state {:with-claude true} :git-identity {}})))))
+      (is (not (fs/exists? (fs/path home ".claude"))))
+      (finally
+        (fs/delete-tree home)
+        (fs/delete-tree project)))))
+
+(deftest refused-docker-args-from-the-global-config-stop-the-launch
+  (let [home (str (fs/create-temp-dir))
+        project (str (fs/create-temp-dir))]
+    (try
+      (fs/create-dirs (fs/path home ".aishell"))
+      (spit (str (fs/path home ".aishell" "config.yaml")) "docker_args: \"--network host\"\n")
+      (let [config (with-redefs [util/get-home (constantly home)]
+                     (aishell.config/load-config project))
+            {:keys [error]} (launch-outcome {:config config :state {}})]
+        (is (str/includes? (str error) "--network host")))
+      (finally
+        (fs/delete-tree home)
+        (fs/delete-tree project)))))
+
+(deftest unsafe-docker-args-lets-refused-entries-reach-docker
+  (let [{:keys [sandbox exec stderr]} (launch-outcome {:config {:security_profile "strict"
+                                                                :docker_args ["--cap-add=SYS_ADMIN"]}
+                                                       :state {}
+                                                       :unsafe-docker-args true})
+        idx (fn [argv s] (.indexOf ^java.util.List argv s))]
+    (doseq [argv [sandbox exec]]
+      (is (some #{"--cap-add=SYS_ADMIN"} argv))
+      (testing "the profile's flags come first, so the let-through entry is applied after them"
+        (is (< (idx argv "ALL") (idx argv "--cap-add=SYS_ADMIN")))))
+    (is (str/includes? stderr "--unsafe-docker-args let through docker_args entry: --cap-add=SYS_ADMIN"))))
+
+(deftest unknown-security-profile-stops-the-launch
+  (is (str/includes? (str (:error (launch-outcome {:config {:security_profile "max"} :state {}})))
+                     "security_profile")))

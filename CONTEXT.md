@@ -17,7 +17,7 @@ The ordered, closed collection of harness descriptors from which every harness-d
 _Avoid_: harness list, harness table
 
 **Global flag**:
-One of aishell's own flags (`--verbose`, `--base-image`, `--unsafe`, `--name`), which counts only before the subcommand; after a harness name the same flag belongs to the Harness. `--base-image`, `--unsafe` and `--name` before a subcommand that does not use them are refused. `--json`, `--help` and `--version` are not Global flags.
+One of aishell's own flags (`--verbose`, `--base-image`, `--unsafe`, `--unsafe-docker-args`, `--name`), which counts only before the subcommand; after a harness name the same flag belongs to the Harness. `--base-image`, `--unsafe`, `--unsafe-docker-args` and `--name` before a subcommand that does not use them are refused. `--json`, `--help` and `--version` are not Global flags.
 _Avoid_: leading flag, top-level flag, global option
 
 **Distro image**:
@@ -88,6 +88,10 @@ Per-project choice of whether a sandbox shares the user's Claude machine state (
 **Security profile**:
 The named bundle of restrictions a Sandbox runs under — `default` or `strict` — chosen per project. Governs capabilities, privilege escalation, process limits and which Network mode applies.
 _Avoid_: posture, hardening level, security mode
+
+**Refused entry**:
+A `docker_args` or `mounts` entry that would weaken a **Sandbox**'s isolation (privilege, capabilities, security options, a host namespace, another network or **Runtime**, a device, the Docker socket), so the Sandbox does not start under any **Security profile** unless the **Global flag** `--unsafe-docker-args` lets it through. The list is fixed in aishell; config cannot shorten it.
+_Avoid_: dangerous args, blocked flags, security warning
 
 **Network mode**:
 Per-project choice of what a Sandbox can reach: `open` (the Docker default), `restricted` (internet only — no loopback, LAN, link-local or metadata addresses), `allowlist` (deny by default; the harness's own hosts plus project additions), or `none`.

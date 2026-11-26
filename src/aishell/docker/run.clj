@@ -271,6 +271,21 @@
       (some? (:memory resources)) (into ["--memory" (check-memory (:memory resources))])
       (some? (:cpus resources)) (into ["--cpus" (check-cpus (:cpus resources))]))))
 
+(def ^:private strict-capabilities
+  "The capabilities the entrypoint's root-then-gosu sequence needs (usermod,
+   chown, gosu), the only ones strict keeps (ADR 0006)."
+  ["CHOWN" "SETUID" "SETGID" "FOWNER" "DAC_OVERRIDE"])
+
+(defn build-security-args
+  "Build the docker run flags a Security profile adds: both profiles cap the
+   process count; :strict also turns off privilege escalation and drops every
+   capability except strict-capabilities."
+  [profile]
+  (cond-> ["--pids-limit" "4096"]
+    (= :strict profile)
+    (into (concat ["--security-opt" "no-new-privileges" "--cap-drop" "ALL"]
+                  (mapcat (fn [cap] ["--cap-add" cap]) strict-capabilities)))))
+
 (defn- tokenize-docker-args
   "Tokenize docker_args into individual args.
    Accepts string (splits on whitespace) or vector (returns as-is).
@@ -281,6 +296,22 @@
     (and docker-args (not (str/blank? docker-args)))
     (str/split (str/trim docker-args) #"\s+")
     :else nil))
+
+(defn- docker-arg-tokens
+  "The config's docker_args as docker run receives them: tokenized, with
+   variables expanded."
+  [config]
+  (mapv util/expand-vars (tokenize-docker-args (:docker_args config))))
+
+(defn refused-entries
+  "The config's docker_args and mounts entries a Sandbox may not start with
+   (see validation/refused-entries), read as a launch reads them: docker_args
+   tokenized and expanded, mounts reduced to their expanded host source."
+  [config]
+  (validation/refused-entries
+   {:docker-args (docker-arg-tokens config)
+    :mount-sources (map #(util/expand-path (first (parse-mount-string (str %))))
+                        (:mounts config))}))
 
 (defn- build-harness-volume-args
   "Build -v flag for harness volume mount.
@@ -640,8 +671,11 @@
 (defn- build-docker-args-internal
   "Build the docker run argument vector shared by build-docker-args and
    build-docker-args-for-exec."
-  [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name tty-flags harness-volume-name]}]
-  (let [uid (get-uid)
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start skip-interactive container-name tty-flags harness-volume-name unsafe-docker-args]}]
+  ;; Refuse before anything below creates host config paths
+  (validation/check-refused-entries! (refused-entries config) unsafe-docker-args)
+  (let [security-args (build-security-args (cfg/resolve-security-profile config))
+        uid (get-uid)
         gid (get-gid)
         home (util/get-home)
         container-home (if (fs/windows?) "/home/developer" home)]
@@ -722,12 +756,13 @@
         (cond-> skip-pre-start
           (into ["-e" "PRE_START="]))
 
-        ;; Config: resources (before docker_args, so a flag there wins)
+        ;; Security profile, then resources: both before docker_args, so a
+        ;; flag there wins
+        (into security-args)
         (into (build-resource-args (:resources config)))
 
         ;; Config: docker_args (must be before image)
-        (cond-> (:docker_args config)
-          (into (mapv util/expand-vars (tokenize-docker-args (:docker_args config)))))
+        (into (docker-arg-tokens config))
 
         ;; Image tag (must be last before command)
         (conj image-tag))))
@@ -744,12 +779,16 @@
    - skip-pre-start: When true, disable pre_start hooks
    - container-name: Value for --name, or nil
    - harness-volume-name: Harness volume to mount, or nil
+   - unsafe-docker-args: When true, let refused docker_args and mounts entries
+     through with a warning each; otherwise exit 1 through output/error on
+     them (see validation/check-refused-entries!). An invalid security_profile
+     exits 1 either way.
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/exec.
 
    PRE_START is passed as -e PRE_START=command. The entrypoint script runs it
    in the background and logs to /tmp/pre-start.log."
-  [{:keys [project-dir image-tag config state git-identity skip-pre-start container-name harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity skip-pre-start container-name harness-volume-name unsafe-docker-args]}]
   (build-docker-args-internal
    {:project-dir project-dir
     :image-tag image-tag
@@ -759,6 +798,7 @@
     :skip-pre-start skip-pre-start
     :container-name container-name
     :harness-volume-name harness-volume-name
+    :unsafe-docker-args unsafe-docker-args
     :tty-flags ["-it"]}))
 
 (defn build-docker-args-for-exec
@@ -776,9 +816,13 @@
    - config: Parsed config map from config.clj (or nil)
    - git-identity: {:name \"...\" :email \"...\"} from read-git-identity
    - tty?: When true, allocate TTY (-it); when false, stdin only (-i)
+   - unsafe-docker-args: When true, let refused docker_args and mounts entries
+     through with a warning each; otherwise exit 1 through output/error on
+     them (see validation/check-refused-entries!). An invalid security_profile
+     exits 1 either way.
 
    Returns vector starting with [\"docker\" \"run\" ...] ready for p/shell."
-  [{:keys [project-dir image-tag config state git-identity tty? harness-volume-name]}]
+  [{:keys [project-dir image-tag config state git-identity tty? harness-volume-name unsafe-docker-args]}]
   (build-docker-args-internal
    {:project-dir project-dir
     :image-tag image-tag
@@ -788,4 +832,5 @@
     :skip-pre-start true  ; Always skip pre_start for exec
     :skip-interactive true  ; Skip interactive features for exec
     :harness-volume-name harness-volume-name
+    :unsafe-docker-args unsafe-docker-args
     :tty-flags (if tty? ["-it"] ["-i"])}))

@@ -18,6 +18,7 @@ Complete reference for aishell configuration options, covering both the global (
   - [ports](#ports)
   - [docker_args](#docker_args)
   - [resources](#resources)
+  - [security_profile](#security_profile)
   - [pre_start](#pre_start)
   - [harness_args](#harness_args)
   - [pi_packages](#pi_packages)
@@ -85,6 +86,7 @@ With `extends: global` (the default), aishell merges configs by data type:
 | **Maps** | `env`, `resources` | Shallow merge (project overrides global keys) | Global: `{DEBUG: "false"}`<br/>Project: `{DEBUG: "true"}`<br/>Result: `{DEBUG: "true"}` |
 | **Map-of-lists** | `harness_args` | Merge keys, concatenate per-harness lists | Global: `{claude: ["--verbose"]}`<br/>Project: `{claude: ["--model", "sonnet"]}`<br/>Result: `{claude: ["--verbose", "--model", "sonnet"]}` |
 | **Scalars** | `pre_start`, `claude_isolation` | Project replaces global | Global: `pre_start: "echo hi"`<br/>Project: `pre_start: ["echo", "bye"]`<br/>Result: `"echo && bye"` |
+| **Stricter wins** | `security_profile` | The stricter profile applies, so a project cannot relax a global `strict` | Global: `strict`<br/>Project: `default`<br/>Result: `strict` |
 | **Custom** | `detection` | Custom merge (see [detection](#detection)) | Enabled: project wins<br/>Patterns: map merge<br/>Allowlist: concatenate |
 | **Global-only** | `pi_packages`, `update_check` | Not merged (global config only) | Project values ignored with warning |
 
@@ -113,6 +115,7 @@ Example showing all available options:
 #       - Lists (mounts, ports, docker_args): concatenate (global + project)
 #       - Maps (env, resources): shallow merge (project overrides global)
 #       - Scalars (pre_start): project replaces global
+#       - security_profile: the stricter profile wins
 #   - "none": This config fully replaces global (no merging)
 
 extends: global
@@ -163,7 +166,8 @@ ports:
 # DOCKER_ARGS - Additional docker run arguments
 # =============================================================================
 # Supports string (space-separated) or array format
-# WARNING: Some flags are dangerous (--privileged, --network=host, etc.)
+# Flags that weaken isolation (--privileged, --network, --cap-add, ...) stop
+# the launch; see docker_args below.
 
 # For memory and CPU caps, use resources (below).
 
@@ -182,6 +186,13 @@ docker_args:
 resources:
   memory: "8g"                      # docker run --memory 8g
   cpus: 4                           # docker run --cpus 4
+
+# =============================================================================
+# SECURITY_PROFILE - Restrictions the Sandbox runs under
+# =============================================================================
+# default: caps the process count. strict: also drops capabilities and
+# privilege escalation, so sudo stops working inside the Sandbox.
+security_profile: default
 
 # =============================================================================
 # PRE_START - Command to run before shell starts
@@ -401,7 +412,7 @@ token, or a mounted ssh-agent socket, avoids exposing the keys themselves.
 
 **Merge behavior:** Global and project mounts concatenate (both apply).
 
-**Security warning:** Mounting sensitive paths (e.g., `/etc`, `/var/run/docker.sock`) triggers warnings. Pass `--unsafe` before the command (`aishell --unsafe claude`) to bypass.
+**Security warning:** Mounting sensitive paths (e.g., `/`, `/etc/passwd`, `~/.aws`, `~/.ssh` private keys) triggers warnings. A mount whose host path names `docker.sock` is refused: it would let the Sandbox control the Docker daemon. Put `--unsafe-docker-args` before the command (`aishell --unsafe-docker-args claude`) to let it through; `--unsafe` does not.
 
 **SSH Keys Security Note:**
 
@@ -562,7 +573,7 @@ docker_args:
 **Notes:**
 - Array format is clearer for multi-flag arguments
 - aishell passes flags directly to `docker run` (after built-in args)
-- Some flags trigger security warnings (see below)
+- Flags that weaken the Sandbox's isolation are refused (see below)
 
 **Merge behavior:** Global and project docker_args concatenate (both apply).
 
@@ -571,23 +582,27 @@ docker_args:
 `docker_args` the deliberate escape hatch — re-enabling a Harness self-updater
 inside a Sandbox with a read-only, pinned Harness volume is on you. See [ADR 0008](adr/0008-harness-owned-runtime-environment-precedence.md).
 
-**Dangerous flags (trigger warnings):**
+**Refused flags:** a launch whose `docker_args` carry any of these, written as `--flag=value` or `--flag value`, stops with exit 1 and an error that names every refused entry. This holds under every [security_profile](#security_profile) and for harness launches, the shell, `exec` and the VSCode Sandbox.
 
-| Flag | Risk |
+| Flag | Why it is refused |
 |------|------|
 | `--privileged` | Full host access |
-| `--cap-add=SYS_ADMIN` | Elevated capabilities |
-| `--cap-add=ALL` | All capabilities |
-| `--security-opt apparmor=unconfined` | Disable security |
-| `--network=host` | No network isolation |
-| `--pid=host` | Host process namespace |
-| `--ipc=host` | Host IPC namespace |
+| `--cap-add`, `--cap-drop` | Changes the capabilities the Security profile sets |
+| `--security-opt` | Changes privilege escalation, seccomp or AppArmor |
+| `--network`, `--net` | Joins the host or another network |
+| `--runtime` | Swaps the OCI runtime |
+| `--pid`, `--userns`, `--ipc`, `--uts`, `--cgroupns` | Joins a host namespace |
+| `--device`, `--device-cgroup-rule` | Exposes host devices |
+| `--volumes-from` | Mounts another container's volumes |
+| any entry naming `docker.sock` | Lets the Sandbox control the Docker daemon |
+
+The only way past is the Global flag `--unsafe-docker-args`, put before the command (`aishell --unsafe-docker-args claude`). It prints one warning for each entry it lets through, on every start. `--unsafe` does not apply. The list is fixed in aishell; config cannot shorten it ([ADR 0006](adr/0006-harden-on-docker-with-an-egress-proxy.md)). `aishell check` reports refused entries as failures.
 
 **Common use cases:**
 
 | Use Case | Example |
 |----------|---------|
-| Resource limits beyond [resources](#resources) | `--memory-swap=4g --pids-limit=100` |
+| Resource limits beyond [resources](#resources) | `--memory-swap=4g --pids-limit=100` (overrides the profile's 4096) |
 | Custom hostname | `--hostname=dev-box` |
 | DNS config | `--dns=8.8.8.8` |
 | /etc/hosts | `--add-host=api:192.168.1.50` |
@@ -623,6 +638,38 @@ resources:
 **Merge behavior:** Shallow merge, like `env`: a project key overrides the same global key, and the other global key is kept. With `extends: none` the global map is dropped.
 
 **Precedence:** the flags go just before `docker_args`, so a `--memory` or `--cpus` in `docker_args` wins over `resources`.
+
+---
+
+### security_profile
+
+**Purpose:** Choose the [Security profile](../CONTEXT.md) the Sandbox runs under: the restrictions on capabilities, privilege escalation and process count.
+
+**Type:** String, `default` or `strict`
+
+**Example:**
+
+```yaml
+security_profile: strict
+```
+
+**Values:**
+- `default` (also when the key is absent): adds `--pids-limit 4096`. Nothing else changes; a Sandbox that runs more than 4096 processes hits the cap.
+- `strict`: everything in `default`, plus `--security-opt no-new-privileges`, `--cap-drop ALL` and `--cap-add` for `CHOWN`, `SETUID`, `SETGID`, `FOWNER` and `DAC_OVERRIDE`, the capabilities the entrypoint needs to create your user and switch to it.
+
+**What strict breaks:**
+- `sudo` and every other setuid binary inside the Sandbox stop escalating, including `sudo` in `pre_start`. Install packages in a [Project extension](ARCHITECTURE.md#extension-system) Dockerfile instead of with `sudo apt-get` at run time.
+- Binaries that gain capabilities through file capabilities, rather than setuid, lose them too. Your own processes already run as a non-root user, so they hold no capabilities under either profile.
+
+**Notes:**
+- The profile applies to every Sandbox `docker run`: the interactive shell, harness launches, `exec` and the VSCode Sandbox when `aishell vscode` starts one.
+- Any other value stops the launch with exit 1 and an error that names `security_profile` and the valid values.
+- `aishell check` and `aishell info` show the profile in effect for the current project.
+- A [refused](#docker_args) `docker_args` flag stops the launch under either profile.
+
+**Merge behavior:** The stricter profile wins: a global `strict` cannot be relaxed by a project `default`. With `extends: none` the global config is dropped, the global profile with it.
+
+**Precedence:** the profile's flags go before `resources` and `docker_args`, so a `docker_args` entry that `--unsafe-docker-args` lets through takes effect after them.
 
 ---
 
@@ -1272,7 +1319,7 @@ resources:
 
 docker_args:
   - "--memory-swap=4g"         # No swap beyond memory limit
-  - "--pids-limit=100"         # Limit process count
+  - "--pids-limit=100"         # Lower the security profile's 4096-process cap
 ```
 
 ### Per-Harness Model Configuration

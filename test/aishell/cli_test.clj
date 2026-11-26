@@ -456,15 +456,17 @@
 
 (deftest parse-global-flags-reads-only-the-flags-before-the-subcommand
   (testing "every global flag before the subcommand is aishell's"
-    (is (= {:verbose? true :base-image? true :unsafe? true :name "x"
+    (is (= {:verbose? true :base-image? true :unsafe? true :unsafe-docker-args? true :name "x"
             :args ["claude" "--model" "opus"]}
            (cli/parse-global-flags
-            ["--unsafe" "--verbose" "--name" "x" "--base-image" "claude" "--model" "opus"]))))
+            ["--unsafe" "--verbose" "--name" "x" "--unsafe-docker-args" "--base-image"
+             "claude" "--model" "opus"]))))
   (testing "after the subcommand they are left for the harness"
-    (is (= {:verbose? false :base-image? false :unsafe? false :name nil
-            :args ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]}
+    (is (= {:verbose? false :base-image? false :unsafe? false :unsafe-docker-args? false :name nil
+            :args ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"
+                   "--unsafe-docker-args"]}
            (cli/parse-global-flags
-            ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image"]))))
+            ["claude" "--verbose" "--unsafe" "--name" "x" "--base-image" "--unsafe-docker-args"]))))
   (testing "other leading flags stay in front of the subcommand"
     (is (= ["--json" "ps"] (:args (cli/parse-global-flags ["--verbose" "--json" "ps"])))))
   (testing "a harness moves in front of the other leading flags"
@@ -637,7 +639,7 @@
 
 (deftest help-lists-every-leading-global-flag
   (let [out (with-out-str (cli/print-help))]
-    (doseq [flag ["--verbose" "--base-image" "--unsafe" "--name"]]
+    (doseq [flag ["--verbose" "--base-image" "--unsafe" "--unsafe-docker-args" "--name"]]
       (is (str/includes? out flag) flag))))
 
 (deftest leading-global-flags-run-the-command-not-a-shell
@@ -730,3 +732,40 @@
       (let [[kind msg] (attached-or-opened args)]
         (is (= :error kind) (str/join " " args))
         (is (str/includes? (str msg) "unsupported_json") (str/join " " args))))))
+
+
+(deftest unsafe-docker-args-reaches-every-sandbox-start
+  (testing "a harness launch"
+    (let [[kind cmd args opts] (dispatched ["--unsafe-docker-args" "claude" "-p" "x"])]
+      (is (= [:run "claude" ["-p" "x"]] [kind cmd args]))
+      (is (true? (:unsafe-docker-args opts)))
+      (is (false? (:unsafe opts)))))
+  (testing "bare aishell"
+    (let [[kind cmd _ opts] (dispatched ["--unsafe-docker-args"])]
+      (is (= [:run nil] [kind cmd]))
+      (is (true? (:unsafe-docker-args opts)))))
+  (testing "exec"
+    (let [[kind args opts] (dispatched ["--unsafe-docker-args" "exec" "ls"])]
+      (is (= [:exec ["ls"]] [kind args]))
+      (is (true? (:unsafe-docker-args opts)))))
+  (testing "vscode"
+    (let [seen (atom nil)]
+      (with-redefs [vscode/open-vscode (fn [opts] (reset! seen opts))]
+        (dispatched ["--unsafe-docker-args" "vscode" "--detach"]))
+      (is (true? (:unsafe-docker-args @seen)))
+      (is (true? (:detach? @seen)))))
+  (testing "without the flag, launches do not let entries through"
+    (is (not (:unsafe-docker-args (last (dispatched ["claude"])))))
+    (is (not (:unsafe-docker-args (last (dispatched ["exec" "ls"]))))))
+  (testing "after the harness it belongs to the harness"
+    (let [[_ cmd args opts] (dispatched ["claude" "--unsafe-docker-args"])]
+      (is (= ["claude" ["--unsafe-docker-args"]] [cmd args]))
+      (is (false? (:unsafe-docker-args opts))))))
+
+(deftest unsafe-docker-args-is-refused-where-no-sandbox-starts
+  (doseq [cmd ["attach" "a" "ps" "setup" "update" "check" "volumes" "info" "upgrade"]]
+    (testing cmd
+      (let [[kind msg] (dispatched ["--unsafe-docker-args" cmd])]
+        (is (= :error kind))
+        (is (str/includes? msg "--unsafe-docker-args"))
+        (is (str/includes? msg cmd))))))

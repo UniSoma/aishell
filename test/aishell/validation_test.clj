@@ -109,3 +109,73 @@
         (is (nil? (refuse (str (fs/create-dirs (fs/path home "proj"))) home))))
       (finally
         (fs/delete-tree tmp)))))
+
+
+;; docker_args and mounts refused for weakening the Sandbox's isolation
+
+(defn- refuse-docker-args
+  "Run check-refused-entries! on the entries refused-entries finds in
+   docker-args tokens and mount sources, treating output/error as a hard
+   reject. Returns {:error <stderr>} on a refusal, else {:warnings <stderr>}."
+  [{:keys [docker-args mounts unsafe?]}]
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "rejected" {})))]
+        (try
+          (validation/check-refused-entries!
+           (validation/refused-entries {:docker-args docker-args :mount-sources mounts})
+           unsafe?)
+          {:warnings (str err)}
+          (catch clojure.lang.ExceptionInfo _
+            {:error (str err)}))))))
+
+(deftest refused-docker-args-exit-naming-each-entry
+  (doseq [flag ["--privileged" "--cap-add" "--cap-drop" "--security-opt" "--network"
+                "--net" "--runtime" "--pid" "--userns" "--ipc" "--uts" "--cgroupns"
+                "--device" "--device-cgroup-rule" "--volumes-from"]]
+    (testing (str flag " written with =")
+      (let [{:keys [error]} (refuse-docker-args {:docker-args [(str flag "=x")]})]
+        (is (some? error) flag)
+        (is (str/includes? (str error) (str flag "=x")) flag)))
+    (testing (str flag " written as two tokens")
+      (let [{:keys [error]} (refuse-docker-args {:docker-args ["--hostname=box" flag "x"]})]
+        (is (some? error) flag)
+        (is (str/includes? (str error) flag) flag))))
+  (testing "a token naming docker.sock is refused"
+    (let [{:keys [error]} (refuse-docker-args
+                           {:docker-args ["-v" "/var/run/docker.sock:/var/run/docker.sock"]})]
+      (is (str/includes? (str error) "/var/run/docker.sock:/var/run/docker.sock"))))
+  (testing "every refused entry is named, not only the first"
+    (let [{:keys [error]} (refuse-docker-args
+                           {:docker-args ["--privileged" "--network" "host" "--pid=host"]})]
+      (is (str/includes? error "--privileged"))
+      (is (str/includes? error "--network host"))
+      (is (str/includes? error "--pid=host"))))
+  (testing "the message names the override and says --unsafe does not apply"
+    (let [{:keys [error]} (refuse-docker-args {:docker-args ["--privileged"]})]
+      (is (str/includes? error "--unsafe-docker-args"))
+      (is (str/includes? error "--unsafe does not override")))))
+
+(deftest docker-sock-mount-source-is-refused
+  (let [{:keys [error]} (refuse-docker-args {:mounts ["/var/run/docker.sock"]})]
+    (is (str/includes? (str error) "mounts: /var/run/docker.sock"))))
+
+(deftest allowed-docker-args-pass-silently
+  (let [{:keys [error warnings]} (refuse-docker-args
+                                  {:docker-args ["--hostname=box" "--add-host" "db:10.0.0.1"
+                                                 "--pids-limit=100" "--gpus" "all" "-u" "1000"
+                                                 "--memory-swap=4g" "-e" "FOO=bar"]
+                                   :mounts ["/home/me/.ssh" "/data"]})]
+    (is (nil? error))
+    (is (= "" warnings))))
+
+(deftest unsafe-docker-args-lets-entries-through-and-names-each
+  (let [{:keys [error warnings]} (refuse-docker-args
+                                  {:docker-args ["--privileged" "--network=host"]
+                                   :mounts ["/var/run/docker.sock"]
+                                   :unsafe? true})]
+    (is (nil? error))
+    (is (str/includes? warnings "--privileged"))
+    (is (str/includes? warnings "--network=host"))
+    (is (str/includes? warnings "/var/run/docker.sock"))
+    (is (= 3 (count (re-seq #"--unsafe-docker-args let through" warnings))))))

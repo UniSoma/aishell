@@ -1,8 +1,10 @@
 (ns aishell.config-test
   (:require [clojure.test :refer [deftest is testing]]
             [babashka.fs :as fs]
+            [clojure.string :as str]
             [aishell.config :as config]
-            [aishell.harness :as harness]))
+            [aishell.harness :as harness]
+            [aishell.output :as output]))
 
 (deftest resolve-claude-isolation-defaults-to-shared
   (testing "absent key defaults to :shared"
@@ -144,3 +146,53 @@
         (is (= {:memory "16g"} (load "extends: none\nresources:\n  memory: 16g\n"))))
       (finally
         (fs/delete-tree dir)))))
+
+
+;; security_profile
+
+(defn- profile-outcome
+  "resolve-security-profile on config, or {:error <stderr>} when it exits."
+  [config]
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (with-redefs [output/exit! (fn [_] (throw (ex-info "exit" {})))]
+        (try
+          (config/resolve-security-profile config)
+          (catch clojure.lang.ExceptionInfo _
+            {:error (str err)}))))))
+
+(deftest security-profile-defaults-to-default
+  (is (= :default (profile-outcome nil)))
+  (is (= :default (profile-outcome {})))
+  (is (= :default (profile-outcome {:security_profile "default"})))
+  (is (= :strict (profile-outcome {:security_profile "strict"}))))
+
+(deftest null-security-profile-means-default
+  (is (= :default (profile-outcome {:security_profile nil}))))
+
+(deftest unknown-security-profile-exits-naming-key-and-values
+  (doseq [v ["paranoid" "" "Strict" true 1]]
+    (let [{:keys [error]} (profile-outcome {:security_profile v})]
+      (is (some? error) (pr-str v))
+      (is (str/includes? (str error) "security_profile") (pr-str v))
+      (is (str/includes? (str error) "default, strict") (pr-str v)))))
+
+(deftest merge-configs-security-profile-stricter-wins
+  (testing "a project cannot relax a global strict"
+    (is (= "strict" (:security_profile (config/merge-configs {:security_profile "strict"}
+                                                             {:security_profile "default"})))))
+  (testing "a project can tighten a global default"
+    (is (= "strict" (:security_profile (config/merge-configs {:security_profile "default"}
+                                                             {:security_profile "strict"})))))
+  (testing "one side alone applies"
+    (is (= "strict" (:security_profile (config/merge-configs {:security_profile "strict"} {}))))
+    (is (= "default" (:security_profile (config/merge-configs {} {:security_profile "default"})))))
+  (testing "an unknown value survives the merge so the launch refuses it"
+    (is (= "bogus" (:security_profile (config/merge-configs {:security_profile "strict"}
+                                                            {:security_profile "bogus"}))))))
+
+(deftest validate-config-knows-security-profile
+  (let [err (java.io.StringWriter.)]
+    (binding [*err* err]
+      (config/validate-config {:security_profile "strict"} "/p/config.yaml"))
+    (is (not (str/includes? (str err) "Unknown config keys")))))

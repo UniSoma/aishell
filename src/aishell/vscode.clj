@@ -75,7 +75,7 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 (defn- start-container!
   "Start the `vscode` Sandbox in detached mode if not already running.
    Returns the container name."
-  [state project-dir image-tag]
+  [state project-dir image-tag unsafe-docker-args]
   (let [container-name (naming/container-name project-dir "vscode")]
     (when-not (naming/container-running? container-name)
       (let [cfg (config/load-config project-dir)
@@ -90,7 +90,8 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
                            :state state
                            :git-identity git-id
                            :container-name container-name
-                           :harness-volume-name harness-volume-name})
+                           :harness-volume-name harness-volume-name
+                           :unsafe-docker-args unsafe-docker-args})
             docker-args (mapv #(if (= % "-it") "-d" %) docker-args)]
         (vol/ensure-vscode-server-volume! state image-tag)
         (naming/remove-container-if-stopped! container-name)
@@ -136,11 +137,11 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
 (defn- open-own-sandbox!
   "Start the `vscode` Sandbox and open VSCode in it. Without `detach?`, block
    until the window closes, then stop the Sandbox."
-  [state project-dir detach? extra-args]
+  [state project-dir detach? extra-args unsafe-docker-args]
   (let [image-tag (run/resolve-image-tag project-dir false)
         _ (build/warn-if-foundation-out-of-date! image-tag)
         _ (ensure-imageconfig! image-tag)
-        container-name (start-container! state project-dir image-tag)]
+        container-name (start-container! state project-dir image-tag unsafe-docker-args)]
     (if detach?
       (do
         (launch-vscode! container-name project-dir false extra-args)
@@ -240,8 +241,10 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
    a running one is joined and left running; otherwise the `vscode` Sandbox
    starts, and by default stops when the window closes unless detach? is set.
    Extra code-args are passed through to the 'code' CLI, merged after
-   harness_args.vscode defaults from config."
-  [& [{:keys [name detach? code-args]}]]
+   harness_args.vscode defaults from config. unsafe-docker-args lets refused
+   docker_args and mounts entries through when the `vscode` Sandbox starts;
+   joining a running Sandbox starts nothing, so it has no effect there."
+  [& [{:keys [name detach? code-args unsafe-docker-args]}]]
   ;; Refuse a home-containing root before anything walks the tree
   (validation/check-project-dir! (System/getProperty "user.dir"))
 
@@ -268,4 +271,4 @@ On Linux/Windows: 'code' is added to PATH during installation.")))
       (cond
         (:error plan) (output/error (:error plan))
         (:join plan) (join-sandbox! project-dir (:join plan) extra-args)
-        :else (open-own-sandbox! state project-dir detach? extra-args)))))
+        :else (open-own-sandbox! state project-dir detach? extra-args unsafe-docker-args)))))

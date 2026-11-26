@@ -275,7 +275,7 @@ The run phase executes a harness (or shell) in a container with project files mo
 ┌──────────────────────────────────────────┐
 │ Security Checks                          │
 │ - aishell.detection.core (filename scan) │
-│ - aishell.validation (dangerous args)    │
+│ - aishell.validation (refused args)      │
 └────────┬─────────────────────────────────┘
          │
          ▼
@@ -392,8 +392,12 @@ Each namespace handles one concern:
    - Supports custom patterns and allowlists
 
 2. **Validation layer (aishell.validation):** Config safety checks
-   - Warns about dangerous `docker_args` (--privileged, --network=host)
-   - Warns about dangerous mounts (/etc, /var/run/docker.sock)
+   - Refuses `docker_args` that weaken isolation (--privileged, --cap-add, --network, host namespaces, devices, docker.sock) and mounts of docker.sock, unless `--unsafe-docker-args` comes before the command
+   - Warns about dangerous mounts (/, /etc/passwd, ~/.aws, SSH private keys)
+
+3. **Security profile (aishell.docker.run):** Restrictions every Sandbox runs under, chosen with `security_profile` ([ADR 0006](adr/0006-harden-on-docker-with-an-egress-proxy.md))
+   - `default`: `--pids-limit 4096`
+   - `strict`: also `no-new-privileges` and `--cap-drop ALL`, keeping only the capabilities the entrypoint needs (CHOWN, SETUID, SETGID, FOWNER, DAC_OVERRIDE)
 
 ---
 

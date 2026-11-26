@@ -101,3 +101,10 @@
   (testing "no caps"
     (is (= ["  None (no caps)"] (format-resources-section nil)))
     (is (= ["  None (no caps)"] (format-resources-section {:resources {}})))))
+
+(def ^:private format-security-section #'info/format-security-section)
+
+(deftest security-section-names-the-active-profile
+  (is (= ["  Profile: default"] (format-security-section nil)))
+  (is (= ["  Profile: default"] (format-security-section {:security_profile "default"})))
+  (is (= ["  Profile: strict"] (format-security-section {:security_profile "strict"}))))

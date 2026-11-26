@@ -1,6 +1,6 @@
 (ns aishell.info
   "Display information about the aishell image stack and the project's
-   resource caps.
+   resource caps and Security profile.
 
    Extracts info from static sources (templates, state, config) rather than
    running Docker commands, so `aishell info` works even when Docker
@@ -165,19 +165,25 @@
                    (mapv (fn [[flag value]] (str (labels flag) value))))]
     (if (seq lines) lines ["  None (no caps)"])))
 
+(defn- format-security-section
+  "Format the Security section body: the active Security profile. An invalid
+   profile exits here with the message a launch would give."
+  [config]
+  [(str "  Profile: " (name (config/resolve-security-profile config)))])
+
 (defn run-info
-  "Print a structured summary of the project's resource caps and the aishell
-   image stack."
+  "Print a structured summary of the project's resource caps, Security
+   profile and the aishell image stack."
   [args]
   (when (some #{"-h" "--help"} args)
     (println (str output/BOLD "Usage:" output/NC " aishell info [--foundation]"))
     (println)
-    (println "Display the project's resource caps and the aishell image stack.")
+    (println "Display the project's resource caps, Security profile and the aishell image stack.")
     (println)
     (println "Options:")
     (println "  --foundation  Print the Foundation image's embedded Dockerfile")
     (println)
-    (println "Shows the project's resource caps, the Foundation image's contents,")
+    (println "Shows the project's resource caps and Security profile, the Foundation image's contents,")
     (println "whether the Base image is built from ~/.aishell/Dockerfile, the")
     (println "Project extension's status, and installed harnesses.")
     (System/exit 0))
@@ -199,7 +205,9 @@
         fossil-version (parse-fossil-version dockerfile)
         state (state/read-state)
         project-dir (System/getProperty "user.dir")
-        resource-lines (format-resources-section (config/load-config project-dir))]
+        cfg (config/load-config project-dir)
+        resource-lines (format-resources-section cfg)
+        security-lines (format-security-section cfg)]
 
     (println (str output/BOLD "Project" output/NC " (" (project-image-tag project-dir) ")"))
     (println "--------------------------------------")
@@ -210,6 +218,12 @@
     (println (str output/BOLD "Resources" output/NC))
     (println "--------------------------------------")
     (doseq [line resource-lines]
+      (println line))
+    (println)
+
+    (println (str output/BOLD "Security" output/NC))
+    (println "--------------------------------------")
+    (doseq [line security-lines]
       (println line))
     (println)
 

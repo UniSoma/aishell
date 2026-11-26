@@ -8,6 +8,7 @@
             [aishell.docker.base :as base]
             [aishell.docker.build :as build]
             [aishell.docker.naming :as naming]
+            [aishell.docker.run :as docker-run]
             [aishell.docker.extension :as ext]
             [aishell.harness :as harness]
             [aishell.config :as config]
@@ -163,21 +164,23 @@
           (print-status :warn (str "Mount not found: " source)))))))
 
 (defn- check-security
-  "Check for dangerous docker args and mount paths."
+  "Report the active Security profile, refused docker_args and mounts entries,
+   and dangerous mount paths. Returns :fail when the profile is invalid or an
+   entry is refused, since a launch would exit on either."
   [cfg]
-  (let [has-warnings? (atom false)]
-    (when-let [docker-args (:docker_args cfg)]
-      (when-let [warnings (validation/check-dangerous-args docker-args)]
-        (reset! has-warnings? true)
-        (doseq [msg warnings]
-          (print-status :warn msg))))
+  (let [failed? (atom false)
+        fail! (fn [msg] (reset! failed? true) (print-status :fail msg))]
+    (if-let [msg (config/security-profile-error cfg)]
+      (fail! (str/replace msg "\n" " — "))
+      (print-status :ok (str "Security profile: " (name (config/resolve-security-profile cfg)))))
+    (if-let [entries (seq (docker-run/refused-entries cfg))]
+      (doseq [{:keys [key entry]} entries]
+        (fail! (str "Refused " key ": " entry " (aishell --unsafe-docker-args lets it through)")))
+      (print-status :ok "No refused docker_args or mounts"))
     (when-let [mounts (:mounts cfg)]
-      (when-let [warnings (validation/check-dangerous-mounts mounts)]
-        (reset! has-warnings? true)
-        (doseq [msg warnings]
-          (print-status :warn msg))))
-    (when-not @has-warnings?
-      (print-status :ok "No dangerous Docker options or mount paths"))))
+      (doseq [msg (validation/check-dangerous-mounts mounts)]
+        (print-status :warn msg)))
+    (when @failed? :fail)))
 
 (defn- check-sensitive-files
   "Scan for sensitive files in project directory."
@@ -288,7 +291,8 @@
       (println)
 
       (println (str output/BOLD "Security" output/NC))
-      (check-security cfg)
+      (when (= :fail (check-security cfg))
+        (reset! critical-fail? true))
       (check-sensitive-files project-dir cfg)
 
       (check-claude-isolation project-dir cfg (state/read-state)))

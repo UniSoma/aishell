@@ -146,9 +146,10 @@
    - cmd: nil for a shell, else a harness subcommand from the registry
    - harness-args: Extra arguments to pass to harness (vector)
    - opts: Optional map with :unsafe (skip detection warnings),
-     :container-name (overrides the name part) and
+     :container-name (overrides the name part),
      :base-image (start on the Base image, without the Project extension
-     or pre_start)
+     or pre_start) and :unsafe-docker-args (let refused docker_args and
+     mounts entries through)
 
    Does not return: exits with the container's exit code, or on Unix
    replaces the process."
@@ -203,9 +204,6 @@
             _ (warn-if-foundation-stale state)
             _ (build/warn-if-foundation-out-of-date! image-tag)
 
-            _ (when-let [docker-args (:docker_args cfg)]
-                (validation/warn-dangerous-args docker-args))
-
             _ (when-let [mounts (:mounts cfg)]
                 (validation/warn-dangerous-mounts mounts))
 
@@ -225,7 +223,8 @@
                           :git-identity git-id
                           :skip-pre-start (skip-pre-start? opts)
                           :container-name container-name-str
-                          :harness-volume-name harness-volume-name})
+                          :harness-volume-name harness-volume-name
+                          :unsafe-docker-args (:unsafe-docker-args opts)})
 
             skip-perms? (harness/skip-permissions?
                          (System/getenv harness/skip-permissions-env-var))
@@ -256,7 +255,8 @@
    Arguments:
    - cmd-args: Vector of command + arguments (e.g., [\"ls\" \"-la\"])
    - opts: Optional map with :base-image (start on the Base image,
-     without the Project extension)
+     without the Project extension) and :unsafe-docker-args (let refused
+     docker_args and mounts entries through)
 
    Auto-detects TTY. Uses all standard mounts/env from config.
    Skips detection warnings and pre_start hooks for fast execution."
@@ -289,7 +289,8 @@
                         :state state
                         :git-identity git-id
                         :tty? tty?
-                        :harness-volume-name harness-volume-name})
+                        :harness-volume-name harness-volume-name
+                        :unsafe-docker-args (:unsafe-docker-args opts)})
 
           container-cmd cmd-args
 

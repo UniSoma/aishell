@@ -103,7 +103,7 @@ aishell/
 - **docker/templates.clj:** Generate Dockerfile template from harness config
 - **docker/run.clj:** Construct docker run command with mounts, env vars, volume
 - **docker/volume.clj:** Harness volume hashing, creation, population, listing, pruning; the VSCode server volume's creation and status
-- **info.clj:** Display the project's resource caps and image stack info (the Foundation image's contents, Base image and Project extension status, harnesses)
+- **info.clj:** Display the project's resource caps, Security profile and image stack info (the Foundation image's contents, Base image and Project extension status, harnesses)
 - **config.clj:** Load and merge YAML configs (global + project)
 - **run.clj:** High-level container lifecycle (detection, pre-start, exec)
 - **state.clj:** Read/write EDN state (foundation-hash, harness-volume-name, etc.)

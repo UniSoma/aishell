@@ -41,6 +41,8 @@
                 :desc "Run on the Base image, skipping the Project extension and pre_start"}
    :unsafe  {:coerce :boolean
              :desc "Skip the sensitive-file confirmation (run commands)"}
+   :unsafe-docker-args {:coerce :boolean
+                        :desc "Let refused docker_args and mounts entries through (commands that start a Sandbox)"}
    :name    {:ref "<name>"
              :desc "Name the container instead of using the harness name"}})
 
@@ -343,7 +345,7 @@
   (println)
   (println (str output/BOLD "Global Options:" output/NC))
   (println (cli/format-opts {:spec global-spec
-                             :order [:help :version :json :verbose :base-image :unsafe :name]}))
+                             :order [:help :version :json :verbose :base-image :unsafe :unsafe-docker-args :name]}))
   (println)
   (println (str output/BOLD "Examples:" output/NC))
   (println (str "  " output/CYAN "aishell setup --with-claude" output/NC "     Set up with Claude Code"))
@@ -867,16 +869,28 @@
    --base-image. Harness subcommands and the bare default accept it too."
   #{"exec"})
 
+(def ^:private unsafe-docker-args-commands
+  "aishell's own subcommands that can start a Sandbox and so accept
+   --unsafe-docker-args. Harness subcommands and the bare default accept it
+   too."
+  #{"exec" "vscode"})
+
 (defn- split-at-separator
   "Split args at the first `--` into [before, from the `--` on]."
   [args]
   (mapv vec (split-with #(not= "--" %) args)))
 
-(defn- do-dispatch* [{:keys [verbose? base-image? unsafe? args] container-name :name}]
+(defn- do-dispatch* [{:keys [verbose? base-image? unsafe? unsafe-docker-args? args] container-name :name}]
   (let [first-arg (first args)
         own-subcommand? (contains? output/non-harness-commands first-arg)
         launch-opts {:unsafe unsafe? :container-name container-name
-                     :base-image base-image?}]
+                     :base-image base-image? :unsafe-docker-args unsafe-docker-args?}]
+    (when (and unsafe-docker-args?
+               own-subcommand?
+               (not (contains? unsafe-docker-args-commands first-arg)))
+      (output/error (str "--unsafe-docker-args only applies to commands that start a Sandbox"
+                         " (harness launches, bare aishell, exec, vscode), not '"
+                         first-arg "'. Try: aishell --unsafe-docker-args <harness>")))
     (when (and base-image?
                own-subcommand?
                (not (contains? base-image-commands first-arg)))
@@ -909,7 +923,9 @@
       (case first-arg
         "info" (info/run-info (vec (rest args)))
         "check" (check/run-check)
-        "exec" (run/run-exec (vec (rest args)) {:base-image base-image?})
+        "exec" (run/run-exec (vec (rest args))
+                             (cond-> {:base-image base-image?}
+                               unsafe-docker-args? (assoc :unsafe-docker-args true)))
         "ps" (handle-ps nil)
         "volumes" (handle-volumes (vec (rest args)))
         ("attach" "a") (let [rest-args (vec (rest args))
@@ -957,7 +973,9 @@
                    (cond
                      help? (vscode/print-help)
                      stop? (vscode/stop-vscode)
-                     :else (vscode/open-vscode (dissoc parsed :help? :stop?))))
+                     :else (vscode/open-vscode
+                            (cond-> (dissoc parsed :help? :stop?)
+                              unsafe-docker-args? (assoc :unsafe-docker-args true)))))
         "upgrade" (let [rest-args (vec (rest args))]
                     (cond
                       (some #{"-h" "--help"} rest-args)
@@ -998,20 +1016,22 @@
    `aishell claude --unsafe` belongs to the harness and is forwarded, since
    harnesses own their argv and share flag names with aishell (`--verbose`).
 
-   Returns {:verbose? :base-image? :unsafe? :name :args}, :name nil when
-   absent. :args is the other leading flags (`--json`, `--help`), which
+   Returns {:verbose? :base-image? :unsafe? :unsafe-docker-args? :name :args},
+   :name nil when absent. :args is the other leading flags (`--json`, `--help`), which
    dispatch reads later, then the subcommand and the rest of argv. A
    pass-through harness moves in front of those flags, so `--json claude`
    forwards --json the way `claude --json` does. Exits 1 through
    output/error when --name has no value or its value starts with `-`."
   [argv]
   (loop [[a & more :as argv] (vec argv)
-         flags {:verbose? false :base-image? false :unsafe? false :name nil}
+         flags {:verbose? false :base-image? false :unsafe? false
+                :unsafe-docker-args? false :name nil}
          later-flags []]
     (case a
       "--verbose"    (recur more (assoc flags :verbose? true) later-flags)
       "--base-image" (recur more (assoc flags :base-image? true) later-flags)
       "--unsafe"     (recur more (assoc flags :unsafe? true) later-flags)
+      "--unsafe-docker-args" (recur more (assoc flags :unsafe-docker-args? true) later-flags)
       "--name"       (if (and (seq more) (not (str/starts-with? (first more) "-")))
                        (recur (rest more) (assoc flags :name (first more)) later-flags)
                        (output/error "--name requires a container name. Try: aishell --name <name> <harness>"))

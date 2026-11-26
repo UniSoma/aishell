@@ -13,7 +13,8 @@
             [aishell.docker :as docker]
             [aishell.docker.base :as base]
             [aishell.docker.hash :as hash]
-            [aishell.docker.templates :as templates]))
+            [aishell.docker.templates :as templates]
+            [aishell.output :as output]))
 
 (def ^:private check-isolation #'check/check-claude-isolation)
 (def ^:private check-harnesses #'check/check-harnesses)
@@ -198,3 +199,43 @@
     (let [out (with-redefs [fs/which (constantly nil)]
                 (with-out-str (check-vscode {:with-vscode true})))]
       (is (str/includes? out "VSCode 'code' CLI not found")))))
+
+
+(def ^:private check-security #'check/check-security)
+
+(defn- security-report
+  "Run check-security on cfg. Returns [result stdout]."
+  [cfg]
+  (let [result (atom nil)
+        out (binding [output/*json-output* false]
+              (with-out-str (reset! result (check-security cfg))))]
+    [@result out]))
+
+(deftest security-check-names-the-active-profile
+  (is (str/includes? (second (security-report {})) "Security profile: default"))
+  (is (str/includes? (second (security-report {:security_profile "strict"}))
+                     "Security profile: strict")))
+
+(deftest security-check-fails-on-refused-entries
+  (let [[result out] (security-report {:docker_args ["--privileged" "--hostname=x"]
+                                       :mounts ["/var/run/docker.sock"]})]
+    (is (= :fail result))
+    (is (str/includes? out "docker_args: --privileged"))
+    (is (str/includes? out "mounts: /var/run/docker.sock"))
+    (is (not (str/includes? out "--hostname=x")))))
+
+(deftest security-check-reads-docker-args-as-a-launch-does
+  (testing "string-form docker_args"
+    (let [[result out] (security-report {:docker_args "--privileged --hostname=x"})]
+      (is (= :fail result))
+      (is (str/includes? out "docker_args: --privileged")))))
+
+(deftest security-check-fails-on-an-unknown-profile-without-exiting
+  (let [[result out] (security-report {:security_profile "max"})]
+    (is (= :fail result))
+    (is (str/includes? out "Invalid security_profile"))))
+
+(deftest security-check-passes-a-clean-config
+  (let [[result out] (security-report {:docker_args ["--hostname=x"]})]
+    (is (not= :fail result))
+    (is (str/includes? out "No refused docker_args or mounts"))))

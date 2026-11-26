@@ -12,7 +12,7 @@
 
 (def known-keys
   "Valid config keys. Unknown keys trigger warning."
-  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :detection :pi_packages :update_check :claude_isolation :claude_shared_paths :resources})
+  #{:mounts :env :ports :docker_args :pre_start :extends :harness_args :detection :pi_packages :update_check :claude_isolation :claude_shared_paths :resources :security_profile})
 
 (def known-harnesses
   "Harness names accepted under `harness_args`, derived from the registry.
@@ -180,7 +180,7 @@
       (when (seq unknown)
         (output/warn (str "Unknown config keys in " source-path ": "
                           (clojure.string/join ", " (map name unknown))
-                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, pi_packages, update_check, claude_isolation, claude_shared_paths, resources"))))
+                          "\nValid keys: mounts, env, ports, docker_args, pre_start, extends, harness_args, detection, pi_packages, update_check, claude_isolation, claude_shared_paths, resources, security_profile"))))
     (when-let [harness-args (:harness_args config)]
       (validate-harness-names harness-args source-path))
     (when-let [detection (:detection config)]
@@ -247,6 +247,23 @@
                      [(keyword s) nil])))
                env))))
 
+(def security-profiles
+  "Security profile names, least strict first."
+  ["default" "strict"])
+
+(defn- stricter-security-profile
+  "The stricter of two security_profile values, either possibly nil. An
+   unknown value is returned as it is, so resolve-security-profile refuses it."
+  [a b]
+  (let [rank (into {} (map-indexed (fn [i p] [p i])) security-profiles)
+        unknown? #(and (some? %) (not (contains? rank %)))]
+    (cond
+      (unknown? b) b
+      (unknown? a) a
+      (nil? a) b
+      (nil? b) a
+      :else (max-key rank a b))))
+
 (defn merge-configs
   "Merge global-config and project-config with defined strategy.
    - Lists (mounts, ports, docker_args, pi_packages, claude_shared_paths):
@@ -254,6 +271,8 @@
    - Maps (env, resources): shallow merge (project overrides global)
    - Map-of-lists (harness_args): merge keys, concatenate per-key lists
    - Scalars (pre_start, claude_isolation): project replaces global
+   - security_profile: the stricter of the two wins, so a project cannot
+     relax a global strict; an unknown value wins so the launch refuses it
    - Detection: custom merge (enabled scalar, patterns map merge, allowlist concat)
    - Removes :extends key from result (internal-only)"
   [global-config project-config]
@@ -305,6 +324,10 @@
                       (if (or global-val project-val)
                         (assoc acc k (merge-harness-args global-val project-val))
                         acc))
+
+                    (= k :security_profile)
+                    (assoc acc k (stricter-security-profile (get global-config k)
+                                                            (get project-config k)))
 
                     ;; Scalar keys - project wins (use contains? to handle false values)
                     (contains? scalar-keys k)
@@ -411,3 +434,27 @@
   (if (= "project" (some-> (:claude_isolation config) name))
     :project
     :shared))
+
+(defn- security-profile-name
+  "A merged config's security_profile, \"default\" when the key is absent or
+   null."
+  [config]
+  (or (get config :security_profile) "default"))
+
+(defn security-profile-error
+  "Why a merged config's security_profile is invalid, or nil when it is
+   absent, default or strict."
+  [config]
+  (let [v (security-profile-name config)]
+    (when-not (some #{v} security-profiles)
+      (str "Invalid security_profile: " (pr-str v)
+           "\nValid values: " (cstr/join ", " security-profiles)))))
+
+(defn resolve-security-profile
+  "The Security profile a merged config selects: :strict for strict, else
+   :default when the value is default, null or absent. Any other value exits
+   1 through output/error, naming the key and the valid values."
+  [config]
+  (if-let [msg (security-profile-error config)]
+    (output/error msg)
+    (keyword (security-profile-name config))))

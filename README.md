@@ -411,6 +411,8 @@ aishell --unsafe claude  # Skip confirmation prompts
 
 `--unsafe` must come before the harness name. `aishell claude --unsafe` passes `--unsafe` to Claude Code instead.
 
+`--unsafe` does not let through `docker_args` that weaken the sandbox's isolation, such as `--privileged` or `--network host`: aishell refuses those, and only `aishell --unsafe-docker-args <harness>` overrides it. See [docker_args](docs/CONFIGURATION.md#docker_args) and [security_profile](docs/CONFIGURATION.md#security_profile).
+
 aishell refuses to start from your home directory or any directory above it, and `--unsafe` does not change that: a sandbox rooted there would hand the harness your SSH keys, credentials, and every project at once.
 
 Sensitive-file detection checks file names, not file contents or git history. For custom patterns and allowlists, see [detection](docs/CONFIGURATION.md#detection). To catch secrets before they are committed, see [Secret scanning](docs/CONFIGURATION.md#secret-scanning).
